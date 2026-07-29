@@ -5,12 +5,7 @@ import { copyText as writeClipboard } from '../utils/clipboard.util';
 /**
  * 點擊複製到剪貼簿。
  *
- * 套用方式有二：
- *   1. 顯式：在任意元素加 `appCopy` 屬性。
- *   2. 隱式：直接命中訪談表（client-view-modal）各「純資料欄位值」class（見 selector）。
- *      金額（mono price）與帶框項目名稱 tag 不在範圍內，故不列入 selector。
- *      客戶狀況及注意事項（`.vt4-status-body`，多段 richtext）非純資料欄位值，
- *      點擊複製整段 textContent 無意義且會蓋掉手動選字，故刻意不列入 selector。
+ * 套用方式：在任意元素加 `appCopy` 屬性。
  *
  * 行為：
  *   - 點擊讀取元素 textContent（即時讀取，永遠對應當下顯示值）複製，成功彈 success toast。
@@ -21,12 +16,7 @@ import { copyText as writeClipboard } from '../utils/clipboard.util';
  *     不走 HostBinding，避免 OnPush 下 ExpressionChangedAfterChecked 與 CD-thrash）。
  */
 @Directive({
-  selector: `[appCopy],
-    .vt1-info-field__value, .vt1-section__value, .vt1-business-scope, .vt1-deal-date,
-    .vfb-block__value, .vfb-cost-tag__value,
-    .vdi-row__value,
-    .vt3-field__value, .vt3-contact-method-value,
-    .vt4-source-section__value, .vt4-section__value, .vt4-field__value`,
+  selector: '[appCopy]',
   standalone: true,
 })
 export class CopyDirective implements AfterViewInit {

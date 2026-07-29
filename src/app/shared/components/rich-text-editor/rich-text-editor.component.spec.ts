@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ProseMirrorJSON } from '../../../features/quoting-cases/models/p4-contract.model';
+import { ProseMirrorJSON } from '../../models/prosemirror.model';
 import { RichTextEditorComponent } from './rich-text-editor.component';
 import { tableHighlightKey } from './table-toolbar/rte-table-highlight.plugin';
 import {

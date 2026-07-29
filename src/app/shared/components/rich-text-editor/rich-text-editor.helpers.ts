@@ -1,4 +1,4 @@
-import { ProseMirrorJSON } from '../../../features/quoting-cases/models/p4-contract.model';
+import { ProseMirrorJSON } from '../../models/prosemirror.model';
 
 export function isExcelHtml(html: string): boolean {
   return (

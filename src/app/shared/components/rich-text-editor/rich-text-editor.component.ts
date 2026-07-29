@@ -23,7 +23,7 @@ import { Color } from '@tiptap/extension-color';
 import MarkdownIt from 'markdown-it';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
 import { IconComponent } from '../icon/icon.component';
-import { ProseMirrorJSON } from '../../../features/quoting-cases/models/p4-contract.model';
+import { ProseMirrorJSON } from '../../models/prosemirror.model';
 import {
   docEqualsIgnoringAttrs,
   isExcelHtml,

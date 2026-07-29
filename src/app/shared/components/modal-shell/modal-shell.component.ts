@@ -13,7 +13,6 @@ import {
   inject,
 } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
-import { DrawerStateService } from '../../../core/services/drawer-state.service';
 import { ModalStackService } from '../../../core/services/modal-stack.service';
 import { CommonModule } from '@angular/common';
 
@@ -96,7 +95,6 @@ export class ModalShellComponent implements OnChanges, OnDestroy {
   private heightAnim: Animation | null = null;
   private renderer = inject(Renderer2);
   private elRef = inject(ElementRef);
-  private drawerState = inject(DrawerStateService);
   private modalStack = inject(ModalStackService);
 
   @HostListener('document:keydown', ['$event'])
@@ -121,8 +119,6 @@ export class ModalShellComponent implements OnChanges, OnDestroy {
       this.isClosing.set(false);
       this.trapAutoCapture.set(false);
       this.visible.set(true);
-      // Modal 開啟時關閉 Nav Drawer
-      this.drawerState.close();
       // 把 host element 移到 document.body 根層，
       // 使 backdrop-filter 不受祖先 overflow:hidden 限制
       this.renderer.appendChild(document.body, this.elRef.nativeElement);
