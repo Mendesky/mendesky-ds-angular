@@ -1,0 +1,39 @@
+:host {
+  display: block;
+  position: fixed;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--border\/white, #ffffff);
+  border-radius: 10px;
+  box-shadow: 0 4px 40px -10px rgba(0, 0, 0, 0.28);
+  min-width: 200px;
+  padding: 5px;
+  animation: actionMenuIn 150ms var(--ease-enter);
+}
+
+@keyframes actionMenuIn {
+  from { opacity: 0; scale: 0.97; }
+  to   { opacity: 1; scale: 1; }
+}
+
+// 強制全寬：button 與 check-chip 在 action-menu 內部一律佔滿容器寬度
+:host ::ng-deep {
+  app-button {
+    display: block;
+    width: 100%;
+
+    .btn { width: 100%; justify-content: flex-start; }
+  }
+
+  app-check-chip {
+    display: block;
+    width: 100%;
+
+    .chip {
+      display: flex;
+      width: 100%;
+    }
+  }
+}

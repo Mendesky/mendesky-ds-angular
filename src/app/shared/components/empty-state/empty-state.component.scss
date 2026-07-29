@@ -1,0 +1,75 @@
+// ── Host：水平置中 + 邊緣留白（任何父容器皆適用）──────────────────
+:host {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding: var(--es-padding, 0px);
+  box-sizing: border-box;
+}
+
+// ── Wrapper ────────────────────────────────────────────────────
+.es-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+// ── Scene canvas：200 × 158px（Figma 原始尺寸）─────────────────
+.es-scene {
+  position: relative;
+  width: 200px;
+  height: 158px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+// ── 共用 layer 基底 ────────────────────────────────────────────
+.es-layer {
+  position: absolute;
+  display: block;
+}
+
+// ── 靜態：剪貼板文件（左） ──────────────────────────────────────
+.es-document    { top:  0px;  left:   0px;   width: 120px;  height: 158px; }
+
+// ── 靜態：鏡片內文件條紋（固定在文件上，放大鏡掃過去時可見）──────
+.es-bars        { top: 30px;  left:  15.5px; width: 89.5px; height: 75.5px; }
+
+// ── 靜態：人物身體（右） ────────────────────────────────────────
+.es-person-body { top: 40px;  left:  90px;   width: 110px;  height: 111px; }
+
+// ── 動畫群組：放大鏡圓框 + 把手 + 白色手掌 ───────────────────────
+// 支點在手腕連接點（約 67% 55%），讓鏡框弧掃 ~6px，手掌幾乎不動
+.es-search-group {
+  position: absolute;
+  top: 0; left: 0;
+  width: 200px;
+  height: 158px;
+  transform-origin: 85% 70%;
+  animation: es-scan 3.2s ease-in-out infinite;
+}
+
+// 放大鏡圓形鏡框
+.es-lens   { top: 20.4px; left:  71.6px;  width: 54.8px; height: 54.6px; }
+// 放大鏡把手
+.es-handle { top: 63.6px; left: 116px;    width: 29.5px; height: 29.4px; }
+// 白色手掌
+.es-hand   { top: 81.2px; left: 131.7px;  width: 40.8px; height: 45.4px; }
+
+// ── 掃描動畫 ──────────────────────────────────────────────────
+// ±7° 以手腕為軸旋轉；鏡框移動 ~6px（明顯弧掃），人體完全不動
+@keyframes es-scan {
+  0%, 100% { transform: rotate(-7deg); }
+  50%       { transform: rotate( 7deg); }
+}
+
+// ── 說明文字 ───────────────────────────────────────────────────
+.es-message {
+  margin: 0;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  color: #939393;
+  text-align: center;
+}

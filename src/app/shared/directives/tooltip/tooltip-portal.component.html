@@ -1,0 +1,14 @@
+<div class="tooltip" [class.tooltip--vertical]="isVertical">
+
+  <!-- Arrow BEFORE box: bottom (↑) or right (←) -->
+  <div *ngIf="showArrowBefore" [class]="arrowClass"></div>
+
+  <!-- Tooltip Box -->
+  <div [class]="boxClass">
+    <span [class]="textClass">{{ text }}</span>
+  </div>
+
+  <!-- Arrow AFTER box: top (↓) or left (→) -->
+  <div *ngIf="showArrowAfter" [class]="arrowClass"></div>
+
+</div>

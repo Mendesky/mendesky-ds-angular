@@ -1,0 +1,43 @@
+<div
+  class="dp-trigger"
+  [class.dp-trigger--S]="size === 'S'"
+  [class.dp-trigger--M]="size === 'M'"
+  [class.dp-trigger--L]="size === 'L'"
+  [class.dp-trigger--open]="isOpen()"
+  [class.dp-trigger--empty]="!displayText && !emptyLabel"
+  [class.dp-trigger--error]="!!errorMessage"
+  [class.dp-trigger--disabled]="disabled"
+  [appErrorTooltip]="errorMessage"
+  [errorPosition]="errorPosition"
+  role="combobox"
+  [attr.aria-expanded]="isOpen()"
+  aria-haspopup="listbox"
+  [attr.aria-label]="displayText || emptyLabel || effectivePlaceholder"
+  [attr.tabindex]="disabled ? -1 : 0"
+  (click)="onTriggerClick()"
+  (keydown.enter)="onTriggerClick(); $event.preventDefault()"
+  (keydown.space)="onTriggerClick(); $event.preventDefault()"
+  (keydown.arrowUp)="onTriggerArrow(1); $event.preventDefault()"
+  (keydown.arrowDown)="onTriggerArrow(-1); $event.preventDefault()"
+  (keydown.tab)="onTriggerTab()"
+  (keydown.shift.tab)="onTriggerTab()">
+  <span class="dp-trigger__text">
+    {{ displayText || emptyLabel || effectivePlaceholder }}
+  </span>
+  @if (showClear) {
+    <app-icon
+      name="Close"
+      size="16"
+      class="dp-clear"
+      data-testid="date-picker-clear"
+      role="button"
+      tabindex="0"
+      aria-label="清除起始日"
+      style="color:var(--text\/body-light,#939393); flex-shrink:0; cursor:pointer"
+      (click)="onClear($event)"
+      (keydown.enter)="onClear($event); $event.preventDefault()"
+      (keydown.space)="onClear($event); $event.preventDefault()"></app-icon>
+  } @else {
+    <app-icon name="DatePicker" size="16" style="color:var(--text\/body-light,#939393); flex-shrink:0"></app-icon>
+  }
+</div>

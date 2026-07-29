@@ -1,0 +1,10 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* inline 輸入框：在 chip-wrap 中保持合理寬度，不撐滿整列 */
+.inline-add__input {
+  display: inline-block;
+  min-width: 160px;
+}

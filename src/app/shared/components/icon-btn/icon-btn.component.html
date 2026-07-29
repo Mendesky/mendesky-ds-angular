@@ -1,0 +1,19 @@
+<div class="icon-btn-wrap"
+     [class.icon-btn-wrap--icon-text]="propClass === 'Icon+Text'"
+     [appTooltip]="displayTooltip"
+     [appTooltipDirection]="resolvedTooltipDir">
+  <button
+    class="icon-btn"
+    [ngClass]="hostClasses"
+    [disabled]="disabled"
+    [attr.aria-label]="ariaLabel || null"
+    [attr.aria-pressed]="toggle ? (active ? 'true' : 'false') : null"
+    type="button"
+    (click)="onClick()"
+  >
+    <span class="icon-btn__icon-wrap">
+      <ng-content></ng-content>
+    </span>
+    <span *ngIf="label" class="icon-btn__label">{{ label }}</span>
+  </button>
+</div>

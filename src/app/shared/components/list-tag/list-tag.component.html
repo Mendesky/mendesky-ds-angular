@@ -1,0 +1,11 @@
+<div class="list-tag">
+  <!-- Badge with item number -->
+  <div *ngIf="showBadge" class="list-tag__badge">{{ itemNumber }}</div>
+
+  <!-- Label text -->
+  <span class="list-tag__text">{{ text }}</span>
+
+  <!-- Extra badges B/C -->
+  <div *ngIf="showBadgeB" class="list-tag__badge list-tag__badge--extra">B</div>
+  <div *ngIf="showBadgeC" class="list-tag__badge list-tag__badge--extra">C</div>
+</div>

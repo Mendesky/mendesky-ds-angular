@@ -1,0 +1,41 @@
+<div class="process-modal-overlay"
+     *ngIf="visible()"
+     [class.process-modal-overlay--leaving]="isClosing()"
+     (click)="onBackdropClick()">
+  <div class="process-modal-card"
+       [class.process-modal-card--running]="type === 'running'"
+       [class.process-modal-card--congratulation]="type === 'congratulation'"
+       [class.process-modal-card--leaving]="isClosing()"
+       (click)="$event.stopPropagation()">
+
+    <!-- Running -->
+    <ng-container *ngIf="type === 'running'">
+      <span class="process-modal__icon">
+        <svg class="spinner" width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="14" stroke="#e7e7e7" stroke-width="2.5"/>
+          <path d="M18 4 A14 14 0 0 1 32 18"
+                stroke="var(--text\/body, #686868)" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="process-modal__text process-modal__text--dark">
+        {{ message || '執行中請稍候' }}
+      </span>
+    </ng-container>
+
+    <!-- Congratulation -->
+    <ng-container *ngIf="type === 'congratulation'">
+      <span class="confetti confetti--1"></span>
+      <span class="confetti confetti--2"></span>
+      <span class="confetti confetti--3"></span>
+      <span class="confetti confetti--4"></span>
+      <span class="confetti confetti--5"></span>
+      <span class="confetti confetti--6"></span>
+      <span class="confetti confetti--7"></span>
+      <span class="confetti confetti--8"></span>
+      <span class="process-modal__text process-modal__text--light process-modal__text--center">
+        {{ message || '恭喜成交！' }}
+      </span>
+    </ng-container>
+
+  </div>
+</div>

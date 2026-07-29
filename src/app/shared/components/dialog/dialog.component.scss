@@ -1,0 +1,117 @@
+@use '../../../../styles/mixins' as mx;
+
+/* ── Overlay ── */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-backdrop {
+  @include mx.backdrop-base;
+  @include mx.backdrop-enter(300ms);
+  position: absolute; /* 覆寫 mixin 的 fixed：backdrop 在 dialog-overlay 內部 */
+}
+
+.dialog-backdrop--leaving {
+  @include mx.backdrop-exit(250ms);
+}
+
+/* ── Dialog Card (frosted glass) ── */
+.dialog-card {
+  position: relative;
+  z-index: 1;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 48px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(7.5px);
+  -webkit-backdrop-filter: blur(7.5px);
+  border: 1px solid var(--border\/white, #ffffff);
+  border-radius: 10px;
+  box-shadow: 0px 4px 40px -10px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  animation: dialogCardIn 300ms var(--ease-enter) both;
+}
+
+.dialog-card--leaving {
+  animation: dialogCardOut 250ms var(--ease-exit) both;
+}
+
+@keyframes dialogCardIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes dialogCardOut {
+  from { opacity: 1; transform: translateY(0)   scale(1);    }
+  to   { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+
+/* ── Inner layout ── */
+.dialog-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Header: icon + title + divider */
+.dialog-header-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 4px;
+}
+
+.dialog-header-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dialog-header-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text\/title, #1c1c2e);
+  flex-shrink: 0;
+}
+
+.dialog-header-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text\/title, #1c1c2e);
+  font-family: 'Noto Sans TC', sans-serif;
+  white-space: nowrap;
+}
+
+.dialog-divider {
+  height: 1px;
+  background: var(--border\/primary, #e7e7e7);
+  width: 100%;
+}
+
+/* Content */
+.dialog-content {
+  padding: 0 4px;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text\/title, #1c1c2e);
+  font-family: 'Noto Sans TC', sans-serif;
+  line-height: 22px;
+  white-space: pre-line;
+}
+
+/* Action buttons */
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+

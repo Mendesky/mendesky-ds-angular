@@ -1,0 +1,118 @@
+/* ─── 外層按鈕（hit area） ─── */
+.carousel-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
+   無文字變體（只有顏色過渡）
+══════════════════════════════════════ */
+
+/* Dot，無文字 */
+.carousel-dot--dot:not(.carousel-dot--has-text) .carousel-dot__shape {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--button\/disabled-dark, #bebebe);
+  transition: background-color 0.15s ease;
+}
+
+.carousel-dot--dot:not(.carousel-dot--has-text):hover .carousel-dot__shape {
+  background: var(--button\/action-light, #4fbaef);
+}
+
+.carousel-dot--dot:not(.carousel-dot--has-text).carousel-dot--active .carousel-dot__shape {
+  background: var(--theme\/primary\/primary-dark, #2980ab);
+}
+
+/* Line，無文字 */
+.carousel-dot--line:not(.carousel-dot--has-text) .carousel-dot__shape {
+  width: 18px;
+  height: 2px;
+  border-radius: 5px;
+  background: var(--button\/disabled-dark, #bebebe);
+  transition: background-color 0.15s ease;
+}
+
+.carousel-dot--line:not(.carousel-dot--has-text):hover .carousel-dot__shape {
+  background: var(--button\/action-light, #4fbaef);
+}
+
+.carousel-dot--line:not(.carousel-dot--has-text).carousel-dot--active .carousel-dot__shape {
+  background: var(--theme\/primary\/primary-dark, #2980ab);
+}
+
+/* ══════════════════════════════════════
+   有文字變體（hover 展開膠囊）
+══════════════════════════════════════ */
+
+/* 共用：可展開的 shape */
+.carousel-dot--has-text .carousel-dot__shape {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--button\/disabled-dark, #bebebe);
+  /* transition 只定義一次 */
+  transition:
+    max-width 0.2s ease,
+    height 0.2s ease,
+    padding 0.2s ease,
+    background-color 0.15s ease;
+}
+
+/* Dot + 有文字：collapsed = 8×8px 圓點 */
+.carousel-dot--dot.carousel-dot--has-text .carousel-dot__shape {
+  min-width: 8px;
+  max-width: 8px;
+  height: 8px;
+}
+
+/* Line + 有文字：collapsed = 18×2px 橫條 */
+.carousel-dot--line.carousel-dot--has-text .carousel-dot__shape {
+  min-width: 18px;
+  max-width: 18px;
+  height: 2px;
+}
+
+/* active → 只改顏色，維持 collapsed 形狀 */
+.carousel-dot--has-text.carousel-dot--active .carousel-dot__shape {
+  background: var(--theme\/primary\/primary-dark, #2980ab);
+}
+
+/* hover → 展開膠囊 + 文字（不論是否 active） */
+.carousel-dot--has-text:hover .carousel-dot__shape {
+  max-width: 100px;
+  height: 20px;
+  padding: 4px 6px;
+  background: var(--button\/action-light, #4fbaef);
+}
+
+/* active + hover → 展開膠囊 + 深藍 */
+.carousel-dot--has-text.carousel-dot--active:hover .carousel-dot__shape {
+  background: var(--theme\/primary\/primary-dark, #2980ab);
+}
+
+/* ─── 文字標籤 ─── */
+.carousel-dot__label {
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body-lightest, #ffffff);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  flex-shrink: 0; /* 不用 width:100%，避免 inline-flex 循環依賴 */
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.carousel-dot--has-text:hover .carousel-dot__label {
+  opacity: 1;
+  transition-delay: 0.1s; /* 等 shape 展開後再淡入 */
+}

@@ -1,0 +1,43 @@
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 22px;
+  padding: 0 3.6px;
+  border-radius: var(--radious\/xxl, 50px);
+  border: none;
+  background: var(--button\/neutral-lighter, #bebebe);
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: background 150ms var(--ease-enter);
+
+  &:focus-visible {
+    outline: 2px solid var(--color\/calmblue\/40, #79d1fc);
+    outline-offset: 2px;
+  }
+}
+
+.toggle-btn--on {
+  background: var(--button\/success, #74ae3e);
+}
+
+.toggle-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-thumb {
+  width: 14.4px;
+  height: 14.4px;
+  border-radius: 50%;
+  background: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 150ms var(--ease-enter);
+}
+
+.toggle-btn--on .toggle-thumb {
+  /* 36 - 3.6*2 - 14.4 = 14.4px */
+  transform: translateX(14.4px);
+}

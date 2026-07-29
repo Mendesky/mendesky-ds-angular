@@ -1,0 +1,23 @@
+<button
+  class="btn"
+  [ngClass]="[sizeClass, variantClass, fullWidth ? 'btn--full' : '', loading ? 'btn--loading' : '', description ? 'btn--has-desc' : '']"
+  [disabled]="(disabled && !clickableWhenDisabled) || loading"
+  [attr.aria-disabled]="clickableWhenDisabled && disabled ? 'true' : null"
+  [appErrorTooltip]="disabledTooltipInput"
+  [errorPosition]="'top'"
+  type="button"
+  (click)="onClick()"
+>
+  <span      *ngIf="loading"                class="btn__spinner"></span>
+  <app-icon  *ngIf="!loading && leftIcon"   [name]="leftIcon"    [size]="iconSizeStr" style="color:currentColor;flex-shrink:0"></app-icon>
+  <app-label *ngIf="!loading && leftLabel"  [text]="leftLabel.text"   [color]="leftLabel.color"   [size]="leftLabel.size   || labelSize"></app-label>
+  <app-label *ngIf="!loading && centerLabel" [text]="centerLabel.text" [color]="centerLabel.color" [size]="centerLabel.size || labelSize"></app-label>
+  <span      *ngIf="loading && loadingText" class="btn__text">{{ loadingText }}</span>
+  <span      *ngIf="!loading && text"       class="btn__text">{{ text }}</span>
+  <!-- 投影內容 slot：僅在未提供 [text] 時啟用，供需要 inline 粗體等 rich content 的按鈕使用；:empty 時隱藏，icon-only 按鈕不產生多餘 gap。 -->
+  <span      *ngIf="!loading && !text"      class="btn__slot"><ng-content></ng-content></span>
+  <span      *ngIf="!loading && description" class="btn__desc">{{ description }}</span>
+  <app-label *ngIf="!loading && rightLabel" [text]="rightLabel.text"  [color]="rightLabel.color"  [size]="rightLabel.size  || labelSize"></app-label>
+  <app-icon  *ngIf="!loading && rightIcon"  [name]="rightIcon"   [size]="iconSizeStr" style="color:currentColor;flex-shrink:0"></app-icon>
+  <span      *ngIf="!loading && shortcut"   class="btn__shortcut">{{ shortcut }}</span>
+</button>

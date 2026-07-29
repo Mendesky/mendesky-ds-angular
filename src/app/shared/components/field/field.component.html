@@ -1,0 +1,12 @@
+<div class="field-wrap">
+
+  <div *ngIf="label" class="field-header" [class.field-header--emphasis]="emphasis">
+    <span class="field-label" [class.field-label--emphasis]="emphasis">{{ label }}</span>
+    <span *ngIf="hint" class="field-hint">{{ hint }}</span>
+    <app-label *ngIf="required" color="SoftBlue" size="XXS" text="必填"></app-label>
+    <span class="field-action"><ng-content select="[field-action]"></ng-content></span>
+  </div>
+
+  <ng-content></ng-content>
+
+</div>

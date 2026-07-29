@@ -1,0 +1,9 @@
+<button
+  type="button"
+  class="chip"
+  [ngClass]="hostClasses"
+  [disabled]="isDisabled"
+  (click)="toggle()">
+  <app-icon class="chip__icon" [name]="iconName" size="16"></app-icon>
+  <span class="chip__text">{{ text }}</span>
+</button>

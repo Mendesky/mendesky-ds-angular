@@ -1,0 +1,22 @@
+<div [class]="rootClass">
+
+  <!-- Thumb: 圖片頭像 -->
+  <img *ngIf="propClass === 'Thumb'"
+       class="avatar-img"
+       [src]="src"
+       alt="" />
+
+  <!-- Text: 文字首字（若以 + 開頭則完整顯示，用於溢出計數如 +3） -->
+  <div *ngIf="propClass === 'Text'" class="avatar-inner avatar-text-inner"
+       [style.background]="bgColor || null">
+    <span class="avatar-label">{{ text.startsWith('+') ? text : (text | slice:0:1) }}</span>
+  </div>
+
+  <!-- Icon: 圖示 -->
+  <div *ngIf="propClass === 'Icon'" class="avatar-inner avatar-icon-inner">
+    <app-icon [name]="iconName"
+              [size]="iconSizeStr"
+              style="color: white; flex-shrink: 0;"></app-icon>
+  </div>
+
+</div>

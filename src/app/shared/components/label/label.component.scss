@@ -1,0 +1,183 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radious\/sm, 4px);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+/* ─── Sizes ─── */
+.label--l   { padding: 8px 12px; }
+.label--m   { padding: 6px 8px; }
+.label--s   { padding: 4px 8px; }
+.label--xs  { padding: 0 4px; }
+.label--xxs { padding: 0 4px; }
+
+/* XXS：縮小字體（12px + medium），優先級高於 color text class */
+.label--xxs .label__text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ─── Color variants ─── */
+
+/* LightWhite: no background, lighter grey text */
+.label--light-white {
+  background: transparent;
+}
+
+/* White: white bg + grey border */
+.label--white {
+  background: var(--label\/secondary, #ffffff);
+  border: 1px solid var(--border\/primary, #e7e7e7);
+}
+
+/* Transparent: no bg, no border */
+.label--transparent {
+  background: transparent;
+}
+
+/* GreyOutline: grey border only */
+.label--grey-outline {
+  background: transparent;
+  border: 1px solid var(--border\/primary, #e7e7e7);
+}
+
+/* SoftBlue */
+.label--soft-blue {
+  background: var(--label\/primary, #4ba5b2);
+}
+
+/* Red: white bg + red border */
+.label--red {
+  background: var(--label\/secondary, #ffffff);
+  border: 1px solid var(--label\/warning, #cc5252);
+}
+
+/* Salmon */
+.label--salmon {
+  background: var(--label\/accent-salmon, #b36a56);
+}
+
+/* Green: white bg + green border */
+.label--green {
+  background: var(--label\/secondary, #ffffff);
+  border: 1px solid var(--border\/secondary, #74ae3e);
+}
+
+/* Grey25 */
+.label--grey25 {
+  background: #d9d9d9;
+}
+
+/* Blue */
+.label--blue {
+  background: var(--label\/accent-blue, #14b6d4);
+}
+
+/* SeaGreen */
+.label--sea-green {
+  background: var(--label\/accent-green, #5da26b);
+}
+
+/* Grey70 */
+.label--grey70 {
+  background: var(--label\/secondary-darkest, #7d7d7d);
+}
+
+/* Grey16 */
+.label--grey16 {
+  background: #e8e8e8;
+}
+
+/* Error */
+.label--error {
+  background: var(--label\/warning, #cc5252);
+}
+
+/* GreenAll */
+.label--green-all {
+  background: var(--label\/accent-green-light, #8fd053);
+}
+
+/* Golden */
+.label--golden {
+  background: var(--label\/accent-golden, #af8e4d);
+}
+
+/* Kanban dotColor 對齊（CornflowerBlue 漸層 SSOT — Figma 17248:269232） */
+.label--kanban-draft {
+  background: var(--label\/kanban-draft, #d3d3d3);
+}
+
+.label--kanban-opened {
+  background: var(--label\/kanban-opened, #bac6fd);
+}
+
+.label--kanban-dealclosed {
+  background: var(--label\/kanban-dealclosed, #8293da);
+}
+
+.label--kanban-archiving {
+  background: var(--label\/kanban-archiving, #5866a0);
+}
+
+.label--kanban-archived {
+  background: var(--label\/kanban-archived, #333d66);
+}
+
+/* ─── Text colors ─── */
+.text--light    { color: var(--text\/body-light, #939393);    font-size: 1em; font-weight: 400; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
+.text--body     { color: var(--text\/body, #686868);          font-size: 1em; font-weight: 400; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
+.text--white    { color: var(--text\/body-lightest, #ffffff);  font-size: 1em; font-weight: 400; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
+.text--error    { color: var(--button\/error, #cc5252);        font-size: 1em; font-weight: 400; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
+
+/* ─── Icon color ─── */
+.icon--body    { color: var(--text\/body, #686868);         display: flex; align-items: center; }
+.icon--white   { color: var(--text\/body-lightest, #ffffff); display: flex; align-items: center; }
+.icon--light   { color: var(--text\/body-light, #939393);   display: flex; align-items: center; }
+.icon--error   { color: var(--button\/error, #cc5252);       display: flex; align-items: center; }
+
+/* ─── Wrap mode ─── */
+/* 自由文字內容：允許 label 像外框一樣折行，取代預設 white-space: nowrap */
+.label--wrap {
+  white-space: normal;
+  max-width: 100%;
+  word-break: break-word;
+
+  .label__text { white-space: normal; }
+}
+
+/* ─── Truncate mode ─── */
+.label--truncate {
+  max-width: 100%;
+  overflow: hidden;
+
+  .label__text { overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* ─── Numbered list badge ─── */
+.label__number-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  background: var(--text\/body, #686868);
+  color: white;
+  font-size: 10px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 2px;
+  box-sizing: border-box;
+  mix-blend-mode: multiply;
+}
+
+.label__icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}

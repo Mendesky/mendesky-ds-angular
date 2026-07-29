@@ -1,0 +1,16 @@
+<!-- Row 水平分隔線 -->
+<div *ngIf="display === 'Row'"
+     class="divider divider--row"
+     [ngClass]="colorClass">
+  <div class="divider__line"></div>
+  <div *ngIf="showLabel" class="divider__badge" [ngClass]="badgeBorderClass">
+    {{ labelText }}
+  </div>
+</div>
+
+<!-- Column 垂直分隔線 -->
+<div *ngIf="display === 'Column'"
+     class="divider divider--column"
+     [ngClass]="colorClass">
+  <div class="divider__line"></div>
+</div>

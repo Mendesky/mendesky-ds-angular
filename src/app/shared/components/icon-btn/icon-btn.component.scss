@@ -1,0 +1,229 @@
+@use '../../../../styles/breakpoints' as bp;
+@use '../../../../styles/mixins' as mx;
+
+/* ── Wrapper（tooltip 定位錨點） ── */
+.icon-btn-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ── Base ── */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  background: var(--icon\/white, #ffffff);
+  color: var(--icon\/body, #686868);
+  transition: background 150ms var(--ease-enter),
+              color     150ms var(--ease-enter);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  @include mx.focus-ring;
+  padding: 0;
+}
+
+.icon-btn__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Sizes (total button dimensions) ── */
+/* 16-: icon=16px, padding=2px → 20px  */
+.icon-btn--xs { width: 20px;  height: 20px; }
+.icon-btn--xs .icon-btn__icon-wrap { width: 16px; height: 16px; }
+
+/* 16:  icon=16px, padding=8px → 32px  */
+.icon-btn--sm { width: 32px;  height: 32px; }
+.icon-btn--sm .icon-btn__icon-wrap { width: 16px; height: 16px; }
+
+/* 24:  icon=24px, padding=10px → 44px */
+.icon-btn--md { width: 44px;  height: 44px; }
+.icon-btn--md .icon-btn__icon-wrap { width: 24px; height: 24px; }
+
+/* 32:  icon=32px, padding=14px → 60px */
+.icon-btn--lg { width: 60px;  height: 60px; }
+.icon-btn--lg .icon-btn__icon-wrap { width: 32px; height: 32px; }
+
+/* 36:  icon=36px, padding=16px → 68px */
+.icon-btn--xl { width: 68px;  height: 68px; }
+.icon-btn--xl .icon-btn__icon-wrap { width: 36px; height: 36px; }
+
+/* 48:  icon=48px, padding=20px → 88px */
+.icon-btn--2xl { width: 88px; height: 88px; }
+.icon-btn--2xl .icon-btn__icon-wrap { width: 48px; height: 48px; }
+
+/* ── Normal ── */
+.icon-btn--normal:hover:not(:disabled) {
+  background: var(--button\/action-light, #4fbaef);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--normal:active:not(:disabled) {
+  background: var(--button\/action, #3a9ccd);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--normal.icon-btn--active {
+  background: var(--button\/success-light, #8fd053);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--normal.icon-btn--active:hover:not(:disabled) {
+  background: var(--button\/success, #74ae3e);
+  color: var(--icon\/white, #ffffff);
+}
+
+/* ── Warning ── */
+.icon-btn--warning {
+  color: var(--icon\/warning, #cc5252);
+}
+.icon-btn--warning:hover:not(:disabled) {
+  background: var(--button\/warning, #ff7373);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--warning:active:not(:disabled) {
+  background: var(--button\/error, #cc5252);
+  color: var(--icon\/white, #ffffff);
+}
+
+/* ── CardBtn ── */
+.icon-btn--card-btn {
+  background: var(--button\/neutral-lightest, #e7e7e7);
+}
+/* size=16 CardBtn → 28px container */
+.icon-btn--card-btn.icon-btn--sm { width: 28px; height: 28px; }
+.icon-btn--card-btn:hover:not(:disabled) {
+  background: var(--border\/primary-dark, #d3d3d3);
+}
+.icon-btn--card-btn:active:not(:disabled) {
+  background: var(--color\/grey\/40, #bdbdbd);
+}
+
+/* ── CardBtnPdSmall ── */
+.icon-btn--card-btn-pd-small:hover:not(:disabled) {
+  background: var(--button\/action-light, #4fbaef);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--card-btn-pd-small:active:not(:disabled) {
+  background: var(--button\/action, #3a9ccd);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--card-btn-pd-small.icon-btn--active {
+  background: var(--button\/success-light, #8fd053);
+  color: var(--icon\/white, #ffffff);
+}
+
+/* ── Modal ── */
+.icon-btn--modal {
+  background: transparent;
+  border: 1px solid var(--border\/white, #ffffff);
+}
+.icon-btn--modal:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+.icon-btn--modal:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── SectionBtn ── */
+.icon-btn--section-btn {
+  background: transparent;
+}
+.icon-btn--section-btn:hover:not(:disabled) {
+  background: var(--color\/grey\/10, #fcfcfc);
+}
+.icon-btn--section-btn:active:not(:disabled) {
+  background: var(--color\/grey\/20, #e7e7e7);
+}
+
+/* ── Drag ── */
+.icon-btn--drag {
+  background: transparent;
+  color: var(--text\/body-light, #939393);
+  cursor: grab;
+}
+.icon-btn--drag:hover:not(:disabled) {
+  color: var(--text\/body, #686868);
+}
+.icon-btn--drag:active:not(:disabled) {
+  cursor: grabbing;
+}
+
+/* ── Block (矩形，白底) ── */
+.icon-btn--block,
+.icon-btn--block-transparent {
+  border-radius: var(--radious\/sm, 4px);
+  width: auto;
+  height: auto;
+}
+.icon-btn--block.icon-btn--sm,
+.icon-btn--block-transparent.icon-btn--sm {
+  padding: 1px 6px;
+}
+.icon-btn--block.icon-btn--md,
+.icon-btn--block-transparent.icon-btn--md {
+  padding: 1px 6px;
+}
+
+.icon-btn--block {
+  background: var(--icon\/white, #ffffff);
+}
+.icon-btn--block:hover:not(:disabled) {
+  background: var(--color\/grey\/10, #f5f5f5);
+}
+.icon-btn--block:active:not(:disabled) {
+  background: var(--color\/grey\/20, #e7e7e7);
+}
+
+/* ── Block-Transparent (矩形，透明底) ── */
+.icon-btn--block-transparent {
+  background: transparent;
+}
+.icon-btn--block-transparent:hover:not(:disabled) {
+  background: var(--color\/grey\/10, #f5f5f5);
+}
+.icon-btn--block-transparent:active:not(:disabled) {
+  background: var(--color\/grey\/20, #e7e7e7);
+}
+
+/* ── Icon+Text ── */
+.icon-btn-wrap--icon-text {
+  flex-direction: column;
+  align-items: center;
+  min-width: 84px;
+}
+.icon-btn--icon-text {
+  background: var(--button\/neutral-lightest, #e7e7e7);
+}
+.icon-btn--icon-text:hover:not(:disabled) {
+  background: var(--button\/action-light, #4fbaef);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--icon-text:active:not(:disabled) {
+  background: var(--button\/action, #3a9ccd);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--icon-text.icon-btn--active {
+  background: var(--button\/success-light, #8fd053);
+  color: var(--icon\/white, #ffffff);
+}
+.icon-btn--icon-text.icon-btn--active:hover:not(:disabled) {
+  background: var(--button\/success, #74ae3e);
+}
+.icon-btn__label {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body, #686868);
+  margin-top: 10px;
+  white-space: nowrap;
+}
+
+/* ── Disabled ── */
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

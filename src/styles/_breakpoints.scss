@@ -1,0 +1,20 @@
+// ── Breakpoint System ──────────────────────────────────────────────────────
+// Devices:
+//   desktop-up            ≥1024px  桌面 / iPad landscape → sidebar 可見
+//   tablet-landscape-down <1024px  iPad portrait / 小筆電 → sidebar 隱藏 + bottom nav
+//   tablet-down           <768px   小平板 / 手機           → padding 再縮
+
+$bp-tablet: 768px;
+$bp-desktop: 1024px;
+
+@mixin tablet-down {
+  @media (max-width: #{$bp-tablet - 1}) { @content; }
+}
+
+@mixin tablet-landscape-down {
+  @media (max-width: #{$bp-desktop - 1}) { @content; }
+}
+
+@mixin desktop-up {
+  @media (min-width: $bp-desktop) { @content; }
+}

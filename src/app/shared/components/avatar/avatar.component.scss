@@ -1,0 +1,103 @@
+.avatar-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 200px;
+  flex-shrink: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* ── Sizes ── */
+.avatar--28  { width: 28px;  height: 28px; }
+.avatar--36  { width: 36px;  height: 36px; }
+.avatar--44  { width: 44px;  height: 44px; }
+.avatar--56  { width: 56px;  height: 56px; }
+.avatar--64  { width: 64px;  height: 64px; }
+.avatar--96  { width: 96px;  height: 96px; }
+.avatar--128 { width: 128px; height: 128px; }
+.avatar--240 { width: 240px; height: 240px; }
+
+/* ── Thumb ── */
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s var(--ease-enter);
+}
+
+/* ── Inner (Text & Icon) ── */
+.avatar-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* ── Text variant ── */
+.avatar-text-inner {
+  background: #398995;
+}
+
+.avatar-label {
+  color: #ffffff;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.avatar--28.avatar--text  .avatar-label { font-size: 1em; letter-spacing: 0.24px; }
+.avatar--36.avatar--text  .avatar-label { font-size: 16px; }
+.avatar--44.avatar--text  .avatar-label { font-size: 20px; }
+.avatar--56.avatar--text  .avatar-label { font-size: 20px; }
+.avatar--64.avatar--text  .avatar-label { font-size: 24px; }
+.avatar--96.avatar--text  .avatar-label { font-size: 36px; }
+.avatar--128.avatar--text .avatar-label { font-size: 50px; }
+.avatar--240.avatar--text .avatar-label { font-size: 75px; }
+
+/* ── Icon variant ── */
+.avatar-icon-inner {
+  background: #939393;
+  transition: background 0.15s;
+}
+
+/* ── Clickable ── */
+.avatar--clickable {
+  cursor: pointer;
+}
+
+/* Thumb hover: scale image 1.2x */
+.avatar--clickable.avatar--thumb:hover .avatar-img {
+  transform: scale(1.2);
+}
+
+/* Text / Icon hover: dark overlay */
+.avatar-text-inner::after,
+.avatar-icon-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background 0.15s;
+  pointer-events: none;
+}
+
+.avatar--clickable.avatar--text:hover .avatar-text-inner::after,
+.avatar--clickable.avatar--icon:hover .avatar-icon-inner::after {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Icon hover: darken bg */
+.avatar--clickable.avatar--icon:hover .avatar-icon-inner {
+  background: #686868;
+}
+
+/* Press / Active: border */
+.avatar--clickable:active {
+  border: 1px solid #e7e7e7;
+}

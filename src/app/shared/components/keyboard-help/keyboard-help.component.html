@@ -1,0 +1,53 @@
+<app-modal-shell
+  [isOpen]="isOpen"
+  width="480px"
+  maxHeight="70vh"
+  ariaLabelledBy="keyboard-help-title"
+  (backdropClick)="onClose()"
+  (escapePress)="onClose()">
+
+  <div class="kh-panel">
+    <!-- Header -->
+    <div class="kh-header">
+      <h2 id="keyboard-help-title" class="kh-title">鍵盤快速鍵</h2>
+      <app-modal-close-btn
+        ariaLabel="關閉說明面板"
+        (closeClick)="onClose()">
+      </app-modal-close-btn>
+    </div>
+
+    <!-- Search -->
+    <div class="kh-search">
+      <app-input
+        size="M"
+        placeholder="搜尋快速鍵..."
+        [initialValue]="searchQuery()"
+        (valueChange)="onSearchChange($event)">
+      </app-input>
+    </div>
+
+    <!-- Shortcut Groups -->
+    <div class="kh-body">
+      @if (filteredShortcuts.length === 0) {
+        <app-empty-state message="找不到符合的快速鍵"></app-empty-state>
+      } @else {
+        @for (group of filteredShortcuts; track group.label) {
+          <div class="kh-group">
+            <p class="kh-group-label">{{ group.label }}</p>
+            @for (item of group.items; track item.description) {
+              <div class="kh-item">
+                <span class="kh-item-desc">{{ item.description }}</span>
+                <span class="kh-item-keys">
+                  @for (key of item.keys; track key) {
+                    <kbd class="kh-kbd">{{ key }}</kbd>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+</app-modal-shell>

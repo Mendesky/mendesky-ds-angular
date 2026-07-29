@@ -1,0 +1,24 @@
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.footer {
+  text-align: var(--footer-text-align, center);
+  padding: var(--footer-padding, 10px 10px 20px);
+  font-size: var(--footer-font-size, 1em);
+  font-weight: 400;
+  color: var(--text\/body);
+  letter-spacing: 0.24px;
+  background: transparent;
+flex-shrink: 0;
+  font-family: 'Noto Sans TC', sans-serif;
+  word-break: var(--footer-word-break, normal);
+  overflow-wrap: var(--footer-overflow-wrap, normal);
+}
+
+.footer strong {
+  font-weight: 700;
+  color: var(--text\/body);
+}

@@ -1,0 +1,83 @@
+/* ── Base ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  white-space: nowrap;
+  user-select: none;
+  transition: background-color 150ms var(--ease-enter),
+              border-color     150ms var(--ease-enter),
+              color            150ms var(--ease-enter);
+
+  &:focus-visible {
+    outline: 2px solid var(--color\/calmblue\/40, #79d1fc);
+    outline-offset: 2px;
+  }
+}
+
+/* ─────────────── Sizes ─────────────── */
+.chip--m  { padding: 10px; }
+.chip--s  { padding: 8px;    font-weight: 500; letter-spacing: 0.48px; }
+.chip--xs { padding: 4px 8px; font-weight: 500; letter-spacing: 0.48px; }
+
+/* ─────────────── Hover（共用，未選中時） ─────────────── */
+.chip:hover:not(.chip--disabled):not(.chip--selected) {
+  background: var(--button\/white, #ffffff);
+  border-color: var(--button\/neutral-lightest, #e7e7e7);
+}
+
+/* ─────────────── Theme: default ─────────────── */
+/* 未選：灰底；選中：綠底白字 */
+.chip--default {
+  background: var(--button\/neutral-lightest, #e7e7e7);
+  color: var(--text\/body, #686868);
+
+  &.chip--selected {
+    background: var(--button\/success, #74ae3e);
+    border-color: transparent;
+    color: #ffffff;
+  }
+}
+
+/* ─────────────── Theme: transparent ─────────────── */
+/* 未選：透明；選中：透明 + 綠字（無底色） */
+.chip--transparent {
+  background: transparent;
+  color: var(--text\/body, #686868);
+
+  &.chip--selected {
+    background: transparent;
+    border-color: transparent;
+    color: var(--button\/success, #74ae3e);
+  }
+}
+
+/* ─────────────── Theme: transparent-grey ─────────────── */
+/* 未選：透明；選中：深灰底白字；選中 hover：更深灰 */
+.chip--transparent-grey {
+  background: transparent;
+  color: var(--text\/body, #686868);
+
+  &.chip--selected {
+    background: var(--button\/neutral-dark, #7d7d7d);
+    border-color: transparent;
+    color: #ffffff;
+  }
+
+  &.chip--selected:hover:not(.chip--disabled) {
+    background: var(--text\/secondary, #535353);
+    border-color: transparent;
+  }
+}
+
+/* ─────────────── Disabled ─────────────── */
+.chip--disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

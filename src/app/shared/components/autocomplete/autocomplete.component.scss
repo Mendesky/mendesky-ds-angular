@@ -1,0 +1,210 @@
+/* ── Wrapper ── */
+.autocomplete-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing\/xs, 8px);
+  width: 100%;
+  position: relative;
+}
+
+/* ── Box ── */
+.autocomplete-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--input\/background, #ffffff);
+  border: 1px solid var(--border\/primary, #e7e7e7);
+  border-radius: 10px;
+  padding: 4px 16px;
+  min-height: 40px;
+  box-sizing: border-box;
+  cursor: text;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  gap: 8px;
+}
+
+/* Size M */
+.autocomplete-wrap--m .autocomplete-box {
+  min-height: 36px;
+  padding: 2px 12px;
+}
+
+/* Size S */
+.autocomplete-wrap--s .autocomplete-box {
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+/* ── Content（chips + input，flex-wrap） ── */
+.autocomplete-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+/* ── Chip ── */
+.autocomplete-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--label\/secondary-dark, #f2f2f2);
+  border-radius: var(--radious\/sm, 4px);
+  padding: 6px 8px;
+  flex-shrink: 0;
+}
+
+/* S size chip: 較小 padding */
+.autocomplete-wrap--s .autocomplete-chip {
+  padding: 4px 8px;
+}
+
+.autocomplete-chip__label {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text\/body, #686868);
+  letter-spacing: 0.24px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.autocomplete-chip__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text\/body, #686868);
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--color\/grey\/20, #e7e7e7);
+  }
+}
+
+/* S size chip remove: 更緊緻 */
+.autocomplete-wrap--s .autocomplete-chip__remove {
+  padding: 0 2px;
+}
+
+/* ── Text Input ── */
+.autocomplete-input {
+  flex: 1;
+  min-width: 80px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body, #686868);
+
+  &::placeholder {
+    color: var(--input\/prompt, #939393);
+  }
+}
+
+/* Size M/S: font 14px → 1em */
+.autocomplete-wrap--m .autocomplete-input,
+.autocomplete-wrap--s .autocomplete-input {
+  font-size: 1em;
+}
+
+/* ── Suffix ── */
+.autocomplete-suffix {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.autocomplete-wrap--s .autocomplete-suffix {
+  height: 24px;
+}
+
+/* ── Down Arrow Icon（對齊 app-select .select-arrow：size 16 + --text/disabled） ── */
+.autocomplete-arrow {
+  color: var(--text\/disabled, #d3d3d3);
+  flex-shrink: 0;
+}
+
+/* ── Clear All Button（圓形） ── */
+.autocomplete-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--icon\/white, #ffffff);
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  color: var(--text\/body, #686868);
+  flex-shrink: 0;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--color\/grey\/10, #f5f5f5);
+  }
+}
+
+
+/* ─────────────── States ─────────────── */
+
+/* Hover */
+.autocomplete-wrap:not(.autocomplete-wrap--disabled):not(.autocomplete-wrap--error):not(.autocomplete-wrap--focus)
+  .autocomplete-box:hover {
+  border-color: var(--input\/prompt, #939393);
+}
+
+/* Actived */
+.autocomplete-wrap--actived .autocomplete-box {
+  border-color: var(--border\/primary-dark, #d3d3d3);
+}
+
+/* Focus */
+.autocomplete-wrap--focus .autocomplete-box {
+  border-color: var(--border\/primary-dark, #d3d3d3);
+  outline: 2px solid var(--focus-ring-color, #3a9ccd);
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+/* Error */
+.autocomplete-wrap--error .autocomplete-box {
+  border-color: var(--border\/error, #cc5252);
+}
+
+/* Disabled */
+.autocomplete-wrap--disabled .autocomplete-box {
+  background: var(--input\/disabled, #f7f7f7);
+  border-color: var(--border\/primary, #e7e7e7);
+  cursor: not-allowed;
+}
+
+.autocomplete-wrap--disabled .autocomplete-input {
+  cursor: not-allowed;
+
+  &::placeholder {
+    color: var(--text\/disabled, #d3d3d3);
+  }
+}
+
+.autocomplete-wrap--disabled .autocomplete-chip__label,
+.autocomplete-wrap--disabled .autocomplete-arrow {
+  color: var(--text\/disabled, #d3d3d3);
+}
+
+.autocomplete-wrap--disabled .autocomplete-chip {
+  opacity: 0.5;
+}

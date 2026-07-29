@@ -1,0 +1,114 @@
+<div class="rte" [class.rte--readonly]="readOnly" #rootEl (focusout)="onRootFocusOut($event)"
+  data-testid="rte-root">
+  <!-- Toolbar -->
+  @if (!readOnly) {
+  <div class="rte__toolbar" data-testid="rte-toolbar" role="toolbar" aria-label="文字格式工具列">
+    <div class="rte__toolbar-left">
+      <app-icon-btn size="16" propClass="SectionBtn"
+        [toggle]="true" [active]="isActive('heading')"
+        tooltip="標題" tooltipPos="Top" ariaLabel="標題"
+        (btnClick)="toggleHeading()" data-testid="rte-heading">
+        <app-icon name="Heading" size="16"></app-icon>
+      </app-icon-btn>
+
+      <div class="rte__toolbar-divider"></div>
+
+      <app-icon-btn size="16" propClass="SectionBtn"
+        [toggle]="true" [active]="isActive('bold')"
+        tooltip="粗體" tooltipPos="Top" ariaLabel="粗體"
+        (btnClick)="toggleBold()">
+        <app-icon name="Bold" size="16"></app-icon>
+      </app-icon-btn>
+      <app-icon-btn size="16" propClass="SectionBtn"
+        [toggle]="true" [active]="isActive('italic')"
+        tooltip="斜體" tooltipPos="Top" ariaLabel="斜體"
+        (btnClick)="toggleItalic()">
+        <app-icon name="Italic" size="16"></app-icon>
+      </app-icon-btn>
+      @if (!isHidden('underline')) {
+        <app-icon-btn size="16" propClass="SectionBtn"
+          [toggle]="true" [active]="isActive('underline')"
+          tooltip="底線" tooltipPos="Top" ariaLabel="底線"
+          (btnClick)="toggleUnderline()" data-testid="rte-underline">
+          <app-icon name="Underline" size="16"></app-icon>
+        </app-icon-btn>
+      }
+      <app-icon-btn size="16" propClass="SectionBtn"
+        [toggle]="true" [active]="isActive('strike')"
+        tooltip="刪除線" tooltipPos="Top" ariaLabel="刪除線"
+        (btnClick)="toggleStrike()" data-testid="rte-strike">
+        <app-icon name="Strikethrough" size="16"></app-icon>
+      </app-icon-btn>
+
+      @if (!isHidden('color')) {
+        <div class="rte__color-wrap">
+          <app-icon-btn size="16" propClass="SectionBtn"
+            [toggle]="true" [active]="colorMenuOpen()"
+            tooltip="文字顏色" tooltipPos="Top" ariaLabel="文字顏色"
+            (btnClick)="openColorMenu()" data-testid="rte-color">
+            <app-icon name="TextColor" size="16"></app-icon>
+          </app-icon-btn>
+
+          @if (colorMenuOpen()) {
+            <app-action-menu (closeMenu)="closeColorMenu()">
+              <div class="rte__color-grid" data-testid="rte-color-grid">
+                @for (c of TEXT_COLORS; track c.label; let i = $index) {
+                  <app-icon-btn size="16" propClass="SectionBtn"
+                    [tooltip]="c.label" tooltipPos="Top" [ariaLabel]="c.label + ' 文字顏色'"
+                    [attr.data-testid]="'rte-swatch-' + i"
+                    (btnClick)="selectColor(c)">
+                    <span class="rte__color-swatch"
+                      [class.rte__color-swatch--default]="!c.hex"
+                      [style.background-color]="c.hex || 'transparent'"></span>
+                  </app-icon-btn>
+                }
+              </div>
+            </app-action-menu>
+          }
+        </div>
+      }
+
+      <div class="rte__toolbar-divider"></div>
+
+      <app-icon-btn size="16" propClass="SectionBtn"
+        [toggle]="true" [active]="isActive('bulletList')"
+        tooltip="項目符號" tooltipPos="Top" ariaLabel="項目符號"
+        (btnClick)="toggleBulletList()">
+        <app-icon name="BulletList" size="16"></app-icon>
+      </app-icon-btn>
+      <app-icon-btn size="16" propClass="SectionBtn"
+        [toggle]="true" [active]="isActive('orderedList')"
+        tooltip="編號列表" tooltipPos="Top" ariaLabel="編號列表"
+        (btnClick)="toggleOrderedList()">
+        <app-icon name="OrderedList" size="16"></app-icon>
+      </app-icon-btn>
+
+      @if (!isHidden('table')) {
+        <div class="rte__toolbar-divider"></div>
+
+        <app-icon-btn size="16" propClass="SectionBtn"
+          tooltip="插入表格" tooltipPos="Top" ariaLabel="插入表格"
+          (btnClick)="insertTable()" data-testid="rte-table">
+          <app-icon name="TableCells" size="16"></app-icon>
+        </app-icon-btn>
+      }
+
+      <!-- 額外 toolbar 按鈕：由 wrapper 透過 ng-content 注入（如插入圖片、插入變數） -->
+      <ng-content select="[extraToolbar]"></ng-content>
+    </div>
+
+    <div class="rte__toolbar-right">
+      <!-- 右側操作：由 wrapper 注入（如復原預設值按鈕） -->
+      <ng-content select="[toolbarRight]"></ng-content>
+    </div>
+  </div>
+  }
+
+  <!-- 編輯主體 -->
+  <div class="rte__body">
+    <div #editorHost class="rte__editor" data-testid="rte-editor"></div>
+
+    <!-- 額外 body 內容：由 wrapper 注入（如 template-var-panel、toast） -->
+    <ng-content></ng-content>
+  </div>
+</div>

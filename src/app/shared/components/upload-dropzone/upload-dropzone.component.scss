@@ -1,0 +1,96 @@
+.upload-dropzone {
+  border: 2px dashed var(--border\/primary-dark, #d3d3d3);
+  border-radius: var(--radious\/md, 8px);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing\/xxs, 4px);
+  cursor: pointer;
+  transition:
+    border-color 150ms var(--ease-enter),
+    background-color 150ms var(--ease-enter);
+
+  &:not(.upload-dropzone--disabled):hover,
+  &.upload-dropzone--drag-over {
+    border-color: var(--button\/action, #3a9ccd);
+    background-color: var(--color\/white\/20, #f0f6fc);
+  }
+
+  &.upload-dropzone--disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  // 錯誤狀態（errorMessage 有值）：紅色框線，token 與 app-input 錯誤框線一致；
+  // 放在 hover/drag-over 之後 → 錯誤未解除時 hover 也維持紅框（錯誤優先於互動提示）
+  &.upload-dropzone--error,
+  &.upload-dropzone--error:not(.upload-dropzone--disabled):hover,
+  &.upload-dropzone--error.upload-dropzone--drag-over {
+    border-color: var(--border\/error, #cc5252);
+  }
+}
+
+/* ── 插畫 SVG ── */
+.upload-dropzone__illust {
+  width: 100px;
+  height: 53.6px; /* viewBox 75/140 aspect ratio */
+  margin-bottom: var(--spacing\/xs, 8px);
+  overflow: visible;
+}
+
+/*
+ * 文件 + 資料夾整組往下滑 9.24px（對應 Figma State 1→2 的 Y 差值）
+ * 對應 Figma: Smart animate · Ease out · 1500ms
+ *
+ * 動畫節奏（總週期 4s）：
+ *   0–10%  : 停在頂部（State 1）
+ *   10–48% : ease-out 滑下（≈1500ms）
+ *   48–62% : 停在底部（State 2）
+ *   62–98% : ease-in 滑回頂部（≈1500ms）
+ *   98–100%: 停在頂部，準備下一輪
+ */
+.upload-illust-doc {
+  animation: docDrop 4s infinite;
+}
+
+@keyframes docDrop {
+  0%, 10% {
+    transform: translateY(0);
+    animation-timing-function: var(--ease-enter); /* ease-out 滑下 */
+  }
+  48%, 62% {
+    transform: translateY(9.24px);
+    animation-timing-function: var(--ease-exit); /* ease-in 滑回 */
+  }
+  98%, 100% {
+    transform: translateY(0);
+  }
+}
+
+/* ── 文字 ── */
+.upload-dropzone__main-text {
+  margin: 4px 0 0;
+  font-size: 1em;
+  color: var(--text\/body, #686868);
+  text-align: center;
+}
+
+.upload-dropzone__sub-text {
+  margin: 0;
+  font-size: 1em;
+  color: var(--text\/body, #686868);
+  text-align: center;
+}
+
+.upload-dropzone__hint-text {
+  margin: 4px 0 0;
+  font-size: 1em;
+  color: var(--text\/body-light, #939393);
+  text-align: center;
+}
+
+/* ── 無障礙：reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .upload-illust-doc { animation: none; }
+}

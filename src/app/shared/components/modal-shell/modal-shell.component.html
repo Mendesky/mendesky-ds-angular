@@ -1,0 +1,31 @@
+<ng-container *ngIf="visible()">
+
+  <!-- Backdrop：獨立 fixed，不包覆 card -->
+  <div
+    class="modal-backdrop"
+    [class.modal-backdrop--floating-right]="variant === 'floating-right'"
+    [class.modal-backdrop--dark]="darkBackdrop"
+    [class.modal-backdrop--leaving]="isClosing()"
+    (click)="onBackdropClick()"
+  ></div>
+
+  <!-- Card：獨立 fixed，backdrop-filter 直接看到頁面內容 -->
+  <div
+    class="modal-card"
+    [class.modal-card--search]="variant === 'search'"
+    [class.modal-card--floating-right]="variant === 'floating-right'"
+    [class.modal-card--leaving]="isClosing()"
+    [class.modal-card--overflow-visible]="overflowVisible"
+    [class.modal-card--glass]="frostedGlass"
+    [style.width]="width"
+    [style.max-height]="maxHeight"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="ariaLabelledBy || null"
+    cdkTrapFocus
+    [cdkTrapFocusAutoCapture]="trapAutoCapture()"
+  >
+    <ng-content></ng-content>
+  </div>
+
+</ng-container>

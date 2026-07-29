@@ -1,0 +1,27 @@
+<div class="list-item" [ngClass]="hostClasses">
+  <div class="list-item__inner">
+
+    <!-- Name Section -->
+    <div class="list-item__name" [class.list-item__name--sm]="level === '3' || level === '4'">
+
+      <!-- Item Number Badge -->
+      <div *ngIf="showItemNumber" class="item-badge">{{ itemNumber }}</div>
+
+      <!-- Circle icon for level 3-4 -->
+      <div *ngIf="level === '3' || level === '4'" class="circle-icon">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <circle cx="6" cy="6" r="5" stroke="var(--text\/body, #686868)" stroke-width="1"/>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <div *ngIf="showTitle" class="list-title" [class.list-title--bold]="level === '1'">
+        {{ title }}
+      </div>
+    </div>
+
+    <!-- Value -->
+    <div *ngIf="showValue" class="list-value">{{ value }}</div>
+
+  </div>
+</div>

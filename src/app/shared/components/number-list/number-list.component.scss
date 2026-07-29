@@ -1,0 +1,136 @@
+// ── Row ──────────────────────────────────────────────────────
+.nl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background 0.15s;
+}
+
+// Sizes
+.nl-row--S { padding: 4px 8px; }
+.nl-row--M { padding: 4px; }
+
+// Hover backgrounds
+.nl-row--bg-white:hover  { background: #ffffff; }
+.nl-row--bg-grey10:hover { background: #f7f7f7; }
+.nl-row--bg-grey20:hover { background: #dedede; }
+
+// ── ContentSection ────────────────────────────────────────────
+.nl-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+// ── Label chip ────────────────────────────────────────────────
+.nl-label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 1px solid #e7e7e7;
+  border-radius: 4px;
+  color: #686868;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 400;
+  white-space: nowrap;
+
+  .nl-row--S & { padding: 6px 8px;  font-size: 12px; }
+  .nl-row--M & { padding: 8px 12px; font-size: 14px; }
+}
+
+// ── Main text ─────────────────────────────────────────────────
+.nl-text {
+  flex: 1;
+  min-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #686868;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 400;
+  padding: 4px;
+
+  .nl-row--S & { font-size: 14px; }
+  .nl-row--M & { font-size: 1em; }
+}
+
+// ── Number1 ───────────────────────────────────────────────────
+.nl-number1 {
+  flex-shrink: 0;
+  color: #686868;
+  text-align: right;
+  white-space: nowrap;
+
+  .nl-row--S & {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    font-style: normal;
+    font-feature-settings: 'lnum' 1, 'tnum' 1;
+  }
+  .nl-row--M & {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 1em;
+    font-weight: 500;
+  }
+}
+
+// ── Number2 ───────────────────────────────────────────────────
+.nl-number2 {
+  flex-shrink: 0;
+  color: #535353;
+  text-align: right;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  font-style: normal;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+}
+
+// ── ButtonSection ─────────────────────────────────────────────
+.nl-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+// ── Action buttons (共用) ─────────────────────────────────────
+.nl-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition: filter 0.15s;
+
+  .nl-row--S & { height: 24px; padding: 0 4px; }
+  .nl-row--M & { height: 28px; padding: 4px 8px; }
+
+  &:hover { filter: brightness(0.93); }
+
+  &--grey {
+    background: #f1f3f5;
+    color: #686868;
+  }
+
+  &--red {
+    background: #ff7373;
+    color: #f1f3f5;
+  }
+}

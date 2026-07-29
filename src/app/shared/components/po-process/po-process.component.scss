@@ -1,0 +1,80 @@
+.po-process {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 333px;
+  padding: 16px 24px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Status backgrounds ── */
+.po-process--running {
+  background: var(--text\/body-lightest, #ffffff);
+  height: 72px;
+}
+
+.po-process--success {
+  background: var(--button\/success, #74ae3e);
+  height: 72px;
+}
+
+.po-process--error {
+  background: var(--button\/error, #cc5252);
+  height: 72px;
+}
+
+.po-process--congratulation {
+  background: var(--button\/success, #74ae3e);
+  height: 104px;
+  padding-left: calc(200px + 24px);
+}
+
+/* ── Icon ── */
+.po-process__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+/* ── Text ── */
+.po-process__text {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Noto Sans TC', sans-serif;
+  line-height: 1.4;
+}
+
+.po-process__text--dark  { color: var(--text\/body, #686868); }
+.po-process__text--light { color: var(--text\/body-lightest, #ffffff); flex: 1; }
+.po-process__text--center { text-align: center; }
+
+/* ── Spinner animation ── */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Confetti (CSS approximation) ── */
+.confetti {
+  position: absolute;
+  border-radius: 2px;
+  opacity: 0.85;
+}
+
+.confetti--1 { width: 8px;  height: 8px;  background: #fff176; top: 12px; left: 20px;  transform: rotate(30deg); }
+.confetti--2 { width: 6px;  height: 6px;  background: #ef9a9a; top: 28px; left: 10px;  border-radius: 50%; }
+.confetti--3 { width: 10px; height: 4px;  background: #80cbc4; top: 50px; left: 30px;  transform: rotate(-20deg); }
+.confetti--4 { width: 6px;  height: 12px; background: #fff176; top: 15px; left: 160px; transform: rotate(15deg); }
+.confetti--5 { width: 8px;  height: 8px;  background: #ef9a9a; top: 65px; left: 150px; border-radius: 50%; }
+.confetti--6 { width: 10px; height: 4px;  background: #b2dfdb; top: 40px; left: 80px;  transform: rotate(45deg); }

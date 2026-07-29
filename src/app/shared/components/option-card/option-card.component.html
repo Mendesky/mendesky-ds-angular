@@ -1,0 +1,24 @@
+<div
+  class="option-card"
+  role="radio"
+  [attr.data-testid]="'option-card-' + value"
+  [attr.aria-checked]="selected"
+  [attr.aria-disabled]="disabled || null"
+  [attr.aria-label]="label"
+  [attr.tabindex]="disabled ? -1 : 0"
+  [ngClass]="hostClasses"
+  (click)="onSelect()"
+  (keydown.enter)="onSelect($event)"
+  (keydown.space)="onSelect($event)"
+>
+  <div class="option-card__media">
+    <div class="option-card__illus" [innerHTML]="safeIllustration" aria-hidden="true"></div>
+    <div class="option-card__desc" *ngIf="description">{{ description }}</div>
+  </div>
+
+  <div class="option-card__label">{{ label }}</div>
+
+  <div class="option-card__check" *ngIf="selected">
+    <app-icon name="Done-OK" size="12" style="color:white"></app-icon>
+  </div>
+</div>

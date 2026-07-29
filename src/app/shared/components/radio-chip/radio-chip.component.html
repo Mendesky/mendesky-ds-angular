@@ -1,0 +1,29 @@
+<div
+  class="chip"
+  role="button"
+  [attr.tabindex]="isDisabled ? -1 : 0"
+  [attr.aria-pressed]="selected"
+  [attr.aria-disabled]="isDisabled || null"
+  [ngClass]="hostClasses"
+  (click)="select()"
+  (keydown.enter)="select()"
+  (keydown.space)="select()">
+
+  <app-icon
+    *ngIf="showRadio"
+    [name]="radioIcon"
+    size="16">
+  </app-icon>
+
+  <span class="chip__text">{{ text }}</span>
+
+  <button
+    *ngIf="showCancel && selected"
+    type="button"
+    class="chip__cancel"
+    [disabled]="isDisabled"
+    (click)="onCancel($event)">
+    <app-icon name="No-X-Cancel" size="16"></app-icon>
+  </button>
+
+</div>

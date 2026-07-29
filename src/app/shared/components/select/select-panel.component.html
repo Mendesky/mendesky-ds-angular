@@ -1,0 +1,23 @@
+<div class="panel">
+  <div class="panel-scroll">
+    <button
+      #optionEl
+      class="panel-option"
+      *ngFor="let opt of options; let i = index"
+      type="button"
+      [class.panel-option--disabled]="opt.disabled"
+      [class.panel-option--active]="i === activeIndex"
+      [disabled]="opt.disabled"
+      (mousedown)="$event.preventDefault()"
+      (click)="select(opt)">
+      {{ opt.label }}
+    </button>
+
+    <div class="panel-empty" *ngIf="options.length === 0">
+      無符合結果
+    </div>
+  </div>
+
+  <!-- inset border -->
+  <div class="panel-inset-border"></div>
+</div>

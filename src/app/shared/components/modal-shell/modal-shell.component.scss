@@ -1,0 +1,193 @@
+@use '../../../../styles/breakpoints' as bp;
+@use '../../../../styles/mixins' as mx;
+
+/* ── Backdrop：全螢幕模糊遮罩 ── */
+.modal-backdrop {
+  @include mx.backdrop-base;
+  @include mx.backdrop-enter(450ms);
+  z-index: 500;
+  cursor: pointer;
+}
+
+.modal-backdrop--leaving {
+  /* backdrop-exit mixin 已內含 pointer-events:none（退場中不攔截關閉後第一個 click） */
+  @include mx.backdrop-exit(450ms);
+}
+
+/* 加深變體：需要高度聚焦的彈窗（如版本更新公告） */
+.modal-backdrop.modal-backdrop--dark {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+/* ── Card：實心卡片，浮在模糊遮罩之上 ── */
+.modal-card {
+  position: fixed;
+  z-index: 501;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid var(--border\/white, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0px 8px 40px -8px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  box-sizing: border-box;
+  /* 視窗寬度上限：width prop 以 inline style 套用（如 540px），此 cap 讓卡片在窄視窗（手機/平板）
+     不超出畫面、自動縮到 100vw - 左右各 16px gutter；桌面 width < 上限故不受影響。 */
+  max-width: calc(100vw - 32px);
+  animation: card-in 450ms var(--ease-enter) both;
+}
+
+.modal-card--leaving {
+  animation: card-out 450ms var(--ease-exit) both;
+  /* 同 backdrop：退場中的卡片不再攔截 pointer（涵蓋 search / floating-right 變體，
+     皆共用此 class）。 */
+  pointer-events: none;
+}
+
+.modal-card--overflow-visible {
+  overflow: visible;
+}
+
+.modal-card--glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(7.5px);
+  -webkit-backdrop-filter: blur(7.5px);
+}
+
+/* ── Keyframes ── */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 20px)) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes card-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 12px)) scale(0.97);
+  }
+}
+
+/* ── Search variant（上方對齊，14vh）── */
+.modal-card--search {
+  top: 14vh;
+  transform: translate(-50%, 0);
+  z-index: 551;
+}
+
+.modal-card--search:not(.modal-card--leaving) {
+  animation-name: search-card-in;
+}
+
+.modal-card--search.modal-card--leaving {
+  animation-name: search-card-out;
+}
+
+@keyframes search-card-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes search-card-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.97);
+  }
+}
+
+/* ── Floating-right variant（Issue Report Dock 等右下角浮層）── */
+/* 永遠最上層：z 必須高於 wizard (.wiz-center: 501) 與 CEM 等一般 modal */
+.modal-backdrop--floating-right {
+  z-index: 600;
+}
+
+.modal-card--floating-right {
+  z-index: 601;
+  top: auto;
+  left: auto;
+  right: 24px;
+  bottom: calc(24px + var(--dock\/h, 48px) + var(--dock\/gap, 12px));
+  transform: none;
+  max-height: calc(100vh - 108px);
+  animation-name: floating-right-in;
+}
+
+.modal-backdrop--passthrough {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  pointer-events: none;
+}
+
+.modal-card--floating-right.modal-card--leaving {
+  animation-name: floating-right-out;
+}
+
+@keyframes floating-right-in {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes floating-right-out {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateX(20px); }
+}
+
+/* ── RWD：平板以下縮減邊距 ── */
+@include bp.tablet-landscape-down {
+  .modal-card:not(.modal-card--floating-right) {
+    max-height: calc(96dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    width: calc(100vw - 24px) !important;
+  }
+}
+
+@include bp.tablet-down {
+  .modal-card:not(.modal-card--floating-right) {
+    width: calc(100vw - 16px) !important;
+    border-radius: var(--radious\/md, 8px);
+  }
+
+  /* 手機版預設 overflow hidden：
+     wizard 的 stepper 在 <1024px 已 position: static，不需要 overflow-visible；
+     但明確加上 overflowVisible 的 modal（如 share-modal）需保留 visible */
+  .modal-card:not(.modal-card--overflow-visible):not(.modal-card--floating-right) {
+    overflow: hidden;
+  }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal-backdrop--leaving,
+  .modal-card,
+  .modal-card--leaving {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .modal-card {
+    transform: translate(-50%, -50%) !important;
+  }
+}

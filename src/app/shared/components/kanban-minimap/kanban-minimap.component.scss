@@ -1,0 +1,95 @@
+.minimap {
+  position: fixed;
+  bottom: 24px;
+  right: calc(24px + var(--dock\/issue-report-w, 100px) + var(--dock\/gap, 12px));
+  width: 200px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(229, 231, 235, 0.6);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  z-index: 100;
+  user-select: none;
+  transform-origin: bottom right;
+  /* hidden by default */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px) scale(0.75);
+  transition: opacity 0.2s ease, transform 0.25s var(--ease-enter);
+
+  &--visible {
+    opacity: 0.75;
+    pointer-events: auto;
+    transform: translateY(0) scale(0.75);
+  }
+
+  &--visible:hover {
+    opacity: 1;
+  }
+}
+
+.minimap-body {
+  position: relative;
+  height: 46px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(248, 250, 252, 0.6);
+  border: 1px solid rgba(241, 245, 249, 0.8);
+  cursor: pointer;
+}
+
+.minimap-track {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  padding: 4px 3px;
+  box-sizing: border-box;
+}
+
+.minimap-col {
+  flex: 1;
+  height: 100%;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px 2px 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.minimap-col__header {
+  height: 3px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.minimap-card {
+  height: 3px;
+  border-radius: 1px;
+  background: rgba(229, 231, 235, 0.8);
+  flex-shrink: 0;
+}
+
+.minimap-viewport {
+  position: absolute;
+  top: 2px;
+  height: calc(100% - 4px);
+  background: rgba(58, 156, 205, 0.15);
+  border: 1.5px solid rgba(58, 156, 205, 0.65);
+  border-radius: 4px;
+  cursor: grab;
+  box-sizing: border-box;
+  transition: left 0.04s linear, width 0.04s linear;
+
+  &--dragging {
+    transition: none;
+    cursor: grabbing;
+    background: rgba(58, 156, 205, 0.22);
+  }
+}

@@ -1,0 +1,32 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.ctrl-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 10px 20px;
+  background: transparent;
+  flex-shrink: 0;
+  gap: 8px;
+
+  /* 手機版（<768px，平板不套用）：縮 padding，避免版面太靠下/右 */
+  @include bp.tablet-down {
+    padding: 8px 0 0px 10px;
+  }
+}
+
+.ctrl-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.ctrl-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}

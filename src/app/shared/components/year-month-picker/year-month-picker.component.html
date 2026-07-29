@@ -1,0 +1,15 @@
+<div
+  class="ymp-trigger"
+  [class.ymp-trigger--S]="size === 'S'"
+  [class.ymp-trigger--M]="size === 'M'"
+  [class.ymp-trigger--L]="size === 'L'"
+  [class.ymp-trigger--open]="isOpen()"
+  [class.ymp-trigger--empty]="!displayText"
+  [class.ymp-trigger--disabled]="disabled"
+  [attr.aria-disabled]="disabled ? true : null"
+  (click)="onTriggerClick()">
+  <span class="ymp-trigger__text">
+    {{ displayText || placeholder }}
+  </span>
+  <app-icon name="DatePicker" size="16" style="color:var(--text\/body-light,#939393); flex-shrink:0"></app-icon>
+</div>

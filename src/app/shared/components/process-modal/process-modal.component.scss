@@ -1,0 +1,104 @@
+@use '../../../../styles/mixins' as mx;
+
+/* ── Overlay ── */
+.process-modal-overlay {
+  @include mx.backdrop-base;
+  @include mx.backdrop-enter(300ms);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.process-modal-overlay--leaving {
+  @include mx.backdrop-exit(250ms);
+}
+
+/* ── Card ── */
+.process-modal-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 333px;
+  max-width: calc(100vw - 32px);
+  padding: 16px 24px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.process-modal-card--leaving {
+  animation: processCardOut 250ms var(--ease-exit) both;
+}
+
+@keyframes processCardOut {
+  from { transform: scale(1)    translateY(0);   }
+  to   { transform: scale(0.94) translateY(6px); }
+}
+
+.process-modal-card--running {
+  background: #ffffff;
+  min-height: 72px;
+}
+
+.process-modal-card--congratulation {
+  background: var(--button\/success, #74ae3e);
+  min-height: 104px;
+  justify-content: center;
+}
+
+/* ── Icon ── */
+.process-modal__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+/* ── Text ── */
+.process-modal__text {
+  font-size: 1em;
+  font-weight: 400;
+  font-family: 'Noto Sans TC', sans-serif;
+  line-height: 1.4;
+}
+
+.process-modal__text--dark   { color: var(--text\/body, #686868); }
+.process-modal__text--light  { color: #ffffff; flex: 1; }
+.process-modal__text--center { text-align: center; font-size: 1.1em; font-weight: 500; }
+
+/* ── Spinner ── */
+.spinner {
+  animation: modal-spin 1s linear infinite;
+}
+
+@keyframes modal-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Confetti ── */
+.confetti {
+  position: absolute;
+  border-radius: 2px;
+  opacity: 0.9;
+  animation: confetti-fall 1.8s ease-in-out infinite alternate;
+}
+
+.confetti--1 { width: 8px;  height: 8px;  background: #fff176; top: 10px; left: 18px;  transform: rotate(30deg);  animation-delay: 0s; }
+.confetti--2 { width: 6px;  height: 6px;  background: #ef9a9a; top: 30px; left: 8px;   border-radius: 50%;        animation-delay: 0.2s; }
+.confetti--3 { width: 10px; height: 4px;  background: #80cbc4; top: 55px; left: 25px;  transform: rotate(-20deg); animation-delay: 0.4s; }
+.confetti--4 { width: 6px;  height: 12px; background: #fff176; top: 12px; right: 30px; transform: rotate(15deg);  animation-delay: 0.1s; }
+.confetti--5 { width: 8px;  height: 8px;  background: #ef9a9a; top: 65px; right: 20px; border-radius: 50%;        animation-delay: 0.3s; }
+.confetti--6 { width: 10px; height: 4px;  background: #b2dfdb; top: 38px; left: 75px;  transform: rotate(45deg);  animation-delay: 0.5s; }
+.confetti--7 { width: 6px;  height: 6px;  background: #fff176; top: 20px; right: 60px; border-radius: 50%;        animation-delay: 0.15s; }
+.confetti--8 { width: 8px;  height: 4px;  background: #ef9a9a; top: 78px; left: 120px; transform: rotate(-35deg); animation-delay: 0.35s; }
+
+@keyframes confetti-fall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0.9; }
+  100% { transform: translateY(6px) rotate(20deg); opacity: 0.6; }
+}

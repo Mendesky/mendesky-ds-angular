@@ -1,0 +1,60 @@
+<div class="autocomplete-wrap" [ngClass]="wrapClasses"
+     [appErrorTooltip]="errorMessage"
+     [errorPosition]="errorPosition"
+     [errorDisabled]="disabled">
+
+  <!-- ── Input Box ── -->
+  <div class="autocomplete-box" (click)="onFocus()">
+
+    <!-- 左側：chips + 文字輸入 -->
+    <div class="autocomplete-content">
+
+      <!-- 已選 chips -->
+      <span
+        *ngFor="let item of _selected"
+        class="autocomplete-chip"
+      >
+        <span class="autocomplete-chip__label">{{ item.label }}</span>
+        <button
+          class="autocomplete-chip__remove"
+          type="button"
+          [attr.aria-label]="'移除 ' + item.label"
+          (mousedown)="removeItem(item, $event)"
+        >
+          <app-icon name="No-X-Cancel" size="16"></app-icon>
+        </button>
+      </span>
+
+      <!-- 文字輸入 -->
+      <input
+        class="autocomplete-input"
+        [placeholder]="_selected.length === 0 ? placeholder : ''"
+        [disabled]="disabled"
+        [value]="inputValue"
+        (input)="onInput($event)"
+        (focus)="onFocus()"
+        (blur)="onBlur()"
+        (keydown)="onKeydown($event)"
+        autocomplete="off"
+      />
+    </div>
+
+    <!-- 右側：清除全部 + 必填 + 下拉箭頭 -->
+    <div class="autocomplete-suffix">
+      <button
+        *ngIf="focused && hasSelection"
+        class="autocomplete-clear"
+        type="button"
+        aria-label="清除全部"
+        (mousedown)="clearAll($event)"
+      >
+        <app-icon name="No-X-Cancel" size="16"></app-icon>
+      </button>
+
+      <app-icon class="autocomplete-arrow" name="DownArrow" size="16"></app-icon>
+    </div>
+
+  </div>
+
+
+</div>

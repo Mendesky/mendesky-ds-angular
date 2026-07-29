@@ -1,0 +1,14 @@
+@if (empty) {
+  <span class="cell-btn cell-btn--empty" aria-hidden="true"></span>
+} @else {
+  <button
+    class="cell-btn"
+    [class.cell-btn--selected]="selected"
+    [disabled]="disabled || null"
+    [attr.aria-selected]="selected"
+    type="button"
+    role="option"
+    (click)="onClick()">
+    {{ text }}
+  </button>
+}

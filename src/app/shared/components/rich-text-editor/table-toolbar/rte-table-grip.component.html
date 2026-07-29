@@ -1,0 +1,33 @@
+<div class="grip-wrap">
+  <button
+    type="button"
+    class="grip"
+    [class.grip--col]="direction === 'col'"
+    [attr.aria-label]="direction === 'row' ? '列操作' : '欄操作'"
+    aria-haspopup="menu"
+    [attr.aria-expanded]="menuOpen()"
+    [attr.data-testid]="direction === 'row' ? 'rte-grip-row' : 'rte-grip-col'"
+    (click)="toggle()">
+    <app-icon name="More" size="16"></app-icon>
+  </button>
+
+  @if (menuOpen()) {
+    <app-action-menu align="left" (closeMenu)="closeMenu()">
+      @for (item of items; track item.id) {
+        @if (item.dividerBefore) {
+          <div class="grip-divider" role="separator"></div>
+        }
+        <button
+          type="button"
+          role="menuitem"
+          class="grip-item noto-12-regular"
+          [class.grip-item--danger]="item.danger"
+          [attr.data-testid]="'rte-grip-item-' + item.id"
+          (click)="onPick(item.id)">
+          <app-icon class="grip-item__icon" [name]="item.icon" size="16"></app-icon>
+          <span class="grip-item__label">{{ item.label }}</span>
+        </button>
+      }
+    </app-action-menu>
+  }
+</div>

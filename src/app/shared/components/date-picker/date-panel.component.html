@@ -1,0 +1,86 @@
+<div class="dp-panel">
+
+  @if (viewState() === 'year-grid') {
+    <!-- 年度選取模式：直接顯示年份網格 -->
+    <div class="dp-panel__year-grid" role="listbox" (keydown)="onYearGridKeydown($event)">
+      @for (y of yearRange; track y) {
+        <app-cell-btn
+          [text]="y + ' 年'"
+          [selected]="y === displayYear()"
+          [disabled]="isYearDisabled(y)"
+          (cellClick)="selectYear(y)">
+        </app-cell-btn>
+      }
+    </div>
+
+  } @else if (viewState() === 'month-grid') {
+    <!-- 月份選取模式 -->
+    <div class="dp-panel__header">
+      <app-icon-btn
+        propClass="SectionBtn"
+        size="16"
+        ariaLabel="上一年"
+        [disabled]="!canGoPrevYear()"
+        (btnClick)="prevYear()">
+        <app-icon name="LeftArrow" size="16"></app-icon>
+      </app-icon-btn>
+      <button
+        type="button"
+        class="dp-panel__year-toggle"
+        aria-label="選擇年份"
+        (click)="openYearGrid()">
+        <span class="dp-panel__header-label">{{ displayYear() }} 年</span>
+        <app-icon name="DownArrow" size="12"></app-icon>
+      </button>
+      <app-icon-btn
+        propClass="SectionBtn"
+        size="16"
+        ariaLabel="下一年"
+        [disabled]="!canGoNextYear()"
+        (btnClick)="nextYear()">
+        <app-icon name="RightArrow" size="16"></app-icon>
+      </app-icon-btn>
+    </div>
+    <div class="dp-panel__month-grid" role="listbox">
+      @for (m of MONTHS; track m) {
+        <app-cell-btn
+          [text]="m + ' 月'"
+          [selected]="isMonthSelected(m)"
+          [disabled]="isMonthDisabled(m)"
+          (cellClick)="selectMonth(m)">
+        </app-cell-btn>
+      }
+    </div>
+
+  } @else if (viewState() === 'day-grid') {
+    <!-- 日期選取模式 -->
+    <div class="dp-panel__header">
+      <app-icon-btn
+        propClass="SectionBtn"
+        size="16"
+        ariaLabel="返回月份"
+        (btnClick)="backToMonths()">
+        <app-icon name="LeftArrow" size="16"></app-icon>
+      </app-icon-btn>
+      <span class="dp-panel__header-label">{{ displayYear() }} 年 {{ selectedMonth() }} 月</span>
+      <div class="dp-panel__nav-spacer"></div>
+    </div>
+    <div class="dp-panel__weekday-row">
+      @for (w of WEEKDAYS; track w) {
+        <span class="dp-panel__weekday">{{ w }}</span>
+      }
+    </div>
+    <div class="dp-panel__day-grid" role="listbox">
+      @for (cell of dayGridCells(); track $index) {
+        <app-cell-btn
+          [text]="cell !== null ? ('' + cell) : ''"
+          [empty]="cell === null"
+          [selected]="cell !== null && isDaySelected(cell)"
+          [disabled]="cell !== null && isDayDisabled(cell)"
+          (cellClick)="cell !== null && selectDay(cell)">
+        </app-cell-btn>
+      }
+    </div>
+  }
+
+</div>

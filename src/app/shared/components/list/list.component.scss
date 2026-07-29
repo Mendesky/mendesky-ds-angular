@@ -1,0 +1,97 @@
+.list-item {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radious\/sm, 4px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Level heights and padding */
+.list-item--level-1 { height: 32px; padding: 8px; gap: 2px; }
+.list-item--level-2 { height: 30px; padding: 8px 8px 8px 20px; }
+.list-item--level-3 { height: 28px; padding: 8px 8px 8px 29px; }
+.list-item--level-4 { height: 28px; padding: 8px 8px 8px 29px; }
+
+/* Default with children: border bottom */
+.list-item--has-children {
+  border-bottom: 1px solid var(--border\/primary, #e7e7e7);
+}
+
+/* Hover state */
+.list-item--hover {
+  background: var(--label\/secondary-dark, #f2f2f2);
+}
+
+.list-item__inner {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.list-item__name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.list-item__name--sm {
+  gap: 2px;
+}
+
+/* Item Number Badge */
+.item-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  background: var(--text\/body, #686868);
+  color: white;
+  font-size: 10px;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+/* Circle icon */
+.circle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Title */
+.list-title {
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body, #686868);
+  letter-spacing: 0.48px;
+  white-space: nowrap;
+  font-family: 'Noto Sans TC', sans-serif;
+  padding-right: 8px;
+}
+
+.list-title--bold {
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Value */
+.list-value {
+  flex: 1;
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--text\/headings, #535353);
+  text-align: right;
+  font-family: 'Noto Sans TC', sans-serif;
+  padding-left: 4px;
+  min-width: 0;
+}

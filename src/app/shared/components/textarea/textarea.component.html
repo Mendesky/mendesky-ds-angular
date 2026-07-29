@@ -1,0 +1,36 @@
+<div class="textarea-wrap" [ngClass]="wrapClasses"
+     [appErrorTooltip]="errorMessage"
+     [errorPosition]="errorPosition"
+     [errorDisabled]="disabled">
+
+  <div class="textarea-box">
+
+    <textarea
+      #textareaEl
+      class="textarea-field"
+      [class.textarea-field--auto-resize]="autoResize"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      [value]="value"
+      (input)="onInput($event)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+    ></textarea>
+
+    <div class="textarea-suffix">
+      <button
+        *ngIf="focused && hasValue"
+        class="textarea-clear"
+        type="button"
+        aria-label="清除"
+        (mousedown)="clearValue($event)"
+      >
+        <app-icon name="No-X-Cancel" size="16"></app-icon>
+      </button>
+
+    </div>
+
+  </div>
+
+
+</div>

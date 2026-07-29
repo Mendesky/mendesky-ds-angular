@@ -1,0 +1,132 @@
+<!-- ════ Horizontal variant（原有） ════ -->
+@if (variant === 'horizontal') {
+  <ol class="stepper" role="list" aria-label="步驟進度">
+    <ng-container *ngFor="let label of steps; let i = index">
+
+      <!-- Done step（可點擊） -->
+      <button
+        *ngIf="i < currentStep"
+        class="step-item step-item--done"
+        type="button"
+        [attr.aria-label]="'步驟 ' + (i + 1) + '：' + label + '，已完成'"
+        (click)="onStepClick(i)">
+        <div class="step-dot">
+          <app-icon name="Done-OK" size="16" style="color:white"></app-icon>
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </button>
+
+      <!-- Active step -->
+      <div
+        *ngIf="i === currentStep"
+        class="step-item step-item--active"
+        aria-current="step"
+        [attr.aria-label]="'步驟 ' + (i + 1) + '：' + label + '，進行中'">
+        <div class="step-dot">
+          <span class="step-number">{{ i + 1 }}</span>
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </div>
+
+      <!-- Default step（未到達） -->
+      <div
+        *ngIf="i > currentStep"
+        class="step-item step-item--default"
+        [attr.aria-label]="'步驟 ' + (i + 1) + '：' + label + '，未開始'">
+        <div class="step-dot">
+          <span class="step-number">{{ i + 1 }}</span>
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </div>
+
+      <!-- 連接線 -->
+      <div
+        *ngIf="i < steps.length - 1"
+        class="step-connector"
+        [class.step-connector--done]="i < currentStep">
+      </div>
+
+    </ng-container>
+  </ol>
+}
+
+<!-- ════ Nav variant ════ -->
+@if (variant === 'nav') {
+  <nav class="sn-nav" aria-label="步驟導覽">
+
+    @for (section of navSections; track $index) {
+
+      <!-- 區段標題（companyName / 集團共用） -->
+      @if (section.label !== undefined) {
+        <div class="sn-section" [class.sn-section--spaced]="$index > 0">
+          <span class="sn-section-label">{{ section.label }}</span>
+          <app-divider display="Row" propClass="Grey20"></app-divider>
+        </div>
+      }
+
+      @for (page of section.pages; track page.id) {
+
+        <!-- 頂層 Nav Pill -->
+        <button
+          class="sn-pill"
+          [class.sn-pill--active]="isNavPageActive(page.id)"
+          [class.sn-pill--locked]="isNavPageLocked(page.id)"
+          [disabled]="isNavPageLocked(page.id)"
+          type="button"
+          (click)="onNavPageClick(page)">
+          <span class="sn-pill-num"
+                [class.sn-pill-num--active]="isNavPageActive(page.id)"
+                [class.sn-pill-num--locked]="isNavPageLocked(page.id)"
+                [class.sn-pill-num--complete]="getPageStatus(page.id) === 'complete'"
+                [class.sn-pill-num--warning]="isPageWarning(page) && !isNavPageActive(page.id)">
+            @if (getPageStatus(page.id) === 'complete') {
+              <app-icon name="Done-OK" size="12" style="color:white"></app-icon>
+            } @else if (!hideNum) {
+              {{ page.num }}
+            }
+          </span>
+          <span class="sn-pill-label">{{ page.label }}</span>
+          @if (isNavPageLocked(page.id)) {
+            <app-icon name="Key" size="12" style="color:var(--border\/primary, #e7e7e7); margin-left:auto; flex-shrink:0"></app-icon>
+          }
+        </button>
+
+        <!-- Sub Items -->
+        @if (page.subItems?.length) {
+          <!-- 收合時設 inert：子項雖仍在 DOM（保留收合動畫），但移出 tab 順序 + AT，
+               避免 Tab 跳進隱藏子項導致焦點「消失」，讓鍵盤直接跳到下一大項。 -->
+          <div class="sn-sub-collapse" [class.ds-collapse--expanded]="isNavPageExpanded(page.id)"
+               [attr.inert]="isNavPageExpanded(page.id) ? null : ''">
+            <div class="sn-sub-collapse__inner">
+              <ul class="sn-sub-list">
+                @for (sub of page.subItems; track sub.id) {
+                  <li>
+                    <button
+                      class="sn-sub-item"
+                      [class.sn-sub-item--active]="isNavSubItemActive(sub.id)"
+                      type="button"
+                      (click)="onNavSubItemClick(sub.id, page.id)">
+                      <span class="sn-sub-dot"
+                            [class.sn-sub-dot--active]="isNavSubItemActive(sub.id)"
+                            [class.sn-sub-dot--complete]="getSubItemStatus(sub.id) === 'complete'"
+                            [class.sn-sub-dot--warning]="isSubItemWarning(sub.id) && !isNavSubItemActive(sub.id)">
+                        @if (getSubItemStatus(sub.id) === 'complete') {
+                          <app-icon name="Done-OK" size="12" style="color:white"></app-icon>
+                        } @else if (isNavSubItemActive(sub.id)) {
+                          <app-icon name="RightArrow" size="12" style="color:white"></app-icon>
+                        }
+                      </span>
+                      <span class="sn-sub-label">{{ sub.label }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+
+      }
+    }
+
+  </nav>
+}

@@ -1,0 +1,107 @@
+@use '../../../../styles/breakpoints' as bp;
+
+/* Portal host — fixed positioning set by TooltipDirective */
+:host {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  display: block;
+}
+
+/* Entry animations — Micro tier (150ms) per animation.md */
+:host.tooltip-portal--top    { animation: tooltipInDown  150ms var(--ease-enter) both; }
+:host.tooltip-portal--bottom { animation: tooltipInUp    150ms var(--ease-enter) both; }
+:host.tooltip-portal--left   { animation: tooltipInRight 150ms var(--ease-enter) both; }
+:host.tooltip-portal--right  { animation: tooltipInLeft  150ms var(--ease-enter) both; }
+
+@keyframes tooltipInDown  { from { opacity: 0; transform: translateY(4px);  } to { opacity: 1; transform: translateY(0);  } }
+@keyframes tooltipInUp    { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0);  } }
+@keyframes tooltipInRight { from { opacity: 0; transform: translateX(4px);  } to { opacity: 1; transform: translateX(0);  } }
+@keyframes tooltipInLeft  { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0);  } }
+
+/* ─── Wrapper layout (複用 app-tooltips 視覺) ─── */
+.tooltip {
+  display: inline-flex;
+  align-items: center;
+  filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.2));
+}
+
+.tooltip--vertical {
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Box */
+.tooltip__box {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: var(--radious\/sm, 4px);
+}
+
+.tooltip__box--default { background: var(--tooltip\/background, #ffffff); }
+.tooltip__box--grey    { background: var(--button\/neutral, #939393); }
+.tooltip__box--warning { background: var(--icon\/warning, #cc5252); }
+
+/* Text */
+.tooltip__text {
+  font-size: 1em;
+  font-weight: 400;
+  font-family: 'Noto Sans TC', sans-serif;
+  letter-spacing: 0.24px;
+  white-space: pre-line;
+}
+
+.tooltip__text--default { color: var(--text\/body, #686868); }
+.tooltip__text--grey,
+.tooltip__text--warning { color: var(--text\/body-lightest, #ffffff); }
+
+/* ─── Arrow triangles ─── */
+/* Arrow pointing LEFT */
+.tooltip__arrow--left {
+  width: 0;
+  height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+}
+.tooltip__arrow--left.arrow--default { border-right: 5px solid var(--tooltip\/background, #ffffff); }
+.tooltip__arrow--left.arrow--grey    { border-right: 5px solid var(--button\/neutral, #939393); }
+.tooltip__arrow--left.arrow--warning { border-right: 5px solid var(--icon\/warning, #cc5252); }
+
+/* Arrow pointing RIGHT */
+.tooltip__arrow--right {
+  width: 0;
+  height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+}
+.tooltip__arrow--right.arrow--default { border-left: 5px solid var(--tooltip\/background, #ffffff); }
+.tooltip__arrow--right.arrow--grey    { border-left: 5px solid var(--button\/neutral, #939393); }
+.tooltip__arrow--right.arrow--warning { border-left: 5px solid var(--icon\/warning, #cc5252); }
+
+/* Arrow pointing UP */
+.tooltip__arrow--up {
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+}
+.tooltip__arrow--up.arrow--default { border-bottom: 5px solid var(--tooltip\/background, #ffffff); }
+.tooltip__arrow--up.arrow--grey    { border-bottom: 5px solid var(--button\/neutral, #939393); }
+.tooltip__arrow--up.arrow--warning { border-bottom: 5px solid var(--icon\/warning, #cc5252); }
+
+/* Arrow pointing DOWN */
+.tooltip__arrow--down {
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+}
+.tooltip__arrow--down.arrow--default { border-top: 5px solid var(--tooltip\/background, #ffffff); }
+.tooltip__arrow--down.arrow--grey    { border-top: 5px solid var(--button\/neutral, #939393); }
+.tooltip__arrow--down.arrow--warning { border-top: 5px solid var(--icon\/warning, #cc5252); }
+
+/* ─── RWD：觸控裝置隱藏 ─── */
+@include bp.tablet-landscape-down {
+  :host { display: none !important; }
+}

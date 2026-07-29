@@ -1,0 +1,46 @@
+<div class="te-wrap" [ngClass]="wrapClasses"
+     [appErrorTooltip]="errorMessage">
+  <div class="te-box" [style.--te-min-rows]="minRows">
+    <div #editor
+         class="te-field"
+         role="textbox"
+         aria-multiline="true"
+         [attr.aria-label]="placeholder"
+         [attr.data-placeholder]="placeholder"
+         [attr.contenteditable]="disabled ? 'false' : 'true'"
+         (input)="onInput()"
+         (focus)="onFocus()"
+         (blur)="onBlur($event)"
+         (paste)="onPaste($event)"
+         (click)="onEditorClick($event)"
+         (keydown)="onKeydown($event)"
+         (compositionstart)="onCompositionStart()"
+         (compositionend)="onCompositionEnd()">
+    </div>
+  </div>
+
+  @if (filteredVarDefs.length > 0) {
+    <app-template-var-panel
+      [varDefs]="filteredVarDefs"
+      [variables]="variables"
+      [contexts]="varContexts"
+      [defaultCaseId]="defaultCaseId"
+      [defaultBundleId]="defaultBundleId"
+      (contextChange)="contextChange.emit($event)"
+      (insert)="insertVariable($event)">
+    </app-template-var-panel>
+  }
+
+  @if (activeSelectKey !== null && _activeSelectChip) {
+    <app-action-menu
+      [anchorEl]="_activeSelectChip"
+      (closeMenu)="closeSelectMenu()">
+      <!-- te-select-menu：glance 選項可能是整句長文案，限寬 + 允許換行，避免選單超出視窗 -->
+      <div class="te-select-menu">
+        @for (opt of _activeSelectOptions; track opt.value) {
+          <app-button variant="ghost" [text]="opt.label" (btnClick)="onSelectOptionClick(opt)"></app-button>
+        }
+      </div>
+    </app-action-menu>
+  }
+</div>

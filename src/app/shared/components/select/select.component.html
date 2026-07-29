@@ -1,0 +1,78 @@
+<div
+  class="select-wrap"
+  #triggerWrap
+  [appErrorTooltip]="errorMessage"
+  [errorPosition]="errorPosition"
+  [errorDisabled]="isDisabled()"
+  [class.select-wrap--m]="size === 'M'"
+  [class.select-wrap--s]="size === 'S'"
+  [class.select-wrap--open]="isOpen()"
+  [class.select-wrap--focused]="isFocused() && !isOpen() && !isDisabled()"
+  [class.select-wrap--actived]="hasValue() && !isOpen()"
+  [class.select-wrap--error]="hasError"
+  [class.select-wrap--disabled]="isDisabled()"
+  (click)="onWrapClick()"
+  (pointerdown)="onWrapPointerdown($event)">
+
+  <div class="select-box">
+
+    <!-- 不可輸入模式（預設）：div trigger，focus 不觸發虛擬鍵盤 -->
+    @if (!searchable) {
+      <div
+        #triggerDiv
+        class="select-field select-field--readonly"
+        [attr.tabindex]="isDisabled() ? null : '0'"
+        role="combobox"
+        [attr.aria-expanded]="isOpen()"
+        [attr.aria-disabled]="isDisabled() || null"
+        [class.select-field--placeholder]="!hasValue()"
+        (focus)="onTriggerFocus()"
+        (blur)="onTriggerBlur()"
+        (keydown)="onKeydown($event)">
+        {{ hasValue() ? displayLabel() : placeholder }}
+      </div>
+    }
+
+    <!-- 可輸入模式（需明確加 [searchable]="true"） -->
+    @if (searchable) {
+      <input
+        #triggerInput
+        class="select-field"
+        type="text"
+        autocomplete="off"
+        [placeholder]="inputPlaceholder()"
+        [value]="inputDisplayValue()"
+        [disabled]="isDisabled()"
+        (focus)="onTriggerFocus()"
+        (blur)="onTriggerBlur()"
+        (input)="onInput($event)"
+        (keydown)="onKeydown($event)"
+      />
+    }
+
+    <div class="select-suffix">
+      @if (clearable && hasValue() && !isDisabled()) {
+        <button
+          type="button"
+          class="select-clear"
+          data-testid="select-clear"
+          tabindex="-1"
+          aria-label="清除"
+          (mousedown)="clearValue($event)"
+          (click)="$event.stopPropagation()">
+          <app-icon name="No-X-Cancel" size="16"></app-icon>
+        </button>
+      }
+      <app-icon
+        name="DownArrow"
+        size="16"
+        class="select-arrow"
+        [class.select-arrow--open]="isOpen()"
+        style="color:var(--text/disabled)">
+      </app-icon>
+    </div>
+
+  </div>
+
+
+</div>

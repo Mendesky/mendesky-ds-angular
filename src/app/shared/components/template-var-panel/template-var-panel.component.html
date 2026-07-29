@@ -1,0 +1,96 @@
+<button #trigger
+        class="tvp-trigger"
+        [class.tvp-trigger--active]="showPanel"
+        title="查看可用範本變數"
+        (click)="togglePanel($event)">
+  <app-icon name="Info-Logs" size="16"></app-icon>
+</button>
+
+@if (showPanel) {
+  <div #panel class="tvp-panel" [class.tvp-panel--inline]="inline">
+    <!-- ⓘ 模式才顯示說明 header 與搜尋框；inline autocomplete 模式由編輯器打字驅動，隱藏二者 -->
+    @if (!inline) {
+      <div class="tvp-panel__header">
+        <app-icon name="Info-Logs" size="16"
+          style="flex-shrink:0;color:var(--button\/action,#3a9ccd)">
+        </app-icon>
+        <span class="noto-12-regular" style="color:var(--text\/body,#686868)">
+          {{ headerText }}
+        </span>
+      </div>
+    }
+
+    <!-- 公司/方案 context 選擇器：ⓘ 與 inline(%%) 模式皆顯示。
+         inline 模式焦點在編輯器，點下拉會使編輯器 blur——由 template-editor.onBlur 的 relatedTarget guard
+         （焦點移進 .tvp-panel / app-select-panel 時不關 autocomplete）保住面板，故切換不會關閉 %% 視窗。 -->
+    @if (contexts.length) {
+      <div class="tvp-context">
+        @if (contexts.length > 1) {
+          <div class="tvp-context__field">
+            <label class="tvp-context__label noto-12-medium">公司</label>
+            <app-select data-testid="tvp-case-select"
+                        size="S"
+                        placeholder="選公司"
+                        [options]="caseOptions"
+                        [ngModel]="selectedCaseId"
+                        (ngModelChange)="onCaseChange($event)"></app-select>
+          </div>
+        }
+        <div class="tvp-context__field">
+          <label class="tvp-context__label noto-12-medium">方案</label>
+          <app-select data-testid="tvp-bundle-select"
+                      size="S"
+                      placeholder="選方案"
+                      [options]="bundleOptions"
+                      [ngModel]="selectedBundleId"
+                      (ngModelChange)="onBundleChange($event)"></app-select>
+        </div>
+      </div>
+    }
+
+    @if (!inline) {
+      <div class="tvp-search-wrap">
+        <input class="tvp-search"
+               type="text"
+               placeholder="搜尋變數…"
+               [value]="searchQuery"
+               (input)="onSearchInput($event)">
+      </div>
+    }
+
+    <div class="tvp-panel__list" role="listbox">
+      @if (varGroups.length === 0) {
+        <p class="tvp-empty noto-12-regular">找不到符合的變數</p>
+      }
+      @for (grp of varGroups; track grp.group) {
+        <div class="tvp-group">
+          <div class="tvp-group__label noto-12-medium">{{ grp.label }}</div>
+          @for (def of grp.defs; track def.key) {
+            <button class="tvp-chip"
+                    role="option"
+                    [id]="'tvp-opt-' + def.key"
+                    [class.tvp-chip--active]="inline && def.key === activeKey"
+                    [attr.aria-selected]="inline && def.key === activeKey"
+                    (mouseenter)="onChipHover($event, def.key)"
+                    (mouseleave)="onChipLeave()"
+                    (mousedown)="onChipMousedown($event)"
+                    (click)="onChipClick(def.key, $event)">
+              <span class="tvp-chip__label noto-12-regular">{{ def.label }}</span>
+              <span class="tvp-chip__key inter-12-bold">{{ varSyntax(def.key) }}</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    @if (hoveredVarKey) {
+      <div class="tvp-tooltip"
+           [style.bottom.px]="chipTooltipPos.bottom"
+           [style.left.px]="chipTooltipPos.left">
+        <app-tooltips propClass="Down" styles="Grey"
+                      [text]="variables[hoveredVarKey] || '（尚無值）'">
+        </app-tooltips>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,77 @@
+:host {
+  display: block;
+  /* 動態限高承載點：PortalPositioningService 把 boundMaxHeight 算出的 maxHeight 設在此
+     host（= portal 元素 panelEl）。內層 .autocomplete-panel 用 max-height:inherit 接收此值，
+     才真正夾住「可捲動清單」的高度；若只設在 host、內層仍固定 240px，限高會失效。 */
+  max-height: 240px;
+}
+
+/* 視覺對齊 app-select 的面板（2026-07-26）：使用者回報「行業代號的下拉跟其他選單不一致」。
+   兩者原本是兩套語言——select：#fcfcfc 底 + 10px 圓角 + 8px 內距 + 藥丸選項；
+   autocomplete：白底 + 8px 圓角 + 無內距 + 透明選項。這裡改為與 select 一致。
+   inset 邊框改用 box-shadow 疊加（select 是多一層 .panel-inset-border 元素，此處不改模板）。 */
+.autocomplete-panel {
+  background: var(--color\/grey\/10, #fcfcfc);
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 4px 35px -5px rgba(0, 0, 0, 0.2),
+              inset 0 0 1px 0 rgba(0, 0, 0, 0.7);
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  /* 由 :host 繼承 maxHeight（預設 240px；手機鍵盤縮小視窗時由 service 動態下修）→
+     這裡才是真正的捲動容器，限高才會生效（見 :host 註解）。 */
+  max-height: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+
+  &::-webkit-scrollbar        { width: 4px; }
+  &::-webkit-scrollbar-track  { background: transparent; }
+  &::-webkit-scrollbar-thumb  { background: rgba(0, 0, 0, 0.15); border-radius: 2px; }
+}
+
+.autocomplete-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;            /* 對齊 select 的 32px 藥丸，但不鎖死高度（見下方換行說明） */
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radious\/sm, 4px);
+  background: var(--button\/normal, #f1f3f5);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 500;
+  color: var(--text\/body, #686868);
+  text-align: left;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: background 150ms var(--ease-enter),
+              color 150ms var(--ease-enter);
+
+  /* 與 select 刻意保留的差異：select 的選項是 `nowrap + text-overflow: ellipsis`，
+     autocomplete 這裡**允許換行**——行業代號等長選項（實測最長 30 字行業名）截斷後
+     看不出是哪一筆；面板寬度已鎖在 trigger 寬（autocomplete-panel.component.ts 的 max-width）。 */
+
+  &:hover,
+  &--active {
+    background: var(--button\/action, #3a9ccd);
+    color: #f1f3f5;
+  }
+}
+
+.autocomplete-no-result {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  color: var(--input\/prompt, #939393);
+}

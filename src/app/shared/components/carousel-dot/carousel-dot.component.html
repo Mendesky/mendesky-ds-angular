@@ -1,0 +1,13 @@
+<button
+  class="carousel-dot"
+  [class.carousel-dot--dot]="variant === 'Dot'"
+  [class.carousel-dot--line]="variant === 'Line'"
+  [class.carousel-dot--has-text]="hasText"
+  [class.carousel-dot--active]="active"
+  type="button"
+  (click)="dotClick.emit()"
+>
+  <span class="carousel-dot__shape">
+    <span *ngIf="hasText" class="carousel-dot__label">{{ text }}</span>
+  </span>
+</button>

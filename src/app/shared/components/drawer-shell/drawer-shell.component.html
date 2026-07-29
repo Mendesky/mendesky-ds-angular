@@ -1,0 +1,16 @@
+@if (visible()) {
+  <!-- Overlay（透明點擊層） -->
+  <div class="drawer-overlay" [class.drawer-overlay--closing]="isClosing()" (click)="onOverlayClick()"></div>
+
+  <!-- Panel -->
+  <div
+    class="drawer-panel"
+    [class.drawer-panel--left]="side === 'left'"
+    [class.drawer-panel--right]="side === 'right'"
+    [class.drawer-panel--bottom]="side === 'bottom'"
+    [class.drawer-panel--closing]="isClosing()"
+    [style.width]="side !== 'bottom' ? width : '100%'"
+  >
+    <ng-content></ng-content>
+  </div>
+}

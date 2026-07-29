@@ -1,0 +1,14 @@
+<div class="toast-container" data-testid="toast-container">
+  @for (t of toastService.toasts(); track t.id) {
+    <app-process-toast
+      [stackMode]="true"
+      [type]="t.type"
+      [message]="t.message"
+      [size]="t.size ?? 'S'"
+      [duration]="999999999"
+      [requestHide]="t.hiding"
+      [action]="t.action"
+      (dismissed)="toastService.removeById(t.id)"
+    />
+  }
+</div>

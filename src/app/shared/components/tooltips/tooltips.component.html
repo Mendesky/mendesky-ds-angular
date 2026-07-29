@@ -1,0 +1,20 @@
+<div class="tooltip" [ngClass]="wrapperClasses">
+
+  <!-- Arrow BEFORE box: Left (points left) and Top (points up) -->
+  <div *ngIf="propClass === 'Left' || propClass === 'Top'"
+       class="tooltip__arrow"
+       [ngClass]="arrowBeforeClasses">
+  </div>
+
+  <!-- Tooltip Box -->
+  <div class="tooltip__box" [ngClass]="boxClasses">
+    <span class="tooltip__text" [ngClass]="textClasses">{{ text }}</span>
+  </div>
+
+  <!-- Arrow AFTER box: Down (points down) and Right (points right) -->
+  <div *ngIf="propClass === 'Down' || propClass === 'Right'"
+       class="tooltip__arrow"
+       [ngClass]="arrowAfterClasses">
+  </div>
+
+</div>

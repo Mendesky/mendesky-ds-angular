@@ -1,0 +1,73 @@
+<div class="number-input-wrap" [ngClass]="wrapClasses"
+     [appErrorTooltip]="errorMessage"
+     [errorPosition]="errorPosition"
+     [errorDisabled]="disabled">
+
+  <div class="number-input-box">
+
+    <input
+      class="number-input-field"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      [value]="displayValue"
+      (input)="onInput($event)"
+      (keydown)="onKeydown($event)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+    />
+
+    <span *ngIf="suffix" class="number-input-unit">{{ suffix }}</span>
+
+    <div class="number-input-suffix">
+
+      <button
+        *ngIf="focused && hasValue && allowEmpty"
+        class="number-input-clear"
+        type="button"
+        aria-label="清除"
+        tabindex="-1"
+        (mousedown)="clearValue($event)"
+      >
+        <app-icon name="No-X-Cancel" size="16"></app-icon>
+      </button>
+
+      <div class="number-stepper">
+        <button
+          class="stepper-btn stepper-btn--up"
+          type="button"
+          [disabled]="atMax || disabled"
+          (click)="stepUp()"
+          aria-label="增加"
+          tabindex="-1"
+        >
+          <!-- 上箭頭 -->
+          <svg width="8" height="5" viewBox="0 0 8 5" fill="none">
+            <path d="M7 4.5L4 1.5L1 4.5" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button
+          class="stepper-btn stepper-btn--down"
+          type="button"
+          [disabled]="atMin || disabled"
+          (click)="stepDown()"
+          aria-label="減少"
+          tabindex="-1"
+        >
+          <!-- 下箭頭 -->
+          <svg width="8" height="5" viewBox="0 0 8 5" fill="none">
+            <path d="M1 1L4 4L7 1" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+
+</div>

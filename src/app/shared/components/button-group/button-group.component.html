@@ -1,0 +1,33 @@
+<div class="btn-group-root" [class.btn-group-root--has-error]="hasError"
+     [appErrorTooltip]="hasError ? errorMessage : ''"
+     [errorPosition]="errorPosition"
+     [errorDisabled]="disabled">
+
+  <div
+    class="btn-group"
+    [ngClass]="'btn-group--' + type"
+    [class.btn-group--size-l]="size === 'L'"
+    [class.btn-group--size-m]="size === 'M'"
+    [class.btn-group--size-s]="size === 'S'"
+    [class.is-error]="hasError"
+    [class.is-disabled]="disabled"
+    role="group">
+
+    <button
+      *ngFor="let opt of options; let i = index; trackBy: trackByOptionValue"
+      class="btn-group__item"
+      [class.is-selected]="value === opt.value"
+      [class.is-option-disabled]="opt.disabled"
+      [disabled]="disabled || opt.disabled"
+      [attr.tabindex]="focusIndex() === i ? 0 : -1"
+      [attr.aria-pressed]="value === opt.value"
+      type="button"
+      (click)="select(opt.value)"
+      (keydown)="onKeydown($event, i)">
+      {{ opt.label }}
+    </button>
+
+  </div>
+
+
+</div>

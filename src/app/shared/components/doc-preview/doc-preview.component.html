@@ -1,0 +1,81 @@
+<div class="doc-preview-overlay" (click)="onBackdropClick($event)">
+
+  <!-- 文件內容區 -->
+  <div class="doc-preview-viewport">
+    @if (currentDoc()) {
+      @if (isPdf()) {
+
+        @if (isLoading()) {
+          <div class="doc-preview-card">
+            <div class="doc-preview-skeleton-page"></div>
+          </div>
+        }
+
+        @if (renderError() && !isLoading()) {
+          <div class="doc-preview-card doc-preview-error-card">
+            <span class="noto-12-regular">預覽失敗，請改用下載</span>
+          </div>
+        }
+
+        @for (img of imageBase64s(); track $index) {
+          @if (img === null) {
+            <div class="doc-preview-card">
+              <div class="doc-preview-skeleton-page"></div>
+            </div>
+          } @else if (img === '') {
+            <div class="doc-preview-card doc-preview-error-card">
+              <span class="noto-12-regular">第 {{ $index + 1 }} 頁預覽失敗，請下載檔案查看</span>
+            </div>
+          } @else {
+            <div class="doc-preview-card">
+              <img class="doc-preview-img"
+                [src]="img"
+                [alt]="currentDoc().name + ' 第' + ($index + 1) + '頁'" />
+            </div>
+          }
+        }
+
+      } @else {
+
+        <div class="doc-preview-card">
+          <img
+            class="doc-preview-img"
+            [src]="currentDoc().url"
+            [alt]="currentDoc().name" />
+        </div>
+
+      }
+    }
+  </div>
+
+  <!-- 浮動導覽列 -->
+  <div class="doc-preview-nav">
+    @if (!isSingle()) {
+      <app-icon-btn
+        size="16"
+        propClass="Normal"
+        ariaLabel="上一份文件"
+        [disabled]="isFirst()"
+        (btnClick)="prev()">
+        <app-icon name="LeftArrow" size="16"></app-icon>
+      </app-icon-btn>
+      <app-icon-btn
+        size="16"
+        propClass="Normal"
+        ariaLabel="下一份文件"
+        [disabled]="isLast()"
+        (btnClick)="next()">
+        <app-icon name="RightArrow" size="16"></app-icon>
+      </app-icon-btn>
+      <span class="doc-preview-nav__divider"></span>
+    }
+    <app-icon-btn
+      size="16"
+      propClass="Normal"
+      ariaLabel="下載文件"
+      (btnClick)="download()">
+      <app-icon name="Download" size="16"></app-icon>
+    </app-icon-btn>
+  </div>
+
+</div>

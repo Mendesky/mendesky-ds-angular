@@ -1,0 +1,62 @@
+<div class="ymp-panel" [ngStyle]="panelStyle">
+
+  @if (yearOnly) {
+    <!-- 年度選取模式：直接顯示年份網格 -->
+    <div class="ymp-panel__year-grid" role="listbox">
+      @for (y of yearRange; track y) {
+        <app-cell-btn
+          [text]="y + ' 年'"
+          [selected]="y === initYear"
+          (cellClick)="selectYear(y)">
+        </app-cell-btn>
+      }
+    </div>
+
+  } @else {
+    <!-- 年月 / 期別選取模式 -->
+    <div class="ymp-panel__header">
+      <app-icon-btn
+        propClass="SectionBtn"
+        size="16"
+        ariaLabel="上一年"
+        [disabled]="!canGoPrev()"
+        (btnClick)="prevYear()">
+        <app-icon name="LeftArrow" size="16"></app-icon>
+      </app-icon-btn>
+      <span class="ymp-panel__year-label">{{ displayYear() }} 年</span>
+      <app-icon-btn
+        propClass="SectionBtn"
+        size="16"
+        ariaLabel="下一年"
+        [disabled]="!canGoNext()"
+        (btnClick)="nextYear()">
+        <app-icon name="RightArrow" size="16"></app-icon>
+      </app-icon-btn>
+    </div>
+
+    @if (mode === 'period') {
+      <!-- 期別模式：6 格，每格 2 個月 -->
+      <div class="ymp-panel__grid" role="listbox">
+        @for (s of PERIOD_STARTS; track s) {
+          <app-cell-btn
+            [text]="getPeriodLabel(s)"
+            [selected]="isPeriodSelected(s)"
+            (cellClick)="selectPeriod(s)">
+          </app-cell-btn>
+        }
+      </div>
+    } @else {
+      <!-- 月份模式：12 格 -->
+      <div class="ymp-panel__grid" role="listbox">
+        @for (m of MONTHS; track m) {
+          <app-cell-btn
+            [text]="m + ' 月'"
+            [selected]="isSelected(m)"
+            (cellClick)="selectMonth(m)">
+          </app-cell-btn>
+        }
+      </div>
+    }
+  }
+
+</div>

@@ -1,0 +1,196 @@
+@use '../../../../styles/mixins' as mx;
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radious\/sm, 4px);
+  cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 400;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  @include mx.focus-ring;
+}
+
+// 投影內容 slot：用 inline-flex 讓 inline 元素（如 <strong>）正常排列。
+// :empty（icon-only 按鈕無投影內容時）隱藏，避免占用 flex gap。
+.btn__slot {
+  &:empty {
+    display: none;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+.btn:disabled {
+  background: #e7e7e7 !important;
+  color: #d3d3d3 !important;
+  border-color: transparent !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn[aria-disabled="true"],
+.btn[aria-disabled="true"]:hover,
+.btn[aria-disabled="true"]:active {
+  background: #e7e7e7 !important;
+  color: #d3d3d3 !important;
+  border-color: transparent !important;
+  cursor: pointer;
+}
+
+.btn--loading:disabled {
+  color: var(--text\/body, #686868) !important;
+}
+
+/* Sizes */
+.btn--xxs { height: 17px; padding: 2px 6px;   gap: 2px; font-size: 11px; }
+.btn--xs  { height: 24px; padding: 4px 8px;   gap: 2px; font-size: 1em; }
+.btn--s   { height: 32px; padding: 6px 10px;  gap: 4px; font-size: 1em; }
+.btn--m   { height: 36px; padding: 8px 12px;  gap: 4px; font-size: 14px; }
+.btn--l   { height: 40px; padding: 10px 16px; gap: 4px; font-size: 16px; }
+.btn--full { width: 100%; }
+
+/* ── filled ─────────────────────────────── */
+.btn--filled-primary { background: #3a9ccd; color: #f1f3f5; }
+.btn--filled-primary:hover  { background: #2980ab; }
+.btn--filled-primary:active { background: #1a6489; }
+
+.btn--filled-success { background: #74ae3e; color: #f1f3f5; }
+.btn--filled-success:hover  { background: #5a8c2c; }
+.btn--filled-success:active { background: #426a1c; }
+
+.btn--filled-danger { background: #ff7373; color: #f1f3f5; }
+.btn--filled-danger:hover  { background: #cc5252; }
+.btn--filled-danger:active { background: #b22424; }
+
+.btn--filled-neutral { background: #7d7d7d; color: #f1f3f5; }
+.btn--filled-neutral:hover  { background: #686868; }
+.btn--filled-neutral:active { background: #535353; }
+
+/* ── tonal ───────────────────────────────── */
+.btn--tonal-primary { background: #f1f3f5; color: #686868; }
+.btn--tonal-primary:hover  { background: #3a9ccd; color: #f1f3f5; }
+.btn--tonal-primary:active { background: #1a6489; color: #f1f3f5; }
+.btn--tonal-neutral { background: #f1f3f5; color: #686868; }
+.btn--tonal-neutral:hover  { background: #7d7d7d; color: #f1f3f5; }
+.btn--tonal-neutral:active { background: #535353; color: #f1f3f5; }
+
+/* ── outlined ────────────────────────────── */
+.btn--outlined-primary {
+  background: #ffffff;
+  color: #686868;
+  border: 1px solid #e7e7e7;
+}
+.btn--outlined-primary:hover  { background: #3a9ccd; color: #f1f3f5; border-color: transparent; }
+.btn--outlined-primary:active { background: #1a6489; color: #f1f3f5; border-color: transparent; }
+
+.btn--outlined-success {
+  background: #ffffff;
+  color: #686868;
+  border: 1px solid #e7e7e7;
+}
+.btn--outlined-success:hover  { background: #ffffff; color: #686868; border-color: #74ae3e; }
+.btn--outlined-success:active { background: #5a8c2c; color: #f1f3f5; border-color: transparent; }
+
+.btn--outlined-neutral {
+  background: rgba(255, 255, 255, 0.7);
+  color: #686868;
+  border: 1px solid #d3d3d3;
+}
+.btn--outlined-neutral:hover  { background: #686868; color: #f1f3f5; border-color: transparent; }
+.btn--outlined-neutral:active { background: #1a6489; color: #f1f3f5; border-color: transparent; }
+
+/* ── ghost ───────────────────────────────── */
+.btn--ghost-primary { background: transparent; color: #686868; }
+.btn--ghost-primary:hover  { background: #2980ab; color: #f1f3f5; }
+.btn--ghost-primary:active { background: #1a6489; color: #f1f3f5; }
+
+.btn--ghost-neutral { background: transparent; color: #686868; }
+.btn--ghost-neutral:hover  { background: #939393; color: #f1f3f5; }
+.btn--ghost-neutral:active { background: #686868; color: #f1f3f5; }
+
+.btn--ghost-danger { background: transparent; color: #cc5252; }
+.btn--ghost-danger:hover  { background: #ff7373; color: #f1f3f5; }
+.btn--ghost-danger:active { background: #cc5252; color: #f1f3f5; }
+
+/* ── elevated ────────────────────────────── */
+.btn--elevated { background: transparent; color: #686868; }
+.btn--elevated:hover  { background: rgba(255, 255, 255, 0.5); box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2); }
+.btn--elevated:active { background: #1a6489; color: #f1f3f5; box-shadow: none; }
+
+.btn__text { color: inherit; }
+
+/* ── description 雙行模式 ── */
+.btn--has-desc {
+  flex-wrap: wrap;
+  text-align: left;
+  justify-content: flex-start;
+  align-items: flex-start;
+  white-space: normal;
+  height: auto;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.btn--has-desc .btn__text {
+  width: 100%;
+  font-weight: 600;
+  color: var(--text\/title, #1c1c2e);
+}
+
+.btn__desc {
+  width: 100%;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body-light, #939393);
+  white-space: normal;
+  text-align: left;
+}
+
+.btn--has-desc:hover .btn__text,
+.btn--has-desc:hover .btn__desc {
+  color: inherit;
+}
+
+/* ── Loading state ── */
+.btn--loading {
+  cursor: wait;
+  pointer-events: none;
+}
+
+.btn--loading .btn__text,
+.btn--loading .btn__spinner {
+  opacity: 0.85;
+}
+
+.btn__spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 快速鍵提示 badge（用於 action-menu 選項右側） */
+.btn__shortcut {
+  margin-left: auto;
+  padding-left: 8px;
+  font-size: 11px;
+  font-family: 'Inter', monospace;
+  opacity: 0.45;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}

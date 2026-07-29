@@ -1,0 +1,43 @@
+<fieldset
+  class="inline-confirm"
+  [class.inline-confirm--required]="requirement() === 'required'"
+  [class.inline-confirm--optional]="requirement() === 'optional'"
+  [class.inline-confirm--fullwidth]="fullWidth()"
+  [class.inline-confirm--disabled]="disabled()"
+  [class.inline-confirm--lg]="size() === 'lg'"
+  [class.inline-confirm--error]="error()">
+  @if (label() || (requirement() === 'required' && !hideRequiredIcon())) {
+    <legend class="inline-confirm__label" [id]="uid + '-label'">
+      @if (requirement() === 'required' && !hideRequiredIcon()) {
+        <app-icon name="Alert" [size]="size() === 'lg' ? '24' : '16'" class="inline-confirm__icon-required"></app-icon>
+      }
+      <span>{{ label() }}</span>
+    </legend>
+  }
+
+  <div class="inline-confirm__details" [id]="uid + '-details'">
+    @if (description()) {
+      <p class="inline-confirm__description">{{ description() }}</p>
+    }
+    <ng-content select="[inlineConfirmDetails]"></ng-content>
+  </div>
+
+  <button
+    type="button"
+    class="inline-confirm__check"
+    [class.inline-confirm__check--on]="confirmed()"
+    role="checkbox"
+    [attr.aria-checked]="confirmed()"
+    [attr.aria-describedby]="uid + '-details'"
+    [disabled]="disabled() || undefined"
+    [appErrorTooltip]="errorMessage()"
+    errorPosition="top"
+    (click)="toggle()"
+    (keydown.space)="$event.preventDefault(); toggle()">
+    <app-icon [name]="confirmed() ? 'CheckedBox' : 'CheckBox'" [size]="size() === 'lg' ? '24' : '16'"></app-icon>
+    <span>{{ checkLabel() }}</span>
+    @if (requirement() === 'optional') {
+      <span class="inline-confirm__optional-hint">（選填）</span>
+    }
+  </button>
+</fieldset>

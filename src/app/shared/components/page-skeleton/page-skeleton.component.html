@@ -1,0 +1,44 @@
+<div class="pgsk">
+  <!-- Top bar placeholder -->
+  <div class="pgsk-topbar">
+    <div class="pgsk-topbar-left">
+      <div class="sk-shimmer pgsk-view-toggle"></div>
+      <div class="pgsk-sep"></div>
+      <div class="sk-shimmer pgsk-btn"></div>
+      <div class="sk-shimmer pgsk-btn"></div>
+      <div class="sk-shimmer pgsk-btn"></div>
+      <div class="sk-shimmer pgsk-btn pgsk-btn--wide"></div>
+    </div>
+    <div class="pgsk-topbar-right">
+      <div class="sk-shimmer pgsk-search"></div>
+    </div>
+  </div>
+
+  <!-- Kanban-style content columns -->
+  <div class="pgsk-body">
+    @for (col of cols; track col) {
+      <div class="pgsk-col">
+        <div class="pgsk-col-hd">
+          <div class="sk-shimmer pgsk-dot"></div>
+          <div class="sk-shimmer pgsk-col-label"></div>
+        </div>
+        @for (c of cards; track c) {
+          <div class="pgsk-card">
+            <div class="pgsk-card-body">
+              <div class="pgsk-tags">
+                <div class="sk-shimmer pgsk-tag"></div>
+                <div class="sk-shimmer pgsk-tag pgsk-tag--wide"></div>
+              </div>
+              <div class="sk-shimmer pgsk-card-name"></div>
+              <div class="sk-shimmer pgsk-card-line"></div>
+              <div class="sk-shimmer pgsk-card-line pgsk-card-line--short"></div>
+            </div>
+            <div class="pgsk-card-side">
+              <div class="sk-shimmer pgsk-circle"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,179 @@
+/* Trigger button anchored to its container (te-wrap is position:relative) */
+:host {
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  z-index: 10;
+  display: block;
+}
+
+/* ⓘ 觸發按鈕 */
+.tvp-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radious\/xxxxl, 200px);
+  background: transparent;
+  color: var(--text\/secondary, #535353);
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+
+  &:hover {
+    background: var(--color\/grey\/10, #f1f3f5);
+    color: var(--button\/action, #3a9ccd);
+  }
+
+  &--active {
+    color: var(--button\/action, #3a9ccd);
+    background: rgba(58, 156, 205, 0.1);
+  }
+}
+
+/* Chip hover tooltip — position: fixed to viewport, works inside portaled panel */
+.tvp-tooltip {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 10001;
+  pointer-events: none;
+}
+
+/* Floating panel — portaled to document.body, positioned by _updatePosition() */
+.tvp-panel {
+  position: fixed;
+  z-index: 2000;
+  width: 300px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  background: var(--input\/background, #ffffff);
+  border: 1px solid var(--border\/primary-dark, #d3d3d3);
+  border-radius: var(--radious\/md, 8px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  animation: tvpPanelIn 150ms ease both;
+}
+
+@keyframes tvpPanelIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.tvp-panel__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing\/xxs, 4px);
+  padding: var(--spacing\/xs, 8px) var(--spacing\/sm, 12px);
+  background: var(--color\/grey\/10, #f1f3f5);
+  border-bottom: 1px solid var(--border\/primary, #e7e7e7);
+}
+
+.tvp-context {
+  display: flex;
+  gap: var(--spacing\/xs, 8px);
+  padding: var(--spacing\/xs, 8px) var(--spacing\/sm, 12px);
+  border-bottom: 1px solid var(--border\/primary, #e7e7e7);
+}
+
+.tvp-context__field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tvp-context__label {
+  color: var(--text\/secondary, #949494);
+}
+
+.tvp-search-wrap {
+  padding: var(--spacing\/xxs, 4px) var(--spacing\/xs, 8px);
+  border-bottom: 1px solid var(--border\/primary, #e7e7e7);
+}
+
+.tvp-search {
+  width: 100%;
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 var(--spacing\/xs, 8px);
+  border: 1px solid var(--border\/primary, #e7e7e7);
+  border-radius: var(--radious\/sm, 4px);
+  background: var(--input\/background, #ffffff);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  color: var(--text\/body, #686868);
+  outline: none;
+
+  &::placeholder { color: var(--text\/disabled, #939393); }
+  &:focus { border-color: var(--border\/primary-dark, #d3d3d3); }
+}
+
+.tvp-panel__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing\/xxs, 4px) 0 var(--spacing\/xs, 8px);
+}
+
+.tvp-empty {
+  padding: var(--spacing\/xs, 8px) var(--spacing\/sm, 12px);
+  color: var(--text\/secondary, #535353);
+  margin: 0;
+}
+
+.tvp-group {
+  padding: var(--spacing\/xxs, 4px) 0;
+}
+
+/* 分群之間插入分隔線（變數較多時降低掃讀成本）；非首組才畫，搜尋過濾後 :not(:first-child) 自動對應實際 DOM 首位 */
+.tvp-group:not(:first-child) {
+  margin-top: var(--spacing\/xxs, 4px);
+  padding-top: var(--spacing\/xs, 8px);
+  border-top: 1px solid var(--border\/primary, #e7e7e7);
+}
+
+.tvp-group__label {
+  padding: 2px var(--spacing\/sm, 12px);
+  color: var(--text\/secondary, #535353);
+}
+
+.tvp-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing\/xxs, 4px);
+  width: 100%;
+  padding: 4px var(--spacing\/sm, 12px);
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms;
+
+  &:hover  { background: rgba(58, 156, 205, 0.06); }
+  &:active { background: rgba(58, 156, 205, 0.12); }
+
+  /* inline autocomplete 鍵盤高亮（↑↓ 移動的目前項）— 焦點環 + 底色，對比足夠供鍵盤操作辨識 */
+  &--active {
+    background: rgba(58, 156, 205, 0.12);
+    outline: 2px solid var(--button\/action, #3a9ccd);
+    outline-offset: -2px;
+  }
+}
+
+.tvp-chip__label {
+  color: var(--text\/body, #686868);
+  flex-shrink: 0;
+}
+
+.tvp-chip__key {
+  color: var(--button\/action, #3a9ccd);
+  font-weight: 700;
+  word-break: break-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tvp-panel { animation: none; }
+}

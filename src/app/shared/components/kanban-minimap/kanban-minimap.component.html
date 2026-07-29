@@ -1,0 +1,17 @@
+<div class="minimap" [class.minimap--visible]="visible()">
+  <div class="minimap-body" #minimapBody (click)="onBodyClick($event)">
+    <div class="minimap-track">
+      <div class="minimap-col" *ngFor="let col of columns">
+        <div class="minimap-col__header" [style.background]="col.color"></div>
+        <div class="minimap-card" *ngFor="let i of cardRange(col.cardCount)"></div>
+      </div>
+    </div>
+    <div
+      class="minimap-viewport"
+      [class.minimap-viewport--dragging]="isDragging"
+      [style.width.px]="vpWidth()"
+      [style.left.px]="vpLeft()"
+      (mousedown)="onViewportMousedown($event)">
+    </div>
+  </div>
+</div>

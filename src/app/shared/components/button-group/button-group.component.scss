@@ -1,0 +1,207 @@
+@use '../../../../styles/mixins' as mx;
+
+// ── Root wrapper ──────────────────────────────────────────────
+.btn-group-root {
+  display: block;
+  position: relative;
+}
+
+.btn-group-root--has-error {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// ── Shared item base ──────────────────────────────────────────
+.btn-group__item {
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  @include mx.focus-ring(-2px);
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+// ── Per-option disabled ────────────────────────────────────────
+.btn-group__item.is-option-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+// ── Form ──────────────────────────────────────────────────────
+.btn-group--form {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #e7e7e7;
+  border-radius: 4px;
+  padding: 4px;
+  transition: border-color 0.15s;
+
+  &.is-error {
+    border-color: #cc5252;
+  }
+
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .btn-group__item {
+    flex: 1;
+    min-height: 36px;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 14px;
+    color: #686868;
+
+    &:hover:not(:disabled):not(.is-selected) {
+      background: #e7e7e7;
+    }
+
+    &.is-selected {
+      background: #74ae3e;
+      color: #ffffff;
+    }
+  }
+
+}
+
+// ── Form Size Variants ─────────────────────────────────────────
+.btn-group--form.btn-group--size-m {
+  padding: 3px;
+
+  .btn-group__item {
+    min-height: 28px;
+    padding: 2px 8px;
+  }
+}
+
+.btn-group--form.btn-group--size-s {
+  padding: 2px;
+
+  .btn-group__item {
+    min-height: 22px;
+    padding: 1px 6px;
+    font-size: 12px;
+  }
+}
+
+// ── Round ─────────────────────────────────────────────────────
+.btn-group--round {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border\/white, #ffffff);
+  border-radius: 50px;
+  padding: 8px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 12px 20px -6px rgba(0, 0, 0, 0.25);
+
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .btn-group__item {
+    min-height: 28px;
+    min-width: 28px;
+    border-radius: 99px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #686868;
+
+    &:hover:not(:disabled):not(.is-selected) {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: var(--border\/white, #ffffff);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    &.is-selected {
+      background: #686868;
+      color: #ffffff;
+    }
+  }
+}
+
+// ── View ──────────────────────────────────────────────────────
+// baseline = M (28px)；size 變化由修飾 class 覆蓋
+.btn-group--view {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  background: #e7e7e7;
+  border-radius: 4px;
+  padding: 0;
+
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .btn-group__item {
+    min-height: 28px;
+    min-width: 28px;
+    border-radius: 5px;
+    padding: 0 8px;
+    font-size: 12px;
+    color: #939393;
+
+    &:hover:not(:disabled):not(.is-selected) {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    &.is-selected {
+      background: #686868;
+      color: #ffffff;
+      border-color: #e7e7e7;
+    }
+  }
+}
+
+// ── View Size Variants ─────────────────────────────────────────
+// L=32（editor toolbar 對齊 icon-btn size="16"=32px）
+.btn-group--view.btn-group--size-l {
+  height: 32px;
+
+  .btn-group__item {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 0 10px;
+  }
+}
+
+// M=28（與 baseline 相同，顯式宣告以保留可讀性）
+.btn-group--view.btn-group--size-m {
+  height: 28px;
+
+  .btn-group__item {
+    min-height: 28px;
+    min-width: 28px;
+    padding: 0 8px;
+  }
+}
+
+// S=24
+.btn-group--view.btn-group--size-s {
+  height: 24px;
+
+  .btn-group__item {
+    min-height: 24px;
+    min-width: 24px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+}
+

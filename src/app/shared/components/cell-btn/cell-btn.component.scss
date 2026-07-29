@@ -1,0 +1,45 @@
+:host {
+  display: contents;
+}
+
+.cell-btn {
+  padding: 6px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radious\/sm, 4px);
+  background: transparent;
+  font-size: 1em;
+  color: var(--text\/body, #686868);
+  cursor: pointer;
+  text-align: center;
+  transition: background 150ms, color 150ms, border-color 150ms;
+
+  &:hover:not(.cell-btn--selected):not(:disabled) {
+    background: var(--color\/grey\/10, #f1f3f5);
+  }
+
+  &:active:not(.cell-btn--selected):not(:disabled) {
+    background: var(--color\/grey\/20, #e7e7e7);
+  }
+
+  &--selected {
+    background: var(--button\/action, #3a9ccd);
+    color: #fff;
+    border-color: var(--button\/action, #3a9ccd);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--empty {
+    display: block;
+    padding: 6px 4px;
+    pointer-events: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--button\/action, #3a9ccd);
+    outline-offset: -2px;
+  }
+}

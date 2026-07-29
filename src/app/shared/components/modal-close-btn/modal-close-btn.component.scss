@@ -1,0 +1,23 @@
+/* 視覺對齊 new-case-wizard 的 .wiz-close-btn（統一所有 modal 的關閉 X 鈕） */
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.modal-close-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radious\/sm, 4px);
+  cursor: pointer;
+  color: var(--text\/body, #686868);
+  transition: background 150ms;
+
+  &:hover:not(:disabled) { background: var(--color\/grey\/10, #f1f3f5); }
+  &:focus-visible { outline: 2px solid var(--button\/action, #3a9ccd); outline-offset: 2px; }
+  &:disabled { cursor: not-allowed; opacity: 0.5; }
+}

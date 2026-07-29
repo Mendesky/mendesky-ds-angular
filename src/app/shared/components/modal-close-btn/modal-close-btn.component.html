@@ -1,0 +1,8 @@
+<button
+  type="button"
+  class="modal-close-btn"
+  [disabled]="disabled"
+  [attr.aria-label]="ariaLabel"
+  (click)="closeClick.emit()">
+  <app-icon name="No-X-Cancel" size="16"></app-icon>
+</button>

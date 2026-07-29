@@ -1,0 +1,74 @@
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.field-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  /* 放不下就換行，不要壓縮標籤文字。中文可逐字斷行 → 文字的 min-content 只有 1 個字寬，
+     flex 因此能把 label / hint 壓成「一字一行」而不溢出（瀏覽器視為合法收縮）。
+     實例：HDM「營業稅申報類型」label + hint 旁有長按鈕（field-action）時被壓成 4 行
+     （2026-07-25 真機回報；Karma 量到 labelH 78.4px＝19.6×4）。
+     flex-wrap 讓 field-action 整塊換到下一行（margin-left:auto 使其仍靠右，與桌機一致）。 */
+  flex-wrap: wrap;
+
+  /* badge（app-label）host 改為 flex container：消掉它的「行框」。
+     host 預設 inline，在 flex 容器中雖被 blockified，但其內的 .label 是 inline-flex → 仍會
+     產生行框，行框高＝max(strut, 子元素高 + 基線下降)，實測比 .label 本身高出約 4px
+     （badge 17.4px → host 行框 ~22px）。這是「同一列中有 badge 的欄位比沒有的低 3px」的真因
+     （2026-07-25 真 iPhone：hdr 19 vs 22、框頂 123 vs 126）。
+     消掉行框後 header 高度由 .field-label（14px × 1.4 ≈ 19.6px）決定，而 badge 只有 17.4px
+     → 有無 badge 的 header 自然等高，**不需要**額外的 min-height，也不需要固定 badge 高度
+     （2026-07-26 對抗式複核指出：`.label--xxs { height: 22px }` 立論前提錯誤且多餘，已移除）。
+     **無單元測試**：此效應源自字型度量（host 行框受父層字型 descent 影響），而 line-height 會被
+     子元素繼承 → Chromium 模擬會連 badge 本身一起撐高，做不出忠實的鑑別條件。依據是 2026-07-25
+     真 iPhone 讀數（hdr 19 vs 22、框頂 123 vs 126）與使用者真機複驗，不是合成測試。 */
+  app-label {
+    display: flex;
+  }
+}
+
+/* 空的 field-action（沒投影內容時仍會渲染的 span）不得佔位：
+   它寬 0 但前面的 6px gap 在 flex 換行計算時仍計入 → 窄欄位會為了這個 0 寬元素多換一行、
+   header 憑空多 6px，反而把同列欄位推歪（2026-07-26 複核實測：375px 級手機 header 22→28px）。 */
+.field-action:empty {
+  display: none;
+}
+
+.field-label {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body, #686868);
+  line-height: 1.4;
+
+  &--emphasis {
+    font-weight: 700;
+    color: var(--text\/title);
+  }
+}
+
+.field-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body-light, #9e9e9e);
+  line-height: 1.4;
+}
+
+// 右側 action slot：推到標題列最右；無投影內容時為空 span，不影響版面。
+.field-action {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.field-header--emphasis {
+  border-bottom: 1px solid var(--border\/primary);
+  padding-bottom: var(--spacing\/xxs);
+}
+

@@ -1,0 +1,218 @@
+.rte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing\/sm);
+  width: 100%;
+}
+
+.rte--readonly {
+  gap: 0;
+
+  .rte__body {
+    border: none;
+    background: transparent;
+    min-height: 0;
+    overflow: visible;
+
+    &:focus-within {
+      border-color: transparent;
+    }
+  }
+
+  .rte__editor {
+    padding: 0;
+    min-height: 0;
+    cursor: default;
+
+    ::ng-deep .ProseMirror {
+      min-height: 0;
+      outline: none;
+      cursor: default;
+    }
+  }
+}
+
+.rte__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing\/xs);
+}
+
+.rte__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+
+  ::ng-deep .icon-btn--section-btn {
+    &:hover:not(:disabled) { background: #f1f3f5; }
+    &:active:not(:disabled) { background: #e7e7e7; }
+  }
+}
+
+.rte__toolbar-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing\/xs);
+  flex-shrink: 0;
+}
+
+.rte__toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border\/primary);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+// ── 文字顏色色票 ──
+.rte__color-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.rte__color-grid {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+}
+
+.rte__color-swatch {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radious\/sm);
+  border: 1px solid var(--border\/primary);
+}
+
+// 「預設（清除顏色）」格：白底 + 斜線
+.rte__color-swatch--default {
+  position: relative;
+  background: #fff;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      to top right,
+      transparent calc(50% - 1px),
+      var(--button\/error) calc(50% - 1px),
+      var(--button\/error) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+  }
+}
+
+.rte__body {
+  position: relative;
+  border: 1px solid var(--border\/primary);
+  border-radius: var(--radious\/md);
+  background: #fff;
+  min-height: 160px;
+  overflow: hidden;
+  transition: border-color 150ms var(--ease-enter);
+
+  &:focus-within {
+    border-color: var(--border\/primary-darker);
+  }
+}
+
+.rte__editor {
+  padding: var(--spacing\/sm) var(--spacing\/md);
+  min-height: 160px;
+  font: 400 14px/1.6 'Noto Sans TC', sans-serif;
+  color: var(--text\/body);
+
+  ::ng-deep .ProseMirror {
+    outline: none;
+    min-height: 140px;
+
+    p { margin: 0 0 0.5em; }
+    p:last-child { margin-bottom: 0; }
+    ul, ol { padding-left: 1.5em; margin: 0 0 0.5em; }
+
+    h3 {
+      font-size: 1.15em;
+      font-weight: 600;
+      line-height: 1.4;
+      margin: 0.6em 0 0.3em;
+      color: var(--text\/title);
+    }
+    h3:first-child { margin-top: 0; }
+
+    u { text-decoration: underline; }
+    s { text-decoration: line-through; }
+
+    a {
+      color: var(--button\/action);
+      text-decoration: underline;
+    }
+
+    // Table
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.5em 0;
+
+      th, td {
+        border: 1px solid var(--border\/primary);
+        padding: 4px 8px;
+        min-width: 60px;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--color\/grey\/10);
+        font-weight: 600;
+        text-align: left;
+      }
+
+      .selectedCell {
+        background: rgba(58, 156, 205, 0.08);
+      }
+
+      // 選單開啟時高亮該列/欄操作範圍（Notion 式）：整塊外框 + 淡藍底。
+      // border-collapse 下 border-color 會被鄰格搶邊而斷裂，改用 box-shadow inset（不受 collapse 影響）；
+      // 四邊各存一個 CSS 變數，多個 class 疊在同一 cell 時互不覆蓋，box-shadow 一次讀四邊 → 只描外框、欄間分隔線維持灰。
+      th, td {
+        &.rte-hl-row,
+        &.rte-hl-col {
+          position: relative;
+          background: rgba(58, 156, 205, 0.12);
+          --hl-t: inset 0 0 0 0 transparent;
+          --hl-b: inset 0 0 0 0 transparent;
+          --hl-l: inset 0 0 0 0 transparent;
+          --hl-r: inset 0 0 0 0 transparent;
+          box-shadow: var(--hl-t), var(--hl-b), var(--hl-l), var(--hl-r);
+        }
+        // 列：上下橫線貫穿整列（每格都描）；左右只在首/尾格 → 外框左右邊
+        &.rte-hl-row {
+          --hl-t: inset 0 2px 0 0 var(--button\/action);
+          --hl-b: inset 0 -2px 0 0 var(--button\/action);
+        }
+        &.rte-hl-row-start { --hl-l: inset 2px 0 0 0 var(--button\/action); }
+        &.rte-hl-row-end { --hl-r: inset -2px 0 0 0 var(--button\/action); }
+        // 欄：左右直線貫穿整欄（每格都描）；上下只在首/尾格 → 外框上下邊
+        &.rte-hl-col {
+          --hl-l: inset 2px 0 0 0 var(--button\/action);
+          --hl-r: inset -2px 0 0 0 var(--button\/action);
+        }
+        &.rte-hl-col-start { --hl-t: inset 0 2px 0 0 var(--button\/action); }
+        &.rte-hl-col-end { --hl-b: inset 0 -2px 0 0 var(--button\/action); }
+      }
+    }
+
+    // Placeholder
+    p.is-editor-empty:first-child::before {
+      content: attr(data-placeholder);
+      float: left;
+      color: var(--text\/disabled);
+      pointer-events: none;
+      height: 0;
+    }
+  }
+}

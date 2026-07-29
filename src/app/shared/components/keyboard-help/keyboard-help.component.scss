@@ -1,0 +1,99 @@
+.kh-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px 24px;
+  gap: 0;
+}
+
+/* ── Header ─────────────────────────────── */
+.kh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.kh-title {
+  margin: 0;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text\/title, #1a1a1a);
+  letter-spacing: 0;
+}
+
+/* ── Search ──────────────────────────────── */
+.kh-search {
+  margin-bottom: 16px;
+}
+
+/* ── Body ────────────────────────────────── */
+.kh-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+/* ── Group ───────────────────────────────── */
+.kh-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kh-group-label {
+  margin: 0 0 4px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 500;
+  color: var(--text\/secondary, #9CA3AF);
+  letter-spacing: 0;
+}
+
+/* ── Item ────────────────────────────────── */
+.kh-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border\/primary, #ebebeb);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.kh-item-desc {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  color: var(--text\/body, #686868);
+}
+
+.kh-item-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── <kbd> 樣式 ──────────────────────────── */
+.kh-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border\/primary-dark, #d1d5db);
+  border-radius: 4px;
+  background: var(--color\/grey\/10, #f9fafb);
+  box-shadow: 0 1px 0 var(--border\/primary-dark, #d1d5db);
+  font-family: 'Inter', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text\/body, #686868);
+  letter-spacing: 0;
+  white-space: nowrap;
+}

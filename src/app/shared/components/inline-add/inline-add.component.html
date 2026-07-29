@@ -1,0 +1,19 @@
+@if (editing()) {
+  <app-input
+    class="inline-add__input"
+    [size]="size"
+    [placeholder]="placeholder"
+    (valueChange)="onValueChange($event)"
+    (blur)="onBlur()"
+    (keydown)="onInputKeydown($event)">
+  </app-input>
+} @else {
+  <app-button
+    variant="ghost"
+    color="primary"
+    [size]="size"
+    [text]="buttonText"
+    [disabled]="disabled"
+    (btnClick)="onTriggerClick()">
+  </app-button>
+}

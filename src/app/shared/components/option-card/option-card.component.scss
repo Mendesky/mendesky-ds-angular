@@ -1,0 +1,146 @@
+:host {
+  display: block;
+}
+
+.option-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radious\/md, 8px);
+  border: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  /* Micro tier 150ms（rules/animation.md） */
+  transition: transform 150ms var(--ease-enter), box-shadow 150ms ease,
+              background-color 150ms ease, border-color 150ms ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--button\/action, #3a9ccd);
+    outline-offset: 2px;
+  }
+}
+
+/* ── media 區：插圖 ↔ 說明 crossfade ── */
+.option-card__media {
+  position: relative;
+  height: 120px;
+  width: 100%;
+  background: var(--color\/grey\/10, #f1f3f5);
+  border-radius: var(--radious\/sm, 4px);
+  overflow: hidden;
+}
+
+.option-card__illus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  opacity: 1;
+  transition: opacity 150ms ease, filter 150ms ease;
+
+  // inline SVG 注入跨越 encapsulation，需 ::ng-deep
+  ::ng-deep svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+}
+
+.option-card__desc {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;   // 水平置左
+  justify-content: center;   // 垂直置中
+  padding: 12px;
+  text-align: left;
+  white-space: pre-line;     // 讓 description 內的 \n 成為斷行
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text\/body, #686868);
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+}
+
+.option-card__label {
+  padding: 8px 0;
+  text-align: center;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text\/headings, #535353);
+}
+
+.option-card__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--label\/primary, #4ba5b2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* ── hover（啟用態）：浮起白底 ── */
+.option-card:hover:not(.option-card--disabled) {
+  transform: translateY(-2px);
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+  .option-card__media {
+    background: #fff;
+  }
+}
+
+/* 有說明文字時：hover 將插圖淡出、說明淡入 */
+.option-card--has-desc:hover:not(.option-card--disabled) {
+  .option-card__illus {
+    opacity: 0;
+  }
+  .option-card__desc {
+    opacity: 1;
+  }
+}
+
+/* ── activity（選中）：填色 + 邊框 + 全彩插圖 ──
+   注意：選中填色與 rest 去飽和的最終色值，在 Task 2 對照 Figma node 15881-1697526 校正 */
+.option-card--selected {
+  border-color: var(--label\/primary, #4ba5b2);
+  background: var(--button\/action-lighter, #a1e0ff);
+
+  .option-card__media {
+    background: transparent;
+  }
+}
+
+/* ── disabled：灰階鎖定（使用者確認：原稿最後一張＝disabled，插圖去飽和） ── */
+.option-card--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+
+  .option-card__illus {
+    filter: grayscale(1);
+  }
+}
+
+/* 尊重 prefers-reduced-motion：停用浮起與插圖↔說明切換動效 */
+@media (prefers-reduced-motion: reduce) {
+  .option-card,
+  .option-card__illus,
+  .option-card__desc {
+    transition: none;
+  }
+  .option-card:hover:not(.option-card--disabled) {
+    transform: none;
+  }
+}

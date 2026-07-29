@@ -1,0 +1,16 @@
+@if (docs.length === 0) {
+  @if (emptyText) {
+    <div class="fl-empty">
+      <span class="noto-12-regular fl-empty__text">{{ emptyText }}</span>
+    </div>
+  }
+} @else {
+  @for (doc of docs; track doc.id) {
+    <app-number-list
+      [text]="doc.size ? doc.name + ' (' + formatSize(doc.size) + ')' : doc.name"
+      [label]="doc.type || ''"
+      [actions]="actions"
+      (actionClick)="onAction(doc.id, $event)">
+    </app-number-list>
+  }
+}

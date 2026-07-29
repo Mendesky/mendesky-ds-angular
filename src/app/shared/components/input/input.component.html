@@ -1,0 +1,49 @@
+<div class="input-wrap" [ngClass]="wrapClasses"
+     [appErrorTooltip]="errorMessage"
+     [errorPosition]="errorPosition"
+     [errorDisabled]="disabled">
+
+  <div class="input-box">
+
+    <input
+      class="input-field"
+      [type]="effectiveType"
+      [attr.inputmode]="inputMode"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      [readonly]="readonly"
+      [value]="value"
+      (input)="onInput($event)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+    />
+
+    <div class="input-suffix">
+      <button
+        *ngIf="type === 'password'"
+        class="input-eye"
+        type="button"
+        tabindex="-1"
+        aria-label="切換密碼顯示"
+        (click)="togglePassword()"
+      >
+        <app-icon [name]="showPassword ? 'eye-off' : 'eye'" size="16"></app-icon>
+      </button>
+
+      <button
+        *ngIf="focused && hasValue && type !== 'password' && !readonly"
+        class="input-clear"
+        type="button"
+        tabindex="-1"
+        aria-label="清除"
+        (mousedown)="clearValue($event)"
+      >
+        <app-icon name="No-X-Cancel" size="16"></app-icon>
+      </button>
+
+    </div>
+
+  </div>
+
+
+</div>
