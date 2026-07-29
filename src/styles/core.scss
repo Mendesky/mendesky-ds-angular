@@ -1,0 +1,640 @@
+/* ========================================
+   Global Styles - 業績儀表板
+   ======================================== */
+
+:root {
+  /* ── Figma Design System Tokens (-00-Components-Library) ── */
+
+  /* 文字 */
+  --text\/body: #686868;
+  --text\/body-light: #939393;
+  --text\/body-lightest: #ffffff;
+  --text\/secondary: #535353;
+  --text\/disabled: #939393;
+  --text\/title: #1c1c2e;
+  --text\/headings: #535353;
+
+  /* 邊框 */
+  --border\/primary: #e7e7e7;
+  --border\/primary-dark: #d3d3d3;
+  --border\/primary-darker: #bebebe;
+  --border\/secondary: #74ae3e;
+  --border\/teal: #098da7;
+  --border\/white: #ffffff;
+
+  /* 灰階 */
+  --color\/grey\/10: #f1f3f5;
+  --color\/grey\/20: #e7e7e7;
+  --color\/grey\/80: #686868;
+  --color\/grey\/90: #535353;
+  --color\/white\/20: #f0f6fc;
+
+  /* 按鈕 */
+  --button\/normal: #f1f3f5;
+  --button\/white: #ffffff;
+  --button\/action: #3a9ccd;
+  --button\/action-light: #4fbaef;
+  --button\/neutral: #939393;
+  --button\/neutral-lightest: #e7e7e7;
+  --button\/neutral-lighter: #bebebe;
+  --button\/neutral-dark: #7d7d7d;
+  --button\/neutral-darker-hover: #686868;
+  --button\/neutral-darkest-actived: #535353;
+  --button\/black: #333333;
+  --button\/success-dark-hover: #5a8c2c;
+  --button\/success-darker-actived: #426a1c;
+  --button\/warning: #ff7373;
+  --button\/success: #74ae3e;
+  --button\/success-light: #8fd053;
+  --button\/error: #cc5252;
+
+  /* Label */
+  --label\/secondary: #ffffff;
+  --label\/secondary-dark: #f2f2f2;
+  --label\/secondary-darkest: #7d7d7d;
+  --label\/primary: #4ba5b2;
+  --label\/accent-golden: #af8e4d;
+  --label\/accent-salmon: #b36a56;
+  --label\/accent-green: #5da26b;
+  --label\/accent-green-light: #8fd053;
+  --label\/accent-blue: #14b6d4;
+  --label\/warning: #cc5252;
+  /* Kanban dotColor tokens（CornflowerBlue 漸層，SSOT 來自 Figma 17248:269232） */
+  --label\/kanban-draft: #d3d3d3;       /* Color/Grey/30 */
+  --label\/kanban-opened: #bac6fd;      /* CornflowerBlue/30 */
+  --label\/kanban-dealclosed: #8293da;  /* CornflowerBlue/50 */
+  --label\/kanban-archiving: #5866a0;   /* CornflowerBlue/70 */
+  --label\/kanban-archived: #333d66;    /* CornflowerBlue/90 */
+
+  /* Icon */
+  --icon\/warning: #cc5252;
+  --icon\/white: #ffffff;
+  --icon\/body: #686868;
+  --icon\/body-darkest: #535353;
+
+  /* Input */
+  --input\/background: #ffffff;
+  --input\/prompt: #939393;
+
+  /* Tooltip */
+  --tooltip\/background: #ffffff;
+
+  /* Label */
+  --label\/secondary: #ffffff;
+
+  /* 背景 */
+  --bg\/modal-content: #f0f4f8;
+  --bg\/white: #ffffff;
+
+  /* 光暈 */
+  --glow\/sidebar-primary: rgba(199, 236, 255, 0.5);
+  --glow\/sidebar-secondary: rgba(199, 236, 255, 0.35);
+  --glow\/content-primary: rgba(199, 236, 255, 0.4);
+  --glow\/content-secondary: rgba(178, 225, 255, 0.3);
+
+  /* 圓角 */
+  --radious\/sm: 4px;
+  --radious\/md: 8px;
+  --radious\/lg: 12px;
+  --radious\/xl: 20px;
+
+  /* 間距 */
+  --spacing\/xxs: 4px;
+  --spacing\/xs: 8px;
+  --spacing\/sm: 12px;
+  --spacing\/md: 16px;
+  --spacing\/lg: 24px;
+  --spacing\/xl: 40px;
+
+  /* 右下角 Dock 群組 */
+  --dock\/h: var(--dock\/issue-report-w); /* dialog overrides to 0px when open; auto-syncs with dock size otherwise */
+  --dock\/gap: 12px;
+  --dock\/issue-report-w: 48px;
+
+  /* 字體家族 */
+  --font-family\/noto: 'Noto Sans TC', sans-serif;
+  --font-family\/inter: 'Inter', sans-serif;
+  --font-family\/mono: 'Roboto Mono', monospace;
+
+  /* 字體大小 */
+  --font-size\/2xs: 10px;
+  --font-size\/xs: 11px;
+  --font-size\/sm: 12px;
+  --font-size\/md: 14px;
+  --font-size\/lg: 16px;
+  --font-size\/xl: 20px;
+  --font-size\/2xl: 24px;
+  --font-size\/3xl: 28px;
+  --font-size\/4xl: 36px;
+  --font-size\/5xl: 50px;
+  --font-size\/6xl: 80px;
+
+  /* ── 顏色色票 - Primary Colors ── */
+
+  /* Blue */
+  --color\/blue\/100: #004b59;
+  --color\/blue\/90: #006e82;
+  --color\/blue\/80: #0090ab;
+  --color\/blue\/70: #14b6d4;
+  --color\/blue\/60: #30dcfd;
+  --color\/blue\/50: #56e4ff;
+  --color\/blue\/40: #7beaff;
+  --color\/blue\/30: #a0f0ff;
+  --color\/blue\/20: #c5f6ff;
+  --color\/blue\/10: #eafbff;
+
+  /* Soft Blue */
+  --color\/softblue\/100: #1d535a;
+  --color\/softblue\/90: #2a6e78;
+  --color\/softblue\/80: #398995;
+  --color\/softblue\/70: #4ba5b2;
+  --color\/softblue\/60: #5ec1cf;
+  --color\/softblue\/50: #73ddec;
+  --color\/softblue\/40: #85f0ff;
+  --color\/softblue\/30: #aaf4ff;
+  --color\/softblue\/20: #cef9ff;
+  --color\/softblue\/10: #f3fdff;
+
+  /* Calm Blue */
+  --color\/calmblue\/100: #073045;
+  --color\/calmblue\/90: #0f4a67;
+  --color\/calmblue\/80: #1a6489;
+  --color\/calmblue\/70: #2980ab;
+  --color\/calmblue\/60: #3a9ccd;
+  --color\/calmblue\/50: #4fbaef;
+  --color\/calmblue\/40: #79d1fc;
+  --color\/calmblue\/30: #a1e0ff;
+  --color\/calmblue\/20: #c7ecff;
+  --color\/calmblue\/10: #eef9ff;
+
+  /* Green */
+  --color\/green\/100: #2b4810;
+  --color\/green\/90: #426a1c;
+  --color\/green\/80: #5a8c2c;
+  --color\/green\/70: #74ae3e;
+  --color\/green\/60: #8fd053;
+  --color\/green\/50: #acf26b;
+  --color\/green\/40: #c4fd90;
+  --color\/green\/30: #d6ffb1;
+  --color\/green\/20: #e7ffd1;
+  --color\/green\/10: #f7fff1;
+
+  /* Grey */
+  --color\/grey\/100: #333333;
+  --color\/grey\/90: #686868;
+  --color\/grey\/80: #686868;
+  --color\/grey\/70: #7d7d7d;
+  --color\/grey\/50: #aaaaaa;
+  --color\/grey\/40: #bebebe;
+  --color\/grey\/30: #d3d3d3;
+  --color\/grey\/20: #e7e7e7;
+  --color\/grey\/10: #f1f3f5;  /* 對齊 Toutou DS token 權威值；先前 #fcfcfc 為錯誤覆寫（與 line 25 衝突） */
+
+  /* ── 顏色色票 - Charts Colors ── */
+
+  /* Pink */
+  --color\/pink\/100: #431e2a;
+  --color\/pink\/90: #612d3e;
+  --color\/pink\/80: #7e3e53;
+  --color\/pink\/70: #9b5069;
+  --color\/pink\/60: #b86480;
+  --color\/pink\/50: #d57897;
+  --color\/pink\/40: #f28fb0;
+  --color\/pink\/30: #f9b1c9;
+  --color\/pink\/20: #ffd5e3;
+  --color\/pink\/10: #fff4f8;
+
+  /* Salmon */
+  --color\/salmon\/100: #5b3025;
+  --color\/salmon\/90: #794234;
+  --color\/salmon\/80: #965544;
+  --color\/salmon\/70: #b36a56;
+  --color\/salmon\/60: #d07f6a;
+  --color\/salmon\/50: #ed9680;
+  --color\/salmon\/40: #ffa790;
+  --color\/salmon\/30: #ffc1b1;
+  --color\/salmon\/20: #ffdcd2;
+  --color\/salmon\/10: #fff6f4;
+
+  /* Gold */
+  --color\/gold\/100: #57441e;
+  --color\/gold\/90: #755c2c;
+  --color\/gold\/80: #92753c;
+  --color\/gold\/70: #af8e4d;
+  --color\/gold\/60: #cca861;
+  --color\/gold\/50: #e9c377;
+  --color\/gold\/40: #ffd88a;
+  --color\/gold\/30: #ffe4ad;
+  --color\/gold\/20: #ffefd0;
+  --color\/gold\/10: #fffbf3;
+
+  /* SeaGreen */
+  --color\/seagreen\/100: #254b2d;
+  --color\/seagreen\/90: #366840;
+  --color\/seagreen\/80: #498555;
+  --color\/seagreen\/70: #5da26b;
+  --color\/seagreen\/60: #73bf82;
+  --color\/seagreen\/50: #8adc9a;
+  --color\/seagreen\/40: #a3fab4;
+  --color\/seagreen\/30: #c1ffcd;
+  --color\/seagreen\/20: #dbffe2;
+  --color\/seagreen\/10: #f6fff8;
+
+  /* Turquoise */
+  --color\/turquoise\/100: #005c5a;
+  --color\/turquoise\/90: #047e7c;
+  --color\/turquoise\/80: #0fa09e;
+  --color\/turquoise\/70: #1fc2bf;
+  --color\/turquoise\/60: #33e4e1;
+  --color\/turquoise\/50: #49fffc;
+  --color\/turquoise\/40: #72fffd;
+  --color\/turquoise\/30: #9bfffd;
+  --color\/turquoise\/20: #c4fffe;
+  --color\/turquoise\/10: #edfffe;
+
+  /* CornflowerBlue */
+  --color\/cornflowerblue\/100: #232a48;
+  --color\/cornflowerblue\/90: #333d66;
+  --color\/cornflowerblue\/80: #455183;
+  --color\/cornflowerblue\/70: #5866a0;
+  --color\/cornflowerblue\/60: #6c7cbd;
+  --color\/cornflowerblue\/50: #8293da;
+  --color\/cornflowerblue\/40: #99abf7;
+  --color\/cornflowerblue\/30: #bac6fd;
+  --color\/cornflowerblue\/20: #d8dfff;
+  --color\/cornflowerblue\/10: #f5f7ff;
+
+  /* Purple */
+  --color\/purple\/100: #422745;
+  --color\/purple\/90: #5a385e;
+  --color\/purple\/80: #734978;
+  --color\/purple\/70: #8b5c91;
+  --color\/purple\/60: #a46fab;
+  --color\/purple\/50: #bd83c4;
+  --color\/purple\/40: #d699de;
+  --color\/purple\/30: #efb0f7;
+  --color\/purple\/20: #fad5fe;
+  --color\/purple\/10: #fef7ff;
+
+  /* ── 既有專案 Tokens ── */
+  --color-primary: #1E6FF1;
+  --color-primary-light: #EEF4FF;
+  --color-primary-dark: #1558C9;
+  --color-bg: #EEF1F5;
+  --color-card-bg: #FFFFFF;
+  --color-sidebar-bg: #FFFFFF;
+  --color-text-primary: #1C1C2E;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --color-border: #E5E7EB;
+  --color-border-light: #F3F4F6;
+  --color-progress-bg: #E5E7EB;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-not-success: #E07090;
+  --color-not-success-light: #FDF2F5;
+
+  /* ── Avatar 配色 Palette ── */
+  --color-avatar-1: #3A9CCD;
+  --color-avatar-2: #8B5CF6;
+  --color-avatar-3: #E88C3C;
+  --color-avatar-4: #D946A8;
+  --color-avatar-5: #10B981;
+  --color-avatar-6: #6366F1;
+  --color-avatar-7: #F59E0B;
+  --color-avatar-8: #06B6D4;
+  --color-avatar-fallback: #9CA3AF;
+
+  --sidebar-width: 64px;
+  --header-height: 56px;
+  --filter-height: 44px;
+  --tabs-height: 48px;
+  --card-radius: 12px;
+  --card-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --transition: 0.2s ease;
+
+  /* 動效緩動曲線（SSOT: Toutou/docs/ds-motion-data.js + .claude/rules/animation.md）*/
+  --ease-enter: cubic-bezier(0.215, 0.61, 0.355, 1); /* easeOutCubic — 進場/減速進場、大小/位置位移 */
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);           /* 加速離場 */
+
+  /* 焦點環 */
+  --focus-ring-color: var(--button\/action, #3a9ccd);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 跨瀏覽器字級一致：原生 <button> 的 UA 預設字體（font: -webkit-small-control）不繼承父層字級，
+   Chrome 解析為 ~13.3px、Safari 為 ~11px，導致 button 內文字（尤其用 1em 的標籤）大小飄移。
+   顯式繼承讓所有「未自訂字級」的 raw button 對齊 body 14px。
+   app-button 用 class 選擇器（.btn--m 等，specificity 較高）設字級，不受此規則影響。2026-07-15 */
+button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+/* Number formatting */
+.number-large {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.number-medium {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Utility */
+.text-secondary { color: var(--color-text-secondary); }
+.text-muted { color: var(--color-text-muted); }
+.text-primary { color: var(--color-primary); }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+/* Card base */
+.card {
+  background: var(--color-card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 12px 0;
+}
+
+/* Tag / Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge-blue {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* Responsive breakpoints */
+// Mobile: < 768px
+// Tablet: 768px - 1199px
+// Desktop: >= 1200px
+
+/* ========================================
+   Font Styles (from Figma Font styles manager)
+   ======================================== */
+
+/* ── Noto Sans TC ── */
+.noto-12-regular  { font-family: var(--font-family\/noto); font-size: 1em; font-weight: 400; line-height: normal; }
+.noto-12-medium   { font-family: var(--font-family\/noto); font-size: 1em; font-weight: 500; line-height: normal; }
+.noto-12-bold     { font-family: var(--font-family\/noto); font-size: 1em; font-weight: 700; line-height: normal; }
+
+.noto-14-regular  { font-family: var(--font-family\/noto); font-size: 14px; font-weight: 400; line-height: normal; }
+.noto-14-medium   { font-family: var(--font-family\/noto); font-size: 14px; font-weight: 500; line-height: normal; }
+.noto-14-bold     { font-family: var(--font-family\/noto); font-size: 14px; font-weight: 700; line-height: normal; }
+
+.noto-16-regular  { font-family: var(--font-family\/noto); font-size: 16px; font-weight: 400; line-height: normal; }
+.noto-16-medium   { font-family: var(--font-family\/noto); font-size: 16px; font-weight: 500; line-height: normal; }
+
+.noto-20-regular  { font-family: var(--font-family\/noto); font-size: 20px; font-weight: 400; line-height: normal; }
+.noto-20-bold     { font-family: var(--font-family\/noto); font-size: 20px; font-weight: 700; line-height: normal; }
+
+.noto-24-regular  { font-family: var(--font-family\/noto); font-size: 24px; font-weight: 400; line-height: normal; letter-spacing: -0.02em; }
+.noto-36-regular  { font-family: var(--font-family\/noto); font-size: 36px; font-weight: 400; line-height: normal; letter-spacing: -0.02em; }
+.noto-50-regular  { font-family: var(--font-family\/noto); font-size: 50px; font-weight: 400; line-height: normal; letter-spacing: -0.02em; }
+.noto-80-regular  { font-family: var(--font-family\/noto); font-size: 80px; font-weight: 400; line-height: normal; letter-spacing: -0.02em; }
+
+/* ── Inter ── */
+.inter-10-regular  { font-family: var(--font-family\/inter); font-size: 10px; font-weight: 400; line-height: normal; }
+
+.inter-12-regular  { font-family: var(--font-family\/inter); font-size: 1em; font-weight: 400; line-height: normal; }
+.inter-12-medium   { font-family: var(--font-family\/inter); font-size: 1em; font-weight: 500; line-height: normal; }
+.inter-12-bold     { font-family: var(--font-family\/inter); font-size: 1em; font-weight: 700; line-height: normal; }
+
+.inter-14-regular  { font-family: var(--font-family\/inter); font-size: 14px; font-weight: 400; line-height: normal; }
+.inter-14-semibold { font-family: var(--font-family\/inter); font-size: 14px; font-weight: 600; line-height: normal; }
+
+.inter-18-semibold { font-family: var(--font-family\/inter); font-size: 18px; font-weight: 600; line-height: normal; }
+.inter-20-bold     { font-family: var(--font-family\/inter); font-size: 20px; font-weight: 700; line-height: normal; }
+.inter-32-semibold { font-family: var(--font-family\/inter); font-size: 32px; font-weight: 600; line-height: normal; letter-spacing: -0.02em; }
+.inter-36-semibold { font-family: var(--font-family\/inter); font-size: 36px; font-weight: 600; line-height: normal; letter-spacing: -0.02em; }
+.inter-40-medium   { font-family: var(--font-family\/inter); font-size: 40px; font-weight: 500; line-height: normal; letter-spacing: -0.02em; }
+
+/* ── Roboto Mono（數字及金額） ── */
+.mono-12-medium { font-family: var(--font-family\/mono); font-size: 1em; font-weight: 500; line-height: normal; }
+.mono-12-bold   { font-family: var(--font-family\/mono); font-size: 1em; font-weight: 700; line-height: normal; }
+.mono-14-medium { font-family: var(--font-family\/mono); font-size: 14px; font-weight: 500; line-height: normal; }
+.mono-18-bold   { font-family: var(--font-family\/mono); font-size: 18px; font-weight: 700; line-height: normal; }
+
+/* ── Overlay 過渡動畫：所有 backdrop 的共用 keyframes ──
+   由 src/styles/_mixins.scss 的 backdrop-enter / backdrop-exit mixin 引用 */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ── Skeleton Screen ─────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.sk-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+}
+
+/* ── Form Error Tooltip（浮動錯誤訊息，不佔版面） ── */
+@keyframes formErrorIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes formErrorInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── DS Collapse — 收合/展開工具 class（CSS Grid 0fr → 1fr，Component tier 300ms） ──
+   用法：
+     <div class="ds-collapse" [class.ds-collapse--expanded]="isExpanded">
+       <div class="ds-collapse__inner"> ... </div>
+     </div>
+*/
+.ds-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms var(--ease-enter);
+}
+
+.ds-collapse--expanded {
+  grid-template-rows: 1fr;
+}
+
+.ds-collapse__inner {
+  overflow: hidden;
+}
+
+/* ── form-error-portal :host（portal component inline styles 已接管容器定位） ── */
+
+.form-error-tooltip__box {
+  background: #cc5252;
+  color: #ffffff;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 4px;
+  filter: drop-shadow(0 2px 6px rgba(204, 82, 82, 0.35));
+}
+
+/* 箭頭朝上（bottom 模式用） */
+.form-error-tooltip__arrow--up {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #cc5252;
+  margin-left: 12px;
+}
+
+/* 箭頭朝下（top 模式用） */
+.form-error-tooltip__arrow--down {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #cc5252;
+  margin-left: 12px;
+}
+
+/* ── 拖曳排序共用動效 ─────────────────────────────── */
+@keyframes drag-settle-glow {
+  0%   { box-shadow: 0 0 0 3px var(--button\/action); }
+  100% { box-shadow: none; }
+}
+
+@keyframes drag-indicator-expand {
+  from { transform: scaleX(0.3); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* P4 list drag */
+  .drag-flip { transition-duration: 0ms !important; }
+  .drag-settled { animation: none !important; }
+  /* Dashboard card drag */
+  .card--flip { transition-duration: 0ms !important; }
+  .card--settled { animation: none !important; }
+}
+
+/* ── 新增報價案件 CTA 按鈕（header + empty-state 共用） ──────────── */
+.app-action-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  min-width: 24px;
+  padding: 0 4px;
+  background: var(--button\/action, #3a9ccd);
+  border: none;
+  border-radius: var(--radious\/sm, 4px);
+  cursor: pointer;
+  transition: opacity 150ms var(--ease-enter);
+
+  &:hover:not(:disabled) { opacity: 0.85; }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+/* ── iOS Safari 輸入框 zoom 防護 ──────────────────────────────
+   iOS Safari 在 input focus 時，若 font-size < 16px 會自動 zoom in viewport。
+   用 !important 覆蓋 Angular Emulated Encapsulation 的 attribute selector 高特異性。
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* element-level 涵蓋 textarea 與所有原生 input（text/date/number/search/
+     inline-rename 等曾漏網的 class）＋原生 select＋contenteditable 富文本編輯器的
+     可編輯根（回報問題 dialog / P4 合約 / 交接文件的 ProseMirror・.te-field；iOS 對
+     contenteditable 同樣 computed <16px 就 zoom，非只原生表單）。用 [contenteditable]
+     精確命中「可編輯」根、不誤及唯讀預覽（唯讀不觸發 zoom）。保留原 4 個 class 以維持
+     app-select 顯示值（.select-field 為 div、非原生元素）的 16px。整塊限制在
+     max-width:767px，桌機完全不套用＝零桌機回歸。（2026-07-24 audit 擴大涵蓋） */
+  input,
+  textarea,
+  select,
+  [contenteditable="true"],
+  [contenteditable=""],
+  .input-field,
+  .number-input-field,
+  .select-field,
+  .autocomplete-input {
+    font-size: 16px !important;
+  }
+}
+
+/* ── 點擊複製互動（CopyDirective 套用，跨元件共用） ──────────────
+   值欄位 hover 變灰 + cursor pointer，提示可點擊複製到剪貼簿。
+   空值（佔位「-」）由 .app-copy--disabled 還原為不可互動。
+   ────────────────────────────────────────────────────────── */
+.app-copy {
+  cursor: pointer;
+  border-radius: var(--radious\/sm, 4px);
+  transition: background-color 150ms var(--ease-enter);
+}
+
+.app-copy:hover {
+  background: var(--color\/grey\/10, #f1f3f5);
+}
+
+.app-copy--disabled {
+  cursor: default;
+}
+
+.app-copy--disabled:hover {
+  background: transparent;
+}
+
+
