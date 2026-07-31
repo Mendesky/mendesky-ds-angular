@@ -8,15 +8,25 @@ Mendesky Design System component library for Angular (source-consumed package).
 
 ### 1. 安裝依賴
 
-在 consumer 的 `package.json` 中新增 `file:` 依賴：
+直接從 GitHub 安裝（需有 `Mendesky/mendesky-ds-angular` 的 SSH 讀取權限）：
+
+```bash
+npm i "git+ssh://git@github.com/Mendesky/mendesky-ds-angular.git#main"
+```
+
+`package.json` 會長這樣：
 
 ```json
 {
   "dependencies": {
-    "@mendesky/ds-angular": "file:../mendesky-ds-angular"
+    "@mendesky/ds-angular": "git+ssh://git@github.com/Mendesky/mendesky-ds-angular.git#main"
   }
 }
 ```
+
+`package-lock.json` 釘的是 commit SHA，所以 `#main` 不會造成不同人裝到不同版本；要升到最新版跑
+`npm update @mendesky/ds-angular`（記得連 lockfile 一起 commit）。本套件不需 build，npm 會直接
+把原始碼放進 `node_modules/@mendesky/ds-angular`。
 
 ### 2. TypeScript 路徑對應
 
@@ -50,9 +60,9 @@ Mendesky Design System component library for Angular (source-consumed package).
 ### 3. 自動建立 symlink（postinstall）
 
 上述 symlink 應該由 consumer 專案的 `postinstall` script 自動建立/刷新，解析
-`node_modules/@mendesky/ds-angular`（`npm install` 已經從 `file:` 依賴設置好）的 realpath 後建立
+`node_modules/@mendesky/ds-angular`（`npm install` 已從 git 依賴抓下來）的 realpath 後建立
 symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
-[`scripts/link-ds-angular.js`](../mendesky-platform-console/scripts/link-ds-angular.js) 作為標準範例。
+`scripts/link-ds-angular.js` 作為標準範例。
 
 ### 4. Angular 編譯配置
 
