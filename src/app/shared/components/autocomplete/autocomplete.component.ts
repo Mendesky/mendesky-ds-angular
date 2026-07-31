@@ -34,6 +34,13 @@ export class AutocompleteComponent implements OnDestroy {
   @Input() errorPosition: 'top' | 'bottom' = 'bottom';
   @Input() disabled = false;
   @Input() singleSelect = false;
+  /**
+   * 是否允許清空已選值。預設 `true`（既有呼叫端行為不變）。
+   * 設 `false` 會關掉**三條**清空路徑：清除全部 X 鈕、chip 移除鈕、輸入框為空時的 Backspace。
+   * 用於「後端 endpoint 為 required 且無 clear 路由」的欄位——清空在後端無法表達，
+   * UI 就不該提供，否則畫面空但後端留舊值、reopen 又跑回來。命名對齊 app-select 的同名 prop。
+   */
+  @Input() clearable = true;
 
   @Output() selectionChange = new EventEmitter<AutocompleteOption[]>();
 
@@ -161,7 +168,8 @@ export class AutocompleteComponent implements OnDestroy {
         break;
 
       case 'Backspace':
-        if (this.inputValue === '' && this._selected.length > 0) {
+        // clearable=false → Backspace 不得成為第三條清空路徑
+        if (this.clearable && this.inputValue === '' && this._selected.length > 0) {
           this._selected = this._selected.slice(0, -1);
           this.selectionChange.emit(this._selected);
           this.syncPanel();
@@ -187,6 +195,7 @@ export class AutocompleteComponent implements OnDestroy {
 
   removeItem(item: AutocompleteOption, event: MouseEvent): void {
     event.stopPropagation();
+    if (!this.clearable) return;
     this._selected = this._selected.filter(s => s.value !== item.value);
     this.selectionChange.emit(this._selected);
     this.syncPanel();
@@ -194,6 +203,7 @@ export class AutocompleteComponent implements OnDestroy {
 
   clearAll(event: MouseEvent): void {
     event.preventDefault();
+    if (!this.clearable) return;
     this._selected = [];
     this.inputValue = '';
     this.activeIndex = -1;

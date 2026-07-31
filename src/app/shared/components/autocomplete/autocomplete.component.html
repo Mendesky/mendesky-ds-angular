@@ -16,6 +16,7 @@
       >
         <span class="autocomplete-chip__label">{{ item.label }}</span>
         <button
+          *ngIf="clearable"
           class="autocomplete-chip__remove"
           type="button"
           [attr.aria-label]="'移除 ' + item.label"
@@ -42,7 +43,7 @@
     <!-- 右側：清除全部 + 必填 + 下拉箭頭 -->
     <div class="autocomplete-suffix">
       <button
-        *ngIf="focused && hasSelection"
+        *ngIf="focused && hasSelection && clearable"
         class="autocomplete-clear"
         type="button"
         aria-label="清除全部"

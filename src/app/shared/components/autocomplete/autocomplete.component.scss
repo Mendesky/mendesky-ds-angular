@@ -208,3 +208,22 @@
 .autocomplete-wrap--disabled .autocomplete-chip {
   opacity: 0.5;
 }
+
+/* ──────────────────────────────────────────────────────────────
+   iOS Safari 緩解（2026-07-27 真機 17 輪二分實測）
+   症狀：手機 Safari 上，只要 .autocomplete-content 裡多出一個「佔空間」的元素
+        （chip 的移除鈕），整個 modal 的所有互動元素都不再產生 click 事件——
+        touchstart 命中正確、無 preventDefault、無位移，但 WebKit 不合成
+        mousedown/mouseup/click。捲動仍正常，故不是主執行緒卡死。
+   已排除：元素型別（button/span）、CSS、icon 內容、事件綁定、在 chip 內或外、
+        動畫、overlay、命中錯位、DOM 重建、水平溢出。唯一相關變數＝該元素是否佔空間。
+   因此以 display:none 讓它完全不參與版面。桌機不受影響。
+   替代操作路徑：HDM P3-5 可用上方 toggle 取消指定（後端同樣送 undesignate）；
+        P3-1/P3-4 本來就是 [clearable]="false"。
+   ⚠️ 移除這條規則會讓手機版 HDM P3 再次整頁點不動。
+   ────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .autocomplete-chip__remove {
+    display: none;
+  }
+}

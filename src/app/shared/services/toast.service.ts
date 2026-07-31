@@ -18,6 +18,24 @@ export interface ToastItem extends ToastInput {
   hiding: boolean;
 }
 
+/**
+ * 型別決定自動消失時長（2026-07-27 使用者拍板：**成功 3 秒 / 失敗 5 秒**）：
+ * `error` → 5000、有 `action`（undo 視窗）→ 5000、其餘（success / loading）→ 3000。
+ * 呼叫端顯式帶 `duration` 一律優先。
+ *
+ * `show()` 與 `update()` **共用**此函式：`update()` 會改 type（loading→error 轉場），
+ * 若只有 `show()` 套規則，轉場後的 error toast 會只停 3 秒。
+ *
+ * 先前 error 的 5000ms 是靠每個呼叫點手打 `duration: 5000`，漏帶就退回 3000；升為預設後那些
+ * 手打值成為冗餘並已清除（實測 22 處：18 為 error＝純冗餘、4 為 success＝原本刻意設 5 秒，
+ * 依「成功 3 秒」政策一併 normalise）。唯一保留顯式值的是 `global-api-error-host`——它不走本容器
+ * （自有 z-index 9999 層），顯式帶值是正確的自我文件化。
+ */
+function resolveDuration(item: Pick<ToastInput, 'duration' | 'type' | 'action'>): number {
+  if (item.duration !== undefined) return item.duration;
+  return (item.action || item.type === 'error') ? 5000 : 3000;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ToastService implements OnDestroy {
   readonly toasts = signal<ToastItem[]>([]);
@@ -31,8 +49,7 @@ export class ToastService implements OnDestroy {
 
     // persist：不設自動隱藏計時器（loading toast 撐到 update() 轉場才開始計時）
     if (!input.persist) {
-      const duration = input.duration ?? (input.action ? 5000 : 3000);
-      const timer = setTimeout(() => this._markHiding(id), duration);
+      const timer = setTimeout(() => this._markHiding(id), resolveDuration(input));
       this.hideTimers.set(id, timer);
     }
 
@@ -52,8 +69,7 @@ export class ToastService implements OnDestroy {
     this.hideTimers.delete(id);
     const merged = this.toasts().find(t => t.id === id);
     if (merged && !merged.persist) {
-      const duration = merged.duration ?? (merged.action ? 5000 : 3000);
-      const timer = setTimeout(() => this._markHiding(id), duration);
+      const timer = setTimeout(() => this._markHiding(id), resolveDuration(merged));
       this.hideTimers.set(id, timer);
     }
   }

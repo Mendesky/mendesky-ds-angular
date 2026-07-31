@@ -46,6 +46,35 @@ describe('ToastService', () => {
   it('auto-dismiss marks hiding=true after 5000ms when action is provided', fakeAsync(() => {
     service.show({ type: 'success', message: 'Action', action: { label: '復原', onClick: () => {} } });
     tick(4999);
+    expect(service.toasts()[0].hiding)
+      .withContext('有 action → 5000ms（action 優先於型別，success 也不掉回 3000）').toBeFalse();
+    tick(1);
+    expect(service.toasts()[0].hiding).toBeTrue();
+  }));
+
+  // ── duration 型別政策（2026-07-27 使用者拍板：success 3s / error 5s）──────────
+  it('error 無 duration → 預設 5000（非 3000）', fakeAsync(() => {
+    service.show({ type: 'error', message: '儲存失敗，請稍後再試' });
+    tick(2999);
+    expect(service.toasts()[0].hiding).toBeFalse();
+    tick(2000);   // 累計 4999
+    expect(service.toasts()[0].hiding)
+      .withContext('error 讀秒需 5000ms；3000ms 就消失代表 show() 沒套 error 規則').toBeFalse();
+    tick(1);
+    expect(service.toasts()[0].hiding).toBeTrue();
+  }));
+
+  it('顯式 duration 勝過型別預設（error + duration 1000 → 1000）', fakeAsync(() => {
+    service.show({ type: 'error', message: '短命 error', duration: 1000 });
+    tick(999);
+    expect(service.toasts()[0].hiding).toBeFalse();
+    tick(1);
+    expect(service.toasts()[0].hiding).toBeTrue();
+  }));
+
+  it('loading 無 duration 且非 persist → 走 3000（不套 error 規則）', fakeAsync(() => {
+    service.show({ type: 'loading', message: '處理中' });
+    tick(2999);
     expect(service.toasts()[0].hiding).toBeFalse();
     tick(1);
     expect(service.toasts()[0].hiding).toBeTrue();
@@ -92,12 +121,25 @@ describe('ToastService', () => {
     expect(service.toasts()[0].hiding).toBeTrue();        // update 後 3s 自動消
   }));
 
-  it('update() 轉 error（無 duration → 用預設 3000）', fakeAsync(() => {
+  // 2026-07-27 推翻先前「update 轉 error 用預設 3000」的設計：error 一律 5000（使用者拍板「失敗請留 5 秒」）。
+  it('update() 轉 error（無 duration → 用 error 預設 5000，非 3000）', fakeAsync(() => {
     const id = service.show({ type: 'loading', message: '訪談表生成中', persist: true });
     service.update(id, { type: 'error', message: '訪談表生成失敗' });
     expect(service.toasts()[0].type).toBe('error');
     expect(service.toasts()[0].message).toBe('訪談表生成失敗');
-    tick(3000);
+    tick(4999);
+    expect(service.toasts()[0].hiding)
+      .withContext('error 應撐到 5000ms；若 3000ms 就 hiding 代表 update() 沒套 error 規則').toBeFalse();
+    tick(1);
+    expect(service.toasts()[0].hiding).toBeTrue();
+  }));
+
+  it('update() 由 success 轉 error（非 persist 起始，無 duration → 5000）', fakeAsync(() => {
+    const id = service.show({ type: 'success', message: '已儲存' });
+    service.update(id, { type: 'error', message: '儲存失敗，請重試' });
+    tick(4999);
+    expect(service.toasts()[0].hiding).toBeFalse();
+    tick(1);
     expect(service.toasts()[0].hiding).toBeTrue();
   }));
 
