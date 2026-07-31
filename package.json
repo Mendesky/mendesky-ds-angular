@@ -1,6 +1,6 @@
 {
   "name": "@mendesky/ds-angular",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Mendesky Design System component library for Angular (source-consumed)",
   "main": "src/index.ts",
   "sideEffects": false,
