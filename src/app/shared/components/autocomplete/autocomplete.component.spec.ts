@@ -149,3 +149,166 @@ describe('AutocompleteComponent — 面板視覺與 select 面板一致', () => 
     expect(acOpt.backgroundColor).withContext('選項底色').toBe(selOpt.backgroundColor);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 以下為 clearable（2026-07-26 HDM 清空語意）——與上方「面板寬度／視覺一致性」
+// 測的是不同面向，merge 時兩邊都保留。
+// ══════════════════════════════════════════════════════════════════════════════
+
+
+/**
+ * app-autocomplete 的 `clearable`（2026-07-26 新增）
+ *
+ * 動機：HDM p3-1 國稅局所別、p3-4 兩個行業代號的後端 endpoint 都是 `required` 且無 clear 路由
+ * → 「清空」在後端無法表達，UI 就不該提供清空手段（否則畫面空、後端留舊值、reopen 又回來）。
+ * 命名對齊 app-select 既有的同名 `clearable` prop。
+ *
+ * 重點：清空**有三條路徑**，`clearable=false` 必須全部關掉，只關一條會留洞：
+ *   1. 右側「清除全部」X 鈕（clearAll）
+ *   2. 每個 chip 自己的移除鈕（removeItem）
+ *   3. 輸入框為空時按 Backspace 砍掉最後一個 chip（onKeydown）
+ *
+ * 預設 `true` 是為了讓既有 12 處呼叫端行為完全不變——第一組測試就是鎖這個預設值
+ * （additive 改共享 DS 元件的回歸防線）。
+ */
+
+const OPTION: AutocompleteOption = { value: 'A1', label: '選項 A1' };
+
+function createAutocomplete(clearable?: boolean): ComponentFixture<AutocompleteComponent> {
+  TestBed.configureTestingModule({ imports: [AutocompleteComponent] });
+  const fixture = TestBed.createComponent(AutocompleteComponent);
+  fixture.componentRef.setInput('options', [OPTION, { value: 'A2', label: '選項 A2' }]);
+  fixture.componentRef.setInput('singleSelect', true);
+  fixture.componentRef.setInput('value', [OPTION]);
+  if (clearable !== undefined) fixture.componentRef.setInput('clearable', clearable);
+  fixture.detectChanges();
+  return fixture;
+}
+
+function root(fixture: ComponentFixture<unknown>): HTMLElement {
+  return fixture.nativeElement as HTMLElement;
+}
+
+function focusInput(fixture: ComponentFixture<unknown>): HTMLInputElement {
+  const input = root(fixture).querySelector('.autocomplete-input') as HTMLInputElement;
+  if (!input) throw new Error('前置條件失敗：找不到 .autocomplete-input');
+  input.dispatchEvent(new Event('focus'));
+  fixture.detectChanges();
+  return input;
+}
+
+describe('AutocompleteComponent — clearable', () => {
+  describe('預設值（不設 clearable）— 鎖住既有 12 處呼叫端的行為', () => {
+    it('focus 後有「清除全部」X 鈕', () => {
+      const fixture = createAutocomplete();
+      focusInput(fixture);
+      expect(root(fixture).querySelector('.autocomplete-clear'))
+        .withContext('預設 clearable=true，清除鈕必須照舊出現')
+        .not.toBeNull();
+      fixture.destroy();
+    });
+
+    it('chip 有移除鈕', () => {
+      const fixture = createAutocomplete();
+      expect(root(fixture).querySelector('.autocomplete-chip__remove'))
+        .withContext('預設 clearable=true，chip 移除鈕必須照舊出現')
+        .not.toBeNull();
+      fixture.destroy();
+    });
+
+    it('輸入框為空時 Backspace → 清掉 chip 並 emit 空陣列', () => {
+      const fixture = createAutocomplete();
+      const emitted: AutocompleteOption[][] = [];
+      fixture.componentInstance.selectionChange.subscribe(v => emitted.push(v));
+      const input = focusInput(fixture);
+
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+      fixture.detectChanges();
+
+      expect(emitted).withContext('預設 clearable=true，Backspace 清空行為不變').toEqual([[]]);
+      fixture.destroy();
+    });
+  });
+
+  describe('clearable=false — 三條清空路徑全關', () => {
+    it('路徑 1：focus 後沒有「清除全部」X 鈕', () => {
+      const fixture = createAutocomplete(false);
+      focusInput(fixture);
+      expect(root(fixture).querySelector('.autocomplete-clear')).toBeNull();
+      fixture.destroy();
+    });
+
+    it('路徑 2：chip 沒有移除鈕', () => {
+      const fixture = createAutocomplete(false);
+      expect(root(fixture).querySelector('.autocomplete-chip__remove')).toBeNull();
+      fixture.destroy();
+    });
+
+    it('路徑 3：輸入框為空時 Backspace 不清空、不 emit', () => {
+      const fixture = createAutocomplete(false);
+      const emitted: AutocompleteOption[][] = [];
+      fixture.componentInstance.selectionChange.subscribe(v => emitted.push(v));
+      const input = focusInput(fixture);
+
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+      fixture.detectChanges();
+
+      expect(emitted).withContext('Backspace 是第三條清空路徑，也必須被 clearable=false 關掉').toEqual([]);
+      expect(root(fixture).querySelector('.autocomplete-chip__label')?.textContent?.trim())
+        .withContext('chip 應仍在')
+        .toBe(OPTION.label);
+      fixture.destroy();
+    });
+
+    it('仍可用「選另一個選項」取代值（singleSelect 取代式，不需先清空）', () => {
+      const fixture = createAutocomplete(false);
+      const emitted: AutocompleteOption[][] = [];
+      fixture.componentInstance.selectionChange.subscribe(v => emitted.push(v));
+
+      fixture.componentInstance.selectOption({ value: 'A2', label: '選項 A2' });
+      fixture.detectChanges();
+
+      expect(emitted).withContext('clearable=false 不得妨礙「改值」')
+        .toEqual([[{ value: 'A2', label: '選項 A2' }]]);
+      fixture.destroy();
+    });
+  });
+
+  /**
+   * 上面路徑 1／2 斷言的是「DOM 裡查不到那顆鈕」——擋在 template 的 `*ngIf="clearable"`。
+   * 但 clearAll() / removeItem() 內另有一層方法 guard，2026-07-27 故障注入實測：**把那兩行
+   * 刪掉，上面的測試全綠**（DOM 本來就沒有那顆鈕，測不到方法有沒有守）。也就是第二層防線
+   * 當時無法被證偽，未來誰順手刪掉都不會有人發現。以下兩條直接呼叫方法，把它鎖住。
+   */
+  describe('clearable=false — 方法層 guard（template *ngIf 之外的第二層防線）', () => {
+    it('clearAll() 被直接呼叫時不清空、不 emit', () => {
+      const fixture = createAutocomplete(false);
+      const emitted: AutocompleteOption[][] = [];
+      fixture.componentInstance.selectionChange.subscribe(v => emitted.push(v));
+
+      fixture.componentInstance.clearAll(new MouseEvent('mousedown'));
+      fixture.detectChanges();
+
+      expect(emitted).withContext('方法層 guard 必須擋住程式化呼叫').toEqual([]);
+      expect(root(fixture).querySelector('.autocomplete-chip__label')?.textContent?.trim())
+        .withContext('chip 應仍在')
+        .toBe(OPTION.label);
+      fixture.destroy();
+    });
+
+    it('removeItem() 被直接呼叫時不清空、不 emit', () => {
+      const fixture = createAutocomplete(false);
+      const emitted: AutocompleteOption[][] = [];
+      fixture.componentInstance.selectionChange.subscribe(v => emitted.push(v));
+
+      fixture.componentInstance.removeItem(OPTION, new MouseEvent('mousedown'));
+      fixture.detectChanges();
+
+      expect(emitted).withContext('方法層 guard 必須擋住程式化呼叫').toEqual([]);
+      expect(root(fixture).querySelector('.autocomplete-chip__label')?.textContent?.trim())
+        .withContext('chip 應仍在')
+        .toBe(OPTION.label);
+      fixture.destroy();
+    });
+  });
+});

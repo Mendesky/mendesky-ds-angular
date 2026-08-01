@@ -10,7 +10,19 @@
   gap: 12px;
   pointer-events: none;
 
+  /* ── 預設穿透，只有帶 action（「復原」鈕）的 toast 才可點 ──────────────────
+     toast 本體沒有任何 click handler（見 process-toast.component.html），唯一可互動元素
+     是 action 存在時才渲染的 <button>。而容器在桌機是右下角固定定位、size S 佔右側
+     24–284px，CEM/HDM 卡片右緣只離視窗 60px —— 若整顆可點，toast 會壓在卡片右下角
+     並吃掉那幾秒的點擊（首當其衝是 P2 sticky footer 右側按鈕）。
+     實證：e2e/drivers/lifecycle.driver.ts 曾必須注入 CSS 關掉 toast 的 pointer-events，
+     註解寫「click 永遠落在 toast 上（實測 retry 至 timeout）」。
+     ⚠️ 改回無條件 auto 會讓該問題全站復發。 */
   app-process-toast {
+    pointer-events: none;
+  }
+
+  app-process-toast.toast-container__item--interactive {
     pointer-events: auto;
   }
 }

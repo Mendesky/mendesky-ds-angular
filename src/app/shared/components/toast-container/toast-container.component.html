@@ -1,6 +1,7 @@
 <div class="toast-container" data-testid="toast-container">
   @for (t of toastService.toasts(); track t.id) {
     <app-process-toast
+      [class.toast-container__item--interactive]="!!t.action"
       [stackMode]="true"
       [type]="t.type"
       [message]="t.message"
