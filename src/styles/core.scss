@@ -23,11 +23,11 @@
   --border\/white: #ffffff;
 
   /* 灰階 */
-  --color\/grey\/10: #f1f3f5;
+  --color\/white\/20: #f1f3f5;
   --color\/grey\/20: #e7e7e7;
   --color\/grey\/80: #686868;
   --color\/grey\/90: #535353;
-  --color\/white\/20: #f0f6fc;
+  --color\/white\/10: #f0f6fc;
 
   /* 按鈕 */
   --button\/normal: #f1f3f5;
@@ -181,14 +181,15 @@
 
   /* Grey */
   --color\/grey\/100: #333333;
-  --color\/grey\/90: #686868;
+  --color\/grey\/90: #535353;
   --color\/grey\/80: #686868;
   --color\/grey\/70: #7d7d7d;
+  --color\/grey\/60: #939393;
   --color\/grey\/50: #aaaaaa;
   --color\/grey\/40: #bebebe;
   --color\/grey\/30: #d3d3d3;
   --color\/grey\/20: #e7e7e7;
-  --color\/grey\/10: #f1f3f5;  /* 對齊 Toutou DS token 權威值；先前 #fcfcfc 為錯誤覆寫（與 line 25 衝突） */
+  --color\/grey\/10: #fcfcfc;
 
   /* ── 顏色色票 - Charts Colors ── */
 
@@ -626,7 +627,7 @@ button {
 }
 
 .app-copy:hover {
-  background: var(--color\/grey\/10, #f1f3f5);
+  background: var(--color\/white\/20, #f1f3f5);
 }
 
 .app-copy--disabled {

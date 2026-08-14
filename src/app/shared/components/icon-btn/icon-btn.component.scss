@@ -132,7 +132,7 @@
   background: transparent;
 }
 .icon-btn--section-btn:hover:not(:disabled) {
-  background: var(--color\/grey\/10, #fcfcfc);
+  background: var(--color\/white\/20, #f1f3f5);
 }
 .icon-btn--section-btn:active:not(:disabled) {
   background: var(--color\/grey\/20, #e7e7e7);
@@ -171,7 +171,7 @@
   background: var(--icon\/white, #ffffff);
 }
 .icon-btn--block:hover:not(:disabled) {
-  background: var(--color\/grey\/10, #f5f5f5);
+  background: var(--color\/white\/20, #f1f3f5);
 }
 .icon-btn--block:active:not(:disabled) {
   background: var(--color\/grey\/20, #e7e7e7);
@@ -182,7 +182,7 @@
   background: transparent;
 }
 .icon-btn--block-transparent:hover:not(:disabled) {
-  background: var(--color\/grey\/10, #f5f5f5);
+  background: var(--color\/white\/20, #f1f3f5);
 }
 .icon-btn--block-transparent:active:not(:disabled) {
   background: var(--color\/grey\/20, #e7e7e7);

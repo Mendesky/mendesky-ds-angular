@@ -14,7 +14,7 @@
   &:not(.upload-dropzone--disabled):hover,
   &.upload-dropzone--drag-over {
     border-color: var(--button\/action, #3a9ccd);
-    background-color: var(--color\/white\/20, #f0f6fc);
+    background-color: var(--color\/white\/10, #f0f6fc);
   }
 
   &.upload-dropzone--disabled {

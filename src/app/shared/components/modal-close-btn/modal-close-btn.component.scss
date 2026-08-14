@@ -17,7 +17,7 @@
   color: var(--text\/body, #686868);
   transition: background 150ms;
 
-  &:hover:not(:disabled) { background: var(--color\/grey\/10, #f1f3f5); }
+  &:hover:not(:disabled) { background: var(--color\/white\/20, #f1f3f5); }
   &:focus-visible { outline: 2px solid var(--button\/action, #3a9ccd); outline-offset: 2px; }
   &:disabled { cursor: not-allowed; opacity: 0.5; }
 }

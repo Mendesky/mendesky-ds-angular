@@ -14,7 +14,7 @@
   transition: background 150ms, color 150ms, border-color 150ms;
 
   &:hover:not(.cell-btn--selected):not(:disabled) {
-    background: var(--color\/grey\/10, #f1f3f5);
+    background: var(--color\/white\/20, #f1f3f5);
   }
 
   &:active:not(.cell-btn--selected):not(:disabled) {
