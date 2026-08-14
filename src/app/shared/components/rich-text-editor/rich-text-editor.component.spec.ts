@@ -3,13 +3,25 @@ import { ProseMirrorJSON } from '../../models/prosemirror.model';
 import { RichTextEditorComponent } from './rich-text-editor.component';
 import { tableHighlightKey } from './table-toolbar/rte-table-highlight.plugin';
 import {
+  TEXT_COLORS,
   docEqualsIgnoringAttrs,
   extractAndCleanExcelTable,
   isMarkdownLike,
   isExcelHtml,
+  isOfficeHtml,
   isRichHtml,
+  normalizeOfficeHtml,
+  snapPasteColor,
   stripNodeAttrs,
 } from './rich-text-editor.helpers';
+import {
+  EXCEL_MAC_HTML,
+  GOOGLE_DOCS_HTML,
+  MAC_MAIL_HTML,
+  WORD_EMAIL_HTML,
+  WORD_MAC_SAFARI_HTML,
+  WORD_WIN_HTML,
+} from './rich-text-editor.paste-fixtures';
 
 // ── docEqualsIgnoringAttrs ────────────────────────────────────────────────────
 
@@ -263,28 +275,76 @@ describe('isMarkdownLike', () => {
 // ── isExcelHtml ───────────────────────────────────────────────────────────────
 
 describe('isExcelHtml', () => {
-  it('plan case 6a: 含 mso- office excel namespace → true', () => {
-    const html = '<html xmlns:o="urn:schemas-microsoft-com" xmlns:x="urn:schemas-microsoft-com:office:excel">';
-    expect(isExcelHtml(html)).toBeTrue();
+  // ── 正向：只認「Excel 專屬的 meta 指紋」，且必須 quote-agnostic ──
+  // 2026-08-03 實機擷取顯示，同一份 Excel HTML 內兩種引號方言並存：
+  //   <meta name=ProgId content=Excel.Sheet>              ← 無引號
+  //   <meta name=Generator content="Microsoft Excel 15">  ← 有引號
+
+  it('真實 Excel（macOS）→ true', () => {
+    expect(isExcelHtml(EXCEL_MAC_HTML)).toBeTrue();
   });
 
-  it('plan case 6b: 含 meta Generator=Microsoft Excel → true', () => {
-    const html = '<meta name="Generator" content="Microsoft Excel 15">';
-    expect(isExcelHtml(html)).toBeTrue();
+  it('meta ProgId=Excel.Sheet 無引號 → true', () => {
+    expect(isExcelHtml('<meta name=ProgId content=Excel.Sheet>')).toBeTrue();
   });
 
-  it('含 class="xl → true', () => {
-    expect(isExcelHtml('<td class="xl65">value</td>')).toBeTrue();
+  it('meta ProgId="Excel.Sheet" 有引號 → true', () => {
+    expect(isExcelHtml('<meta name="ProgId" content="Excel.Sheet">')).toBeTrue();
+  });
+
+  it('meta Generator=Microsoft Excel 有引號 → true', () => {
+    expect(isExcelHtml('<meta name="Generator" content="Microsoft Excel 15">')).toBeTrue();
+  });
+
+  it('meta Generator=Microsoft Excel 無引號 → true', () => {
+    expect(isExcelHtml('<meta name=Generator content="Microsoft Excel 16">')).toBeTrue();
+  });
+
+  // ── 負向：Word 三方言一律不得判為 Excel ──
+  // 這三條是「Word/Outlook 貼上完全沒反應」的核心迴歸測試：
+  // 誤判為 Excel → extractAndCleanExcelTable 找不到 <table> 回 null
+  // → onPaste 什麼都沒插入卻 return true → ProseMirror 取消預設貼上。
+
+  it('真實 Word（Windows）→ false（誤判會導致死貼上）', () => {
+    expect(isExcelHtml(WORD_WIN_HTML)).toBeFalse();
+  });
+
+  it('真實 Word（macOS Safari，完全無 meta）→ false（誤判會導致死貼上）', () => {
+    expect(isExcelHtml(WORD_MAC_SAFARI_HTML)).toBeFalse();
+  });
+
+  it('真實 Word email（filtered medium，含 xmlns:x=office:excel）→ false', () => {
+    // 這份是 Word 卻宣告了 Excel 命名空間 → 證明 Excel 判準不得用任何 xmlns
+    expect(WORD_EMAIL_HTML).toContain('urn:schemas-microsoft-com:office:excel');
+    expect(isExcelHtml(WORD_EMAIL_HTML)).toBeFalse();
+  });
+
+  it('macOS Mail（WebKit inline-style 序列化）→ false', () => {
+    expect(isExcelHtml(MAC_MAIL_HTML)).toBeFalse();
   });
 
   it('普通 HTML → false', () => {
     expect(isExcelHtml('<table><tr><td>value</td></tr></table>')).toBeFalse();
+  });
+
+  it('僅 xmlns:o office namespace（Office 共用，非 Excel 專屬）→ false', () => {
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office">';
+    expect(isExcelHtml(html)).toBeFalse();
+  });
+
+  it('class="xl65"（Excel 實測不輸出此形式，只會誤傷網頁）→ false', () => {
+    expect(isExcelHtml('<td class="xl65">value</td>')).toBeFalse();
   });
 });
 
 // ── isRichHtml ────────────────────────────────────────────────────────────────
 
 describe('isRichHtml', () => {
+  // isRichHtml 是「要不要放行 markdown 重繪路徑」的閘門：回 false 且 text/plain 像 markdown
+  // 時，整包 HTML 會被丟棄改用 markdown-it 重繪。因此白名單太窄 = 真實 HTML 被吃掉。
+  // 2026-08-03 實測：macOS Mail 一整封信 8KB，舊白名單（table|ul|ol|strong|em|b|i|h1-6）
+  // 一個都不命中 → 只因該信 text/plain 剛好不像 markdown 才逃過；有「1. …」編號就會中。
+
   it('含 table tag 且長度 > 50 → true', () => {
     const html = '<div><table><tr><td>some cell content here</td></tr></table></div>';
     expect(isRichHtml(html)).toBeTrue();
@@ -295,12 +355,161 @@ describe('isRichHtml', () => {
     expect(isRichHtml(html)).toBeTrue();
   });
 
+  it('真實 macOS Mail（只有 p + span[style]，無舊白名單 tag）→ true', () => {
+    expect(isRichHtml(MAC_MAIL_HTML)).toBeTrue();
+  });
+
+  it('只有 p 的長 HTML → true（段落結構是 markdown 表達不了的資訊）', () => {
+    const html = '<p>第一段落內容，這裡要夠長才能通過既有的 50 字元長度門檻</p><p>第二段落內容也一樣要夠長</p>';
+    expect(html.length).toBeGreaterThan(50); // 守住 fixture 本身：太短會因長度門檻假紅
+    expect(isRichHtml(html)).toBeTrue();
+  });
+
+  it('只有 div 的長 HTML → true', () => {
+    const html = '<div>第一區塊內容，這裡要夠長以通過長度門檻</div><div>第二區塊內容也一樣夠長</div>';
+    expect(isRichHtml(html)).toBeTrue();
+  });
+
+  it('只有 br 的長 HTML → true（換行是 markdown 難以無損表達的結構）', () => {
+    const html = 'plain text line one with enough length<br>line two also with enough length';
+    expect(isRichHtml(html)).toBeTrue();
+  });
+
+  it('含 a href 的長 HTML → true', () => {
+    const html = 'see <a href="https://example.com/docs">this documentation page</a> for more detail';
+    expect(isRichHtml(html)).toBeTrue();
+  });
+
   it('長度 ≤ 50 的 HTML → false（太短視為簡單文字）', () => {
     expect(isRichHtml('<p>short</p>')).toBeFalse();
   });
 
-  it('純文字（無 rich HTML tag）→ false', () => {
+  it('純文字（完全無 HTML tag）→ false（此時才放行 markdown 重繪）', () => {
     expect(isRichHtml('This is plain text without any HTML tags, just a long string')).toBeFalse();
+  });
+
+  it('純 markdown 原始碼（無 HTML tag）→ false（markdown 自動轉換仍須生效）', () => {
+    expect(isRichHtml('**粗體字**\n- 清單項目一\n- 清單項目二\n1. 編號項目\n\n更多純文字內容')).toBeFalse();
+  });
+});
+
+// ── isOfficeHtml ──────────────────────────────────────────────────────────────
+// 「要不要跑 Office 正規化」的判準（與 isExcelHtml 的「要不要走表格清洗」不同）。
+// 必須是多訊號 OR：Word 三方言的共同點只有 xmlns:o/w 與 Mso class / mso-list style，
+// macOS Safari 那份連一個 <meta> 都沒有。
+
+describe('isOfficeHtml', () => {
+  it('真實 Word（Windows）→ true', () => {
+    expect(isOfficeHtml(WORD_WIN_HTML)).toBeTrue();
+  });
+
+  it('真實 Word（macOS Safari，無任何 meta）→ true', () => {
+    expect(isOfficeHtml(WORD_MAC_SAFARI_HTML)).toBeTrue();
+  });
+
+  it('真實 Word email（filtered medium）→ true', () => {
+    expect(isOfficeHtml(WORD_EMAIL_HTML)).toBeTrue();
+  });
+
+  it('真實 Excel（macOS）→ true', () => {
+    expect(isOfficeHtml(EXCEL_MAC_HTML)).toBeTrue();
+  });
+
+  it('macOS Mail（WebKit 序列化）→ false（現況正常，不得被正規化介入）', () => {
+    expect(isOfficeHtml(MAC_MAIL_HTML)).toBeFalse();
+  });
+
+  it('Google Docs → false（TipTap Bold 的兩道防線已能正確處理，不得介入）', () => {
+    expect(isOfficeHtml(GOOGLE_DOCS_HTML)).toBeFalse();
+  });
+
+  it('一般網頁 HTML → false', () => {
+    expect(isOfficeHtml('<div><h2>標題</h2><p>內容</p><ul><li>項目</li></ul></div>')).toBeFalse();
+  });
+
+  it('空字串 → false', () => {
+    expect(isOfficeHtml('')).toBeFalse();
+  });
+});
+
+// ── snapPasteColor ────────────────────────────────────────────────────────────
+// 貼上的顏色吸附到編輯器色盤（使用者 2026-08-03 拍板「文字顏色應該要用編輯器有支援的顏色」）。
+// 規則：無彩色（黑／白／低飽和灰）→ null＝預設色；有彩色 → 色相最近的色盤色。
+// 為什麼無彩色不映射到「灰 #718096」：Word 正文絕大多數帶顯式 color:black，
+// 按最近色硬算會讓每次貼上全文變淺灰。代價是「灰」無法經由貼上取得（明確接受）。
+
+describe('snapPasteColor', () => {
+  it('#000000（Word 正文預設）→ null，不得變成灰 #718096', () => {
+    expect(snapPasteColor('#000000')).toBeNull();
+  });
+
+  it('#FFFFFF → null（Excel 深藍底標題列白字的隱形防線）', () => {
+    expect(snapPasteColor('#FFFFFF')).toBeNull();
+  });
+
+  it('white（色名）→ null', () => {
+    expect(snapPasteColor('white')).toBeNull();
+  });
+
+  it('windowtext（CSS 系統色關鍵字，實測 Excel 使用）→ null', () => {
+    expect(snapPasteColor('windowtext')).toBeNull();
+  });
+
+  it('rgb(51, 51, 51)（深灰）→ null', () => {
+    expect(snapPasteColor('rgb(51, 51, 51)')).toBeNull();
+  });
+
+  it('transparent → null', () => {
+    expect(snapPasteColor('transparent')).toBeNull();
+  });
+
+  it('#FF0000 → 紅 #E53E3E', () => {
+    expect(snapPasteColor('#FF0000')).toBe('#E53E3E');
+  });
+
+  it('#EE0000（實測 Word 紅色標題原始值）→ 紅 #E53E3E', () => {
+    expect(snapPasteColor('#EE0000')).toBe('#E53E3E');
+  });
+
+  it('rgb(238, 0, 0) !important（實測 macOS Mail，必須 strip !important）→ 紅 #E53E3E', () => {
+    expect(snapPasteColor('rgb(238, 0, 0) !important')).toBe('#E53E3E');
+  });
+
+  it('red（色名）→ 紅 #E53E3E', () => {
+    expect(snapPasteColor('red')).toBe('#E53E3E');
+  });
+
+  it('#0070C0（Word 標準藍）→ 藍 #2980AB', () => {
+    expect(snapPasteColor('#0070C0')).toBe('#2980AB');
+  });
+
+  it('#00B050（Word 標準綠）→ 綠 #38A169', () => {
+    expect(snapPasteColor('#00B050')).toBe('#38A169');
+  });
+
+  it('#7030A0（Word 標準紫）→ 紫 #805AD5', () => {
+    expect(snapPasteColor('#7030A0')).toBe('#805AD5');
+  });
+
+  it('#FFC000（Word 標準橙黃）→ 黃 #D4A017', () => {
+    expect(snapPasteColor('#FFC000')).toBe('#D4A017');
+  });
+
+  it('空字串 / 無法解析 → null（不得 throw）', () => {
+    expect(snapPasteColor('')).toBeNull();
+    expect(snapPasteColor('not-a-color')).toBeNull();
+    expect(snapPasteColor(null)).toBeNull();
+    expect(snapPasteColor(undefined)).toBeNull();
+  });
+
+  it('回傳值一律屬於 TEXT_COLORS 的 hex 或 null（不得產生色盤外的顏色）', () => {
+    const allowed = TEXT_COLORS.filter(c => c.hex).map(c => c.hex);
+    const inputs = ['#FF0000', '#0070C0', '#00B050', '#7030A0', '#FFC000', '#FF8800', '#8B00FF', '#00FFFF'];
+    for (const input of inputs) {
+      const out = snapPasteColor(input);
+      expect(out).not.toBeNull();
+      expect(allowed).toContain(out!);
+    }
   });
 });
 
@@ -795,5 +1004,381 @@ describe('RichTextEditorComponent tableStructureEditing', () => {
     rowRef.changeDetectorRef.detectChanges();
     // 凍結：addAbove 仍不出現
     expect(document.body.querySelector('[data-testid="rte-grip-item-addAbove"]')).toBeNull();
+  });
+});
+
+// ── 貼上分派（onPaste）：結構性保證「不吞內容」 ────────────────────────────────
+//
+// 這一組守的是一條硬規則：**任何分支若產不出可插入內容，一律 return false 把控制權
+// 交還 ProseMirror**（PM 對不認識的元素是保留內文往下遞迴，交還不會吃掉內容）。
+// 原本只有 Excel 分支允許「沒插入也 return true」，把「嗅探錯誤」升級成「內容永久遺失」。
+
+describe('RichTextEditorComponent paste dispatch', () => {
+  let fixture: ComponentFixture<RichTextEditorComponent>;
+  let comp: RichTextEditorComponent;
+
+  function create(hiddenTools: ReadonlyArray<'underline' | 'color' | 'table'> = []) {
+    fixture = TestBed.createComponent(RichTextEditorComponent);
+    comp = fixture.componentInstance;
+    comp.hiddenTools = hiddenTools;
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [RichTextEditorComponent] }).compileComponents();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  function ed() {
+    return comp.getEditor()!;
+  }
+
+  /** 組出真實 ClipboardEvent（karma 跑真 Chrome，DataTransfer / ClipboardEvent 都可用）。 */
+  function pasteEvent(parts: { html?: string; text?: string; withImage?: boolean }): ClipboardEvent {
+    const dt = new DataTransfer();
+    if (parts.html) dt.setData('text/html', parts.html);
+    if (parts.text) dt.setData('text/plain', parts.text);
+    if (parts.withImage) {
+      dt.items.add(new File([new Uint8Array([137, 80, 78, 71])], 'clip.png', { type: 'image/png' }));
+    }
+    return new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+  }
+
+  function callOnPaste(e: ClipboardEvent): boolean {
+    return (comp as unknown as { onPaste(e: ClipboardEvent): boolean }).onPaste(e);
+  }
+
+  // ── 死貼上迴歸：Word 三方言都必須交還 ProseMirror 且真的有內容進來 ──
+
+  it('Word（Windows）→ onPaste 回 false（交還 PM），不得宣告已處理', () => {
+    create();
+    expect(callOnPaste(pasteEvent({ html: WORD_WIN_HTML, text: 'Item1\nItem 2\nSome text' }))).toBeFalse();
+  });
+
+  it('Word（macOS Safari）→ onPaste 回 false', () => {
+    create();
+    expect(callOnPaste(pasteEvent({ html: WORD_MAC_SAFARI_HTML, text: 'Item1\nSome text' }))).toBeFalse();
+  });
+
+  it('Word email（filtered medium）→ onPaste 回 false', () => {
+    create();
+    expect(callOnPaste(pasteEvent({ html: WORD_EMAIL_HTML, text: '前言段落\nItem1' }))).toBeFalse();
+  });
+
+  it('Word（Windows）實際 dispatch 到編輯器 → 內文非空且含來源文字（原始 bug 的端到端迴歸）', () => {
+    create();
+    ed().view.dom.dispatchEvent(pasteEvent({ html: WORD_WIN_HTML, text: 'Item1\nItem 2\nSome text' }));
+    const text = ed().getText();
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain('Item1');
+    expect(text).toContain('Some text');
+  });
+
+  it('Word email 含表格外段落 → 表格前後的段落都在（不得只留第一張表）', () => {
+    create();
+    ed().view.dom.dispatchEvent(pasteEvent({ html: WORD_EMAIL_HTML, text: '前言段落\nItem1\nItem 2\n後記段落' }));
+    const text = ed().getText();
+    expect(text).toContain('前言段落');
+    expect(text).toContain('後記段落');
+  });
+
+  // ── image flavor 共存：Excel 與 Word 的 clipboard 都同時帶 image/png（2026-08-03 實測）──
+  // 若 image 分支排在 HTML 之前，或未檢查宿主是否訂閱 imagePasted，會把整包文字換成一張
+  // 儲存格截圖、或在未綁 (imagePasted) 的宿主（如 p4-4）直接吞掉貼上。
+
+  it('Word HTML ＋ image/png 共存 → 走文字路徑，不得 emit imagePasted', () => {
+    create();
+    let emitted = 0;
+    comp.imagePasted.subscribe(() => emitted++);
+    ed().view.dom.dispatchEvent(pasteEvent({ html: WORD_WIN_HTML, text: 'Item1', withImage: true }));
+    expect(emitted).toBe(0);
+    expect(ed().getText()).toContain('Item1');
+  });
+
+  it('Excel HTML ＋ image/png 共存 → 走表格路徑，不得 emit imagePasted（儲存格截圖須被吞掉）', () => {
+    create();
+    let emitted = 0;
+    comp.imagePasted.subscribe(() => emitted++);
+    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '客戶\t項目\t酬金', withImage: true }))).toBeTrue();
+    expect(emitted).toBe(0);
+  });
+
+  it('只有圖片（無 HTML）且宿主已訂閱 imagePasted → emit 並接手', () => {
+    create();
+    let emitted = 0;
+    comp.imagePasted.subscribe(() => emitted++);
+    expect(callOnPaste(pasteEvent({ withImage: true }))).toBeTrue();
+    expect(emitted).toBe(1);
+  });
+
+  it('只有圖片（無 HTML）但宿主未訂閱 imagePasted → 回 false，不得吞掉貼上', () => {
+    // p4-4 客戶狀況卡片沒有綁 (imagePasted)：若無此守衛就是「emit 進虛空 + 吞掉貼上」
+    create();
+    expect(callOnPaste(pasteEvent({ withImage: true }))).toBeFalse();
+  });
+
+  // ── markdown 劫持：有語意 HTML 時不得丟棄 HTML 改用 text/plain 重繪 ──
+
+  it('HTML 只有 p（無舊白名單 tag）＋ text/plain 像 markdown → 交還 PM，HTML 不得被丟棄', () => {
+    create();
+    const html =
+      '<p>第一段落內容，這裡刻意寫得長一些，確保整段 HTML 的字元數超過 isRichHtml 既有的 50 字元門檻</p>' +
+      '<p>第二段落內容，同樣是一般段落，沒有任何舊白名單裡的語意標籤</p>';
+    expect(html.length).toBeGreaterThan(50); // 守住 fixture 本身：太短會因長度門檻假紅
+    expect(callOnPaste(pasteEvent({ html, text: '1. 第一項\n2. 第二項' }))).toBeFalse();
+  });
+
+  it('macOS Mail → 交還 PM（現況正常的 baseline，不得回歸）', () => {
+    create();
+    expect(callOnPaste(pasteEvent({ html: MAC_MAIL_HTML, text: '為解決奇勝系統、JWMIS 及財會 TACS' }))).toBeFalse();
+    ed().view.dom.dispatchEvent(pasteEvent({ html: MAC_MAIL_HTML, text: '為解決奇勝系統' }));
+    expect(ed().getText()).toContain('奇勝系統');
+  });
+
+  it('只有 text/plain 的 markdown（無 text/html）→ 仍自動轉為格式化內容（既有功能不得被破壞）', () => {
+    create();
+    expect(callOnPaste(pasteEvent({ text: '**粗體字**\n- 清單項目' }))).toBeTrue();
+    expect(JSON.stringify(ed().getJSON())).toContain('bulletList');
+  });
+
+  // ── Excel 表格清洗：反向護欄 ＋ schema 無 table node 時不得硬插 ──
+
+  it('Excel（只有一張表格）→ 接手清洗，doc 含 table 且不含 mso-', () => {
+    create();
+    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '客戶\t項目\t酬金' }))).toBeTrue();
+    const json = JSON.stringify(ed().getJSON());
+    expect(json).toContain('"table"');
+    expect(json).not.toContain('mso-');
+    expect(ed().getText()).toContain('記帳');
+  });
+
+  it('Excel 但 schema 無 table node（hiddenTools 含 table）→ 回 false 交還 PM，不得插入無處落地的 table', () => {
+    create(['underline', 'color', 'table']);
+    expect(comp.getEditor()!.schema.nodes['table']).toBeUndefined();
+    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '客戶\t項目\t酬金' }))).toBeFalse();
+  });
+
+  it('判為 Excel 但抽不到表格 → 回 false（不得「沒插入卻 return true」）', () => {
+    create();
+    const excelNoTable = '<meta name=ProgId content=Excel.Sheet><div>只有文字沒有表格的 Excel 圖表複製</div>';
+    expect(callOnPaste(pasteEvent({ html: excelNoTable, text: '只有文字' }))).toBeFalse();
+  });
+
+  it('無 clipboardData → 回 false', () => {
+    create();
+    expect(callOnPaste(new ClipboardEvent('paste'))).toBeFalse();
+  });
+});
+
+// ── normalizeOfficeHtml：Office 格式保真 ──────────────────────────────────────
+//
+// 掛在 `editorProps.transformPastedHTML`，只在 `isOfficeHtml` 為真時作用。
+// 三件事在架構上非做不可：
+// 1. Excel 的顏色/粗體住在 <style> 的 class 規則裡，而 ProseMirror **明確忽略 <style>**、
+//    只讀 inline style attribute → 不 inline 化就拿不到（實測 macOS Excel 無 class=xl##，
+//    故必須泛用任意 class 命名，不得寫死 .xl##）
+// 2. Word 的清單不是 ul/li，是 <p class=MsoListParagraph style='mso-list:lN levelM'>
+//    ＋被 <![if !supportLists]> 包住的符號 span；<![if]> 在 HTML5 是 bogus comment，
+//    只有標記本身變註解、中間的符號 span 仍是活的 DOM → 不處理就會外洩字面「·」「1.」
+// 3. colwidth / align 序列化層存不回去（serializeTableAsHtml 只存 colspan/rowspan）
+//    → 必須主動 strip，否則是「編輯器看得到、reopen 變預設」的前後端不一致
+
+describe('normalizeOfficeHtml', () => {
+  function parse(html: string): Document {
+    return new DOMParser().parseFromString(html, 'text/html');
+  }
+
+  // ── <style> class 規則 inline 化（泛用命名）──
+
+  it('任意 class 命名的 <style> 規則都 inline 化（不得寫死 .xl##）', () => {
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office">' +
+      '<head><style><!--.xl65{color:#FF0000;font-weight:700} .head0{color:#0070C0;font-weight:700}--></style></head>' +
+      '<body><table><tr><td class=xl65>紅字粗體</td><td class=head0>藍字粗體</td></tr></table></body></html>';
+    const out = normalizeOfficeHtml(html);
+    const cells = parse(out).querySelectorAll('td');
+    expect(cells.length).toBe(2);
+    // 顏色已 inline 且吸附到色盤（#FF0000 → 紅 #E53E3E；#0070C0 → 藍 #2980AB）
+    expect(cells[0].getAttribute('style')).toContain('#E53E3E');
+    expect(cells[1].getAttribute('style')).toContain('#2980AB');
+    expect(cells[0].getAttribute('style')).toContain('font-weight');
+  });
+
+  it('真實 Excel fixture：白字標題列的 color:white 被移除（不得隱形），一般 cell 文字保留', () => {
+    const out = normalizeOfficeHtml(EXCEL_MAC_HTML);
+    expect(out).not.toContain('white');
+    expect(out).toContain('客戶');
+    expect(out).toContain('記帳');
+    expect(out).toContain('12000');
+  });
+
+  it('color:windowtext（CSS 系統色）不得變成任何色盤色', () => {
+    const html =
+      '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head>' +
+      '<meta name=ProgId content=Excel.Sheet>' +
+      '<style><!--.font5{color:windowtext}--></style></head>' +
+      '<body><table><tr><td class=font5>一般文字</td></tr></table></body></html>';
+    const out = normalizeOfficeHtml(html);
+    const style = parse(out).querySelector('td')!.getAttribute('style') ?? '';
+    expect(style).not.toContain('color');
+  });
+
+  it('來源本就是 inline style（無 <style> 區塊）→ 顏色照吸附，不重複套用', () => {
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office"><body>' +
+      '<p style="color:#EE0000;font-size:22pt">紅字</p></body></html>';
+    const out = normalizeOfficeHtml(html);
+    const style = parse(out).querySelector('p')!.getAttribute('style') ?? '';
+    expect(style).toContain('#E53E3E');
+    expect((style.match(/color/g) ?? []).length).toBe(1);
+    expect(style).not.toContain('font-size'); // 字級刻意不保留
+  });
+
+  // ── Word 假清單重組 ──
+
+  it('真實 Word（Windows）假清單 → 真 ol/ul，且不得殘留字面「·」或「1.」', () => {
+    const out = normalizeOfficeHtml(WORD_WIN_HTML);
+    const doc = parse(out);
+    expect(doc.querySelectorAll('ol').length).toBeGreaterThan(0);
+    expect(doc.querySelectorAll('ul').length).toBeGreaterThan(0);
+    // Word 原始碼會在行中折行（`Item\n2`），HTML 語意上換行＝空白，PM 解析時才收斂；
+    // normalizer 刻意不動空白（那是 PM 的職責，且動了會弄壞 <pre>），故此處比對前先收斂。
+    const items = Array.from(doc.querySelectorAll('li')).map(li =>
+      (li.textContent ?? '').replace(/\s+/g, ' ').trim(),
+    );
+    expect(items).toContain('Item1');
+    expect(items).toContain('Bullet 1');
+    // 符號不得外洩成內文
+    const text = doc.body.textContent ?? '';
+    expect(text).not.toContain('·');
+    expect(text).not.toContain('1.');
+    // 清單外的一般段落仍在
+    expect(text).toContain('Some text');
+  });
+
+  it('真實 Word（macOS Safari）假清單 → 真 ol，符號不外洩', () => {
+    const out = normalizeOfficeHtml(WORD_MAC_SAFARI_HTML);
+    const doc = parse(out);
+    expect(doc.querySelectorAll('ol, ul').length).toBeGreaterThan(0);
+    expect((doc.body.textContent ?? '')).not.toContain('1.');
+    expect(Array.from(doc.querySelectorAll('li')).map(li => (li.textContent ?? '').trim())).toContain('Item1');
+  });
+
+  it('Word email 已是真 ol/li → 不得再重組（重複包裹會多一層清單）', () => {
+    const out = normalizeOfficeHtml(WORD_EMAIL_HTML);
+    const doc = parse(out);
+    expect(doc.querySelectorAll('ol').length).toBe(1);
+    expect(doc.querySelectorAll('ol ol').length).toBe(0);
+    expect(doc.querySelectorAll('li').length).toBe(2);
+    expect(doc.body.textContent).toContain('前言段落');
+    expect(doc.body.textContent).toContain('後記段落');
+  });
+
+  // ── Office 雜訊清除 ──
+
+  it('移除 colgroup / col / align / class / <o:p> / mso-* 宣告', () => {
+    const out = normalizeOfficeHtml(EXCEL_MAC_HTML);
+    expect(out).not.toContain('<col');
+    expect(out).not.toContain('colgroup');
+    expect(out).not.toContain('mso-');
+    expect(out).not.toContain('class=');
+    expect(out.toLowerCase()).not.toContain('<o:p');
+    expect(out).not.toContain('align=');
+    expect(out).not.toContain('text-align');
+  });
+
+  // ── 紅線：不得破壞 TipTap Bold 的 font-weight 防線 ──
+
+  it('紅線：font-weight:normal 宣告必須保留（移除會讓 Google Docs 整段變粗體）', () => {
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office"><body>' +
+      '<b style="font-weight:normal"><p style="font-weight:400">一般文字</p></b></body></html>';
+    const out = normalizeOfficeHtml(html);
+    expect(out).toContain('font-weight:normal');
+    expect(out).toContain('font-weight:400');
+  });
+
+  it('紅線：Google Docs 不被 isOfficeHtml 命中 → normalizer 不介入（貼上後 doc 中無 bold mark）', () => {
+    expect(isOfficeHtml(GOOGLE_DOCS_HTML)).toBeFalse();
+  });
+
+  it('顏色一律落在 TEXT_COLORS 內或被移除（不得產生色盤外的顏色）', () => {
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office"><body>' +
+      '<p style="color:#8B00FF">紫調</p><p style="color:rgb(255,136,0)">橘調</p>' +
+      '<p style="color:#123456">深藍灰</p></body></html>';
+    const out = normalizeOfficeHtml(html);
+    const allowed = TEXT_COLORS.filter(c => c.hex).map(c => c.hex!);
+    const colors = Array.from(parse(out).querySelectorAll('[style]'))
+      .map(el => /color\s*:\s*([^;]+)/i.exec(el.getAttribute('style') ?? '')?.[1]?.trim())
+      .filter((c): c is string => !!c);
+    for (const c of colors) expect(allowed).toContain(c);
+  });
+
+  it('空字串 / 非 Office HTML → 原樣回傳，不得 throw', () => {
+    expect(normalizeOfficeHtml('')).toBe('');
+    const plain = '<p>一般網頁段落</p>';
+    expect(normalizeOfficeHtml(plain)).toContain('一般網頁段落');
+  });
+});
+
+// ── transformPastedHTML 掛載：Office 來源才正規化 ──────────────────────────────
+
+describe('RichTextEditorComponent transformPastedHTML', () => {
+  let fixture: ComponentFixture<RichTextEditorComponent>;
+  let comp: RichTextEditorComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [RichTextEditorComponent] }).compileComponents();
+    fixture = TestBed.createComponent(RichTextEditorComponent);
+    comp = fixture.componentInstance;
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    fixture.nativeElement.remove();
+  });
+
+  function transform(html: string): string {
+    const fn = comp.getEditor()!.view.someProp('transformPastedHTML') as
+      | ((html: string) => string)
+      | undefined;
+    expect(fn).toBeDefined();
+    return fn!(html);
+  }
+
+  it('Office HTML → 經過正規化（Word 假清單變真清單）', () => {
+    expect(transform(WORD_WIN_HTML)).toContain('<li');
+  });
+
+  it('非 Office HTML（macOS Mail）→ 原樣通過，不得被介入', () => {
+    expect(transform(MAC_MAIL_HTML)).toBe(MAC_MAIL_HTML);
+  });
+
+  it('Google Docs → 原樣通過（font-weight 防線不得被動到）', () => {
+    expect(transform(GOOGLE_DOCS_HTML)).toBe(GOOGLE_DOCS_HTML);
+  });
+
+  it('Word 貼上端到端：清單進得來且無字面符號外洩', () => {
+    const dt = new DataTransfer();
+    dt.setData('text/html', WORD_WIN_HTML);
+    dt.setData('text/plain', 'Item1\nItem 2\nSome text\nBullet 1');
+    comp.getEditor()!.view.dom.dispatchEvent(
+      new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }),
+    );
+    const json = JSON.stringify(comp.getEditor()!.getJSON());
+    const text = comp.getEditor()!.getText();
+    expect(json).toContain('orderedList');
+    expect(json).toContain('bulletList');
+    expect(text).toContain('Item1');
+    expect(text).toContain('Some text');
+    expect(text).not.toContain('·');
   });
 });

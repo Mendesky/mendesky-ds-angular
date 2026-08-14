@@ -5,6 +5,9 @@
   "main": "src/index.ts",
   "sideEffects": false,
   "license": "MIT",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "peerDependencies": {
     "@angular/cdk": ">=17.3.0",
     "@angular/common": ">=17.3.0",
@@ -24,6 +27,31 @@
     "@tiptap/starter-kit": "^3.22.3",
     "markdown-it": "^14.1.1",
     "pdfjs-dist": "3.11.174",
-    "rxjs": ">=7.0.0"
+    "rxjs": ">=7.1.0"
+  },
+  "devDependencies": {
+    "@angular/cdk": "^17.3.0",
+    "@angular/common": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/forms": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "@tiptap/core": "^3.22.3",
+    "@tiptap/extension-color": "^3.22.4",
+    "@tiptap/extension-link": "^3.22.3",
+    "@tiptap/extension-placeholder": "^3.22.3",
+    "@tiptap/extension-table": "^3.22.4",
+    "@tiptap/extension-table-cell": "^3.22.4",
+    "@tiptap/extension-table-header": "^3.22.4",
+    "@tiptap/extension-table-row": "^3.22.4",
+    "@tiptap/extension-text-style": "^3.22.4",
+    "@tiptap/pm": "^3.22.3",
+    "@tiptap/starter-kit": "^3.22.3",
+    "@types/jasmine": "^6.0.0",
+    "@types/markdown-it": "^14.1.2",
+    "markdown-it": "^14.1.1",
+    "pdfjs-dist": "3.11.174",
+    "rxjs": "~7.8.0",
+    "typescript": "~5.4.2",
+    "zone.js": "~0.14.3"
   }
 }

@@ -693,8 +693,8 @@ function sanitizeInlineStyles(root: HTMLElement): void {
  * （macOS Mail、Google Docs、一般網頁）走 PM 預設解析就已正確，介入只會弄壞
  * （Google Docs 靠 `<b style="font-weight:normal">` 的宣告避免整段變粗體）。
  *
- * 五步順序有依賴關係：class 規則要在 `class` 屬性被移除前 inline 化；假清單重組要在
- * 符號 span 被清掉前讀到符號才能判斷 ordered / bullet。
+ * 各步順序有依賴關係（見下方編號註解）：class 規則要在 `class` 屬性被移除前 inline 化；
+ * 假清單重組要在符號 span 被清掉前讀到符號才能判斷 ordered / bullet。
  */
 export function normalizeOfficeHtml(html: string): string {
   if (!html) return html;

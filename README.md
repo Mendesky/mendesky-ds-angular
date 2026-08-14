@@ -137,3 +137,10 @@ cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
 ## License
 
 MIT
+
+## Spec 政策：與 mendesky-web 同步
+
+本套件的 `*.spec.ts` 與 mendesky-web 中對應的 consumer contract tests 是**同一份契約的兩份拷貝**，
+必須同步更新：改了元件行為，兩邊的 spec 一起改。web 的 CI（karma）是行為閘門，本 repo 的 CI 只跑
+`tsc --noEmit`（typecheck 閘門）。回灌（backport）元件程式碼時，對應 spec 檔一併回灌，
+不得留下「程式碼是新的、spec 斷言舊行為」的打架狀態。

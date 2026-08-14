@@ -1,0 +1,32 @@
+name: CI
+
+# DS 是 source-consumed 套件：完整的 build／unit test 閘門在 mendesky-web 的
+# CI（consumer contract tests，spec 兩邊同步）。這裡守住最低限度——
+# +N 行不得在 DS 側零驗證進 main。
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: tsc --noEmit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
