@@ -51,6 +51,13 @@ export class DrawerShellComponent implements OnChanges, OnDestroy {
       this.isClosing.set(false);
       this.visible.set(true);
     } else {
+      // `isOpen` 第一次綁定就是 `false`（抽屜預設關閉）時，沒有「正在關閉」的動畫可播——
+      // `visible` / `isClosing` 本來就已經是初始值 `false`，不需要排一顆 300ms 的計時器
+      // 才把它們設回同樣的值。
+      //
+      // 這不只是浪費：消費端用 `fakeAsync` 測試時，若在計時器觸發前就結束（例如 `tick(200)`
+      // 短於 300ms），會留下一顆「還在佇列裡」的計時器讓測試失敗，即使該測試與抽屜開闔無關。
+      if (changes['isOpen'].firstChange) return;
       this.isClosing.set(true);
       this.closeTimer = setTimeout(() => {
         this.visible.set(false);
