@@ -13,7 +13,7 @@
 .dialog-backdrop {
   /* 遮罩用黑而非 mixin 預設的灰藍：對齊 DS 文件 dialog「Dual-Blur 視覺規格」的
      .dialog-overlay background（2026-08-13 使用者拍板以文件為主）。
-     刻意只覆寫此處、不改 mixin 預設——另外 8 個用預設值的浮層文件並未規定遮罩顏色。 */
+     刻意只覆寫此處、不改 mixin 預設——其他使用預設值的浮層，其遮罩顏色文件並未規定。 */
   @include mx.backdrop-base($bg: rgba(0, 0, 0, 0.2));
   @include mx.backdrop-enter(300ms);
   position: absolute; /* 覆寫 mixin 的 fixed：backdrop 在 dialog-overlay 內部 */
