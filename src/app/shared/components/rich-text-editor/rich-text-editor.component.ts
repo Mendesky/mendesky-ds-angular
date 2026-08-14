@@ -16,6 +16,8 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { CellSelection, selectedRect, isInTable } from '@tiptap/pm/tables';
+// 與全域 DOMParser 同名，故取別名；用途是「先確認這段 HTML 在當前 schema 下解析得出節點」。
+import { DOMParser as PMDOMParser } from '@tiptap/pm/model';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import { TextStyle } from '@tiptap/extension-text-style';
@@ -25,11 +27,15 @@ import { IconBtnComponent } from '../icon-btn/icon-btn.component';
 import { IconComponent } from '../icon/icon.component';
 import { ProseMirrorJSON } from '../../models/prosemirror.model';
 import {
+  TEXT_COLORS,
   docEqualsIgnoringAttrs,
   isExcelHtml,
   extractAndCleanExcelTable,
   isRichHtml,
   isMarkdownLike,
+  isOfficeHtml,
+  isTableOnlyClipboard,
+  normalizeOfficeHtml,
 } from './rich-text-editor.helpers';
 
 /** 列把手選單項。不含「刪除整個表格」——太危險易誤觸，改由使用者選取整表後原生刪除。 */
@@ -154,6 +160,11 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
       content: this.value ?? undefined,
       editable: !this.readOnly,
       editorProps: this.readOnly ? {} : {
+        // Office 來源先正規化再交給 PM 解析（Excel 的 <style> class 規則 inline 化、
+        // Word 假清單重組成真 ul/ol、strip colwidth/align/mso-*）。
+        // 非 Office 來源原樣通過——macOS Mail / Google Docs / 一般網頁走 PM 預設解析
+        // 就已正確，介入只會弄壞（Google Docs 靠 font-weight:normal 宣告避免整段變粗體）。
+        transformPastedHTML: html => (isOfficeHtml(html) ? normalizeOfficeHtml(html) : html),
         handlePaste: (_view, event) => this.onPaste(event as ClipboardEvent),
       },
       onUpdate: ({ editor }) => {
@@ -522,17 +533,11 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
    * 固定色票，沿用舊前端 markdown-textarea 的 7 色（來源：Frontend repo
    * component/markdown-textarea presetColors）；hex=null 為「預設（清除顏色）」。
    * 顏色以 inline style 序列化，前端檢視 / 後端 PDF 皆吃 inline style，故色盤可自由增減、不影響契約。
+   *
+   * 定義本體在 `rich-text-editor.helpers.ts`（SSOT）——貼上時的 `snapPasteColor` 要從同一份
+   * 定義推導可用色相，色盤若在兩處各寫一份會漂移。此處只是轉出給 template 用。
    */
-  readonly TEXT_COLORS: ReadonlyArray<{ label: string; hex: string | null }> = [
-    { label: '預設', hex: null },
-    { label: '紅', hex: '#E53E3E' },
-    { label: '橘', hex: '#DD6B20' },
-    { label: '黃', hex: '#D4A017' },
-    { label: '綠', hex: '#38A169' },
-    { label: '藍', hex: '#2980AB' },
-    { label: '紫', hex: '#805AD5' },
-    { label: '灰', hex: '#718096' },
-  ];
+  readonly TEXT_COLORS = TEXT_COLORS;
   readonly colorMenuOpen = signal(false);
 
   openColorMenu(): void { this.colorMenuOpen.set(true); }
@@ -549,22 +554,59 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
 
   // ── Paste & Drop ──
 
+  /**
+   * `handlePaste` 分派。
+   *
+   * **硬規則：任何分支若產不出可插入內容，一律 `return false` 把控制權交還 ProseMirror。**
+   * `return true` 等於告訴 PM「這次貼上我處理完了」，PM 會 `preventDefault()` 且不做預設貼上；
+   * 因此「沒插入卻 return true」＝內容被靜默吃掉（使用者體感是按 ⌘V 完全沒反應）。
+   * PM 預設解析對 schema 不認識的元素是保留內文往下遞迴，所以交還不會吃掉內容。
+   *
+   * 嗅探（`isExcelHtml` 等）只用來決定「要不要做額外處理」，**不得**用來決定「內容能不能進來」。
+   */
   private onPaste(e: ClipboardEvent): boolean {
     const data = e.clipboardData;
     if (!data) return false;
 
-    const htmlData = data.getData('text/html');
+    const rawHtml = data.getData('text/html');
     const textData = data.getData('text/plain');
+    // `handlePaste` 拿到的是**原始** clipboard 字串——`transformPastedHTML` 只影響 PM 自己
+    // 解析出的 slice，不會改動 event。所以此處要自己正規化一次，否則 Excel 分支看到的是
+    // 未 inline 化的 <style> class 規則（顏色/粗體全在裡面）。normalizeOfficeHtml 是純函數，
+    // 對已正規化的輸入等冪。
+    const htmlData = rawHtml && isOfficeHtml(rawHtml) ? normalizeOfficeHtml(rawHtml) : rawHtml;
 
-    if (htmlData && isExcelHtml(htmlData)) {
+    // ① Excel 表格清洗。四個條件全過才接手，任一不過就往下走：
+    //    - 確定是 Excel（meta 指紋，非 xmlns——Word/Outlook 也有 office namespace）
+    //    - schema 真的有 table node（`hiddenTools` 含 table 時沒有，硬插會被攤平成一坨黏死的文字）
+    //    - clipboard 只有一張表格（Word「段落＋表格＋段落」或 Outlook 簽名檔 layout table
+    //      走這條會只留表格、其餘靜默丟失）
+    //    - 清洗後真的抽到可插入內容
+    //    注意 `isExcelHtml` 必須驗 **rawHtml**：正規化會移除 `<meta>`（Excel 指紋就在那裡），
+    //    拿正規化後的字串去判會讓這條分支永遠不觸發。形狀判斷則用正規化後的——
+    //    此時 `colgroup`/`col` 已清掉，判得更準。
+    if (
+      rawHtml &&
+      isExcelHtml(rawHtml) &&
+      !!this.editorInstance?.schema.nodes['table'] &&
+      isTableOnlyClipboard(htmlData)
+    ) {
       const tableHtml = extractAndCleanExcelTable(htmlData);
-      if (tableHtml) this.editorInstance?.commands.insertContent(tableHtml);
-      return true;
+      if (tableHtml && this.insertIfNonEmpty(tableHtml)) return true;
     }
 
-    const items = data.items;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.startsWith('image/')) {
+    // ② 有語意結構的 HTML → 交還 ProseMirror 預設解析。
+    //    **這條必須排在 image 之前**：2026-08-03 實測 Excel 與 Word 的 clipboard `items`
+    //    都同時帶 `image/png`（儲存格截圖 / 文件快照）。若先走 image 分支，會把整包文字換成
+    //    一張圖，或在未綁 `(imagePasted)` 的宿主（如 p4-4 客戶狀況卡片）直接吞掉貼上。
+    if (htmlData && isRichHtml(htmlData)) return false;
+
+    // ③ 純圖片貼上（clipboard 沒有可用 HTML）。只有宿主真的訂閱了 `imagePasted` 才接手，
+    //    否則就是「emit 進虛空 ＋ 吞掉貼上」——p4-4 客戶狀況卡片沒有綁這個 output。
+    if (this.imagePasted.observed) {
+      const items = data.items;
+      for (let i = 0; i < items.length; i++) {
+        if (!items[i].type.startsWith('image/')) continue;
         const file = items[i].getAsFile();
         if (file) {
           this.imagePasted.emit(file);
@@ -573,13 +615,31 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
       }
     }
 
-    if (!isRichHtml(htmlData) && textData && isMarkdownLike(textData)) {
+    // ④ markdown 純文字自動轉格式：降為「剪貼簿沒有可用 HTML」時的 fallback。
+    //    有 HTML 卻在此把它丟棄改用 text/plain 重繪，是最徹底的「吃掉格式」。
+    if (textData && isMarkdownLike(textData)) {
       const html = this.md.render(textData);
-      this.editorInstance?.commands.insertContent(html);
-      return true;
+      if (this.insertIfNonEmpty(html)) return true;
     }
 
     return false;
+  }
+
+  /**
+   * 只有「這段 HTML 在當前 schema 下真的解析出節點」時才插入並回 true。
+   *
+   * 先 parse 再插入（而非插入後比對 doc 大小）：貼上時若有選取範圍，插入會同時刪除選取，
+   * doc 大小可能不變甚至變小，用大小判斷會誤判成失敗 → 交還 PM 後被貼第二次。
+   */
+  private insertIfNonEmpty(html: string): boolean {
+    const editor = this.editorInstance;
+    if (!editor) return false;
+    const holder = document.createElement('div');
+    holder.innerHTML = html;
+    const slice = PMDOMParser.fromSchema(editor.schema).parseSlice(holder);
+    if (slice.content.size === 0) return false;
+    editor.commands.insertContent(html);
+    return true;
   }
 
   private handleDrop = (event: Event): void => {

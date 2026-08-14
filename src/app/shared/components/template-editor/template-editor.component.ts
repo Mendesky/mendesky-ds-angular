@@ -117,7 +117,15 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges {
     // 每次 CD 回新 reference——只在「key 集合或 options 數」實際變化時才重渲染
     const defsSigChanged = changes['variableDefs'] ? this._updateVarDefsSig() : false;
 
-    if (changes['template'] && !this.isEditing) {
+    // 先擋自己的 echo：controlled parent（p4-5-fee / p4-6-notes / p5-letter）會把剛 emit 的
+    // template 原封不動回寫成 [template]。此時 DOM 已經是正確狀態，重繪只會把使用者的游標打掉
+    // （innerHTML 整批換節點 → selection 塌回編輯器 offset 0 → Backspace 變 no-op，症狀就是
+    //  「剛插入的範本變數刪不掉」；2026-08-11 使用者第二輪回報，測試已鎖）。
+    // 只有「真正的外部新值」才需要重繪。isEditing 仍保留為第二道門（編輯中一律不重繪）。
+    const externalTemplateChange = !!changes['template']
+      && changes['template'].currentValue !== this._lastEmittedTemplate;
+
+    if (externalTemplateChange && !this.isEditing) {
       this.renderTemplate();
     } else if (defsSigChanged) {
       if (this.isEditing) {
@@ -146,9 +154,48 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges {
     if (!el) return;
     this._pendingDefsRender = false;
     el.innerHTML = this.buildHTML(this.template, this.variables);
+    this._ensureTrailingAnchor();
     this.syncHasContent();
   }
 
+  /**
+   * 不變量：編輯器內容若「以 chip 結尾」，chip 之後必須有一個 text node 當游標落點。
+   *
+   * chip 是 `contenteditable=false` 的 atomic inline 元素，末尾沒有可編輯落點時游標無處可放
+   * （實測會塌到編輯器根節點 offset 0），此時 Backspace 是 no-op ——「插入末尾變數後刪不掉」
+   * 就是這個狀態（2026-08-11 使用者回報；2026-06-27 曾修過 insertVariable 側的同型缺口）。
+   *
+   * 為什麼渲染側也需要：`buildHTML` 是用 template 依 `%Key%` split 後拼字串，結尾是變數時
+   * 最後一段為空字串、貢獻 0 字元 → `innerHTML` 出來的最後一個子節點就是 chip。
+   * 首次渲染 / reopen / 外部 template 變更 / defs 升級後的重繪都走 renderTemplate，全都會踩到。
+   *
+   * 用**空 text node**而非 ZWSP：實測 ZWSP 會讓第一次 Backspace 只吃掉 ZWSP、chip 反而留著
+   * （等於把「刪不掉」換成「要按兩次」）。
+   */
+  private _ensureTrailingAnchor(): void {
+    const el = this.editorRef?.nativeElement;
+    if (!el) return;
+    // 找「最後一個有意義的節點」而非 el.lastChild：真 app 實測尾端常有瀏覽器 normalize 補的 <br>
+    // （2026-08-11 診斷檔第 1 行 lastNextSibling:"BR("")" / lastIsLastChild:false），
+    // 只看 lastChild 會讓 helper 直接不做事、chip 後仍沒有打字落點。
+    let last: ChildNode | null = el.lastChild;
+    while (last && last.nodeType === Node.ELEMENT_NODE && (last as HTMLElement).tagName === 'BR') {
+      last = last.previousSibling;
+    }
+    if (last && last.nodeType === Node.ELEMENT_NODE && (last as HTMLElement).matches('.tpl[data-var]')) {
+      // 插在 chip **之後**（不是 appendChild 到最尾）：否則 anchor 落在 <br> 之後，
+      // 不是 chip 的鄰居，游標仍無處可放。<br> 本身保持原位（可能是使用者按的換行）。
+      el.insertBefore(document.createTextNode(''), last.nextSibling);
+    }
+  }
+
+  /**
+   * chip 顯示值同步。**值沒變就不寫 DOM**——`p4-5-fee` 的 `[variables]` 綁定用 spread 產新物件，
+   * 每次 CD 都是新 reference → `changes['variables']` 每輪成立 → 無條件寫會讓每顆 chip 每輪
+   * 產生一筆 MutationRecord（2026-08-11 真 app 診斷檔 2630 行中 2627 行都是
+   * `{target:"SPAN",added:["#text"],removed:["#text"]}`，即下面 plain 那條路）。
+   * 已驗證不傷游標，但無謂的 DOM 寫入照樣要消掉。
+   */
   private updateVariableSpans(): void {
     const el = this.editorRef?.nativeElement;
     if (!el) return;
@@ -156,17 +203,18 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges {
       const key = span.getAttribute('data-var') ?? '';
       const val = this.variables[key];
       const def = this.findDef(key);
-      span.classList.toggle('tpl--empty', !val);
+      span.classList.toggle('tpl--empty', !val); // 狀態相同時 DOM 不變更，無需額外守門
+      const next = val || `[${key}]`;
       if (def?.options?.length) {
         // select chip：只更新文字節點（第一個 childNode），保留 caret SVG
         const firstChild = span.childNodes[0];
         if (firstChild?.nodeType === Node.TEXT_NODE) {
-          firstChild.textContent = val || `[${key}]`;
+          if (firstChild.textContent !== next) firstChild.textContent = next;
         } else {
-          span.innerHTML = this.escape(val || `[${key}]`) + CARET_SVG;
+          span.innerHTML = this.escape(next) + CARET_SVG;
         }
-      } else {
-        span.textContent = val || `[${key}]`;
+      } else if (span.textContent !== next) {
+        span.textContent = next;
       }
     });
   }
@@ -294,7 +342,71 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges {
   onCompositionEnd(): void { this._composing = false; this._detectAutocomplete(); }
 
   /** autocomplete 面板開啟時路由鍵盤（焦點在編輯器，故由此攔截 ↑↓Enter Esc） */
+  /**
+   * Backspace 刪除游標前方的 chip —— **必須由元件自己刪，不能靠瀏覽器**。
+   *
+   * 真 app 實測（2026-08-11 使用者 Console 診斷）：chip 後面已有空 text node、游標就在該 node
+   * 的 offset 0、`defaultPrevented === false`（沒有任何人攔事件），原生 Backspace **仍然不刪
+   * chip**——chip 數 6→6，瀏覽器反而做 normalize 補了一個 `<br>`、游標跳到 `EDITOR@9`。
+   * 也就是說「空 text node」是零寬度落點，對原生刪除不算「前方有可刪內容」。
+   * 先前 RCA 的 playwright 實驗顯示「刪得掉」，是因為那裡的 selection 是元素層 offset
+   * （`EDITOR@childNodes.length`）——與真 app 的 `TEXT("")@0` 不是同一種位置，這個瀏覽器邊界
+   * 行為在 harness 與真 app 不一致、測不出來，所以改成自己刪：行為可控、karma 可完整驗證。
+   *
+   * @returns true = 已處理（已 preventDefault 並移除 chip）；false = 不介入，交給原生行為
+   */
+  private _deleteChipBeforeCaret(event: KeyboardEvent): boolean {
+    const el = this.editorRef?.nativeElement;
+    const sel = window.getSelection();
+    if (!el || !sel || sel.rangeCount === 0) return false;
+    const range = sel.getRangeAt(0);
+    if (!range.collapsed) return false;                    // 有選取範圍 → 原生刪選取內容
+    if (!el.contains(range.startContainer)) return false;
+
+    let node: Node | null;
+    if (range.startContainer.nodeType === Node.TEXT_NODE) {
+      if (range.startOffset > 0) return false;             // 前方還有字元 → 原生刪字元
+      node = range.startContainer.previousSibling;
+    } else {
+      node = range.startOffset > 0 ? range.startContainer.childNodes[range.startOffset - 1] : null;
+    }
+    // 只跨過「空 text node」這種零寬度落點；遇到 <br>（使用者按的換行）不跨過去，
+    // 讓原生先刪掉那個換行——否則會變成「按一次 Backspace 連換行帶 chip 一起消失」。
+    while (node && node.nodeType === Node.TEXT_NODE && !(node as Text).data) {
+      node = node.previousSibling;
+    }
+    const chip = node && node.nodeType === Node.ELEMENT_NODE
+      && (node as HTMLElement).matches('.tpl[data-var]')
+      ? (node as HTMLElement)
+      : null;
+    if (!chip) return false;
+
+    event.preventDefault();
+    const before = chip.previousSibling;
+    chip.remove();
+
+    // 游標落回原本 chip 的位置（前一個 text node 末端 / 前一個節點之後 / 編輯器起點）
+    const caret = document.createRange();
+    if (before && before.nodeType === Node.TEXT_NODE) {
+      caret.setStart(before, (before as Text).data.length);
+    } else if (before) {
+      caret.setStartAfter(before);
+    } else {
+      caret.setStart(el, 0);
+    }
+    caret.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(caret);
+
+    this._ensureTrailingAnchor();   // 刪完若又以 chip 結尾 → 補回打字落點
+    this.onInput();                 // 走既有路徑：extractTemplate → emit + _lastEmittedTemplate
+    return true;
+  }
+
   onKeydown(event: KeyboardEvent): void {
+    // Backspace 先於 autocomplete 判斷：面板沒開時下面那行會直接 return，chip 刪除就永遠不會執行
+    if (event.key === 'Backspace' && this._deleteChipBeforeCaret(event)) return;
+
     const p = this.varPanel;
     if (!p?.isOpen || !p.inline) return;
     switch (event.key) {
@@ -480,6 +592,8 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges {
       fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
     }
     node.parentNode!.replaceChild(fragment, node);
+    // `%Key%` 收在字串結尾時上面的 if 不成立 → chip 後沒有游標落點（同 renderTemplate 的缺口）
+    this._ensureTrailingAnchor();
   }
 
   /** 將 %key% 變數插入游標位置；若編輯器未聚焦則插入至末尾 */
@@ -524,7 +638,12 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges {
     sel?.addRange(caret);
 
     this.syncHasContent();
-    this.templateChange.emit(this.extractTemplate());
+    // 記住自己 emit 的值（與 onInput / _replaceSelectChip 對齊）：controlled parent 會把它原封不動
+    // 回寫成 [template]，ngOnChanges 靠這個比對才分得出「自己的 echo」與「外部新值」，
+    // 不會在使用者游標底下重繪（重繪會讓 selection 塌回編輯器 offset 0 → Backspace 變 no-op）。
+    const emittedTemplate = this.extractTemplate();
+    this._lastEmittedTemplate = emittedTemplate;
+    this.templateChange.emit(emittedTemplate);
     this.textChange.emit(this.extractText());
   }
 
