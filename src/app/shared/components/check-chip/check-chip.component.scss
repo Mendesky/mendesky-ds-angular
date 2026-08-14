@@ -9,8 +9,17 @@
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 1em;
   font-weight: 400;
-  white-space: nowrap;
   user-select: none;
+
+  /* 長文字折行而非撐破容器。
+     text 並非只有固定 enum 短標籤：CEM P1 / HDM P4-2 的「前所資訊及更換原因／前所服務業務」
+     選項由 app-inline-add 讓使用者自由輸入（無長度上限），實務值為整段敘述。
+     nowrap 會讓 min-content ＝ 整串寬 → chip 作為 flex item 完全不可收縮 → 必定溢出。
+     短標籤在放得下時渲染結果與 nowrap 相同（normal 只在空間不足時才斷行）。 */
+  white-space: normal;
+  overflow-wrap: anywhere;   /* 長不可斷 ASCII（URL / 英文全稱）也要能斷 */
+  max-width: 100%;
+  text-align: left;          /* button UA 預設 center，多行時會逐行居中、難讀 */
   transition: background-color 150ms var(--ease-enter),
               border-color     150ms var(--ease-enter),
               color            150ms var(--ease-enter);
@@ -20,6 +29,9 @@
     outline-offset: 2px;
   }
 }
+
+/* checkbox icon 固定 16px：.chip 是 flex 容器，文字折行撐高時 icon 不得被壓縮 */
+.chip__icon { flex: none; }
 
 /* ─────────────── Sizes ─────────────── */
 .chip--m  { padding: 10px; }
