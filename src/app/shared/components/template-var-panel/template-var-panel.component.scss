@@ -23,7 +23,7 @@
   transition: background 150ms, color 150ms;
 
   &:hover {
-    background: var(--color\/grey\/10, #f1f3f5);
+    background: var(--color\/white\/20, #f1f3f5);
     color: var(--button\/action, #3a9ccd);
   }
 
@@ -67,7 +67,7 @@
   align-items: flex-start;
   gap: var(--spacing\/xxs, 4px);
   padding: var(--spacing\/xs, 8px) var(--spacing\/sm, 12px);
-  background: var(--color\/grey\/10, #f1f3f5);
+  background: var(--color\/white\/20, #f1f3f5);
   border-bottom: 1px solid var(--border\/primary, #e7e7e7);
 }
 

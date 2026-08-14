@@ -60,7 +60,7 @@
               color            150ms var(--ease-enter);
 
   &:hover:not(.inline-confirm__check--on) {
-    background: var(--color\/grey\/10, #f1f3f5);
+    background: var(--color\/white\/20, #f1f3f5);
   }
 
   &:focus-visible {
@@ -129,7 +129,7 @@
 
 /* ─────────────── requirement: required（警告 callout） ─────────────── */
 .inline-confirm--required {
-  background: var(--color\/grey\/10, #f1f3f5);
+  background: var(--color\/white\/20, #f1f3f5);
   border-color: var(--border\/primary-dark, #d3d3d3);
 
   .inline-confirm__label {

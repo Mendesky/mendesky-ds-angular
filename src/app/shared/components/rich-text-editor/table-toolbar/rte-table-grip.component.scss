@@ -24,7 +24,7 @@
   transition: background 150ms var(--ease-enter);
 }
 
-.grip:hover { background: var(--color\/grey\/10, #f1f3f5); }
+.grip:hover { background: var(--color\/white\/20, #f1f3f5); }
 
 .grip:focus-visible {
   outline: 2px solid var(--button\/action, #3a9ccd);
@@ -62,7 +62,7 @@
   background: var(--border\/primary, #e7e7e7);
 }
 
-.grip-item:hover { background: var(--color\/grey\/10, #f1f3f5); }
+.grip-item:hover { background: var(--color\/white\/20, #f1f3f5); }
 
 .grip-item:focus-visible {
   outline: 2px solid var(--button\/action, #3a9ccd);
