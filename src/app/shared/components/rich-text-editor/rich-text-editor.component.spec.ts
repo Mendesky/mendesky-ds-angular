@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProseMirrorJSON } from '../../models/prosemirror.model';
-import { RichTextEditorComponent } from './rich-text-editor.component';
+import { RichTextEditorComponent, type RichTextEditorTool } from './rich-text-editor.component';
 import { tableHighlightKey } from './table-toolbar/rte-table-highlight.plugin';
 import {
   TEXT_COLORS,
@@ -631,7 +631,7 @@ describe('RichTextEditorComponent hiddenTools', () => {
   let fixture: ComponentFixture<RichTextEditorComponent>;
   let comp: RichTextEditorComponent;
 
-  function create(hiddenTools: ReadonlyArray<'underline' | 'color' | 'table'>) {
+  function create(hiddenTools: ReadonlyArray<RichTextEditorTool>) {
     fixture = TestBed.createComponent(RichTextEditorComponent);
     comp = fixture.componentInstance;
     comp.hiddenTools = hiddenTools;
@@ -668,6 +668,34 @@ describe('RichTextEditorComponent hiddenTools', () => {
     expect(names).toContain('table');
     expect(names).toContain('textStyle');
     expect(names).toContain('color');
+  });
+
+  // 服務內容（自訂服務項目）只要兩種清單：文字格式會一路存成 markdown 並印進報價單，
+  // 出現粗體／標題不是想要的結果。**藏按鈕不夠**——StarterKit 帶鍵盤快速鍵與 markdown
+  // input rule，⌘B 與打 `**粗體**` 照樣生效，所以 extension 必須一起關（比照既有的 underline）。
+  it('hiddenTools 含 bold/italic/strike/heading：按鈕與 extension 都不存在', () => {
+    create(['bold', 'italic', 'strike', 'heading']);
+
+    expect(query('rte-bold')).toBeNull();
+    expect(query('rte-italic')).toBeNull();
+    expect(query('rte-strike')).toBeNull();
+    expect(query('rte-heading')).toBeNull();
+
+    const names = extensionNames();
+    expect(names).not.toContain('bold');
+    expect(names).not.toContain('italic');
+    expect(names).not.toContain('strike');
+    expect(names).not.toContain('heading');
+  });
+
+  it('只藏文字格式時，兩種清單仍在（服務內容要用的就是它們）', () => {
+    create(['bold', 'italic', 'strike', 'heading', 'underline', 'color', 'table']);
+
+    expect(query('rte-bullet-list')).not.toBeNull();
+    expect(query('rte-ordered-list')).not.toBeNull();
+    const names = extensionNames();
+    expect(names).toContain('bulletList');
+    expect(names).toContain('orderedList');
   });
 
   it('hiddenTools 全傳：三顆按鈕不渲染', () => {

@@ -55,6 +55,22 @@ const COL_GRIP_ITEMS: readonly GripMenuItem[] = [
   { id: 'deleteCol', label: '刪除此欄', icon: 'Trash-Del', dividerBefore: true, danger: true},
 ];
 
+/**
+ * `hiddenTools` 可隱藏的工具。
+ *
+ * **隱藏是連 capability 一起關**，不只是藏按鈕：StarterKit 帶鍵盤快速鍵（⌘B）與 markdown
+ * input rule（打 `**粗體**`），只藏按鈕的話那些格式照樣進得了文件。呼叫端之所以要隱藏，
+ * 通常正是因為下游（Notion 轉換、報價單 PDF）不接受那個格式。
+ */
+export type RichTextEditorTool =
+  | 'underline'
+  | 'color'
+  | 'table'
+  | 'heading'
+  | 'bold'
+  | 'italic'
+  | 'strike';
+
 @Component({
   selector: 'app-rich-text-editor',
   standalone: true,
@@ -78,7 +94,7 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
    * 消費端序列化目標不支援某格式時傳入（如回報問題 → Notion 不支援 underline/color/table）。
    * 建立 editor 時讀取，須於初始化前設定。
    */
-  @Input() hiddenTools: ReadonlyArray<'underline' | 'color' | 'table'> = [];
+  @Input() hiddenTools: ReadonlyArray<RichTextEditorTool> = [];
   /**
    * 開啟表格結構編輯：hover（滑鼠）或 tap 進 cell（觸控/鍵盤）時，於列左緣 / 欄上緣浮出把手，
    * 點把手 → 該列/欄增刪選單（Notion 式）。
@@ -134,7 +150,7 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
     try { fn(); } finally { this.suppressEmit = false; }
   }
 
-  isHidden(tool: 'underline' | 'color' | 'table'): boolean {
+  isHidden(tool: RichTextEditorTool): boolean {
     return this.hiddenTools.includes(tool);
   }
 
@@ -144,7 +160,13 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
       extensions: [
         StarterKit.configure({
           link: false,
+          // 每一項都要成對處理：模板 `@if` 藏按鈕、這裡關 extension。少了後者，
+          // 快速鍵與 markdown input rule 仍會產生該格式（見 RichTextEditorTool 說明）。
           ...(this.isHidden('underline') ? { underline: false } : {}),
+          ...(this.isHidden('heading') ? { heading: false } : {}),
+          ...(this.isHidden('bold') ? { bold: false } : {}),
+          ...(this.isHidden('italic') ? { italic: false } : {}),
+          ...(this.isHidden('strike') ? { strike: false } : {}),
         }),
         ...(this.isHidden('table')
           ? []

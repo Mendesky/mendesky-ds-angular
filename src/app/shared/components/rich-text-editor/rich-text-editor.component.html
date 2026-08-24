@@ -4,27 +4,33 @@
   @if (!readOnly) {
   <div class="rte__toolbar" data-testid="rte-toolbar" role="toolbar" aria-label="文字格式工具列">
     <div class="rte__toolbar-left">
-      <app-icon-btn size="16" propClass="SectionBtn"
-        [toggle]="true" [active]="isActive('heading')"
-        tooltip="標題" tooltipPos="Top" ariaLabel="標題"
-        (btnClick)="toggleHeading()" data-testid="rte-heading">
-        <app-icon name="Heading" size="16"></app-icon>
-      </app-icon-btn>
+      @if (!isHidden('heading')) {
+        <app-icon-btn size="16" propClass="SectionBtn"
+          [toggle]="true" [active]="isActive('heading')"
+          tooltip="標題" tooltipPos="Top" ariaLabel="標題"
+          (btnClick)="toggleHeading()" data-testid="rte-heading">
+          <app-icon name="Heading" size="16"></app-icon>
+        </app-icon-btn>
 
-      <div class="rte__toolbar-divider"></div>
+        <div class="rte__toolbar-divider"></div>
+      }
 
-      <app-icon-btn size="16" propClass="SectionBtn"
-        [toggle]="true" [active]="isActive('bold')"
-        tooltip="粗體" tooltipPos="Top" ariaLabel="粗體"
-        (btnClick)="toggleBold()">
-        <app-icon name="Bold" size="16"></app-icon>
-      </app-icon-btn>
-      <app-icon-btn size="16" propClass="SectionBtn"
-        [toggle]="true" [active]="isActive('italic')"
-        tooltip="斜體" tooltipPos="Top" ariaLabel="斜體"
-        (btnClick)="toggleItalic()">
-        <app-icon name="Italic" size="16"></app-icon>
-      </app-icon-btn>
+      @if (!isHidden('bold')) {
+        <app-icon-btn size="16" propClass="SectionBtn"
+          [toggle]="true" [active]="isActive('bold')"
+          tooltip="粗體" tooltipPos="Top" ariaLabel="粗體"
+          (btnClick)="toggleBold()" data-testid="rte-bold">
+          <app-icon name="Bold" size="16"></app-icon>
+        </app-icon-btn>
+      }
+      @if (!isHidden('italic')) {
+        <app-icon-btn size="16" propClass="SectionBtn"
+          [toggle]="true" [active]="isActive('italic')"
+          tooltip="斜體" tooltipPos="Top" ariaLabel="斜體"
+          (btnClick)="toggleItalic()" data-testid="rte-italic">
+          <app-icon name="Italic" size="16"></app-icon>
+        </app-icon-btn>
+      }
       @if (!isHidden('underline')) {
         <app-icon-btn size="16" propClass="SectionBtn"
           [toggle]="true" [active]="isActive('underline')"
@@ -33,12 +39,14 @@
           <app-icon name="Underline" size="16"></app-icon>
         </app-icon-btn>
       }
-      <app-icon-btn size="16" propClass="SectionBtn"
-        [toggle]="true" [active]="isActive('strike')"
-        tooltip="刪除線" tooltipPos="Top" ariaLabel="刪除線"
-        (btnClick)="toggleStrike()" data-testid="rte-strike">
-        <app-icon name="Strikethrough" size="16"></app-icon>
-      </app-icon-btn>
+      @if (!isHidden('strike')) {
+        <app-icon-btn size="16" propClass="SectionBtn"
+          [toggle]="true" [active]="isActive('strike')"
+          tooltip="刪除線" tooltipPos="Top" ariaLabel="刪除線"
+          (btnClick)="toggleStrike()" data-testid="rte-strike">
+          <app-icon name="Strikethrough" size="16"></app-icon>
+        </app-icon-btn>
+      }
 
       @if (!isHidden('color')) {
         <div class="rte__color-wrap">
@@ -73,13 +81,13 @@
       <app-icon-btn size="16" propClass="SectionBtn"
         [toggle]="true" [active]="isActive('bulletList')"
         tooltip="項目符號" tooltipPos="Top" ariaLabel="項目符號"
-        (btnClick)="toggleBulletList()">
+        (btnClick)="toggleBulletList()" data-testid="rte-bullet-list">
         <app-icon name="BulletList" size="16"></app-icon>
       </app-icon-btn>
       <app-icon-btn size="16" propClass="SectionBtn"
         [toggle]="true" [active]="isActive('orderedList')"
         tooltip="編號列表" tooltipPos="Top" ariaLabel="編號列表"
-        (btnClick)="toggleOrderedList()">
+        (btnClick)="toggleOrderedList()" data-testid="rte-ordered-list">
         <app-icon name="OrderedList" size="16"></app-icon>
       </app-icon-btn>
 
