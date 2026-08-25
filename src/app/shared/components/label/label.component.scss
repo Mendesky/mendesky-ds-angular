@@ -66,6 +66,15 @@
   border: 1px solid var(--border\/secondary, #74ae3e);
 }
 
+/* GreenOutline: white bg + green border + green bold text
+   分類標記用（對齊 Red 的白底彩框做法）。框與字同色、字重 600，
+   刻意不重用 Green——那一格是灰字，已有既存消費端。
+   色值取 Color/Green/80 而非 /70：/70 (#74ae3e) 白底對比僅 2.67:1，小字級讀不清。 */
+.label--green-outline {
+  background: var(--label\/secondary, #ffffff);
+  border: 1px solid var(--label\/outline-green, #5a8c2c);
+}
+
 /* Grey25 */
 .label--grey25 {
   background: #d9d9d9;
@@ -106,6 +115,11 @@
   background: var(--label\/accent-golden, #af8e4d);
 }
 
+/* Purple */
+.label--purple {
+  background: var(--label\/accent-purple, #8b5c91);
+}
+
 /* Kanban dotColor 對齊（CornflowerBlue 漸層 SSOT — Figma 17248:269232） */
 .label--kanban-draft {
   background: var(--label\/kanban-draft, #d3d3d3);
@@ -132,12 +146,15 @@
 .text--body     { color: var(--text\/body, #686868);          font-size: 1em; font-weight: 400; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
 .text--white    { color: var(--text\/body-lightest, #ffffff);  font-size: 1em; font-weight: 400; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
 .text--error    { color: var(--button\/error, #cc5252);        font-size: 1em; font-weight: 400; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
+/* GreenOutline 專用：字重 600 是這一格的規格，不是呼叫端責任 */
+.text--green    { color: var(--label\/outline-green, #5a8c2c);  font-size: 1em; font-weight: 600; font-family: 'Noto Sans TC', sans-serif; letter-spacing: 0.24px; }
 
 /* ─── Icon color ─── */
 .icon--body    { color: var(--text\/body, #686868);         display: flex; align-items: center; }
 .icon--white   { color: var(--text\/body-lightest, #ffffff); display: flex; align-items: center; }
 .icon--light   { color: var(--text\/body-light, #939393);   display: flex; align-items: center; }
 .icon--error   { color: var(--button\/error, #cc5252);       display: flex; align-items: center; }
+.icon--green   { color: var(--label\/outline-green, #5a8c2c); display: flex; align-items: center; }
 
 /* ─── Wrap mode ─── */
 /* 自由文字內容：允許 label 像外框一樣折行，取代預設 white-space: nowrap */
