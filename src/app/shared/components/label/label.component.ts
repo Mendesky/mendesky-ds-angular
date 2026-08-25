@@ -7,6 +7,7 @@ export type LabelColor =
   | 'SoftBlue' | 'Red' | 'Salmon' | 'Green'
   | 'Grey25' | 'Blue' | 'SeaGreen' | 'Grey70'
   | 'Grey16' | 'Error' | 'GreenAll' | 'Golden'
+  | 'Purple' | 'GreenOutline'
   | 'KanbanDraft' | 'KanbanOpened' | 'KanbanDealClosed' | 'KanbanArchiving' | 'KanbanArchived';
 
 export type LabelSize = 'M' | 'S' | 'L' | 'XS' | 'XXS';
@@ -48,6 +49,8 @@ export class LabelComponent {
     Error:       'label--error',
     GreenAll:    'label--green-all',
     Golden:      'label--golden',
+    Purple:       'label--purple',
+    GreenOutline: 'label--green-outline',
     KanbanDraft:      'label--kanban-draft',
     KanbanOpened:     'label--kanban-opened',
     KanbanDealClosed: 'label--kanban-dealclosed',
@@ -73,6 +76,8 @@ export class LabelComponent {
     Golden:      'text--white',   // white（金底）
     GreenAll:    'text--white',   // white（淺綠底）
     Error:       'text--white',   // white（紅底）
+    Purple:       'text--white',   // white（紫底）
+    GreenOutline: 'text--green',   // #5a8c2c 加粗（白底綠框，分類標記）
     KanbanDraft:      'text--body',    // #686868（淺灰 #d3d3d3 底，深字）
     KanbanOpened:     'text--body',    // #686868（CornflowerBlue/30 #bac6fd 底，深字）
     KanbanDealClosed: 'text--white',   // white（CornflowerBlue/50 #8293da 底，白字）
@@ -97,6 +102,8 @@ export class LabelComponent {
     Golden:      'icon--white',
     GreenAll:    'icon--white',
     Error:       'icon--white',
+    Purple:       'icon--white',
+    GreenOutline: 'icon--green',
     KanbanDraft:      'icon--body',
     KanbanOpened:     'icon--body',
     KanbanDealClosed: 'icon--white',
