@@ -4,6 +4,7 @@ export * from './app/shared/components/action-menu/action-menu.component';
 export * from './app/shared/components/autocomplete/autocomplete-panel.component';
 export * from './app/shared/components/autocomplete/autocomplete.component';
 export * from './app/shared/components/avatar/avatar.component';
+export * from './app/shared/components/badge/badge.component';
 export * from './app/shared/components/button-group/button-group.component';
 export * from './app/shared/components/button/button.component';
 export * from './app/shared/components/carousel-dot/carousel-dot.component';

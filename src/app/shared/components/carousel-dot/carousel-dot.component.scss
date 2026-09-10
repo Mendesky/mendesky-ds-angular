@@ -20,7 +20,8 @@
   height: 8px;
   border-radius: 99px;
   background: var(--button\/disabled-dark, #bebebe);
-  transition: background-color 0.15s ease;
+  /* 寬度過渡的理由見下面 Line 那一段 */
+  transition: background-color 0.15s ease, width 0.15s ease;
 }
 
 .carousel-dot--dot:not(.carousel-dot--has-text):hover .carousel-dot__shape {
@@ -31,13 +32,18 @@
   background: var(--theme\/primary\/primary-dark, #2980ab);
 }
 
-/* Line，無文字 */
+/* Line，無文字。
+   高度與 Dot 直徑一致（8px）：兩個變體會並排在同一列表示「目前這一則 vs 其餘」，
+   高度不同會讓那條線看起來像浮在中線上的髮絲，而不是同一組指示器。
+   2026-09-10 由 2px 改為 8px（原值在版本更新視窗實測不可用）。 */
 .carousel-dot--line:not(.carousel-dot--has-text) .carousel-dot__shape {
   width: 18px;
-  height: 2px;
-  border-radius: 5px;
+  height: 8px;
+  border-radius: 99px;
   background: var(--button\/disabled-dark, #bebebe);
-  transition: background-color 0.15s ease;
+  /* 寬度也要過渡：Dot ↔ Line 是換 class 換形狀，只過渡顏色的話寬度會瞬跳、
+     顏色卻慢半拍，看起來像閃一下。兩者同步才是「圓點長成長條」。 */
+  transition: background-color 0.15s ease, width 0.15s ease;
 }
 
 .carousel-dot--line:not(.carousel-dot--has-text):hover .carousel-dot__shape {
@@ -75,11 +81,11 @@
   height: 8px;
 }
 
-/* Line + 有文字：collapsed = 18×2px 橫條 */
+/* Line + 有文字：collapsed = 18×8px 橫條（與無文字版同高，理由見上） */
 .carousel-dot--line.carousel-dot--has-text .carousel-dot__shape {
   min-width: 18px;
   max-width: 18px;
-  height: 2px;
+  height: 8px;
 }
 
 /* active → 只改顏色，維持 collapsed 形狀 */
