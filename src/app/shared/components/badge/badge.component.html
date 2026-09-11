@@ -1,0 +1,8 @@
+<span
+  *ngIf="visible"
+  class="ds-badge"
+  [class.ds-badge--dot]="isDot"
+  [class.ds-badge--number]="!isDot"
+  [attr.aria-label]="computedAriaLabel || null"
+  [attr.role]="computedAriaLabel ? 'status' : null"
+>{{ label }}</span>

@@ -1,0 +1,41 @@
+/* host 不佔版面：徽章本體是 absolute，定位基準是宿主（宿主需 position: relative）。
+   用 display: contents 讓 <app-badge> 這層盒子完全消失，避免在 flex/grid 宿主裡多出一個項目。 */
+:host {
+  display: contents;
+}
+
+.ds-badge {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 99px;
+  background: var(--badge\/unread, #cc5252);
+  border: 1.5px solid var(--border\/white, #ffffff);
+  color: var(--label\/secondary, #ffffff);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  /* 疊在按鈕上，不該吃掉宿主的點擊 */
+  pointer-events: none;
+  /* 全域是 border-box，所以下面的寬高都是「含白框」的外框尺寸 */
+  box-sizing: border-box;
+}
+
+/* 只表示「有未讀」。外框 10×10（紅色本體 7px），2026-09-10 定案取代原本 header 手刻的 7×7 */
+.ds-badge--dot {
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+}
+
+/* 帶數量。單位數由 min-width 撐成圓形；多位數靠左右內距長寬 */
+.ds-badge--number {
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+}
