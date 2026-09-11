@@ -125,7 +125,20 @@
 .btn--elevated:hover  { background: rgba(255, 255, 255, 0.5); box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2); }
 .btn--elevated:active { background: #1a6489; color: #f1f3f5; box-shadow: none; }
 
-.btn__text { color: inherit; }
+/* min-width: 0 是關鍵：.btn__text 是 flex item，預設最小尺寸等於整串文字的完整寬度
+   （nowrap 從 .btn 繼承下來），所以它永遠不會被壓縮、overflow 也永遠不會觸發。
+   加了這行才有東西可截。
+
+   兩件不能順手加：
+   - white-space: nowrap —— 已從 .btn 繼承；.btn--has-desc 刻意改回 normal 讓雙行標題能換行，
+     在這裡硬寫會壓過它，把那些按鈕的標題壓成單行截斷。
+   - flex: 1 —— 會讓帶 icon 的置中按鈕文字全部變成靠左。 */
+.btn__text {
+  color: inherit;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ── description 雙行模式 ── */
 .btn--has-desc {

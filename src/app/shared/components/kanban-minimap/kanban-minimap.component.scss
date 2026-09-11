@@ -4,11 +4,15 @@
   right: calc(24px + var(--dock\/issue-report-w, 100px) + var(--dock\/gap, 12px));
   width: 200px;
   height: 64px;
-  background: rgba(255, 255, 255, 0.5);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(229, 231, 235, 0.6);
-  border-radius: 10px;
+  /* 不透明白底：原本是 rgba(255,255,255,0.5) + backdrop blur，
+     疊在卡片上時卡片的文字會透出來，minimap 的欄位縮圖就分不清楚。
+     底一旦不透明，blur 也沒有作用對象，一併移除。 */
+  background: #ffffff;
+  /* 邊框用最深的一級：這個元件浮在淺灰頁面與白卡片之間，兩種底色都要撐得住 */
+  border: 1px solid var(--border\/primary-darker, #bebebe);
+  /* 原本寫死 10px，不在 token 階梯上（sm 4 / md 8 / lg 12 / xl 20）。
+     改用 md，與並排的回報問題浮塊一致。內層縮圖的 5/3/1px 是示意元素的尺度，不套 token。 */
+  border-radius: var(--radious\/md, 8px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 8px;
   z-index: 100;
@@ -21,13 +25,15 @@
   transition: opacity 0.2s ease, transform 0.25s var(--ease-enter);
 
   &--visible {
-    opacity: 0.75;
+    /* 完全不透明：半透明會讓底下的卡片內容透上來 */
+    opacity: 1;
     pointer-events: auto;
     transform: translateY(0) scale(0.75);
   }
 
   &--visible:hover {
-    opacity: 1;
+    /* 底已經不透明，改用陰影給 hover 回饋 */
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);
   }
 }
 
@@ -36,8 +42,8 @@
   height: 46px;
   border-radius: 5px;
   overflow: hidden;
-  background: rgba(248, 250, 252, 0.6);
-  border: 1px solid rgba(241, 245, 249, 0.8);
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
   cursor: pointer;
 }
 
