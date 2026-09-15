@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter,
   OnInit, AfterViewInit, OnDestroy, HostListener, signal, computed, inject, ElementRef,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
@@ -29,6 +29,7 @@ export interface DocPreviewItem {
   imports: [CommonModule, IconComponent, IconBtnComponent],
   templateUrl: './doc-preview.component.html',
   styleUrls: ['./doc-preview.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocPreviewComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input({ required: true }) docs: DocPreviewItem[] = [];

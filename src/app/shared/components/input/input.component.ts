@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, Output, EventEmitter, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, Output, EventEmitter, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -13,6 +13,7 @@ export type InputSanitize = 'none' | 'digits';
   imports: [CommonModule, IconComponent, ErrorTooltipDirective],
   templateUrl: './input.component.html',
   styleUrls: ['./input.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InputComponent implements OnChanges {
   /** 輸入框尺寸 */

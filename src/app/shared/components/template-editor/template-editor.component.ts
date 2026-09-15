@@ -1,6 +1,7 @@
 import {
   Component, Input, Output, EventEmitter, NgZone, inject,
   ElementRef, ViewChild, AfterViewInit, OnChanges, OnDestroy, SimpleChanges,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -26,6 +27,7 @@ const CARET_SVG = '<svg class="tpl__caret" viewBox="0 0 24 24" width="12" height
   imports: [CommonModule, ErrorTooltipDirective, TemplateVarPanelComponent, ActionMenuComponent, ButtonComponent],
   templateUrl: './template-editor.component.html',
   styleUrls: ['./template-editor.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDestroy {
   /** 範本字串，含 %key% 標記，例：「茲將附上 %CompanyName% 有關 %ServiceItemNames% 之…」 */

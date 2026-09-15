@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, ElementRef, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, ElementRef, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../button/button.component';
 import { InputComponent } from '../input/input.component';
@@ -18,6 +18,7 @@ import { InputComponent } from '../input/input.component';
   imports: [CommonModule, ButtonComponent, InputComponent],
   templateUrl: './inline-add.component.html',
   styleUrls: ['./inline-add.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InlineAddComponent {
   /** 觸發鈕文字 */

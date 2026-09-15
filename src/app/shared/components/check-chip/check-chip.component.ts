@@ -1,4 +1,4 @@
-import { Component, Input, forwardRef } from '@angular/core';
+import { Component, Input, forwardRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -17,6 +17,7 @@ export type CheckChipTheme = 'default' | 'transparent' | 'transparent-grey';
   }],
   templateUrl: './check-chip.component.html',
   styleUrls: ['./check-chip.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckChipComponent implements ControlValueAccessor {
   /** 顯示文字 */

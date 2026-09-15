@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type DividerDisplay = 'Row' | 'Column';
@@ -10,6 +10,7 @@ export type DividerClass = 'White' | 'Grey20' | 'Grey30' | 'Grey40';
   imports: [CommonModule],
   templateUrl: './divider.component.html',
   styleUrls: ['./divider.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DividerComponent {
   /** 方向：Row 水平 | Column 垂直 */

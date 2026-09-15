@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type ProcessModalType = 'running' | 'congratulation';
@@ -9,6 +9,7 @@ export type ProcessModalType = 'running' | 'congratulation';
   imports: [CommonModule],
   templateUrl: './process-modal.component.html',
   styleUrls: ['./process-modal.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProcessModalComponent implements OnChanges {
   @Input() type: ProcessModalType = 'running';

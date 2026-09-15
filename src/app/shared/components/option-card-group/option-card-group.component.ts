@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OptionCardComponent } from '../option-card/option-card.component';
 
@@ -24,6 +24,7 @@ export interface OptionCardItem {
   imports: [CommonModule, OptionCardComponent],
   templateUrl: './option-card-group.component.html',
   styleUrls: ['./option-card-group.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OptionCardGroupComponent {
   @Input() options: OptionCardItem[] = [];

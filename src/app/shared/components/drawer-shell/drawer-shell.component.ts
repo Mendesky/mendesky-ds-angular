@@ -9,7 +9,7 @@ import {
   OnDestroy,
   HostListener,
   inject,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalStackService } from '../../../core/services/modal-stack.service';
 
@@ -19,6 +19,7 @@ import { ModalStackService } from '../../../core/services/modal-stack.service';
   imports: [CommonModule],
   templateUrl: './drawer-shell.component.html',
   styleUrls: ['./drawer-shell.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DrawerShellComponent implements OnChanges, OnDestroy {
   /** 控制顯示 / 隱藏 */

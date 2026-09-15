@@ -2,7 +2,7 @@ import {
   Component, Input, Output, EventEmitter,
   HostBinding,
   OnChanges, SimpleChanges, ViewChildren, QueryList, ElementRef,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SelectOption } from './select.component';
 
@@ -12,6 +12,7 @@ import { SelectOption } from './select.component';
   imports: [CommonModule],
   templateUrl: './select-panel.component.html',
   styleUrls: ['./select-panel.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectPanelComponent implements OnChanges {
   @Input() options: SelectOption[] = [];

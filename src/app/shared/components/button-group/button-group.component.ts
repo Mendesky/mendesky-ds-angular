@@ -2,7 +2,7 @@ import {
   Component, Input, Output, EventEmitter,
   ElementRef, OnChanges, SimpleChanges,
   inject, signal,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
 
@@ -20,6 +20,7 @@ export type ButtonGroupType = 'form' | 'round' | 'view';
   imports: [CommonModule, ErrorTooltipDirective],
   templateUrl: './button-group.component.html',
   styleUrls: ['./button-group.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ButtonGroupComponent implements OnChanges {
   private el = inject(ElementRef);

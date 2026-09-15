@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../icon/icon.component';
 import { ActionMenuComponent } from '../../action-menu/action-menu.component';
@@ -26,6 +26,7 @@ export interface GripMenuItem {
   imports: [CommonModule, IconComponent, ActionMenuComponent],
   templateUrl: './rte-table-grip.component.html',
   styleUrls: ['./rte-table-grip.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RteTableGripComponent {
   /** 'row' = 列把手（垂直，定位在列左緣）；'col' = 欄把手（水平，定位在欄上緣）。 */

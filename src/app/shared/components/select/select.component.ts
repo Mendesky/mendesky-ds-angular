@@ -3,7 +3,7 @@ import {
   ViewChild, ElementRef, OnDestroy, forwardRef,
   ApplicationRef, EnvironmentInjector, createComponent,
   ComponentRef, HostListener, effect,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -43,6 +43,7 @@ function optionsEqual(a: SelectOption[], b: SelectOption[]): boolean {
   }],
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectComponent implements ControlValueAccessor, OnDestroy {
   @ViewChild('triggerWrap')  triggerWrapRef!:  ElementRef<HTMLDivElement>;

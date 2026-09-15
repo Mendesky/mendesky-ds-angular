@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NumberListComponent, NumberListAction } from '../number-list/number-list.component';
 
@@ -17,6 +17,7 @@ export interface FileItem {
   imports: [CommonModule, NumberListComponent],
   templateUrl: './file-list.component.html',
   styleUrls: ['./file-list.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FileListComponent {
   @Input() docs: FileItem[] = [];

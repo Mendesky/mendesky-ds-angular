@@ -11,7 +11,7 @@ import {
   SimpleChanges,
   inject,
   signal,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../button/button.component';
@@ -23,6 +23,7 @@ import { ModalStackService } from '../../../core/services/modal-stack.service';
   imports: [CommonModule, ButtonComponent, A11yModule],
   templateUrl: './dialog.component.html',
   styleUrls: ['./dialog.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogComponent implements OnChanges, OnDestroy {
   @Input() isOpen = false;

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 
@@ -11,6 +11,7 @@ export type AvatarSize = 28 | 36 | 44 | 56 | 64 | 96 | 128 | 240;
   imports: [CommonModule, IconComponent],
   templateUrl: './avatar.component.html',
   styleUrls: ['./avatar.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AvatarComponent {
   /** 顯示類型：Thumb 照片 / Text 文字 / Icon 圖示 */

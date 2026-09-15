@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './list-tag.component.html',
   styleUrls: ['./list-tag.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListTagComponent {
   @Input() itemNumber = 'i';

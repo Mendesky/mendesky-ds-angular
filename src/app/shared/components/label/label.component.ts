@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 
@@ -18,6 +18,7 @@ export type LabelSize = 'M' | 'S' | 'L' | 'XS' | 'XXS';
   imports: [CommonModule, IconComponent],
   templateUrl: './label.component.html',
   styleUrls: ['./label.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LabelComponent {
   @Input() color: LabelColor = 'LightWhite';

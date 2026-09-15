@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalShellComponent } from '../modal-shell/modal-shell.component';
 import { ModalCloseBtnComponent } from '../modal-close-btn/modal-close-btn.component';
@@ -30,6 +30,7 @@ export interface ShortcutGroup {
   imports: [CommonModule, ModalShellComponent, ModalCloseBtnComponent, InputComponent, EmptyStateComponent],
   templateUrl: './keyboard-help.component.html',
   styleUrls: ['./keyboard-help.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KeyboardHelpComponent {
   @Input() isOpen = false;

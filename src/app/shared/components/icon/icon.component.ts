@@ -1,4 +1,4 @@
-import { Component, HostBinding, Input, OnChanges, isDevMode } from '@angular/core';
+import { Component, HostBinding, Input, OnChanges, isDevMode, ChangeDetectionStrategy } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ICON_REGISTRY } from './icon.registry';
 
@@ -29,6 +29,7 @@ const SIZE_MAP: Record<string, number> = {
   standalone: true,
   templateUrl: './icon.component.html',
   styleUrls: ['./icon.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IconComponent implements OnChanges {
   /** Figma icon 名稱，對應 Icons/xxx（不含 Icons/ 前綴） */

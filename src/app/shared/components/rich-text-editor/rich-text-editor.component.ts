@@ -3,7 +3,7 @@ import {
   AfterViewInit, OnDestroy, OnChanges, SimpleChanges,
   inject, ChangeDetectorRef, signal,
   ApplicationRef, EnvironmentInjector, createComponent, ComponentRef,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActionMenuComponent } from '../action-menu/action-menu.component';
 import { RteTableGripComponent, GripMenuItem } from './table-toolbar/rte-table-grip.component';
@@ -77,6 +77,7 @@ export type RichTextEditorTool =
   imports: [CommonModule, IconBtnComponent, IconComponent, ActionMenuComponent],
   templateUrl: './rich-text-editor.component.html',
   styleUrls: ['./rich-text-editor.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChanges {
   @Input() value: ProseMirrorJSON | null = null;

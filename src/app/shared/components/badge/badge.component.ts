@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /** `auto` 依 count 決定圓點或數字；`dot` 強制只顯示圓點（不講數量） */
@@ -30,6 +30,7 @@ export type BadgeOverflow = 'plus' | 'dot';
   imports: [CommonModule],
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BadgeComponent {
   /** 未讀數量。null 或 <= 0 時不渲染（variant='dot' 除外） */

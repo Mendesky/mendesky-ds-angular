@@ -11,7 +11,7 @@ import {
   Renderer2,
   HostListener,
   inject,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import { ModalStackService } from '../../../core/services/modal-stack.service';
 import { CommonModule } from '@angular/common';
@@ -22,6 +22,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule, A11yModule],
   templateUrl: './modal-shell.component.html',
   styleUrls: ['./modal-shell.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalShellComponent implements OnChanges, OnDestroy {
   /** 控制顯示 / 隱藏 */

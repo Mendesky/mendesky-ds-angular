@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type CarouselDotVariant = 'Dot' | 'Line';
@@ -9,6 +9,7 @@ export type CarouselDotVariant = 'Dot' | 'Line';
   imports: [CommonModule],
   templateUrl: './carousel-dot.component.html',
   styleUrls: ['./carousel-dot.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarouselDotComponent {
   /** 基礎形狀：圓點或橫條 */

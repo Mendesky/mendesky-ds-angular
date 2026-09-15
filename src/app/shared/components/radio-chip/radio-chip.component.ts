@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, forwardRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -16,6 +16,7 @@ export type RadioChipSize = 'm' | 's' | 'xs';
   }],
   templateUrl: './radio-chip.component.html',
   styleUrls: ['./radio-chip.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RadioChipComponent implements ControlValueAccessor {
   /** 顯示文字 */

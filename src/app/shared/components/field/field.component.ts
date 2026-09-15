@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LabelComponent } from '../label/label.component';
 
@@ -8,6 +8,7 @@ import { LabelComponent } from '../label/label.component';
   imports: [CommonModule, LabelComponent],
   templateUrl: './field.component.html',
   styleUrls: ['./field.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FieldComponent {
   /** 欄位標題文字；不傳則不顯示 label row */

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TooltipDirective } from '../../directives/tooltip/tooltip.directive';
 import { TooltipPortalDirection } from '../../directives/tooltip/tooltip-portal.component';
@@ -30,6 +30,7 @@ export type IconBtnClass =
   imports: [CommonModule, TooltipDirective],
   templateUrl: './icon-btn.component.html',
   styleUrls: ['./icon-btn.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IconBtnComponent {
   /** 圖示尺寸（對應 Figma size 參數） */

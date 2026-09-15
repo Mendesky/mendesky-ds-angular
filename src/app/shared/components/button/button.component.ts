@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { LabelComponent, LabelColor, LabelSize } from '../label/label.component';
@@ -21,6 +21,7 @@ export interface BtnLabelConfig {
   imports: [CommonModule, IconComponent, LabelComponent, ErrorTooltipDirective],
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ButtonComponent implements OnChanges {
   @Input() variant: ButtonVariant = 'filled';
