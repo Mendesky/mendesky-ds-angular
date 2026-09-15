@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -11,6 +11,7 @@ export type NumberInputSize = 'S' | 'M' | 'L';
   imports: [CommonModule, IconComponent, ErrorTooltipDirective],
   templateUrl: './number-input.component.html',
   styleUrls: ['./number-input.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NumberInputComponent implements OnChanges, OnDestroy {
   @Input() size: NumberInputSize = 'M';

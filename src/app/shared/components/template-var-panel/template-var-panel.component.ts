@@ -2,7 +2,7 @@ import {
   Component, Input, Output, EventEmitter,
   ElementRef, ViewChild, OnDestroy, OnChanges, SimpleChanges,
   inject, ChangeDetectorRef,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -28,6 +28,7 @@ type CloseReason = 'outside' | 'chipClick' | 'esc' | 'anchorGone' | 'destroy' | 
   imports: [CommonModule, FormsModule, IconComponent, TooltipsComponent, SelectComponent],
   templateUrl: './template-var-panel.component.html',
   styleUrls: ['./template-var-panel.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplateVarPanelComponent implements OnDestroy, OnChanges {
   @Input() varDefs: TemplateVarDef[] = [];

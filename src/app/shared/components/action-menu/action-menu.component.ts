@@ -2,7 +2,7 @@ import {
   Component, Input, Output, EventEmitter,
   HostListener, ElementRef, AfterViewInit, OnDestroy,
   inject,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { Placement, PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
 
 @Component({
@@ -11,6 +11,7 @@ import { Placement, PortalOverlayRef, PortalPositioningService } from '../../ser
   imports: [],
   templateUrl: './action-menu.component.html',
   styleUrls: ['./action-menu.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActionMenuComponent implements AfterViewInit, OnDestroy {
   private readonly el = inject(ElementRef<HTMLElement>);

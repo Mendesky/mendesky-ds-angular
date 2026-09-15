@@ -1,19 +1,19 @@
 <div class="toast"
-     [ngClass]="['toast--' + displayType, 'toast--size-' + size]"
-     [class.toast--hiding]="hiding"
+     [ngClass]="['toast--' + displayType(), 'toast--size-' + size]"
+     [class.toast--hiding]="hiding()"
      [class.toast--stack]="stackMode"
-     [attr.role]="displayType === 'error' ? 'alert' : 'status'"
-     [attr.aria-live]="displayType === 'error' ? 'assertive' : 'polite'"
+     [attr.role]="displayType() === 'error' ? 'alert' : 'status'"
+     [attr.aria-live]="displayType() === 'error' ? 'assertive' : 'polite'"
      aria-atomic="true">
   <span class="toast__content"
-        [class.toast__content--out]="swapPhase === 'out'"
-        [class.toast__content--in]="swapPhase === 'in'">
+        [class.toast__content--out]="swapPhase() === 'out'"
+        [class.toast__content--in]="swapPhase() === 'in'">
     @if (isLoading) {
       <span class="toast__spinner" data-testid="process-toast-spinner" aria-hidden="true"></span>
     } @else {
       <app-icon [name]="iconName" [size]="iconSize" style="color:currentColor;flex-shrink:0"></app-icon>
     }
-    <span class="toast__msg">{{ displayMessage }}</span>
+    <span class="toast__msg">{{ displayMessage() }}</span>
   </span>
   @if (action(); as act) {
     <button type="button"

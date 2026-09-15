@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type PoProcessStatus = 'Running' | 'Success' | 'Error' | 'Congratulation';
@@ -9,6 +9,7 @@ export type PoProcessStatus = 'Running' | 'Success' | 'Error' | 'Congratulation'
   imports: [CommonModule],
   templateUrl: './po-process.component.html',
   styleUrls: ['./po-process.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PoProcessComponent {
   @Input() status: PoProcessStatus = 'Running';

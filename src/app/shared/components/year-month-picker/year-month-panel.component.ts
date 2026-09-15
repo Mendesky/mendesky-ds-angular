@@ -1,6 +1,6 @@
 import {
   Component, Input, Output, EventEmitter, OnInit, signal, HostListener,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
@@ -12,6 +12,7 @@ import { CellBtnComponent } from '../cell-btn/cell-btn.component';
   imports: [CommonModule, IconComponent, IconBtnComponent, CellBtnComponent],
   templateUrl: './year-month-panel.component.html',
   styleUrls: ['./year-month-panel.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class YearMonthPanelComponent implements OnInit {
   @Input() anchorRect!: DOMRect;

@@ -47,7 +47,7 @@ describe('CarouselDotComponent', () => {
         fixture.nativeElement.querySelector('.carousel-dot') as HTMLElement
       ).getBoundingClientRect().height;
 
-      component.variant = 'Line';
+      fixture.componentRef.setInput('variant', 'Line');
       fixture.detectChanges();
       const lineHost = (
         fixture.nativeElement.querySelector('.carousel-dot') as HTMLElement
@@ -65,7 +65,9 @@ describe('CarouselDotComponent', () => {
       fixture.detectChanges();
       const before = shape().getBoundingClientRect();
 
-      component.active = true;
+      // OnPush：直接改 plain 屬性 fixture.detectChanges() 偵測不到，須用 setInput 走 Angular
+      // 的 input 綁定機制。
+      fixture.componentRef.setInput('active', true);
       fixture.detectChanges();
       const after = shape().getBoundingClientRect();
 
@@ -79,7 +81,7 @@ describe('CarouselDotComponent', () => {
       const host = () => fixture.nativeElement.querySelector('.carousel-dot') as HTMLElement;
       expect(host().classList).not.toContain('carousel-dot--active');
 
-      component.active = true;
+      fixture.componentRef.setInput('active', true);
       fixture.detectChanges();
       expect(host().classList).toContain('carousel-dot--active');
     });

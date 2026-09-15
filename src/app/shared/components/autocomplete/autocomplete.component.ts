@@ -1,8 +1,8 @@
 import {
   Component, Input, Output, EventEmitter, HostListener, ElementRef,
   ApplicationRef, EnvironmentInjector, createComponent, ComponentRef, OnDestroy,
-  inject,
-} from '@angular/core';
+  inject, signal,
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -22,6 +22,7 @@ export interface AutocompleteOption {
   imports: [CommonModule, IconComponent, ErrorTooltipDirective],
   templateUrl: './autocomplete.component.html',
   styleUrls: ['./autocomplete.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutocompleteComponent implements OnDestroy {
   @Input() size: AutocompleteSize = 'L';
@@ -46,9 +47,12 @@ export class AutocompleteComponent implements OnDestroy {
 
   protected _selected: AutocompleteOption[] = [];
   protected inputValue = '';
-  protected focused = false;
-  protected showDropdown = false;
-  protected activeIndex = -1;
+  // signal（非 plain 欄位）：onBlur 的 setTimeout、selectOption（被 portal 面板的
+  // optionClick.subscribe 呼叫）、PortalPositioningService 的 onClose callback 三條路徑
+  // 都不是本元件 template 自己的事件來源，OnPush 元件下 plain 欄位變更不會觸發重繪。
+  protected focused = signal(false);
+  protected showDropdown = signal(false);
+  protected activeIndex = signal(-1);
 
   private readonly el = inject(ElementRef<HTMLElement>);
   private readonly appRef = inject(ApplicationRef);
@@ -80,36 +84,36 @@ export class AutocompleteComponent implements OnDestroy {
       [`autocomplete-wrap--${this.size.toLowerCase()}`]: true,
       'autocomplete-wrap--disabled': this.disabled,
       'autocomplete-wrap--error':    !this.disabled && !!this.errorMessage,
-      'autocomplete-wrap--focus':    !this.disabled && !this.errorMessage && this.focused,
-      'autocomplete-wrap--actived':  !this.disabled && !this.errorMessage && !this.focused && this.hasSelection,
+      'autocomplete-wrap--focus':    !this.disabled && !this.errorMessage && this.focused(),
+      'autocomplete-wrap--actived':  !this.disabled && !this.errorMessage && !this.focused() && this.hasSelection,
     };
   }
 
   onFocus(): void {
     if (this.disabled) return;
-    this.focused = true;
+    this.focused.set(true);
     if (!this.panelRef) {
-      this.showDropdown = true;
+      this.showDropdown.set(true);
       this.openPanel();
     }
   }
 
   onBlur(): void {
     setTimeout(() => {
-      this.focused = false;
-      if (this.showDropdown) {
-        this.showDropdown = false;
+      this.focused.set(false);
+      if (this.showDropdown()) {
+        this.showDropdown.set(false);
         this.closePanel();
-        this.activeIndex = -1;
+        this.activeIndex.set(-1);
       }
     }, 150);
   }
 
   onInput(event: Event): void {
     this.inputValue = (event.target as HTMLInputElement).value;
-    this.activeIndex = -1;
+    this.activeIndex.set(-1);
     if (!this.panelRef) {
-      this.showDropdown = true;
+      this.showDropdown.set(true);
       this.openPanel();
     } else {
       this.syncPanel();
@@ -123,47 +127,47 @@ export class AutocompleteComponent implements OnDestroy {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        if (!this.showDropdown) {
-          this.showDropdown = true;
+        if (!this.showDropdown()) {
+          this.showDropdown.set(true);
           this.openPanel();
-          this.activeIndex = 0;
+          this.activeIndex.set(0);
           this.syncPanel();
         } else {
-          this.activeIndex = opts.length === 0 ? -1
-            : Math.min(this.activeIndex + 1, opts.length - 1);
+          this.activeIndex.set(opts.length === 0 ? -1
+            : Math.min(this.activeIndex() + 1, opts.length - 1));
           this.syncPanel();
         }
         break;
 
       case 'ArrowUp':
         event.preventDefault();
-        if (this.showDropdown && opts.length > 0) {
-          this.activeIndex = Math.max(this.activeIndex - 1, 0);
+        if (this.showDropdown() && opts.length > 0) {
+          this.activeIndex.set(Math.max(this.activeIndex() - 1, 0));
           this.syncPanel();
         }
         break;
 
       case 'Enter': {
-        if (this.showDropdown && this.activeIndex >= 0 && this.activeIndex < opts.length) {
+        if (this.showDropdown() && this.activeIndex() >= 0 && this.activeIndex() < opts.length) {
           event.preventDefault();
           event.stopPropagation();
-          this.selectOption(opts[this.activeIndex]);
+          this.selectOption(opts[this.activeIndex()]);
         }
         break;
       }
 
       case 'Tab':
-        if (this.showDropdown && this.activeIndex >= 0 && this.activeIndex < opts.length) {
-          this.selectOption(opts[this.activeIndex]);
+        if (this.showDropdown() && this.activeIndex() >= 0 && this.activeIndex() < opts.length) {
+          this.selectOption(opts[this.activeIndex()]);
         }
         break;
 
       case 'Escape':
-        if (this.showDropdown) {
+        if (this.showDropdown()) {
           event.stopPropagation();
-          this.showDropdown = false;
+          this.showDropdown.set(false);
           this.closePanel();
-          this.activeIndex = -1;
+          this.activeIndex.set(-1);
         }
         break;
 
@@ -181,12 +185,12 @@ export class AutocompleteComponent implements OnDestroy {
   selectOption(option: AutocompleteOption): void {
     this._selected = this.singleSelect ? [option] : [...this._selected, option];
     this.inputValue = '';
-    this.activeIndex = -1;
+    this.activeIndex.set(-1);
     this.selectionChange.emit(this._selected);
 
     if (this.singleSelect) {
-      this.showDropdown = false;
-      this.focused = false;
+      this.showDropdown.set(false);
+      this.focused.set(false);
       this.closePanel();
     } else {
       this.syncPanel();
@@ -206,7 +210,7 @@ export class AutocompleteComponent implements OnDestroy {
     if (!this.clearable) return;
     this._selected = [];
     this.inputValue = '';
-    this.activeIndex = -1;
+    this.activeIndex.set(-1);
     this.selectionChange.emit([]);
     this.syncPanel();
   }
@@ -221,7 +225,7 @@ export class AutocompleteComponent implements OnDestroy {
       environmentInjector: this.envInjector,
     });
     this.panelRef.setInput('options',     this.filteredOptions);
-    this.panelRef.setInput('activeIndex', this.activeIndex);
+    this.panelRef.setInput('activeIndex', this.activeIndex());
     this.panelRef.setInput('width',       rect.width);
 
     this.panelRef.instance.optionClick.subscribe((opt: AutocompleteOption) => {
@@ -249,10 +253,10 @@ export class AutocompleteComponent implements OnDestroy {
         closeOnEscape: false,
         onClose: (reason) => {
           if (reason === 'manual') return;
-          this.showDropdown = false;
+          this.showDropdown.set(false);
           this.closePanel();
-          this.activeIndex = -1;
-          this.focused = false;
+          this.activeIndex.set(-1);
+          this.focused.set(false);
         },
       },
     );
@@ -271,6 +275,6 @@ export class AutocompleteComponent implements OnDestroy {
   private syncPanel(): void {
     if (!this.panelRef) return;
     this.panelRef.setInput('options',     this.filteredOptions);
-    this.panelRef.setInput('activeIndex', this.activeIndex);
+    this.panelRef.setInput('activeIndex', this.activeIndex());
   }
 }

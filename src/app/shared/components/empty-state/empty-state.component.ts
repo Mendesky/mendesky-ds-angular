@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './empty-state.component.html',
   styleUrls: ['./empty-state.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmptyStateComponent {
   /** 插圖下方的說明文字；空字串時不顯示 */

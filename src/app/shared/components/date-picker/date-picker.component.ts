@@ -1,7 +1,7 @@
 import {
   Component, Input, OnDestroy, ElementRef, ApplicationRef,
   EnvironmentInjector, ComponentRef, forwardRef, signal, createComponent, inject,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -20,6 +20,7 @@ import { PortalOverlayRef, PortalPositioningService } from '../../services/porta
     useExisting: forwardRef(() => DatePickerComponent),
     multi: true,
   }],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
   @Input() size: 'S' | 'M' | 'L' = 'M';

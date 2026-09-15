@@ -1,4 +1,4 @@
-import { Component, input, model } from '@angular/core';
+import { Component, input, model, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -9,6 +9,7 @@ import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive'
   imports: [CommonModule, IconComponent, ErrorTooltipDirective],
   templateUrl: './inline-confirm.component.html',
   styleUrls: ['./inline-confirm.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InlineConfirmComponent {
   label = input.required<string>();

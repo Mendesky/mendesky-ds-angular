@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { AvatarComponent } from '../avatar/avatar.component';
@@ -13,6 +13,7 @@ export type NumberListAction = 'view' | 'download' | 'delete' | 'subview';
   imports: [CommonModule, IconComponent, AvatarComponent],
   templateUrl: './number-list.component.html',
   styleUrls: ['./number-list.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NumberListComponent {
   /** S (小) 或 M (大)，影響字體、間距、按鈕大小 */

@@ -1,4 +1,4 @@
-import { Component, Input, HostBinding } from '@angular/core';
+import { Component, Input, HostBinding, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type TooltipPortalDirection = 'top' | 'bottom' | 'left' | 'right';
@@ -10,6 +10,7 @@ export type TooltipPortalStyle = 'default' | 'warning' | 'grey';
   imports: [CommonModule],
   templateUrl: './tooltip-portal.component.html',
   styleUrls: ['./tooltip-portal.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TooltipPortalComponent {
   @Input() text = '';

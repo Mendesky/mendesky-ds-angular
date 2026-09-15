@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter, OnInit, AfterViewInit,
   signal, HostListener, ElementRef, HostBinding, inject,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
@@ -13,6 +13,7 @@ import { CellBtnComponent } from '../cell-btn/cell-btn.component';
   imports: [CommonModule, IconComponent, IconBtnComponent, CellBtnComponent],
   templateUrl: './date-panel.component.html',
   styleUrls: ['./date-panel.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatePanelComponent implements OnInit, AfterViewInit {
   @Input() minYear = 110;

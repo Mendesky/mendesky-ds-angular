@@ -1,7 +1,7 @@
 import {
   Component, Input, OnDestroy, ElementRef, ApplicationRef,
   EnvironmentInjector, ComponentRef, Renderer2, forwardRef, signal, createComponent,
-} from '@angular/core';
+ ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -18,6 +18,7 @@ import { YearMonthPanelComponent } from './year-month-panel.component';
     useExisting: forwardRef(() => YearMonthPickerComponent),
     multi: true,
   }],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class YearMonthPickerComponent implements ControlValueAccessor, OnDestroy {
   @Input() size: 'S' | 'M' | 'L' = 'S';

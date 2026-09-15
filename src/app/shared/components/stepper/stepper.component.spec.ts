@@ -41,7 +41,9 @@ describe('StepperComponent — nav variant 收合子項不佔 tab 順序', () =>
   });
 
   it('切換展開狀態 → inert 隨之更新', () => {
-    comp.expandedPageIds = ['p2']; // 改成 p2 展開、p1 收合
+    // OnPush：直接改 plain 屬性 fixture.detectChanges() 偵測不到，須用 setInput 走 Angular 的
+    // input 綁定機制（見 carousel-dot / modal-close-btn 同類修正）。
+    fixture.componentRef.setInput('expandedPageIds', ['p2']); // 改成 p2 展開、p1 收合
     fixture.detectChanges();
     expect(collapses()[0].hasAttribute('inert')).toBeTrue();
     expect(collapses()[1].hasAttribute('inert')).toBeFalse();

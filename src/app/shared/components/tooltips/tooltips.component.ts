@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type TooltipDirection = 'Left' | 'Down' | 'Top' | 'Right';
@@ -10,6 +10,7 @@ export type TooltipStyle = 'Default' | 'Warning' | 'Grey';
   imports: [CommonModule],
   templateUrl: './tooltips.component.html',
   styleUrls: ['./tooltips.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TooltipsComponent implements OnChanges {
   @Input() propClass: TooltipDirection = 'Down';

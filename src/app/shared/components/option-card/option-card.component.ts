@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { IconComponent } from '../icon/icon.component';
@@ -20,6 +20,7 @@ import { IconComponent } from '../icon/icon.component';
   imports: [CommonModule, IconComponent],
   templateUrl: './option-card.component.html',
   styleUrls: ['./option-card.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OptionCardComponent {
   /** 選項值（識別用，亦組成 data-testid） */

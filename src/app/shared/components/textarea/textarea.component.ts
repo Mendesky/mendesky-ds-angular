@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, AfterViewInit, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -11,6 +11,7 @@ export type TextareaSize = 'M' | 'L';
   imports: [CommonModule, IconComponent, ErrorTooltipDirective],
   templateUrl: './textarea.component.html',
   styleUrls: ['./textarea.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TextareaComponent implements OnChanges, AfterViewInit {
   /** 輸入框尺寸 */

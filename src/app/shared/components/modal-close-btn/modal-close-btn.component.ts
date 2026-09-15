@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 
 /**
@@ -12,6 +12,7 @@ import { IconComponent } from '../icon/icon.component';
   imports: [IconComponent],
   templateUrl: './modal-close-btn.component.html',
   styleUrls: ['./modal-close-btn.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalCloseBtnComponent {
   /** 無障礙標籤；情境特定可覆寫（如「關閉酬金拆分」），預設「關閉」 */

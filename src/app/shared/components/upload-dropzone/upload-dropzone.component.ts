@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
 
@@ -8,6 +8,7 @@ import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive'
   imports: [CommonModule, ErrorTooltipDirective],
   templateUrl: './upload-dropzone.component.html',
   styleUrls: ['./upload-dropzone.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UploadDropzoneComponent {
   /** 可接受的副檔名列表，如 ['.pdf', '.jpg', '.png']；空陣列表示不限 */

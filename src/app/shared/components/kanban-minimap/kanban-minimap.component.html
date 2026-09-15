@@ -8,7 +8,7 @@
     </div>
     <div
       class="minimap-viewport"
-      [class.minimap-viewport--dragging]="isDragging"
+      [class.minimap-viewport--dragging]="isDragging()"
       [style.width.px]="vpWidth()"
       [style.left.px]="vpLeft()"
       (mousedown)="onViewportMousedown($event)">
