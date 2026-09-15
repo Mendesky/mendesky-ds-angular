@@ -43,7 +43,7 @@
     <!-- 右側：清除全部 + 必填 + 下拉箭頭 -->
     <div class="autocomplete-suffix">
       <button
-        *ngIf="focused && hasSelection && clearable"
+        *ngIf="focused() && hasSelection && clearable"
         class="autocomplete-clear"
         type="button"
         aria-label="清除全部"

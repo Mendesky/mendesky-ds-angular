@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef, OnDestroy, signal } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface MinimapColumn {
@@ -13,6 +13,7 @@ export interface MinimapColumn {
   imports: [CommonModule],
   templateUrl: './kanban-minimap.component.html',
   styleUrls: ['./kanban-minimap.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KanbanMinimapComponent implements OnDestroy {
   @ViewChild('minimapBody') minimapBodyRef!: ElementRef<HTMLElement>;
@@ -33,7 +34,9 @@ export class KanbanMinimapComponent implements OnDestroy {
   visible = signal(false);
   vpLeft = signal(0);
   vpWidth = signal(0);
-  isDragging = false;
+  /** signal（非 plain boolean）：mouseup 監聽掛在 document 上、不是本元件 template 內的
+   *  事件來源，OnPush 元件下 plain 欄位變更不會觸發重繪，改用 signal 確保正確刷新。 */
+  isDragging = signal(false);
 
   private _boardEl: HTMLElement | null = null;
   private readonly _onScroll = () => this.updateViewport();
@@ -82,7 +85,7 @@ export class KanbanMinimapComponent implements OnDestroy {
   }
 
   onViewportMousedown(e: MouseEvent): void {
-    this.isDragging = true;
+    this.isDragging.set(true);
     const startX = e.clientX;
     const startScroll = this._boardEl?.scrollLeft ?? 0;
     e.preventDefault();
@@ -95,7 +98,7 @@ export class KanbanMinimapComponent implements OnDestroy {
       el.scrollLeft = startScroll + (ev.clientX - startX) * (el.scrollWidth / body.clientWidth);
     };
     const onUp = () => {
-      this.isDragging = false;
+      this.isDragging.set(false);
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
