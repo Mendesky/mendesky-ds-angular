@@ -60,6 +60,27 @@
   user-select: all;
   line-height: inherit;
 
+  /* 可拖曳的 chip（普通 chip；select chip 的點擊要開下拉，不可拖）。
+     坑 2：user-select:all 會讓瀏覽器把拖曳判成「選取文字」而不是「拖一個元素」——
+     dragstart 的 target 會變成文字節點、元素拖曳整個不成立。可拖的 chip 必須關掉它。 */
+  &[draggable='true'] {
+    user-select: none;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  /* 拖曳中的來源 chip：留在原位變淡，讓使用者知道「這顆正在被搬」。
+     0.4 在這顆淺藍底 chip 上幾乎看不出來（2026-09-14 使用者回報「沒有半透明」）→ 調到 0.25
+     並加虛線外框，兩個訊號疊加才夠明顯。 */
+  &.tpl--dragging {
+    opacity: 0.25;
+    outline: 1px dashed var(--button\/action, #3a9ccd);
+    outline-offset: 1px;
+  }
+
   &.tpl--empty {
     background: var(--color\/white\/20, #f1f3f5);
     color: var(--text\/secondary, #535353);
@@ -149,4 +170,20 @@
     height: auto;
     min-height: 36px;
   }
+}
+
+/* ── 拖曳落點指示線 ──
+   對應對照組（酬金補充說明）的 ProseMirror Dropcursor。顏色取產品既有的落點指示語彙
+   `--button/action`（p4-5-fee.component.scss:57 的 drag-over-top/bot 用同一個），
+   粗細 2px：dropcursor 預設 1px 在這個字級偏細，而既有卡片指示是 3px（那是整條邊，不同量級）。
+   定位基準是 .te-wrap（本檔開頭已設 position: relative），且 .te-wrap / .te-box / .te-field
+   都沒有 overflow → 不會被裁切、不需要 portal 到 body。 */
+.te-drop-caret {
+  position: absolute;
+  display: none;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--button\/action, #3a9ccd);
+  pointer-events: none;   /* 不得吃掉 dragover：吃掉的話線一出現拖曳就斷 */
+  z-index: 1;
 }

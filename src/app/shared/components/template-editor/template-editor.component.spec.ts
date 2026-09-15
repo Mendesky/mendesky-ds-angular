@@ -671,3 +671,800 @@ describe('TemplateEditorComponent — Backspace 刪除前方 chip（自訂 handl
     expect(rest[0].dataset['var']).toBe('A');
   });
 });
+
+// ── ⓘ 面板「搜尋後插入」的游標位置（2026-09-14 使用者回報）────────────────────
+// 症狀：點 ⓘ 直接點變數 → 插在游標位置（對）；點 ⓘ **先在搜尋框打字**再點變數 →
+// 插到文字最後面（錯）。根因：`insertVariable` 只讀插入當下的 live document selection
+// （`editorEl.contains(range.commonAncestorContainer)`），而搜尋框是原生 <input>、
+// 面板又 portal 到 body —— 點它必然把 selection 帶離編輯器 → 走末尾 fallback 分支。
+// 對照組「直接點 chip」不壞，是因為 `.tvp-chip` 綁了 mousedown preventDefault（不搶焦點）；
+// `%%` inline 路徑不壞，是因為 `_deleteTriggerText()` 會主動把 selection 設回編輯器內。
+// 修法：編輯器自己保存游標快照，插入時 live selection →快照→末尾 三階降級。
+describe('TemplateEditorComponent — ⓘ 搜尋後插入的游標位置', () => {
+  let component: TemplateEditorComponent;
+  let fixture: ComponentFixture<TemplateEditorComponent>;
+  let outside: HTMLElement;
+
+  const defs: TemplateVarDef[] = [
+    { key: 'A', label: '變數A', group: 'basic' },
+    { key: 'B', label: '變數B', group: 'basic' },
+  ];
+
+  function editorEl(): HTMLElement {
+    return fixture.nativeElement.querySelector('[contenteditable]') as HTMLElement;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TemplateEditorComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    fixture = TestBed.createComponent(TemplateEditorComponent);
+    component = fixture.componentInstance;
+    component.variableDefs = defs;
+    component.variables = { A: '值A', B: '值B' };
+    component.template = '前綴中段尾段';
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+
+    // 面板 portal 到 body，搜尋框是它的後代——用一個編輯器外的節點忠實模擬「焦點被搜尋框奪走」
+    outside = document.createElement('div');
+    outside.textContent = '面板搜尋框';
+    document.body.appendChild(outside);
+  });
+
+  afterEach(() => {
+    if (fixture.nativeElement.parentNode === document.body) {
+      document.body.removeChild(fixture.nativeElement);
+    }
+    if (outside.parentNode) outside.parentNode.removeChild(outside);
+  });
+
+  /** 把游標放進編輯器第一個 text node 的指定 offset */
+  function putCaret(offset: number): Text {
+    const node = editorEl().firstChild as Text;
+    const r = document.createRange();
+    r.setStart(node, offset);
+    r.collapse(true);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(r);
+    return node;
+  }
+
+  /**
+   * 忠實模擬「點擊面板搜尋框」：真實瀏覽器下 rangeCount 仍是 1，只是
+   * commonAncestorContainer 落在編輯器外（實測 cac=BODY/DIV），不是 rangeCount=0。
+   */
+  function stealSelectionToPanel(): void {
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    const r = document.createRange();
+    r.selectNodeContents(outside);
+    sel.addRange(r);
+  }
+
+  it('搜尋框奪走焦點後插入 → 變數落在 blur 前的游標位置（不是末尾）', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFocus();
+    putCaret(2);                              // 「前綴|中段尾段」
+    component.onBlur(new FocusEvent('blur')); // 點 ⓘ → 編輯器失焦
+    stealSelectionToPanel();                  // 點搜尋框打字 → selection 離開編輯器
+
+    component.insertVariable('A');
+
+    expect(emitted)
+      .withContext('修前為「前綴中段尾段%A%」＝插到末尾')
+      .toBe('前綴%A%中段尾段');
+  });
+
+  it('blur 的 relatedTarget 落在面板內（onBlur early-return 路徑）→ 仍要有快照', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+    const panel = document.createElement('div');
+    panel.className = 'tvp-panel';
+    document.body.appendChild(panel);
+
+    component.onFocus();
+    putCaret(2);
+    // relatedTarget 在 .tvp-panel 內 → onBlur 在 :521-524 early return
+    component.onBlur({ relatedTarget: panel } as unknown as FocusEvent);
+    stealSelectionToPanel();
+
+    component.insertVariable('A');
+    document.body.removeChild(panel);
+
+    expect(emitted)
+      .withContext('快照必須寫在 relatedTarget guard 之前，否則 Safari 這條路徑抓不到')
+      .toBe('前綴%A%中段尾段');
+  });
+
+  it('方向鍵移動游標（只有 keyup、沒有 input）後失焦 → 插在移動後的位置', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFocus();
+    putCaret(4);
+    putCaret(2); // 模擬瀏覽器已套用方向鍵
+    editorEl().dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft' }));
+    stealSelectionToPanel();
+
+    component.insertVariable('A');
+
+    expect(emitted)
+      .withContext('keyup 監聽沒註冊成功的話，這條會落回末尾')
+      .toBe('前綴%A%中段尾段');
+  });
+
+  it('快照失效（外部 template 變更觸發重繪）→ 降級成末尾，不得插到開頭', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFocus();
+    putCaret(2);
+    component.onBlur(new FocusEvent('blur'));
+
+    const prev = component.template;
+    component.template = '全新文字';
+    component.ngOnChanges({ template: new SimpleChange(prev, '全新文字', false) });
+    stealSelectionToPanel();
+
+    component.insertVariable('A');
+
+    // innerHTML 整批換節點後，live Range 依 DOM 規格會重錨定到 (editorEl, 0)：
+    // 不清快照的話 isConnected 與 contains 兩道驗證都會過 → 變數插到開頭。
+    expect(emitted).toBe('全新文字%A%');
+    expect(emitted).not.toBe('%A%全新文字');
+  });
+
+  it('點 chip 造成整塊被選取（user-select:all）→ 插在 chip 之後，不得刪掉該 chip', () => {
+    let emitted = '';
+    component.template = '%A%尾段';
+    component.ngOnChanges({ template: new SimpleChange('前綴中段尾段', '%A%尾段', false) });
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    const chip = editorEl().querySelector('.tpl[data-var="A"]') as HTMLElement;
+    component.onFocus();
+    const r = document.createRange();
+    r.selectNode(chip);                 // user-select:all → 點一下就是整塊被選取
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(r);
+    editorEl().dispatchEvent(new MouseEvent('mouseup'));
+    component.onBlur(new FocusEvent('blur'));
+    stealSelectionToPanel();
+
+    component.insertVariable('B');
+
+    expect(emitted)
+      .withContext('非 collapsed 快照若直接 deleteContents，%A% 會被吃掉')
+      .toBe('%A%%B%尾段');
+  });
+
+  it('live selection 在編輯器內（ⓘ 直接點 chip）→ 插在游標位置並把焦點還給編輯器', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+    const focusSpy = spyOn(editorEl(), 'focus').and.callThrough();
+
+    component.onFocus();
+    putCaret(2);
+    component.insertVariable('A');
+
+    expect(emitted).toBe('前綴%A%中段尾段');
+    expect(focusSpy)
+      .withContext('修前 focus() 只出現在末尾 fallback 分支 → 插完游標看不見、無法續打')
+      .toHaveBeenCalled();
+    const sel = window.getSelection()!;
+    const chip = editorEl().querySelector('.tpl[data-var="A"]')!;
+    expect(sel.getRangeAt(0).startContainer).toBe(chip.nextSibling!);
+  });
+
+  it('連續插入兩個變數（都走快照路徑）→ 第二個接在第一個之後', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFocus();
+    putCaret(2);
+    component.onBlur(new FocusEvent('blur'));
+    stealSelectionToPanel();
+    component.insertVariable('A');
+
+    stealSelectionToPanel();
+    component.insertVariable('B');
+
+    expect(emitted)
+      .withContext('插入後沒有把快照更新到新游標 → 第二個會蓋回第一個的位置')
+      .toBe('前綴%A%%B%中段尾段');
+  });
+
+  it('`%%` inline 路徑：live selection 優先於快照（回歸鎖）', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    // 先在 offset 0 建立一份舊快照
+    component.onFocus();
+    putCaret(0);
+    component.onBlur(new FocusEvent('blur'));
+
+    // 再走 %% 觸發：_deleteTriggerText 會把 selection 設回編輯器
+    component.onFocus();
+    editorEl().textContent = '中文%%Def';
+    putCaret('中文%%Def'.length);
+    component.onInput();
+    component.insertVariable('A');
+
+    expect(emitted).toBe('中文%A%');
+    expect(emitted).not.toContain('%%');
+  });
+
+  it('快照路徑插入後：只 emit 一次 templateChange，parent 原封回寫不重繪', () => {
+    let emitted = '';
+    let count = 0;
+    component.templateChange.subscribe((t: string) => { emitted = t; count++; });
+
+    component.onFocus();
+    putCaret(2);
+    component.onBlur(new FocusEvent('blur'));
+    stealSelectionToPanel();
+    component.insertVariable('A');
+
+    expect(count).toBe(1);
+    const chipBefore = editorEl().querySelector('.tpl[data-var="A"]');
+    const prev = component.template;
+    component.template = emitted;
+    component.ngOnChanges({ template: new SimpleChange(prev, emitted, false) });
+    expect(editorEl().querySelector('.tpl[data-var="A"]'))
+      .withContext('echo 抑制失效 → 重繪 → 游標塌回編輯器根節點')
+      .toBe(chipBefore);
+  });
+});
+
+// ── chip 拖曳重排（2026-09-14 使用者要求；2026-06-27 曾做過、踩四個坑後拍板不做）──
+// 這次的範圍收斂成「只在同一格編輯器內重排」（使用者 2026-09-14 選項 A），四個舊坑各自對應：
+//  坑1 dragstart 的 target 可能是文字節點 → 一律先正規化成 element 再 closest
+//  坑2 `.tpl` 的 user-select:all 讓瀏覽器把拖曳當「選取文字」→ 可拖的 chip 改 user-select:none
+//  坑3 dragstart 冒泡到 `.p4-fee__item`（宿主對非握把來源無條件 preventDefault）→ 整個拖曳被殺
+//      → chip 的 dragstart/dragover/drop 一律 stopPropagation
+//  坑4 原生 DnD 一旦啟動瀏覽器全權接管、可拖出框落到別的編輯器 → 改成自己算落點自己搬，
+//      並且「來源不是自己這格的 chip」時完全不碰事件（不 preventDefault、不 stopPropagation），
+//      讓宿主的酬金項目重排照常運作
+describe('TemplateEditorComponent — chip 拖曳重排（同格內）', () => {
+  let component: TemplateEditorComponent;
+  let fixture: ComponentFixture<TemplateEditorComponent>;
+
+  const defs: TemplateVarDef[] = [
+    { key: 'A', label: '變數A', group: 'basic' },
+    { key: 'B', label: '變數B', group: 'basic' },
+    { key: 'S', label: '選擇變數', group: 'fee', options: [{ label: '甲', value: 'a' }] },
+  ];
+
+  function editorEl(): HTMLElement {
+    return fixture.nativeElement.querySelector('[contenteditable]') as HTMLElement;
+  }
+  function chip(key: string): HTMLElement {
+    return editorEl().querySelector(`.tpl[data-var="${key}"]`) as HTMLElement;
+  }
+
+  /** 指定 drop 落點：真實瀏覽器靠滑鼠座標換算，karma 無精確 layout，改直接給位置 */
+  function stubDropPoint(node: Node, offset: number): void {
+    spyOn(component as unknown as { _caretFromPoint: (x: number, y: number) => unknown },
+          '_caretFromPoint').and.returnValue({ node, offset });
+  }
+
+  /** 合成一顆帶 dataTransfer 的 DragEvent（karma 下 DataTransfer 建構子可用） */
+  function dragEvent(type: string, target: Node, init: Partial<DragEventInit> = {}): DragEvent {
+    const ev = new DragEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: new DataTransfer(),
+      ...init,
+    });
+    Object.defineProperty(ev, 'target', { value: target, configurable: true });
+    return ev;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TemplateEditorComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    fixture = TestBed.createComponent(TemplateEditorComponent);
+    component = fixture.componentInstance;
+    component.variableDefs = defs;
+    component.variables = { A: '值A', B: '值B', S: '甲' };
+    component.template = '前段%A%中段%B%尾段';
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    if (fixture.nativeElement.parentNode === document.body) {
+      document.body.removeChild(fixture.nativeElement);
+    }
+  });
+
+  it('chip 帶 draggable 屬性（普通 chip 可拖）', () => {
+    expect(chip('A').getAttribute('draggable')).toBe('true');
+    expect(chip('B').getAttribute('draggable')).toBe('true');
+  });
+
+  it('select chip 不可拖（它的點擊要開下拉選單，兩者衝突）', () => {
+    component.template = '%S%尾段';
+    component.ngOnChanges({ template: new SimpleChange('前段%A%中段%B%尾段', '%S%尾段', false) });
+    expect(chip('S').getAttribute('draggable')).toBeNull();
+  });
+
+  it('dragstart：stopPropagation 擋住宿主的 preventDefault（坑 3）', () => {
+    // 忠實重現宿主：`.p4-fee__item` 也是 draggable，其 onDragStart 對非握把來源
+    // 無條件 preventDefault —— dragstart 冒泡上去就會把整個拖曳殺掉。
+    const outer = document.createElement('div');
+    const hostSpy = jasmine.createSpy('hostDragStart').and.callFake((e: DragEvent) => e.preventDefault());
+    outer.addEventListener('dragstart', hostSpy);
+    document.body.appendChild(outer);
+    outer.appendChild(fixture.nativeElement);
+
+    // 真的 dispatch（不是直接呼叫方法），事件才會走完冒泡鏈
+    const ev = new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() });
+    chip('A').dispatchEvent(ev);
+
+    expect(hostSpy)
+      .withContext('冒泡到宿主 → 宿主 preventDefault → chip 完全拖不動（2026-06-27 的死因）')
+      .not.toHaveBeenCalled();
+    expect(ev.defaultPrevented).toBeFalse();
+    document.body.removeChild(outer);
+  });
+
+  it('select chip 的 dragstart 不得被宿主擋下來之外還留下拖曳狀態', () => {
+    component.template = '%S%尾段';
+    component.ngOnChanges({ template: new SimpleChange('前段%A%中段%B%尾段', '%S%尾段', false) });
+    const ev = new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() });
+    chip('S').dispatchEvent(ev);
+    expect(ev.defaultPrevented)
+      .withContext('select chip 不可拖 → 必須 preventDefault，否則瀏覽器會亂搬文字')
+      .toBeTrue();
+  });
+
+  it('dragstart 的 target 是文字節點時不得爆（坑 1）', () => {
+    const textNode = editorEl().firstChild!;
+    expect(() => component.onFieldDragStart(dragEvent('dragstart', textNode))).not.toThrow();
+  });
+
+  it('把 %A% 拖到 %B% 之後 → 順序變成 前段中段%B%%A%尾段', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    // 落點：%B% 之後那個 text node（「尾段」）的 offset 0
+    const tail = chip('B').nextSibling as Text;
+    stubDropPoint(tail, 0);
+    component.onFieldDrop(dragEvent('drop', editorEl()));
+
+    expect(emitted).toBe('前段中段%B%%A%尾段');
+    expect(editorEl().querySelectorAll('.tpl[data-var]').length)
+      .withContext('搬移不是複製：總數不變')
+      .toBe(2);
+  });
+
+  it('拖到自己原位 → 不動 DOM、不 emit（node identity 不變）', () => {
+    let count = 0;
+    component.templateChange.subscribe(() => count++);
+
+    const before = chip('A');
+    const anchorBefore = before.nextSibling;
+    component.onFieldDragStart(dragEvent('dragstart', before));
+    stubDropPoint(before.nextSibling as Text, 0);
+    component.onFieldDrop(dragEvent('drop', editorEl()));
+
+    expect(chip('A')).toBe(before);
+    expect(before.nextSibling).toBe(anchorBefore);
+    expect(count).toBe(0);
+  });
+
+  it('落點被算在 chip 自己內部 → 夾到 chip 之外，不得把 chip 塞進 chip 裡', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    // caretFromPoint 打在 %B% 中央時，真實瀏覽器會回傳 chip **內部**的 text node
+    const insideB = chip('B').firstChild as Text;
+    stubDropPoint(insideB, 1);
+    component.onFieldDrop(dragEvent('drop', editorEl()));
+
+    expect(chip('B').querySelector('.tpl[data-var="A"]'))
+      .withContext('chip 巢狀 → walkNodes 會序列化成 %B% 吃掉 %A%')
+      .toBeNull();
+    expect(emitted).toContain('%A%');
+    expect(emitted).toContain('%B%');
+  });
+
+  it('外來拖曳（非本格 chip）→ 完全不碰事件，讓宿主的項目重排照跑（坑 3 反向）', () => {
+    const ev = dragEvent('drop', editorEl());
+    const pd = spyOn(ev, 'preventDefault');
+    const sp = spyOn(ev, 'stopPropagation');
+
+    component.onFieldDrop(ev); // 沒有先 dragstart ＝ 來源不是本格 chip
+
+    expect(pd).not.toHaveBeenCalled();
+    expect(sp)
+      .withContext('無條件 stopPropagation 會吃掉宿主酬金項目重排的 drop')
+      .not.toHaveBeenCalled();
+  });
+
+  it('dragover：只對自己的拖曳 preventDefault（否則瀏覽器不允許 drop）', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    const mine = dragEvent('dragover', editorEl());
+    const minePd = spyOn(mine, 'preventDefault');
+    component.onFieldDragOver(mine);
+    expect(minePd).toHaveBeenCalled();
+  });
+
+  it('dragend：拖曳被取消（沒有 drop）也要清乾淨拖曳中樣式與狀態', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    component.onFieldDragEnd(dragEvent('dragend', chip('A')));
+
+    expect(editorEl().querySelectorAll('.tpl--dragging').length).toBe(0);
+    // 狀態沒清乾淨的話，下一次外來拖曳會被誤判成「自己的」
+    const ev = dragEvent('drop', editorEl());
+    const sp = spyOn(ev, 'stopPropagation');
+    component.onFieldDrop(ev);
+    expect(sp).not.toHaveBeenCalled();
+  });
+
+  it('搬移後：最後一個節點是 chip 時仍要有游標落點（_ensureTrailingAnchor 不變量）', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    const tail = chip('B').nextSibling as Text;
+    stubDropPoint(tail, tail.data.length);
+    component.onFieldDrop(dragEvent('drop', editorEl()));
+
+    const chips = editorEl().querySelectorAll('.tpl[data-var]');
+    const last = chips[chips.length - 1];
+    expect(last.nextSibling?.nodeType).toBe(Node.TEXT_NODE);
+    expect(emitted).toBe('前段中段%B%尾段%A%');
+  });
+
+  it('搬移後：echo 回寫不重繪（_lastEmittedTemplate 必須同步）', () => {
+    let emitted = '';
+    component.templateChange.subscribe((t: string) => (emitted = t));
+
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    const tail = chip('B').nextSibling as Text;
+    stubDropPoint(tail, 0);
+    component.onFieldDrop(dragEvent('drop', editorEl()));
+
+    const chipRef = chip('A');
+    const prev = component.template;
+    component.template = emitted;
+    component.ngOnChanges({ template: new SimpleChange(prev, emitted, false) });
+    expect(chip('A'))
+      .withContext('沒同步 _lastEmittedTemplate → 在使用者手底下整批重繪')
+      .toBe(chipRef);
+  });
+
+  it('disabled 時不可拖', () => {
+    component.disabled = true;
+    component.ngOnChanges({ disabled: new SimpleChange(false, true, false) });
+    const ev = dragEvent('dragstart', chip('A'));
+    const pd = spyOn(ev, 'preventDefault');
+    component.onFieldDragStart(ev);
+    expect(pd).toHaveBeenCalled();
+  });
+});
+
+// ── 拖曳時的落點指示線（2026-09-14 使用者回報「看不出會放到哪」）──────────────
+// 對照組「酬金補充說明」用的是 ProseMirror StarterKit 內含的 Dropcursor（一條線）。
+// 這裡自己畫一條對應的線，顏色對齊產品既有的落點指示語彙 `--button/action`
+// （p4-5-fee.component.scss:57 的 drag-over-top / drag-over-bot 用同一個）。
+//
+// 實作形態：線**永遠存在於 template 裡**（不是 document.createElement）。
+// 理由：Angular emulated encapsulation 會給 component scss 的選擇器加 `[_ngcontent-xxx]`，
+// 命令式建立的元素沒有那個屬性、吃不到樣式。放進 template 才有；同時用 ViewChild 直接改
+// 它的 inline style（不走 Angular 綁定），dragover 每幀更新才不會觸發 CD ——
+// 本元件沒有 OnPush，一頁有 9 個以上實例，每幀 tick 全 app 會拖垮 P4。
+describe('TemplateEditorComponent — 拖曳落點指示線', () => {
+  let component: TemplateEditorComponent;
+  let fixture: ComponentFixture<TemplateEditorComponent>;
+
+  function editorEl(): HTMLElement {
+    return fixture.nativeElement.querySelector('[contenteditable]') as HTMLElement;
+  }
+  function chip(key: string): HTMLElement {
+    return editorEl().querySelector(`.tpl[data-var="${key}"]`) as HTMLElement;
+  }
+  function caretEl(): HTMLElement {
+    return fixture.nativeElement.querySelector('.te-drop-caret') as HTMLElement;
+  }
+  function caretVisible(): boolean {
+    const el = caretEl();
+    return !!el && getComputedStyle(el).display !== 'none';
+  }
+  function stubDropPoint(node: Node, offset: number): jasmine.Spy {
+    return spyOn(component as unknown as { _caretFromPoint: (x: number, y: number) => unknown },
+                 '_caretFromPoint').and.returnValue({ node, offset });
+  }
+  function dragEvent(type: string, target: Node): DragEvent {
+    const ev = new DragEvent(type, {
+      bubbles: true, cancelable: true, dataTransfer: new DataTransfer(),
+    });
+    Object.defineProperty(ev, 'target', { value: target, configurable: true });
+    return ev;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TemplateEditorComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    fixture = TestBed.createComponent(TemplateEditorComponent);
+    component = fixture.componentInstance;
+    component.variableDefs = [
+      { key: 'A', label: '變數A', group: 'basic' },
+      { key: 'B', label: '變數B', group: 'basic' },
+    ];
+    component.variables = { A: '值A', B: '值B' };
+    component.template = '前段%A%中段%B%尾段';
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    if (fixture.nativeElement.parentNode === document.body) {
+      document.body.removeChild(fixture.nativeElement);
+    }
+  });
+
+  it('指示線元素存在於 template 內（不是命令式建立），預設不顯示', () => {
+    expect(caretEl())
+      .withContext('命令式建立的元素吃不到 component scss，必須放在 template 裡')
+      .toBeTruthy();
+    expect(caretVisible()).toBeFalse();
+  });
+
+  it('指示線不在 contenteditable 內 → 不影響序列化', () => {
+    expect(editorEl().contains(caretEl()))
+      .withContext('線若落在 .te-field 內，walkNodes 會把它當內容序列化進 template 字串')
+      .toBeFalse();
+    expect(component['extractTemplate']()).toBe('前段%A%中段%B%尾段');
+  });
+
+  it('拖曳中 dragover → 指示線顯示在落點上', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    stubDropPoint(chip('B').nextSibling as Text, 0);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+
+    expect(caretVisible()).toBeTrue();
+    expect(parseFloat(caretEl().style.height))
+      .withContext('高度為 0 的線等於看不見')
+      .toBeGreaterThan(0);
+  });
+
+  it('落點等於原位（放開是 no-op）→ 不顯示線，避免誤導', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    stubDropPoint(chip('A').nextSibling as Text, 0);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+
+    expect(caretVisible())
+      .withContext('放開不會有任何變化，卻畫線告訴使用者「會放這裡」')
+      .toBeFalse();
+  });
+
+  it('drop 之後 → 線消失', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    const tail = chip('B').nextSibling as Text;
+    stubDropPoint(tail, 0);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+    expect(caretVisible()).toBeTrue();
+
+    component.onFieldDrop(dragEvent('drop', editorEl()));
+    expect(caretVisible()).toBeFalse();
+  });
+
+  it('拖曳被取消（dragend，沒有 drop）→ 線消失', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    stubDropPoint(chip('B').nextSibling as Text, 0);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+    expect(caretVisible()).toBeTrue();
+
+    component.onFieldDragEnd(dragEvent('dragend', chip('A')));
+    expect(caretVisible()).toBeFalse();
+  });
+
+  it('離開編輯器（dragleave 到框外）→ 線消失', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    stubDropPoint(chip('B').nextSibling as Text, 0);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+    expect(caretVisible()).toBeTrue();
+
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    const ev = dragEvent('dragleave', editorEl());
+    Object.defineProperty(ev, 'relatedTarget', { value: outside, configurable: true });
+    component.onFieldDragLeave(ev);
+    expect(caretVisible()).toBeFalse();
+    document.body.removeChild(outside);
+  });
+
+  // collapsed Range 的 getBoundingClientRect 在**空 text node** 上回 0×0 —— 而 chip 後面的
+  // 游標落點（_ensureTrailingAnchor 插的 anchor）正好就是空 text node。只用 collapsed range
+  // 量的話，拖到行尾那條線高度是 0 ＝ 使用者看不到。必須往鄰居借高度。
+  it('落點在空 text node（chip 後的游標落點）→ 線仍要有高度', () => {
+    component.template = '前段%A%中段%B%';
+    component.ngOnChanges({ template: new SimpleChange('前段%A%中段%B%尾段', '前段%A%中段%B%', false) });
+
+    const anchor = chip('B').nextSibling as Text;
+    expect(anchor.nodeType).toBe(Node.TEXT_NODE);
+    expect(anchor.data).withContext('_ensureTrailingAnchor 插的是空 text node').toBe('');
+
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    stubDropPoint(anchor, 0);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+
+    expect(caretVisible()).toBeTrue();
+    expect(parseFloat(caretEl().style.height))
+      .withContext('collapsed range 在空 text node 上量到 0 → 線看不見')
+      .toBeGreaterThan(0);
+  });
+
+  it('落點在元素層位置（container 是編輯器本身）→ 線仍要有高度', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    const el = editorEl();
+    const idx = Array.prototype.indexOf.call(el.childNodes, chip('B'));
+    stubDropPoint(el, idx);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+
+    expect(caretVisible()).toBeTrue();
+    expect(parseFloat(caretEl().style.height)).toBeGreaterThan(0);
+  });
+
+  it('外來拖曳（非本格 chip）的 dragover → 不顯示線', () => {
+    stubDropPoint(chip('B').nextSibling as Text, 0);   // 沒有先 dragstart
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+    expect(caretVisible()).toBeFalse();
+  });
+
+  it('落點算不出來（拖到框外）→ 不顯示線', () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    spyOn(component as unknown as { _caretFromPoint: (x: number, y: number) => unknown },
+          '_caretFromPoint').and.returnValue(null);
+    component.onFieldDragOver(dragEvent('dragover', editorEl()));
+    expect(caretVisible()).toBeFalse();
+  });
+
+  it('拖曳中的 chip 有 tpl--dragging 且實際變淡（不只是掛了 class）', async () => {
+    component.onFieldDragStart(dragEvent('dragstart', chip('A')));
+    await new Promise<void>(r => requestAnimationFrame(() => r()));   // 加 class 是 rAF 延後的
+
+    const dragged = chip('A');
+    expect(dragged.classList.contains('tpl--dragging')).toBeTrue();
+    expect(parseFloat(getComputedStyle(dragged).opacity))
+      .withContext('樣式沒穿透 encapsulation 的話 class 掛了也沒視覺效果')
+      .toBeLessThan(0.6);
+  });
+});
+
+// ── 拖曳縮圖（2026-09-14 使用者回報「變數字數多時拖著一張很大的圖」）─────────────
+// 不設 setDragImage 時瀏覽器用預設＝被拖元素的整張截圖，長變數就是一大塊跟著滑鼠跑。
+// 改成固定寬度上限的小膠囊：保留 chip 的藍底藍框（知道在拖哪一顆），超出用省略號截斷。
+// 形態照 p4-6-notes.component.ts:306-329 的既有前例（clone → 定位到畫面外 → setDragImage → rAF 移除）。
+describe('TemplateEditorComponent — 拖曳縮圖', () => {
+  let component: TemplateEditorComponent;
+  let fixture: ComponentFixture<TemplateEditorComponent>;
+
+  const LONG = '財務報表查核簽證暨稅務簽證申報作業（含年度結算）';
+
+  function editorEl(): HTMLElement {
+    return fixture.nativeElement.querySelector('[contenteditable]') as HTMLElement;
+  }
+  function chip(key: string): HTMLElement {
+    return editorEl().querySelector(`.tpl[data-var="${key}"]`) as HTMLElement;
+  }
+  function dragStartOn(node: Node): { ev: DragEvent; spy: jasmine.Spy } {
+    const ev = new DragEvent('dragstart', {
+      bubbles: true, cancelable: true, dataTransfer: new DataTransfer(),
+    });
+    Object.defineProperty(ev, 'target', { value: node, configurable: true });
+    const spy = spyOn(ev.dataTransfer!, 'setDragImage');
+    component.onFieldDragStart(ev);
+    return { ev, spy };
+  }
+  /** 等一次 rAF（clone 移除是 rAF 延後的） */
+  const nextFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TemplateEditorComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    fixture = TestBed.createComponent(TemplateEditorComponent);
+    component = fixture.componentInstance;
+    component.variableDefs = [{ key: 'A', label: '變數A', group: 'basic' }];
+    component.variables = { A: LONG };
+    component.template = '前段%A%尾段';
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    if (fixture.nativeElement.parentNode === document.body) {
+      document.body.removeChild(fixture.nativeElement);
+    }
+    document.querySelectorAll('.te-drag-ghost').forEach(n => n.remove());
+  });
+
+  it('dragstart → 設定自訂縮圖（不用瀏覽器預設的整張截圖）', () => {
+    const { spy } = dragStartOn(chip('A'));
+    expect(spy)
+      .withContext('沒設 setDragImage ＝ 瀏覽器拿整顆 chip 截圖，長變數就是一大塊')
+      .toHaveBeenCalled();
+  });
+
+  it('長變數的縮圖寬度受上限拘束（不隨文字長度膨脹）', () => {
+    const { spy } = dragStartOn(chip('A'));
+    const ghost = spy.calls.mostRecent().args[0] as HTMLElement;
+
+    expect(ghost.offsetWidth).toBeGreaterThan(0);
+    expect(ghost.offsetWidth)
+      .withContext(`原 chip 寬 ${chip('A').offsetWidth}px；縮圖不得跟著長`)
+      .toBeLessThanOrEqual(180);
+  });
+
+  it('縮圖保留變數身分（看得出在拖哪一顆），超出以省略號截斷', () => {
+    const { spy } = dragStartOn(chip('A'));
+    const ghost = spy.calls.mostRecent().args[0] as HTMLElement;
+
+    expect(ghost.textContent).withContext('空白矩形看不出拖的是哪個變數').toBeTruthy();
+    expect(LONG.startsWith((ghost.textContent ?? '').replace(/…$/, '')))
+      .withContext('縮圖文字應為原值的前綴')
+      .toBeTrue();
+    expect(getComputedStyle(ghost).textOverflow).toBe('ellipsis');
+  });
+
+  it('縮圖用完就從 DOM 移除（不留殘骸）', async () => {
+    dragStartOn(chip('A'));
+    await new Promise<void>(r => setTimeout(r, 0));
+    await new Promise<void>(r => setTimeout(r, 0));
+    expect(document.querySelectorAll('.te-drag-ghost').length).toBe(0);
+  });
+
+  // 「ghost 必須活到瀏覽器拍完拖曳影像」這件事 **karma 測不出來**：headless Chrome 沒有
+  // 真實 vsync，rAF 與 setTimeout(0) 的先後跟真瀏覽器不同，斷言誰先跑只是在測 harness。
+  // 這裡只鎖「setDragImage 當下 ghost 仍在 DOM 且有尺寸」——那是同步的、測得準的部分。
+  // 「移除時機夠不夠晚」列為真瀏覽器驗證項（V：真 app 拖長變數，看縮圖是小膠囊還是整格截圖）。
+  it('setDragImage 當下 ghost 在 DOM 內且已完成 layout', () => {
+    const { spy } = dragStartOn(chip('A'));
+    const ghost = spy.calls.mostRecent().args[0] as HTMLElement;
+    expect(ghost.isConnected)
+      .withContext('沒 append 到 document 的元素，setDragImage 會忽略')
+      .toBeTrue();
+    expect(ghost.offsetHeight)
+      .withContext('量到 0×0 的元素瀏覽器同樣忽略 → fallback 回預設截圖')
+      .toBeGreaterThan(0);
+  });
+
+  it('拖曳取消（dragend）→ 縮圖立刻清掉，不等 setTimeout', () => {
+    dragStartOn(chip('A'));
+    const ev = new DragEvent('dragend', { bubbles: true, dataTransfer: new DataTransfer() });
+    component.onFieldDragEnd(ev);
+    expect(document.querySelectorAll('.te-drag-ghost').length).toBe(0);
+  });
+
+  it('元件在 rAF 跑完前被銷毀 → 縮圖不得留在 body', () => {
+    dragStartOn(chip('A'));
+    component.ngOnDestroy();
+    expect(document.querySelectorAll('.te-drag-ghost').length)
+      .withContext('modal 反覆開關會累積殘骸')
+      .toBe(0);
+  });
+
+  it('不可拖的 select chip → 不建立縮圖', () => {
+    component.variableDefs = [{ key: 'A', label: '變數A', group: 'basic', options: [{ label: '甲', value: 'a' }] }];
+    component.ngOnChanges({ variableDefs: new SimpleChange([], component.variableDefs, false) });
+    const { spy } = dragStartOn(chip('A'));
+    expect(spy).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('.te-drag-ghost').length).toBe(0);
+  });
+});

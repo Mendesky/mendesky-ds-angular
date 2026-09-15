@@ -14,10 +14,22 @@
          (paste)="onPaste($event)"
          (click)="onEditorClick($event)"
          (keydown)="onKeydown($event)"
+         (dragstart)="onFieldDragStart($event)"
+         (dragover)="onFieldDragOver($event)"
+         (drop)="onFieldDrop($event)"
+         (dragend)="onFieldDragEnd($event)"
+         (dragleave)="onFieldDragLeave($event)"
          (compositionstart)="onCompositionStart()"
          (compositionend)="onCompositionEnd()">
     </div>
   </div>
+
+  <!-- 拖曳落點指示線。**永遠在 template 裡**（不用 document.createElement）：
+       emulated encapsulation 會給 component scss 的選擇器加 [_ngcontent-xxx]，
+       命令式建立的元素沒有那個屬性就吃不到樣式。位置與顯示由 ViewChild 直接改 inline
+       style（不走 Angular 綁定）——dragover 每幀觸發，走綁定會讓沒有 OnPush 的本元件
+       每幀 tick 全 app。放在 .te-wrap 內、.te-field 外：walkNodes 才不會把它序列化進 template。 -->
+  <span #dropCaret class="te-drop-caret" aria-hidden="true"></span>
 
   @if (filteredVarDefs.length > 0) {
     <app-template-var-panel
