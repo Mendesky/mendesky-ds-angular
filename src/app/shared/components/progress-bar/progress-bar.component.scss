@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+/* class 前綴用 .ds-progress，與 .ds-badge 同理：避免跟消費端既有的 .progress 工具類撞名 */
+.ds-progress {
+  position: relative;
+  height: 8px;
+  border-radius: var(--radious\/xxl, 50px);
+  background: var(--color\/grey\/20, #e7e7e7);
+  overflow: hidden;
+}
+
+.ds-progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--button\/action, #3a9ccd);
+  transition: width 200ms var(--ease-enter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-progress__fill {
+    transition: none;
+  }
+}
