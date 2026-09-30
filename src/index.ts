@@ -42,6 +42,7 @@ export * from './app/shared/components/page-skeleton/page-skeleton.component';
 export * from './app/shared/components/po-process/po-process.component';
 export * from './app/shared/components/process-modal/process-modal.component';
 export * from './app/shared/components/process-toast/process-toast.component';
+export * from './app/shared/components/progress-bar/progress-bar.component';
 export * from './app/shared/components/radio-chip/radio-chip.component';
 export * from './app/shared/components/rich-text-editor/rich-text-editor.component';
 export * from './app/shared/components/rich-text-editor/rich-text-editor.helpers';
