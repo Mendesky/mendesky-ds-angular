@@ -49,6 +49,8 @@ export * from './app/shared/components/rich-text-editor/table-toolbar/rte-table-
 export * from './app/shared/components/rich-text-editor/table-toolbar/rte-table-highlight.plugin';
 export * from './app/shared/components/select/select-panel.component';
 export * from './app/shared/components/select/select.component';
+export * from './app/shared/components/sort-header/sort-header.component';
+export * from './app/shared/components/sort-header/sort-header.model';
 export * from './app/shared/components/stepper/stepper.component';
 export * from './app/shared/components/template-editor/template-editor.component';
 export * from './app/shared/components/template-var-panel/template-var-panel.component';
