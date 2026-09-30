@@ -1,0 +1,84 @@
+/*
+ * 消費端的欄寬 class（例：col-email）常帶 overflow: hidden，給內容列的長文字顯示「…」用；表頭沿用同一個 class 時，
+ * 往外凸 6px 的按鈕會被裁掉，滑過時一側的底色就不見了。表頭本身不需要裁切，這裡強制不裁。
+ */
+:host {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: visible !important;
+}
+
+:host(.ds-sort-header--end) {
+  justify-content: flex-end;
+}
+
+/* class 前綴用 .ds-sort-header，與 .ds-progress 同理：避免跟消費端既有的 .lt-hd--sortable 撞名 */
+.ds-sort-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% + 12px);
+  min-width: 0;
+  /* 左右內距往外拉回，表頭文字才會跟下方內容的左緣（或靠右時的右緣）對齊 */
+  margin: 0 0 0 -6px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: var(--radious\/sm, 4px);
+  background: transparent;
+  font: inherit;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--text\/body-light, #939393);
+  cursor: pointer;
+  transition: background-color 150ms var(--ease-enter), color 150ms var(--ease-enter);
+
+  &:hover {
+    background: var(--color\/white\/20, #f1f3f5);
+    color: var(--text\/title, #3e3e3e);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--button\/action, #3a9ccd);
+    outline-offset: 1px;
+  }
+}
+
+:host(.ds-sort-header--end) .ds-sort-header {
+  margin: 0 -6px 0 0;
+}
+
+/* 正在排序的欄：動作色 + 半粗（hover 時仍維持動作色） */
+.ds-sort-header--active,
+.ds-sort-header--active:hover {
+  color: var(--button\/action, #3a9ccd);
+  font-weight: 500;
+}
+
+.ds-sort-header__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 圖示跟著文字色；沒在排序時先藏起來，滑過或鍵盤聚焦才出現 */
+.ds-sort-header__icon {
+  flex-shrink: 0;
+  color: currentColor;
+  opacity: 0;
+  transition: opacity 150ms var(--ease-enter);
+}
+
+.ds-sort-header:hover .ds-sort-header__icon,
+.ds-sort-header:focus-visible .ds-sort-header__icon,
+.ds-sort-header--active .ds-sort-header__icon {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-sort-header,
+  .ds-sort-header__icon {
+    transition: none;
+  }
+}
