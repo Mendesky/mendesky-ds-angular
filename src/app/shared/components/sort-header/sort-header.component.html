@@ -1,0 +1,10 @@
+<button
+  type="button"
+  class="ds-sort-header"
+  [class.ds-sort-header--active]="active"
+  [attr.data-testid]="key ? 'sort-' + key : null"
+  (click)="onClick()"
+>
+  <span class="ds-sort-header__label">{{ label }}</span>
+  <app-icon class="ds-sort-header__icon" [name]="icon" size="12" />
+</button>
