@@ -45,6 +45,13 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
    */
   @Input() ancestorAnchorEl: HTMLElement | null = null;
 
+  /**
+   * 打開時是否把焦點移到第一個選項。預設 true（More 選單等：開了就用鍵盤選）。
+   * 錨點是輸入框、使用者打開選單後還要繼續打字時設 false（如搜尋框下的「最近開啟」），
+   * 否則游標會被搶進選單，接下來打的字進不了輸入框。設 false 時鍵盤進入選單由呼叫端負責。
+   */
+  @Input() autoFocusFirst = true;
+
   /** 應關閉選單時發射（點擊外部 或 autoCloseOnAction=true 時點擊內部）。 */
   @Output() closeMenu = new EventEmitter<void>();
 
@@ -86,7 +93,7 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
         },
       },
     );
-    requestAnimationFrame(() => this._focusFirstWhenReady());
+    if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
   }
 
   ngOnDestroy(): void {
@@ -224,6 +231,6 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
         if (reason !== 'manual') this.closeMenu.emit();
       },
     });
-    requestAnimationFrame(() => this._focusFirstWhenReady());
+    if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
   }
 }
