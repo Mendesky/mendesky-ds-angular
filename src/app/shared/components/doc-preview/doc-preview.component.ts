@@ -7,6 +7,7 @@ import { IconComponent } from '../icon/icon.component';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
 import { ModalStackService } from '../../../core/services/modal-stack.service';
 import * as pdfjsLib from 'pdfjs-dist';
+import { loadPdfDocument } from '../../utils/pdf-render.util';
 
 // Promise.try polyfill for pdfjs-dist v5 (TC39 Stage 2, not yet in all browsers)
 if (!(Promise as unknown as Record<string, unknown>)['try']) {
@@ -146,7 +147,7 @@ export class DocPreviewComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!pdfDoc) {
         const response = await fetch(url);
         const buffer = await response.arrayBuffer();
-        pdfDoc = await pdfjsLib.getDocument(buffer).promise;
+        pdfDoc = await loadPdfDocument(buffer);
         this.pdfCache.set(url, pdfDoc);
       }
 
