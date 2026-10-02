@@ -106,6 +106,9 @@ cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
 
 若缺少此檔案，PDF 預覽與渲染功能將無法正常運作。
 
+**安全**：讀 PDF 一律呼叫 `loadPdfDocument()`（`pdf-render.util`），不要直接呼叫 `pdfjsLib.getDocument()`。
+它關閉了 pdf.js 的 eval（`isEvalSupported: false`），避免惡意 PDF 在本站執行任意 JavaScript（CVE-2024-4367）。
+
 ## 全域樣式引入
 
 套件提供的所有元件依賴設計系統的 token 與 typography 定義。在 consumer 的 `angular.json` 中，於
