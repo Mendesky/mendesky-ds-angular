@@ -42,7 +42,8 @@
 .field-label {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 1em;
-  font-weight: 400;
+  /* 中粗：和標題旁的說明（.field-hint，400）區分層級（2026-10-05 使用者定案） */
+  font-weight: 500;
   color: var(--text\/body, #686868);
   line-height: 1.4;
 

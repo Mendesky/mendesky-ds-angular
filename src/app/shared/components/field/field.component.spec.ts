@@ -98,3 +98,41 @@ describe('FieldComponent — 空 field-action 不得造成多餘換行', () => {
     expect(h).withContext(`header 多換了一行（高 ${h.toFixed(1)}px，單行應為 19.6）`).toBeLessThan(22);
   });
 });
+
+/**
+ * 標題與說明的層級：標題中粗 500、說明（hint）一般 400、emphasis 標題 700。
+ * 2026-10-05 使用者定案：標題加重以便和標題旁的說明文字區分。
+ */
+@Component({
+  standalone: true,
+  imports: [FieldComponent],
+  template: `
+    <app-field label="資產總額" hint="（元）"><div>控制項</div></app-field>
+    <app-field label="群組標題" [emphasis]="true"><div>控制項</div></app-field>
+  `,
+})
+class WeightHostComponent {}
+
+describe('FieldComponent — 標題與說明的字重', () => {
+  let fixture: ComponentFixture<WeightHostComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [WeightHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(WeightHostComponent);
+    fixture.detectChanges();
+  });
+
+  it('標題中粗 500，說明一般 400', () => {
+    const fields = (fixture.nativeElement as HTMLElement).querySelectorAll('app-field');
+    const label = fields[0].querySelector('.field-label') as HTMLElement;
+    const hint = fields[0].querySelector('.field-hint') as HTMLElement;
+    expect(getComputedStyle(label).fontWeight).toBe('500');
+    expect(getComputedStyle(hint).fontWeight).toBe('400');
+  });
+
+  it('emphasis 標題維持 700', () => {
+    const fields = (fixture.nativeElement as HTMLElement).querySelectorAll('app-field');
+    const label = fields[1].querySelector('.field-label') as HTMLElement;
+    expect(getComputedStyle(label).fontWeight).toBe('700');
+  });
+});
