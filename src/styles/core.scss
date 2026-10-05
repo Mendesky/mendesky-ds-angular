@@ -119,7 +119,7 @@
 
   /* 字體家族 */
   --font-family\/noto: 'Noto Sans TC', sans-serif;
-  --font-family\/inter: 'Inter', sans-serif;
+  --font-family\/inter: 'Noto Sans TC', sans-serif;  /* 已淘汰（2026-10-05）：Inter 從未被載入，改指 Noto；新程式請用 noto-* */
   --font-family\/mono: 'Roboto Mono', monospace;
 
   /* 字體大小 */
@@ -462,6 +462,7 @@ button {
 .mono-12-medium { font-family: var(--font-family\/mono); font-size: 1em; font-weight: 500; line-height: normal; }
 .mono-12-bold   { font-family: var(--font-family\/mono); font-size: 1em; font-weight: 700; line-height: normal; }
 .mono-14-medium { font-family: var(--font-family\/mono); font-size: 14px; font-weight: 500; line-height: normal; }
+.mono-14-semibold { font-family: var(--font-family\/mono); font-size: 14px; font-weight: 600; line-height: normal; }
 .mono-18-bold   { font-family: var(--font-family\/mono); font-size: 18px; font-weight: 700; line-height: normal; }
 
 /* ── Overlay 過渡動畫：所有 backdrop 的共用 keyframes ──

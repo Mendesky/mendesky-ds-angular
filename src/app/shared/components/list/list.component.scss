@@ -49,7 +49,7 @@
   background: var(--text\/body, #686868);
   color: white;
   font-size: 10px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
   display: flex;
   align-items: center;
   justify-content: center;

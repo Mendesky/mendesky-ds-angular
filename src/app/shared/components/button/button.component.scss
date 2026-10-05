@@ -202,7 +202,7 @@
   margin-left: auto;
   padding-left: 8px;
   font-size: 11px;
-  font-family: 'Inter', monospace;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
   opacity: 0.45;
   letter-spacing: 0;
   flex-shrink: 0;

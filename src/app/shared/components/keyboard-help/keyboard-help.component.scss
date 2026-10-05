@@ -90,7 +90,7 @@
   border-radius: 4px;
   background: var(--color\/white\/20, #f1f3f5);
   box-shadow: 0 1px 0 var(--border\/primary-dark, #d1d5db);
-  font-family: 'Inter', monospace;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
   font-size: 11px;
   font-weight: 500;
   color: var(--text\/body, #686868);

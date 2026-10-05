@@ -54,7 +54,7 @@
 }
 
 .step-number {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
   font-size: 14px;
   font-weight: 600;
   color: var(--text\/body-light, #939393);
@@ -232,7 +232,7 @@
   border-radius: 99px;
   font-size: 12px;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
   flex-shrink: 0;
   border: 1px solid var(--button\/neutral, #939393);
   background: var(--button\/white, #ffffff);
