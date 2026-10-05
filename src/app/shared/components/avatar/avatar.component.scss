@@ -71,6 +71,23 @@
   cursor: pointer;
 }
 
+/* clickable 時根元素是 <button>：重設瀏覽器預設樣式，外觀與 div 版相同 */
+button.avatar-root {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+.avatar--clickable:focus-visible {
+  outline: 2px solid var(--button\/action, #3a9ccd);
+  outline-offset: 2px;
+}
+
 /* Thumb hover: scale image 1.2x */
 .avatar--clickable.avatar--thumb:hover .avatar-img {
   transform: scale(1.2);

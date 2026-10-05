@@ -29,8 +29,11 @@ export class AvatarComponent {
   /** Icon 用：icon 名稱（對應 icon registry） */
   @Input() iconName: string = 'User';
 
-  /** 是否可互動（啟用 hover / active 效果） */
+  /** 可點擊：根元素改為 <button>（鍵盤可聚焦、Enter／空白鍵觸發），並啟用 hover / active 效果。點擊綁在外層 (click) 即可 */
   @Input() clickable: boolean = false;
+
+  /** 可點擊時給報讀軟體的名稱；未提供時用 text。 */
+  @Input() ariaLabel: string = '';
 
   /** 自訂背景色（Text / Icon 模式，有值時覆蓋 SCSS 預設色） */
   @Input() bgColor: string = '';

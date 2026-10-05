@@ -1,4 +1,4 @@
-<div [class]="rootClass">
+<ng-template #content>
 
   <!-- Thumb: 圖片頭像 -->
   <img *ngIf="propClass === 'Thumb'"
@@ -19,4 +19,18 @@
               style="color: white; flex-shrink: 0;"></app-icon>
   </div>
 
-</div>
+</ng-template>
+
+<!-- 可點擊：用原生 <button>，鍵盤可聚焦、Enter／空白鍵觸發；click 會冒泡到外層 <app-avatar (click)> -->
+<button *ngIf="clickable; else staticRoot"
+        type="button"
+        [class]="rootClass"
+        [attr.aria-label]="ariaLabel || text || null">
+  <ng-container *ngTemplateOutlet="content"></ng-container>
+</button>
+
+<ng-template #staticRoot>
+  <div [class]="rootClass">
+    <ng-container *ngTemplateOutlet="content"></ng-container>
+  </div>
+</ng-template>
