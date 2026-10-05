@@ -53,7 +53,7 @@
   background: rgba(58, 156, 205, 0.1);
   color: var(--button\/action, #3a9ccd);
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
   border: 1px solid rgba(58, 156, 205, 0.18);
   cursor: default;
   overflow-wrap: anywhere;

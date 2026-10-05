@@ -137,6 +137,21 @@ cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
 
 元件編譯期額外依賴 `_mixins.scss` 與 `_breakpoints.scss`（自動隨套件載入），消費端無需手動引入。若未引入 `core`，元件將在 runtime 缺乏樣式，呈現色碼裸奔狀態。
 
+## 字型載入
+
+本套件**不**自帶字型檔，由消費端在 `index.html` 載入：
+
+- **Noto Sans TC（必載）**：所有文字與一般數字。Noto Sans TC 的數字本身等寬，數字欄位不需另加 `tabular-nums`。
+- **Roboto Mono（用到 `mono-*` class 才需要）**：只用在報價與附加服務的金額。
+
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Roboto+Mono:wght@400..700&display=swap" rel="stylesheet">
+```
+
+`--font-family/inter` 與 `.inter-*` 已淘汰（Inter 從未被任何消費端載入），目前改指 Noto Sans TC 以免舊用法壞掉；新程式請用 `noto-*`。
+
 ## License
 
 MIT
