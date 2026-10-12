@@ -29,10 +29,16 @@
 }
 
 // ── Label chip ────────────────────────────────────────────────
+// 放不下時截成「…」：比照 app-label 的 truncate 模式（可縮、最寬 100%）。
+// 全文由 [appTooltipOnlyWhenTruncated] 在被截斷時提供。
 .nl-label {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
+  display: inline-block;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: #ffffff;
   border: 1px solid #e7e7e7;
   border-radius: 4px;

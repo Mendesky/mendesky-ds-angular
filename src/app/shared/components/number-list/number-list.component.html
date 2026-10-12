@@ -11,16 +11,18 @@
       <span>檢視</span>
     </button>
 
-    <span *ngIf="label" class="nl-label">{{ label }}</span>
+    <span *ngIf="label" class="nl-label"
+      [appTooltip]="label" [appTooltipOnlyWhenTruncated]="true">{{ label }}</span>
 
-    <span *ngIf="text" class="nl-text">{{ text }}</span>
+    <span *ngIf="text" class="nl-text"
+      [appTooltip]="text" [appTooltipOnlyWhenTruncated]="true">{{ text }}</span>
 
   </div>
 
   <!-- Number1 -->
   <span *ngIf="number1" class="nl-number1">{{ number1 }}</span>
 
-  <!-- ButtonSection：view / download / delete -->
+  <!-- ButtonSection：view / download / edit / delete -->
   <div *ngIf="hasButtons" class="nl-buttons">
 
     <button *ngIf="hasView"
@@ -37,6 +39,14 @@
       (click)="emit('download')">
       <app-icon name="Download" size="16" style="color:currentColor;flex-shrink:0"></app-icon>
       <span>下載</span>
+    </button>
+
+    <button *ngIf="hasEdit"
+      class="nl-action-btn nl-action-btn--grey"
+      type="button"
+      (click)="emit('edit')">
+      <app-icon name="Edit" size="16" style="color:currentColor;flex-shrink:0"></app-icon>
+      <span>編輯</span>
     </button>
 
     <button *ngIf="hasDelete"
