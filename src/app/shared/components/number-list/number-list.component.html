@@ -1,4 +1,4 @@
-<div class="nl-row" [ngClass]="['nl-row--' + size, 'nl-row--bg-' + background]">
+<div class="nl-row" [ngClass]="['nl-row--' + size, 'nl-row--bg-' + background]" [class.nl-row--labeled]="isLabeled">
 
   <!-- ContentSection：subview 小按鈕 + label chip + 主文字 -->
   <div class="nl-content">
@@ -6,28 +6,31 @@
     <button *ngIf="hasSubview"
       class="nl-action-btn nl-action-btn--grey"
       type="button"
+      aria-label="檢視"
       (click)="emit('subview')">
       <app-icon name="eye" size="16" style="color:currentColor;flex-shrink:0"></app-icon>
       <span>檢視</span>
     </button>
 
     <span *ngIf="label" class="nl-label"
-      [appTooltip]="label" [appTooltipOnlyWhenTruncated]="true">{{ label }}</span>
+      [appTooltip]="label" [appTooltipOnlyWhenTruncated]="true" [appTooltipWrap]="true">{{ label }}</span>
 
     <span *ngIf="text" class="nl-text"
-      [appTooltip]="text" [appTooltipOnlyWhenTruncated]="true">{{ text }}</span>
+      [appTooltip]="text" [appTooltipOnlyWhenTruncated]="true" [appTooltipWrap]="true">{{ text }}</span>
 
   </div>
 
   <!-- Number1 -->
   <span *ngIf="number1" class="nl-number1">{{ number1 }}</span>
 
-  <!-- ButtonSection：view / download / edit / delete -->
+  <!-- ButtonSection：view / download / edit / delete。
+       手機（tablet-down）只留圖示、文字隱藏，按鈕名稱由 aria-label 提供給螢幕閱讀器 -->
   <div *ngIf="hasButtons" class="nl-buttons">
 
     <button *ngIf="hasView"
       class="nl-action-btn nl-action-btn--grey"
       type="button"
+      aria-label="檢視"
       (click)="emit('view')">
       <app-icon name="eye" size="16" style="color:currentColor;flex-shrink:0"></app-icon>
       <span>檢視</span>
@@ -36,6 +39,7 @@
     <button *ngIf="hasDownload"
       class="nl-action-btn nl-action-btn--grey"
       type="button"
+      aria-label="下載"
       (click)="emit('download')">
       <app-icon name="Download" size="16" style="color:currentColor;flex-shrink:0"></app-icon>
       <span>下載</span>
@@ -44,6 +48,7 @@
     <button *ngIf="hasEdit"
       class="nl-action-btn nl-action-btn--grey"
       type="button"
+      aria-label="編輯"
       (click)="emit('edit')">
       <app-icon name="Edit" size="16" style="color:currentColor;flex-shrink:0"></app-icon>
       <span>編輯</span>
@@ -52,6 +57,7 @@
     <button *ngIf="hasDelete"
       class="nl-action-btn nl-action-btn--red"
       type="button"
+      aria-label="刪除"
       (click)="emit('delete')">
       <app-icon name="No-X-Cancel" size="16" style="color:currentColor;flex-shrink:0"></app-icon>
       <span>刪除</span>

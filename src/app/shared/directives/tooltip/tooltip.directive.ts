@@ -44,6 +44,9 @@ export class TooltipDirective implements AfterViewInit {
    */
   @Input() appTooltipOnlyWhenTruncated = false;
 
+  /** 長文字換行：tooltip 文字最寬 520px，超過就換行（給檔名、使用者自填標題這類可能很長的文字）；預設關閉 */
+  @Input() appTooltipWrap = false;
+
   private readonly el = inject(ElementRef<HTMLElement>);
   private readonly appRef = inject(ApplicationRef);
   private readonly envInjector = inject(EnvironmentInjector);
@@ -125,6 +128,7 @@ export class TooltipDirective implements AfterViewInit {
     this._portalRef.setInput('text', this.text);
     this._portalRef.setInput('tooltipStyle', this.appTooltipStyle);
     this._portalRef.setInput('direction', this.appTooltipDirection);
+    this._portalRef.setInput('wrap', this.appTooltipWrap);
 
     this.appRef.attachView(this._portalRef.hostView);
     document.body.appendChild(this._portalRef.location.nativeElement);

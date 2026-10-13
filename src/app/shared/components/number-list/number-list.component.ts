@@ -43,6 +43,14 @@ export class NumberListComponent {
   get hasDelete(): boolean   { return this.actions.includes('delete'); }
   get hasButtons(): boolean  { return this.hasView || this.hasDownload || this.hasEdit || this.hasDelete; }
   get showAvatar(): boolean  { return !!this.avatarText; }
+  /**
+   * 「標題＋檔名＋按鈕」的列：放不下時折成兩行，按鈕對齊檔名那一行；手機上標題獨佔第一行。
+   * 有 number／avatar／subview 的列不套用（那些欄位沒有在兩行排法裡的位置），維持原排法。
+   */
+  get isLabeled(): boolean {
+    return !!this.label && this.hasButtons
+      && !this.number1 && !this.number2 && !this.showAvatar && !this.hasSubview;
+  }
 
   emit(action: NumberListAction): void {
     this.actionClick.emit(action);
