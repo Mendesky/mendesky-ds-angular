@@ -88,6 +88,17 @@ export const WithError: Story = {
   },
 };
 
+// 版面放不下時：錯誤提示改到上方（errorPosition 預設 bottom）
+export const WithErrorTop: Story = {
+  name: '錯誤狀態：提示改在上方（版面放不下時）',
+  args: {
+    acceptedTypes: ['.pdf'],
+    maxSize: 20,
+    errorMessage: '請至少上傳一份報價單原檔',
+    errorPosition: 'top',
+  },
+};
+
 // ── 互動：選檔後顯示結果（檔案只在瀏覽器內，不會上傳）──────
 export const Interactive: Story = {
   name: '互動測試（選檔事件）',

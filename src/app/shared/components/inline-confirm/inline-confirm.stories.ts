@@ -156,3 +156,24 @@ export const ErrorState: Story = {
     props: { confirmed: false },
   }),
 };
+
+// 版面放不下時：錯誤提示改到上方（例如勾選框下方緊接著主按鈕）
+export const ErrorStateTop: Story = {
+  name: '錯誤狀態：提示改在上方（版面放不下時）',
+  render: () => ({
+    template: `
+      <div style="padding:48px 16px 16px; max-width:520px;">
+        <app-inline-confirm
+          label=""
+          checkLabel="我已確認報價內容皆正確無誤"
+          requirement="required"
+          errorPosition="top"
+          [error]="!confirmed"
+          [errorMessage]="confirmed ? '' : '請勾選確認後再送出'"
+          [(confirmed)]="confirmed">
+        </app-inline-confirm>
+      </div>
+    `,
+    props: { confirmed: false },
+  }),
+};

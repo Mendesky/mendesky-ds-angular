@@ -23,8 +23,11 @@ export class UploadDropzoneComponent {
   /** 停用時顯示的提示文字 */
   @Input() disabledHint = '';
 
-  /** 欄位驗證錯誤訊息；有值時在 dropzone 正上方顯示 tooltip（空字串 = 不顯示）*/
+  /** 欄位驗證錯誤訊息；有值時顯示 tooltip（空字串 = 不顯示）*/
   @Input() errorMessage = '';
+
+  /** 錯誤提示位置：預設 bottom（欄位錯誤統一放下方）；版面放不下時才改 top */
+  @Input() errorPosition: 'top' | 'bottom' = 'bottom';
 
   /** 選到有效檔案後 emit（通過驗證的全部檔案，支援多檔） */
   @Output() fileSelected = new EventEmitter<File[]>();
