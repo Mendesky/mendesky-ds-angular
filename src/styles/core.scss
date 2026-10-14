@@ -321,7 +321,7 @@
   --card-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
   --transition: 0.2s ease;
 
-  /* 動效緩動曲線（SSOT: Toutou/docs/ds-motion-data.js + .claude/rules/animation.md）*/
+  /* 動效緩動曲線（說明正本：src/docs/foundations/motion.ts）*/
   --ease-enter: cubic-bezier(0.215, 0.61, 0.355, 1); /* easeOutCubic — 進場/減速進場、大小/位置位移 */
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);           /* 加速離場 */
 

@@ -82,3 +82,6 @@ export * from './app/shared/utils/print-pdf.util';
 export * from './app/shared/utils/safe-uuid.util';
 export * from './app/shared/utils/template-text.util';
 export * from './app/shared/utils/template-var-key';
+export type * from './docs/component-doc';
+export type * from './docs/foundation-doc';
+export type * from './docs/pattern-doc';

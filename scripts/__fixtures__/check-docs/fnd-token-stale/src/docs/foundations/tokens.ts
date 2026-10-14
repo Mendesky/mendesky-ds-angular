@@ -1,0 +1,1 @@
+export const DS_TOKENS = [{ group: '文字', desc: 'Text', tokens: [{ name: '--text\\/body', value: '#686868', desc: '內文' }, { name: '--ease-enter', value: 'x', desc: '進場' }, { name: '--text\\/gone', value: '#000', desc: '已刪除' }] }];
