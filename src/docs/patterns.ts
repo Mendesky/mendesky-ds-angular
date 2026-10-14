@@ -602,7 +602,7 @@ export const DS_PATTERNS: Record<string, PatternDoc> = {
         rule: [
           '主動作按鈕使用 app-button [clickableWhenDisabled]="true" [disabledMessage]="..." (disabledClick)="..."',
           '外觀仍顯示 disabled（灰底灰字），但 click / tap 可穿透',
-          '點擊後觸發兩層回饋：全域錯誤顯示在按鈕正上方 tooltip；欄位級錯誤顯示在該欄位下方（欄位元件 errorPosition 預設 bottom，2026-10-14 定案）+ scroll 到第一個欄位錯誤',
+          '點擊後觸發兩層回饋：全域錯誤顯示在按鈕正上方 tooltip；欄位級錯誤預設顯示在該欄位下方（欄位元件 errorPosition 預設 bottom；版面放不下時才改 top，2026-10-14 定案）+ scroll 到第一個欄位錯誤',
           '多個錯誤同時存在：全部 tooltip 同時顯示，scroll 到第一個欄位級錯誤',
           'tooltip 持續顯示直到對應條件滿足才消失，不自動 dismiss',
         ],
