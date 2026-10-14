@@ -1,0 +1,63 @@
+:host {
+  display: inline-flex;
+  vertical-align: middle;
+  max-width: 100%;
+}
+
+/* ── Base ── */
+/* 可點範圍＝圖示＋四周 2px＋1px 透明邊：m 為 30px，s、l 為 26、34px，都大於 WCAG 2.5.8 的 24px */
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text\/body, #686868);
+  cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  text-align: left;          /* button UA 預設 center，label 折行時會逐行居中 */
+  user-select: none;
+  transition: background-color 150ms var(--ease-enter),
+              border-color     150ms var(--ease-enter);
+
+  /* 滑鼠移入：三種狀態都有（check-chip 只有沒選時有；這裡沒有整顆變色，不會跟選中樣式打架） */
+  &:hover:not(:disabled) {
+    background: var(--button\/white, #ffffff);
+    border-color: var(--button\/neutral-lightest, #e7e7e7);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color\/calmblue\/40, #79d1fc);
+    outline-offset: 2px;
+  }
+
+  /* 停用：跟 check-chip 一樣整個變淡；原生 disabled 讓它不能點、也不能 Tab 到 */
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+.checkbox--labeled { padding-right: 8px; }
+
+/* 圖示跟著 color 走（currentColor）。label 折行撐高時圖示不得被壓縮 */
+.checkbox__icon {
+  flex: none;
+  color: var(--text\/body, #686868);
+}
+
+.checkbox--on .checkbox__icon,
+.checkbox--mixed .checkbox__icon {
+  color: var(--color\/green\/80, #5a8c2c);
+}
+
+.checkbox__label {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

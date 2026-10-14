@@ -10,6 +10,7 @@ export * from './app/shared/components/button/button.component';
 export * from './app/shared/components/carousel-dot/carousel-dot.component';
 export * from './app/shared/components/cell-btn/cell-btn.component';
 export * from './app/shared/components/check-chip/check-chip.component';
+export * from './app/shared/components/checkbox/checkbox.component';
 export * from './app/shared/components/ctrl-bar/ctrl-bar.component';
 export * from './app/shared/components/date-picker/date-panel.component';
 export * from './app/shared/components/date-picker/date-picker.component';
