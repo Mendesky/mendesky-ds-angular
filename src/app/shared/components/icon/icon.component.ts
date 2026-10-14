@@ -9,7 +9,8 @@ import { ICON_REGISTRY } from './icon.registry';
  *   <app-icon name="DownArrow" size="16"></app-icon>
  *
  * 大小：透過 size input 控制，對應 Figma IconsPlaceHolder 尺寸
- *   可用值：12 | 16 | 24 | 32 | 36 | 48（預設 24）
+ *   可用值：12 | 16 | 20 | 24 | 28 | 32 | 36 | 48（預設 24）
+ *   20、28 是給 app-checkbox 的 s、l 用的（框約 16.7px、23.3px）
  *
  * 顏色：透過 CSS color 屬性控制（使用 currentColor）
  *   <app-icon name="DownArrow" size="24" style="color:#3A9CCD"></app-icon>
@@ -18,7 +19,9 @@ import { ICON_REGISTRY } from './icon.registry';
 const SIZE_MAP: Record<string, number> = {
   '12': 12,
   '16': 16,
+  '20': 20,
   '24': 24,
+  '28': 28,
   '32': 32,
   '36': 36,
   '48': 48,
@@ -35,8 +38,8 @@ export class IconComponent implements OnChanges {
   /** Figma icon 名稱，對應 Icons/xxx（不含 Icons/ 前綴） */
   @Input() name = '';
 
-  /** 正方形尺寸（px），對應 Figma IconsPlaceHolder：12 | 16 | 24 | 32 | 36 | 48 */
-  @Input() size: '12' | '16' | '24' | '32' | '36' | '48' = '24';
+  /** 正方形尺寸（px），對應 Figma IconsPlaceHolder：12 | 16 | 24 | 32 | 36 | 48；20、28 是 app-checkbox 專用 */
+  @Input() size: '12' | '16' | '20' | '24' | '28' | '32' | '36' | '48' = '24';
 
   @HostBinding('style.width.px')
   get hostWidth(): number { return SIZE_MAP[this.size] ?? 24; }

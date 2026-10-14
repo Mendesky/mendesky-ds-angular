@@ -207,6 +207,13 @@ export const ICON_REGISTRY: Record<string, string> = {
 
   'CheckedBox': `<g transform="translate(-324,-10)"><path fill-rule="evenodd" clip-rule="evenodd" d="M343 12H329C327.34 12 326 13.34 326 15V29C326 30.66 327.34 32 329 32H343C344.66 32 346 30.66 346 29V15C346 13.34 344.66 12 343 12ZM344 29C344 29.55 343.55 30 343 30H329C328.45 30 328 29.55 328 29V15C328 14.45 328.45 14 329 14H343C343.55 14 344 14.45 344 15V29ZM340.79 17.79L334.5 24.08L331.21 20.79C330.82 20.4 330.19 20.4 329.8 20.79C329.41 21.18 329.41 21.81 329.8 22.2L333.8 26.2C334.19 26.59 334.82 26.59 335.21 26.2L342.21 19.2C342.6 18.81 342.6 18.18 342.21 17.79C341.82 17.4 341.19 17.4 340.8 17.79H340.79Z" fill="currentColor"/></g>`,
 
+  // 三態勾選框（app-checkbox）用。框與勾沿用 CheckBox / CheckedBox，同樣框佔 viewBox 中間 20 格，可直接互換。
+  // CheckBoxOn：實心框、勾挖空（透出底色）；CheckBoxMixed：CheckBox 外框＋同色 8% 底＋橫線。
+  // 單色 currentColor，放在綠底 / 深灰底的 chip 上會跟著文字變白（2026-10-14 加入，DS 為 SSOT，不從 Figma 來）。
+  'CheckBoxOn': `<g transform="translate(-324,-10)"><path fill-rule="evenodd" clip-rule="evenodd" d="M329 12H343C344.66 12 346 13.34 346 15V29C346 30.66 344.66 32 343 32H329C327.34 32 326 30.66 326 29V15C326 13.34 327.34 12 329 12ZM340.79 17.79L334.5 24.08L331.21 20.79C330.82 20.4 330.19 20.4 329.8 20.79C329.41 21.18 329.41 21.81 329.8 22.2L333.8 26.2C334.19 26.59 334.82 26.59 335.21 26.2L342.21 19.2C342.6 18.81 342.6 18.18 342.21 17.79C341.82 17.4 341.19 17.4 340.8 17.79H340.79Z" fill="currentColor"/></g>`,
+
+  'CheckBoxMixed': `<rect x="4" y="4" width="16" height="16" rx="1" fill="currentColor" fill-opacity="0.08"/><g transform="translate(-1026,-10)"><path fill-rule="evenodd" clip-rule="evenodd" d="M1031 14C1030.45 14 1030 14.4477 1030 15V29C1030 29.5523 1030.45 30 1031 30H1045C1045.55 30 1046 29.5523 1046 29V15C1046 14.4477 1045.55 14 1045 14H1031ZM1028 15C1028 13.3431 1029.34 12 1031 12H1045C1046.66 12 1048 13.3431 1048 15V29C1048 30.6569 1046.66 32 1045 32H1031C1029.34 32 1028 30.6569 1028 29V15Z" fill="currentColor"/></g><rect x="6.5" y="10.8" width="11" height="2.4" rx="1.2" fill="currentColor"/>`,
+
   'Round-Circle': `<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5" fill="none"/>`,
 
   'Round-Circle-Selected': `<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="4.5" fill="currentColor"/>`,

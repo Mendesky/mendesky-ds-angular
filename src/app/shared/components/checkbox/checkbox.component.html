@@ -1,0 +1,16 @@
+<button
+  type="button"
+  role="checkbox"
+  class="checkbox"
+  [class.checkbox--on]="state === 'on'"
+  [class.checkbox--mixed]="state === 'mixed'"
+  [class.checkbox--labeled]="!!label"
+  [attr.aria-checked]="ariaChecked"
+  [attr.aria-label]="label ? null : (ariaLabel || null)"
+  [disabled]="isDisabled"
+  (click)="toggle()">
+  <app-icon class="checkbox__icon" [name]="iconName" [size]="iconSize"></app-icon>
+  @if (label) {
+    <span class="checkbox__label">{{ label }}</span>
+  }
+</button>
