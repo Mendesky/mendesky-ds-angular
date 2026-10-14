@@ -5,7 +5,7 @@ export const processModalDoc: ComponentDoc = {
   name: 'Process Modal',
   selector: 'app-process-modal',
   group: '浮層元件',
-  summary: 'type: running|success|error · message [isOpen] · (dismissed)',
+  summary: 'type: running|congratulation · message [isOpen] · (dismissed)',
   when: '耗時操作的進度顯示（覆蓋整個畫面）。',
   props: [
     {

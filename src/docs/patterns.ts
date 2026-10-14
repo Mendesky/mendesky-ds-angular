@@ -11,7 +11,7 @@ export const DS_PATTERNS: Record<string, PatternDoc> = {
   'modal.dismissal': {
     name: 'Modal 關閉行為',
     principle: '有資料損失風險 → 強制確認出口（X + 二次確認，鎖 backdrop）；無風險 → 最低退出成本（backdrop 即可關）；儲存中 → 全鎖，避免 race condition',
-    when: '設計或擴充 modal / dialog 類 dismissable surface 時；討論 X 按鈕 / ESC / backdrop 三出口策略時（drawer 另見 drawer.dismissal）',
+    when: '設計或擴充 modal / dialog 類 dismissable surface 時；討論 X 按鈕 / ESC / backdrop 三出口策略時（drawer 的關閉行為見 drawer-shell 元件說明）',
     scenarios: [
       {
         type: 'readOnlyDismissible',
@@ -224,7 +224,7 @@ export const DS_PATTERNS: Record<string, PatternDoc> = {
           '使用 app-inline-confirm 元件（已建，路徑 dashboard-app/src/app/shared/components/inline-confirm/）',
           '元件由四個區塊組成：label（前提聲明主訴）+ description / bullets（補充說明或列點）+ check（勾選控制）+ 外部 app-button（由消費者控制 disabled）',
           '前提聲明用宣告句式（「我已確認 XXX」），不用問句（「XXX 嗎？」）',
-          'mode 分兩級：strict（高後果，如開管理帳）→ 視覺較強、消費者以 [disabled]="!confirmed()" 鎖主按鈕；advisory（低後果，如成交前設定複核）→ 視覺中性、checkLabel 自動附加「（選填）」，主按鈕常 enabled',
+          'requirement 分兩級：required（高後果，如開管理帳）→ 視覺較強、消費者以 [disabled]="!confirmed()" 鎖主按鈕；optional（低後果，如成交前設定複核）→ 視覺中性、checkLabel 自動附加「（選填）」，主按鈕常 enabled',
           '不組合 dialog（重複摩擦）',
           '離開頁面再回來，confirmed 由父層清空（不保留 stale state）',
         ],
@@ -602,7 +602,7 @@ export const DS_PATTERNS: Record<string, PatternDoc> = {
         rule: [
           '主動作按鈕使用 app-button [clickableWhenDisabled]="true" [disabledMessage]="..." (disabledClick)="..."',
           '外觀仍顯示 disabled（灰底灰字），但 click / tap 可穿透',
-          '點擊後觸發兩層回饋：全域錯誤顯示在按鈕正上方 tooltip；欄位級錯誤顯示在該欄位正上方 tooltip + scroll 到第一個欄位錯誤',
+          '點擊後觸發兩層回饋：全域錯誤顯示在按鈕正上方 tooltip；欄位級錯誤顯示在該欄位下方（欄位元件 errorPosition 預設 bottom，2026-10-14 定案）+ scroll 到第一個欄位錯誤',
           '多個錯誤同時存在：全部 tooltip 同時顯示，scroll 到第一個欄位級錯誤',
           'tooltip 持續顯示直到對應條件滿足才消失，不自動 dismiss',
         ],
@@ -740,7 +740,7 @@ export const DS_PATTERNS: Record<string, PatternDoc> = {
         type: 'autoDrillToFirstIncomplete',
         description: '點未通過 CTA 自動鑽取到第一個錯誤',
         rule: [
-          '點 disabled 完成 CTA → 觸發驗證（唯一入口，見 feedback_validation_lifecycle_three_strike 單一入口原則）',
+          '點 disabled 完成 CTA → 觸發驗證（唯一入口）',
           '鑽取順序：第一個未完成實體 → 切到該實體 → 其第一個未完成頁 → 切到該頁 → smooth scroll 到第一個錯誤欄位',
           '跨實體/跨頁切換後需等 DOM render（雙 requestAnimationFrame）再 query 錯誤欄位 scroll，避免抓到舊實體/舊頁 DOM',
           '使用者亦可自行點任何紅框 pill / 紅點徽章直接導航過去（兩層地圖皆可點）',
@@ -1064,7 +1064,7 @@ export const DS_PATTERNS: Record<string, PatternDoc> = {
           'border-collapse 表格用 box-shadow inset 逐邊組合畫外框（border-color 會被鄰格搶邊而斷裂）；只描外框、欄間分隔線維持灰',
           '切換把手（列選單開→欄選單開）用方向守衛，只有「正在高亮的方向」關閉才清，避免誤清剛套上的另一方向高亮',
         ],
-        rationale: '操作前先看清「會影響哪一整塊」是 Notion 式表格編輯的關鍵回饋。Decoration 由 PM 每次 render 重套、重繪抹不掉，是唯一可靠做法（feedback_richtext_inline_editing_pitfalls #5）。',
+        rationale: '操作前先看清「會影響哪一整塊」是 Notion 式表格編輯的關鍵回饋。Decoration 由 PM 每次 render 重套、重繪抹不掉，是唯一可靠做法。',
       },
     ],
     antiPatterns: [

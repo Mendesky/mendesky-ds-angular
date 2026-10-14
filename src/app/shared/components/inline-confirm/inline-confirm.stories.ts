@@ -135,3 +135,24 @@ export const SideBySide: Story = {
     },
   }),
 };
+
+// 錯誤狀態：取自 mendesky-web 成交視窗（closed-deal-modal）「成交前確認」——未勾選就送出時
+// [error] 打開警示框、[errorMessage] 顯示「請勾選確認後再送出」。勾選後錯誤自動消失。
+export const ErrorState: Story = {
+  name: '錯誤狀態（未勾選就送出）',
+  render: () => ({
+    template: `
+      <div style="padding:48px 16px 16px; max-width:520px;">
+        <app-inline-confirm
+          label=""
+          checkLabel="我已確認報價內容皆正確無誤"
+          requirement="required"
+          [error]="!confirmed"
+          [errorMessage]="confirmed ? '' : '請勾選確認後再送出'"
+          [(confirmed)]="confirmed">
+        </app-inline-confirm>
+      </div>
+    `,
+    props: { confirmed: false },
+  }),
+};

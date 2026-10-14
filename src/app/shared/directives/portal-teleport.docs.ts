@@ -5,6 +5,7 @@ export const portalTeleportDoc: ComponentDoc = {
   name: 'Portal Teleport 元素外送',
   selector: '[appPortalTeleport]',
   group: '工具',
+  when: '元素必須脫離目前 DOM 位置才能正確顯示時用（祖先有 transform、backdrop-filter 或 overflow:hidden）。需要跟著觸發點定位與追蹤捲動時改用 PortalPositioningService。',
   description: `把套用此 directive 的元素在 ngOnInit 時 appendChild 到 document.body，在 ngOnDestroy 時移除。
 用於「元素必須脫離目前 DOM 位置才能正確顯示」的情境——祖先有 transform、backdrop-filter 或 overflow:hidden 時，position:fixed 會以該祖先為基準或被裁切。`,
   props: [],

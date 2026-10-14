@@ -108,11 +108,20 @@ function docPropNames(doc) {
   return new Set(doc.props.map((p) => p.name.replace(/^\(|\)$/g, '')));
 }
 
-/** core.scss 裡宣告的 CSS 變數（名稱保留原始寫法，例如 `--text\/body`） */
+/**
+ * core.scss 裡宣告的 CSS 變數 → 第一次宣告的值（名稱保留原始寫法，例如 `--text\/body`）。
+ * 前面必須是行首、空白、{ 或 ;，排除 `.btn--disabled:hover` 這類 BEM 修飾 class 後接偽類。
+ * 同一個變數在 media query 等處被覆寫時，以第一次（通常是 :root）為準。
+ */
 function scssCustomProperties(scss) {
-  // 前面必須是行首、空白、{ 或 ;，排除 `.btn--disabled:hover` 這類 BEM 修飾 class 後接偽類
-  return new Set([...scss.matchAll(/(?:^|[\s{;])(--[A-Za-z0-9_\\/.-]+)\s*:/gm)].map((m) => m[1]));
+  const map = new Map();
+  for (const m of scss.matchAll(/(?:^|[\s{;])(--[A-Za-z0-9_\\/.-]+)\s*:\s*([^;]*);/gm)) {
+    if (!map.has(m[1])) map.set(m[1], m[2].trim());
+  }
+  return map;
 }
+
+const normalizeValue = (v) => v.replace(/\s+/g, ' ').trim().toLowerCase();
 
 /**
  * 基礎（token、字型）與互動原則的一致性。repo 沒有 src/docs/foundations/ 時略過（只檢查元件）。
@@ -138,9 +147,14 @@ export function checkFoundations(root, componentIds) {
   if (tokens) {
     const documented = new Set(tokens.flatMap((g) => g.tokens.map((t) => t.name)));
     const stale = [...documented].filter((n) => !defined.has(n)).sort();
-    const undocumented = [...defined].filter((n) => !documented.has(n)).sort();
+    const undocumented = [...defined.keys()].filter((n) => !documented.has(n)).sort();
+    const drifted = tokens
+      .flatMap((g) => g.tokens)
+      .filter((t) => defined.has(t.name) && normalizeValue(t.value) !== normalizeValue(defined.get(t.name)))
+      .map((t) => `${t.name}（說明寫 ${t.value}，core.scss 是 ${defined.get(t.name)}）`);
     if (stale.length) errors.push(`token：說明有、core.scss 已不存在（${stale.length} 個）：${stale.join(', ')}`);
     if (undocumented.length) errors.push(`token：core.scss 有、說明沒寫（${undocumented.length} 個）：${undocumented.join(', ')}`);
+    if (drifted.length) errors.push(`token：說明的值跟 core.scss 不同（${drifted.length} 個）：${[...new Set(drifted)].join('；')}`);
   }
 
   const typography = load(path.join(docs, 'foundations', 'typography.ts'));

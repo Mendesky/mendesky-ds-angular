@@ -5,6 +5,7 @@ export const dsCollapseDoc: ComponentDoc = {
   name: 'DS Collapse 收合動畫',
   group: '工具',
   selector: '.ds-collapse',
+  when: '內容區塊需要收合／展開動畫時用（例如可展開的卡片段落）。統一用這組 class，不要自己寫 height 動畫。',
   description: `CSS Grid \`0fr → 1fr\` 收合/展開工具 class。Component tier 300ms，進出場共用 ease-out curve。
 所有需要「內容區塊收合/展開」動畫的元件，統一使用此方案。`,
   props: [

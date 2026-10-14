@@ -88,3 +88,10 @@ test('互動原則的相關元件或相關原則不存在 → 失敗', () => {
   assert.match(errors.join('\n'), /#no-such-component/);
   assert.match(errors.join('\n'), /other\.missing/);
 });
+
+test('說明裡的 token 值跟 core.scss 不同 → 失敗', () => {
+  const { errors } = run('fnd-token-value-drift');
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /--text\\\/body/);
+  assert.match(errors[0], /#000000/);
+});

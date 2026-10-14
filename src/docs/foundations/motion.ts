@@ -63,5 +63,5 @@ export const DS_MOTION: MotionDoc = {
       desc: '元素離場時從緩慢開始到快速消失，感覺「果斷離開」',
     },
   },
-  rule: 'Enter 動畫用 enter easing；Exit 動畫用 exit easing。Micro tier 兩者皆可用 ease-out。一律以 token var(--ease-enter)/var(--ease-exit) 套用（定義於 dashboard-app src/styles.scss :root），禁止硬寫 cubic-bezier 數值；size/位置 transition 一律帶 var(--ease-enter)。',
+  rule: 'Enter 動畫用 enter easing；Exit 動畫用 exit easing。Micro tier 兩者皆可用 ease-out。一律以 token var(--ease-enter)/var(--ease-exit) 套用（定義於 src/styles/core.scss :root），禁止硬寫 cubic-bezier 數值；size/位置 transition 一律帶 var(--ease-enter)。',
 };

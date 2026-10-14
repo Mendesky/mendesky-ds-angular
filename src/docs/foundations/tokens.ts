@@ -373,22 +373,22 @@ export const DS_TOKENS: TokenGroup[] = [
     tokens: [
       {
         name: '--glow\\/sidebar-primary',
-        value: 'rgba(199,236,255,0.50)',
+        value: 'rgba(199, 236, 255, 0.5)',
         desc: 'Sidebar 主光暈',
       },
       {
         name: '--glow\\/sidebar-secondary',
-        value: 'rgba(199,236,255,0.35)',
+        value: 'rgba(199, 236, 255, 0.35)',
         desc: 'Sidebar 副光暈',
       },
       {
         name: '--glow\\/content-primary',
-        value: 'rgba(199,236,255,0.40)',
+        value: 'rgba(199, 236, 255, 0.4)',
         desc: '內容區主光暈',
       },
       {
         name: '--glow\\/content-secondary',
-        value: 'rgba(178,225,255,0.30)',
+        value: 'rgba(178, 225, 255, 0.3)',
         desc: '內容區副光暈',
       },
     ],
@@ -527,8 +527,8 @@ export const DS_TOKENS: TokenGroup[] = [
       },
       {
         name: '--font-family\\/inter',
-        value: "'Inter', sans-serif",
-        desc: '英文/數字字體',
+        value: "'Noto Sans TC', sans-serif",
+        desc: '已淘汰（2026-10-05）：Inter 從未被載入，改指 Noto Sans TC；新程式請用 --font-family/noto 與 noto-* class',
       },
       {
         name: '--font-family\\/mono',
@@ -574,7 +574,7 @@ export const DS_TOKENS: TokenGroup[] = [
       {
         name: '--transition',
         value: '0.2s ease',
-        desc: '預設轉場',
+        desc: '早期的預設轉場；不在動效時長分級內，新程式請照「動效」的時長分級與 var(--ease-enter)／var(--ease-exit) 撰寫',
       },
     ],
   },
