@@ -1,12 +1,17 @@
 name: CI
 
-# DS 是 source-consumed 套件：完整的 build／unit test 閘門在 mendesky-web 的
-# CI（consumer contract tests，spec 兩邊同步）。這裡守住最低限度——
-# +N 行不得在 DS 側零驗證進 main。
+# PR 與每次 push 都跑。公開 repo 一律用 GitHub 提供的主機（自架主機會讓外部 fork 的 PR 執行任意程式碼）。
+#   typecheck   型別檢查（含範例頁與說明檔）
+#   check-docs  說明檢查：元件屬性、token、字型、互動原則與程式碼一致；含腳本自身的測試
+#   unit-test   DS 元件單元測試（Karma）
+#   smoke       建置文件網站，逐頁打開確認畫得出來、沒有錯誤
 on:
   push:
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -15,18 +20,56 @@ concurrency:
 jobs:
   typecheck:
     name: tsc --noEmit
-    runs-on: [self-hosted, linux, X64, dev]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
+      - run: npm ci
+      - run: npm run typecheck
 
-      - name: Install deps
-        run: npm ci
+  check-docs:
+    name: 說明檢查
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:scripts
+      - run: npm run check:docs
 
-      - name: Typecheck
-        run: npm run typecheck
+  unit-test:
+    name: 單元測試
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx ng test --watch=false --browsers=ChromeHeadlessCI
+
+  smoke:
+    name: 文件網站建置與冒煙測試
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node --test scripts/smoke-storybook.browser.mjs
+      - run: npm run build-storybook
+      - run: npm run smoke

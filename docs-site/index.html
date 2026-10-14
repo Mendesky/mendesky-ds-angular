@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mendesky Design System</title>
+  <meta name="description" content="Mendesky Design System：Angular 元件庫與設計規範文件">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff; --text: #1c1c2e; --muted: #686868; --line: #e7e7e7; --soft: #f6f7f8;
+      --accent: #3a9ccd; --accent-strong: #19779f; --code-bg: #1c1c2e; --code-text: #f1f3f5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #14151c; --text: #ececf1; --muted: #a3a3ad; --line: #2c2e3a; --soft: #1c1e27; --accent: #6cc0e8; --accent-strong: #9ad4f0; --code-bg: #0b0c11; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; line-height: 1.7; }
+    main { max-width: 880px; margin: 0 auto; padding: 48px 16px 64px; }
+    header h1 { font-size: 32px; margin: 0 0 8px; }
+    header p { color: var(--muted); margin: 0 0 20px; font-size: 16px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 8px; text-decoration: none; font-weight: 500; border: 1px solid var(--line); color: var(--text); }
+    .btn--primary { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+    h2 { font-size: 20px; margin: 40px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+    h3 { font-size: 16px; margin: 20px 0 6px; }
+    pre { background: var(--code-bg); color: var(--code-text); padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; }
+    code { font-family: 'Roboto Mono', monospace; font-size: 13px; }
+    p code, li code { background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+    a { color: var(--accent); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+    .card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; text-decoration: none; color: var(--text); }
+    .card strong { display: block; margin-bottom: 4px; }
+    .card span { color: var(--muted); font-size: 14px; }
+    #versions { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    #versions a { display: inline-block; padding: 4px 12px; border: 1px solid var(--line); border-radius: 16px; text-decoration: none; color: var(--text); font-size: 14px; }
+    footer { margin-top: 48px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Mendesky Design System</h1>
+    <p>Angular 元件庫與設計規範。每個元件都有可操作的範例、屬性表、程式碼範例與使用時機。</p>
+    <div class="actions">
+      <a class="btn btn--primary" href="latest/">進入元件文件</a>
+      <a class="btn" href="https://github.com/Mendesky/mendesky-ds-angular">GitHub</a>
+      <a class="btn" href="https://github.com/Mendesky/mendesky-ds-angular/releases">版本說明</a>
+    </div>
+  </header>
+
+  <h2>文件裡有什麼</h2>
+  <div class="cards">
+    <a class="card" href="latest/"><strong>元件</strong><span>互動、表單、浮層、展示元件與工具，每個元件一頁。</span></a>
+    <a class="card" href="latest/?path=/story/foundations--colors"><strong>基礎</strong><span>色彩 token、字型、動效、圖示。</span></a>
+    <a class="card" href="latest/?path=/story/patterns--all-patterns"><strong>互動原則</strong><span>什麼情境用什麼元件、為什麼這樣選。</span></a>
+  </div>
+
+  <h2>安裝</h2>
+  <p>本套件直接提供原始碼（不需 build），從 GitHub 安裝並指定版本 tag：</p>
+  <pre><code id="install-cmd">npm i "github:Mendesky/mendesky-ds-angular#&lt;版本 tag&gt;"</code></pre>
+  <p>版本 tag 見下方「版本」或 <a href="https://github.com/Mendesky/mendesky-ds-angular/releases">版本說明</a>。</p>
+  <p>使用端還要做三件事，細節與原因見 <a href="https://github.com/Mendesky/mendesky-ds-angular#readme">README</a>：</p>
+  <ol>
+    <li><code>tsconfig.json</code> 的 <code>paths</code> 把 <code>@mendesky/ds-angular</code> 指到專案根目錄的 symlink（由 postinstall 建立）。</li>
+    <li><code>angular.json</code> 的 build 與 test 都開 <code>preserveSymlinks</code>。</li>
+    <li>全域樣式 <code>@use 'core';</code>，並在 <code>index.html</code> 載入 Noto Sans TC 字型；用到 PDF 預覽時提供 <code>assets/pdf.worker.min.js</code>。</li>
+  </ol>
+
+  <h2>快速上手</h2>
+  <p>元件都是 standalone，直接放進 <code>imports</code>：</p>
+<pre><code>import { Component } from '@angular/core';
+import { ButtonComponent } from '@mendesky/ds-angular';
+
+@Component({
+  selector: 'app-demo',
+  standalone: true,
+  imports: [ButtonComponent],
+  template: `&lt;app-button variant="filled" color="primary" text="確認" (btnClick)="save()"&gt;&lt;/app-button&gt;`,
+})
+export class DemoComponent {
+  save() {}
+}</code></pre>
+  <p>每個元件該用在哪裡、不該用在哪裡，寫在元件文件每一頁最上方。寫原生 <code>&lt;button&gt;</code>、自刻下拉之前，先查有沒有現成元件。</p>
+
+  <h2>版本</h2>
+  <p>每個正式版保留一份當時的文件。<code>latest</code> 是 main 的最新內容。</p>
+  <ul id="versions"><li><a href="latest/">latest</a></li></ul>
+
+  <footer>Copyright (c) 2026 嘉威聯合會計師事務所. All rights reserved. 公開僅供檢視，未授權任何使用、複製、修改或散布。</footer>
+</main>
+<script>
+  // versions.json 由發布流程產生：[{ "version": "v0.1.12" }, ...]，新到舊
+  fetch('versions.json', { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : []))
+    .then((list) => {
+      const ul = document.getElementById('versions');
+      if (list[0]) document.getElementById('install-cmd').textContent = 'npm i "github:Mendesky/mendesky-ds-angular#' + list[0].version + '"';
+      for (const { version } of list) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = version + '/';
+        a.textContent = version;
+        li.appendChild(a);
+        ul.appendChild(li);
+      }
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

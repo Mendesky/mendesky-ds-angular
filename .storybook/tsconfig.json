@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "webpack-env"],
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "noEmit": false
+  },
+  "include": ["../src/**/*.stories.ts", "../src/**/*.docs.ts", "../src/docs/**/*.ts", "./preview.ts", "./ds-docs-page.ts"],
+  "exclude": ["../src/**/*.spec.ts"]
+}

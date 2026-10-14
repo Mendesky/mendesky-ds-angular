@@ -91,6 +91,39 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 }
 ```
 
+## 文件網站與元件說明
+
+- 線上文件：https://mendesky.github.io/mendesky-ds-angular/ （`latest` 是 main 的最新內容，每個正式版另外保留一份）
+- 本機開啟：`npm ci && npm run storybook`，打開 http://localhost:6006
+
+**本 repo 是 DS 知識的唯一正本**：元件說明、色彩 token、字型、動效、互動原則都在這裡，文件網站與
+mendesky-web 的 AI 協作索引（`.claude/ds-*-index.md`）都從這裡產生，不要在別處另外維護一份。
+
+| 內容 | 正本位置 |
+|---|---|
+| 元件說明（用途、屬性、範例程式碼、注意事項） | 元件旁邊的 `<名稱>.docs.ts`（格式見 `src/docs/component-doc.ts`） |
+| 範例頁 | 元件旁邊的 `<名稱>.stories.ts` |
+| 色彩與 token、字型、動效 | `src/docs/foundations/`（樣式本身在 `src/styles/core.scss`） |
+| 互動原則 | `src/docs/patterns.ts` |
+| 圖示 | `src/app/shared/components/icon/icon.registry.ts`（文件網站直接讀它） |
+
+### 新增或修改元件時要補什麼
+
+1. 元件旁邊的說明檔 `<名稱>.docs.ts`：用途與禁止事項（`when`）、每個 `@Input`／`@Output`（含 signal 的 `input()`／`output()`／`model()`）、程式碼範例、注意事項。
+2. 元件旁邊的範例頁 `<名稱>.stories.ts`：`title` 寫成 `'<分組>/<名稱>'` 字面值；第一支 story 是說明頁上方的主範例。
+3. 改了 `core.scss` 的 token 或字型 class，同步改 `src/docs/foundations/`。
+4. 本機跑一次：
+
+```bash
+npm run typecheck      # 型別檢查
+npm run check:docs     # 說明與程式碼是否一致（屬性、token、字型、互動原則）
+npx ng test --watch=false --browsers=ChromeHeadless   # 單元測試
+npm run build-storybook && npm run smoke              # 文件網站建置與逐頁冒煙測試
+```
+
+CI 會在每個 PR 跑同樣的檢查，任何一項失敗都不能合併。只在母元件內部使用的子元件（例如 `select-panel`）
+不需要說明檔，清單在 `scripts/check-docs.mjs` 的 `INTERNAL_COMPONENTS`。
+
 ## PDF 功能依賴
 
 套件內的 `doc-preview` 元件與 `pdf-render.util` 工具需要 PDF 處理能力，在 runtime 會讀取：

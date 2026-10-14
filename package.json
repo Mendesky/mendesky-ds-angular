@@ -4,9 +4,22 @@
   "description": "Mendesky Design System component library for Angular (source-consumed)",
   "main": "src/index.ts",
   "sideEffects": false,
-  "license": "MIT",
+  "license": "UNLICENSED",
+  "files": [
+    "src",
+    "scripts/export-docs.mjs",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "storybook": "ng run ds:storybook",
+    "build-storybook": "ng run ds:build-storybook",
+    "test": "ng test",
+    "test:scripts": "node --test scripts/",
+    "check:docs": "node scripts/check-docs.mjs",
+    "smoke": "node scripts/smoke-storybook.mjs"
   },
   "peerDependencies": {
     "@angular/cdk": ">=17.3.0",
@@ -30,11 +43,21 @@
     "rxjs": ">=7.1.0"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "^17.3.17",
+    "@angular/animations": "^17.3.12",
     "@angular/cdk": "^17.3.0",
+    "@angular/cli": "^17.3.17",
     "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.12",
+    "@angular/compiler-cli": "^17.3.12",
     "@angular/core": "^17.3.0",
     "@angular/forms": "^17.3.0",
     "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.12",
+    "@playwright/test": "~1.59.0",
+    "@storybook/addon-essentials": "^8.6.19",
+    "@storybook/angular": "^8.6.19",
+    "@storybook/blocks": "^8.6.19",
     "@tiptap/core": "^3.22.3",
     "@tiptap/extension-color": "^3.22.4",
     "@tiptap/extension-link": "^3.22.3",
@@ -48,9 +71,17 @@
     "@tiptap/starter-kit": "^3.22.3",
     "@types/jasmine": "^6.0.0",
     "@types/markdown-it": "^14.1.2",
+    "jasmine-core": "^6.3.0",
+    "karma": "^6.4.4",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-jasmine": "^5.1.0",
+    "karma-jasmine-html-reporter": "^2.3.0",
     "markdown-it": "^14.1.1",
     "pdfjs-dist": "3.11.174",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "rxjs": "~7.8.0",
+    "storybook": "^8.6.19",
     "typescript": "~5.4.2",
     "zone.js": "~0.14.3"
   }
