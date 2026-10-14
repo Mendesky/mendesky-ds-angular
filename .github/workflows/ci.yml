@@ -15,7 +15,7 @@ concurrency:
 jobs:
   typecheck:
     name: tsc --noEmit
-    runs-on: [self-hosted, linux, X64, dev]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
