@@ -8,10 +8,10 @@ Mendesky Design System component library for Angular (source-consumed package).
 
 ### 1. 安裝依賴
 
-直接從 GitHub 安裝（需有 `Mendesky/mendesky-ds-angular` 的 SSH 讀取權限）：
+直接從 GitHub 安裝，指定版本 tag（版本列表見 GitHub Releases 或文件網站右上角的版本選單）：
 
 ```bash
-npm i "git+ssh://git@github.com/Mendesky/mendesky-ds-angular.git#main"
+npm i "github:Mendesky/mendesky-ds-angular#v0.1.12"
 ```
 
 `package.json` 會長這樣：
@@ -19,14 +19,14 @@ npm i "git+ssh://git@github.com/Mendesky/mendesky-ds-angular.git#main"
 ```json
 {
   "dependencies": {
-    "@mendesky/ds-angular": "git+ssh://git@github.com/Mendesky/mendesky-ds-angular.git#main"
+    "@mendesky/ds-angular": "github:Mendesky/mendesky-ds-angular#v0.1.12"
   }
 }
 ```
 
-`package-lock.json` 釘的是 commit SHA，所以 `#main` 不會造成不同人裝到不同版本；要升到最新版跑
-`npm update @mendesky/ds-angular`（記得連 lockfile 一起 commit）。本套件不需 build，npm 會直接
-把原始碼放進 `node_modules/@mendesky/ds-angular`。
+`package-lock.json` 會記下該 tag 對應的 commit；升級時改 tag 並指名重裝
+（`npm i "github:Mendesky/mendesky-ds-angular#<新 tag>"`），記得連 lockfile 一起 commit。
+本套件不需 build，npm 會直接把原始碼放進 `node_modules/@mendesky/ds-angular`。
 
 ### 2. TypeScript 路徑對應
 
@@ -93,8 +93,10 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 
 ## 文件網站與元件說明
 
-- 線上文件：https://mendesky.github.io/mendesky-ds-angular/ （`latest` 是 main 的最新內容，每個正式版另外保留一份）
-- 本機開啟：`npm ci && npm run storybook`，打開 http://localhost:6006
+- 線上文件：https://mendesky.github.io/mendesky-ds-angular/ （會轉到最新正式版）。每個正式版各自保留一整套文件，
+  右上角可切換版本；`main` 是開發中的最新內容。網址結構：`/<版本>/` 是指南，`/<版本>/components/` 是元件頁。
+- 本機看指南：`npm run site:dev`；本機看元件頁：`npm run storybook`（http://localhost:6006）
+- 本機建完整網站：`DOCS_REPO_BASE=/ npm run site:build -- main`，輸出在 `site/.vitepress/dist`
 
 **本 repo 是 DS 知識的唯一正本**：元件說明、色彩 token、字型、動效、互動原則都在這裡，文件網站與
 mendesky-web 的 AI 協作索引（`.claude/ds-*-index.md`）都從這裡產生，不要在別處另外維護一份。
@@ -105,6 +107,7 @@ mendesky-web 的 AI 協作索引（`.claude/ds-*-index.md`）都從這裡產生�
 | 範例頁 | 元件旁邊的 `<名稱>.stories.ts` |
 | 色彩與 token、字型、動效 | `src/docs/foundations/`（樣式本身在 `src/styles/core.scss`） |
 | 互動原則 | `src/docs/patterns.ts` |
+| 指南文章 | `site/guide/*.md`（表格與原則內容在建置時從上面的正本讀出，文章只寫說明） |
 | 圖示 | `src/app/shared/components/icon/icon.registry.ts`（文件網站直接讀它） |
 
 ### 新增或修改元件時要補什麼
@@ -118,7 +121,9 @@ mendesky-web 的 AI 協作索引（`.claude/ds-*-index.md`）都從這裡產生�
 npm run typecheck      # 型別檢查
 npm run check:docs     # 說明與程式碼是否一致（屬性、token、字型、互動原則）
 npx ng test --watch=false --browsers=ChromeHeadless   # 單元測試
-npm run build-storybook && npm run smoke              # 文件網站建置與逐頁冒煙測試
+DOCS_REPO_BASE=/ npm run site:build -- main          # 建完整文件網站（指南＋元件頁）
+node scripts/smoke-storybook.mjs site/.vitepress/dist/components   # 元件頁逐頁冒煙測試
+node scripts/smoke-guides.mjs site/.vitepress/dist /main/         # 指南逐頁冒煙測試
 ```
 
 CI 會在每個 PR 跑同樣的檢查，任何一項失敗都不能合併。只在母元件內部使用的子元件（例如 `select-panel`）

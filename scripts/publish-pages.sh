@@ -1,6 +1,7 @@
 #!/bin/bash
-# 把文件網站的一個版本發布到 gh-pages 分支，並更新首頁。其他版本資料夾原樣保留。
-# 用法：scripts/publish-pages.sh <storybook 建置目錄> <資料夾名稱：latest 或 v1.2.3> [versions.json 要加入的版本]
+# 把一個版本的完整文件網站（指南＋元件頁）發布到 gh-pages 分支的 <版本資料夾>/，其他版本原樣保留。
+# 同時更新網站根目錄的轉址頁；正式版另外加進 versions.json（新到舊）。
+# 用法：scripts/publish-pages.sh <建好的網站目錄> <版本資料夾：main 或 v1.2.3> [要加入 versions.json 的版本]
 # 在 GitHub Actions 裡執行（用工作流程的 token 推送）。
 set -euo pipefail
 BUILD_DIR="$(cd "$1" && pwd)"
@@ -15,7 +16,6 @@ else
   REMOTE="$(git -C "$ROOT" remote get-url origin)"
 fi
 
-
 if git ls-remote --exit-code --heads "$REMOTE" gh-pages >/dev/null 2>&1; then
   git clone --quiet --depth 1 --branch gh-pages "$REMOTE" "$WORK"
 else
@@ -29,13 +29,14 @@ git -C "$WORK" config user.email "41898282+github-actions[bot]@users.noreply.git
 rm -rf "${WORK:?}/$TARGET"
 mkdir -p "$WORK/$TARGET"
 cp -R "$BUILD_DIR/." "$WORK/$TARGET/"
-cp -R "$ROOT/docs-site/." "$WORK/"
+cp "$ROOT/site/root/index.html" "$WORK/index.html"
 touch "$WORK/.nojekyll"
+[ -f "$WORK/versions.json" ] || echo "[]" > "$WORK/versions.json"
 
 if [ -n "$ADD_VERSION" ]; then
   node -e '
     const fs = require("fs"); const file = process.argv[1]; const v = process.argv[2];
-    const list = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : [];
+    const list = JSON.parse(fs.readFileSync(file, "utf8"));
     const next = [{ version: v }, ...list.filter((x) => x.version !== v)];
     fs.writeFileSync(file, JSON.stringify(next, null, 2) + "\n");
   ' "$WORK/versions.json" "$ADD_VERSION"

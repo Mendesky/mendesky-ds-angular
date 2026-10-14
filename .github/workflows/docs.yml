@@ -1,9 +1,9 @@
 name: Docs
 
-# main 有新 commit 時，重建文件網站並發布到 gh-pages 分支（GitHub Pages 的來源）：
-#   /            首頁（docs-site/）
-#   /latest/     main 的最新內容
-#   /<版本>/      每個正式版的文件（由自動打版流程發布，這裡不動）
+# main 有新 commit 時，重建 main 版的文件網站並發布到 gh-pages 分支（GitHub Pages 的來源）：
+#   /                    轉到最新正式版（還沒有正式版時轉到 main）
+#   /main/               main 的指南（VitePress），/main/components/ 是元件頁（Storybook）
+#   /<版本>/              每個正式版各自一整套文件（由打版流程發布，這裡不動）
 # PR 不發布；PR 的建置檢查在 CI 的 smoke job。
 on:
   push:
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: 發布 latest
+    name: 發布 main
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -31,8 +31,8 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      - run: npm run build-storybook
-      - name: 推到 gh-pages（只換首頁與 latest，保留各版本資料夾）
+      - run: bash scripts/build-site.sh main
+      - name: 推到 gh-pages（只換 main 資料夾與根目錄轉址頁，保留各版本資料夾）
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/publish-pages.sh storybook-static latest
+        run: scripts/publish-pages.sh site/.vitepress/dist main

@@ -4,7 +4,7 @@ name: CI
 #   typecheck   型別檢查（含範例頁與說明檔）
 #   check-docs  說明檢查：元件屬性、token、字型、互動原則與程式碼一致；含腳本自身的測試
 #   unit-test   DS 元件單元測試（Karma）
-#   smoke       建置文件網站，逐頁打開確認畫得出來、沒有錯誤
+#   smoke       建置文件網站（指南＋元件頁），逐頁打開確認畫得出來、沒有錯誤
 on:
   push:
   pull_request:
@@ -56,6 +56,9 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
+      # 版面量測類測試依字型而定：裝中文字型，讓 Linux 上的換行結果跟開發機一致
+      - name: 安裝中文字型
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
       - run: npx ng test --watch=false --browsers=ChromeHeadlessCI
 
   smoke:
@@ -70,6 +73,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: node --test scripts/smoke-storybook.browser.mjs
-      - run: npm run build-storybook
-      - run: npm run smoke
+      - run: node --test scripts/smoke-storybook.browser.mjs scripts/smoke-guides.browser.mjs
+      - run: DOCS_REPO_BASE=/ bash scripts/build-site.sh main
+      - run: node scripts/smoke-storybook.mjs site/.vitepress/dist/components
+      - run: node scripts/smoke-guides.mjs site/.vitepress/dist /main/
