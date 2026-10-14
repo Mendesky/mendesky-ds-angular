@@ -16,6 +16,8 @@ export class TooltipPortalComponent {
   @Input() text = '';
   @Input() direction: TooltipPortalDirection = 'top';
   @Input() tooltipStyle: TooltipPortalStyle = 'default';
+  /** 長文字換行：文字最寬 520px，超過就換行（無空白的長檔名也會斷）；預設關閉 */
+  @Input() wrap = false;
 
   @HostBinding('class') get hostClass(): string {
     return `tooltip-portal tooltip-portal--${this.direction}`;
@@ -50,6 +52,6 @@ export class TooltipPortalComponent {
   }
 
   get textClass(): string {
-    return `tooltip__text tooltip__text--${this.tooltipStyle}`;
+    return `tooltip__text tooltip__text--${this.tooltipStyle}${this.wrap ? ' tooltip__text--wrap' : ''}`;
   }
 }

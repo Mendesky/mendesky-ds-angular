@@ -1,3 +1,5 @@
+@use '../../../../styles/breakpoints' as bp;
+
 // ── Row ──────────────────────────────────────────────────────
 .nl-row {
   display: flex;
@@ -29,10 +31,16 @@
 }
 
 // ── Label chip ────────────────────────────────────────────────
+// 放不下時截成「…」：比照 app-label 的 truncate 模式（可縮、最寬 100%）。
+// 全文由 [appTooltipOnlyWhenTruncated] 在被截斷時提供。寬度小於 1024px 改換行，見檔尾。
 .nl-label {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
+  display: inline-block;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: #ffffff;
   border: 1px solid #e7e7e7;
   border-radius: 4px;
@@ -132,5 +140,57 @@
   &--red {
     background: #ff7373;
     color: #f1f3f5;
+  }
+}
+
+// ── 「標題＋檔名＋按鈕」的列（.nl-row--labeled，條件見 .ts 的 isLabeled）──────────
+// 標題與檔名放不下時會折成兩行（標題一行、檔名一行）。按鈕要對齊「檔名那一行」，
+// 不能卡在兩行中間：靠下對齊，再往上補 2px（S 尺寸：檔名文字框約 28px、按鈕 24px → 中線對齊）。
+// 單行時與原本的置中相差 0～2px。沒有 label 的列不受影響，維持置中。
+.nl-row--labeled {
+  align-items: flex-end;
+
+  .nl-buttons { margin-bottom: 2px; }
+}
+
+// ── 寬度小於 1024px：標題與檔名換行完整顯示，不截斷 ─────────────────────────
+// 斷點與 DS tooltip 的隱藏斷點相同（tooltip-portal 在 tablet-landscape-down 一律隱藏）：
+// tooltip 不出現的寬度就不能截斷，否則會「截斷又看不到全文」。代價是名稱長的列會變高。
+@include bp.tablet-landscape-down {
+  .nl-label,
+  .nl-text {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
+
+// ── 手機（tablet-down，小於 768px）────────────────────────────────────────
+@include bp.tablet-down {
+  // 按鈕只留圖示；按鈕名稱由 template 的 aria-label 提供給螢幕閱讀器
+  .nl-action-btn {
+    > span { display: none; }
+
+    .nl-row--S & { width: 24px; padding: 0; }
+    .nl-row--M & { width: 28px; padding: 0; }
+  }
+
+  // 有 label 的列改兩行格線：第一行只放標題、用滿整列；第二行放檔名和按鈕。
+  // flex 排法下按鈕欄從整列頂端佔到底，標題那一行右側明明空著也伸不過去，標題只剩約 8 字。
+  .nl-row--labeled {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'label label'
+      'text  buttons';
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 4px;
+
+    .nl-content { display: contents; }
+    .nl-label   { grid-area: label; justify-self: start; }
+    .nl-text    { grid-area: text; min-width: 0; }
+    .nl-buttons { grid-area: buttons; margin-bottom: 0; }
   }
 }

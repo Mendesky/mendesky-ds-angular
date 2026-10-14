@@ -52,6 +52,13 @@
   white-space: pre-line;
 }
 
+// 長文字換行（[appTooltipWrap]）：沒有最大寬度時，90 字無空白的檔名會把 tooltip 撐到 1735px。
+// 520px 沿用客戶文件原型的實測值；overflow-wrap: anywhere 讓沒有空白的長檔名也能斷行。
+.tooltip__text--wrap {
+  max-width: 520px;
+  overflow-wrap: anywhere;
+}
+
 .tooltip__text--default { color: var(--text\/body, #686868); }
 .tooltip__text--grey,
 .tooltip__text--warning { color: var(--text\/body-lightest, #ffffff); }
