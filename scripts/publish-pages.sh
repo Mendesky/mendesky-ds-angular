@@ -1,6 +1,6 @@
 #!/bin/bash
 # 把一個版本的完整文件網站（指南＋元件頁）發布到 gh-pages 分支的 <版本資料夾>/，其他版本原樣保留。
-# 同時更新網站根目錄的轉址頁；正式版另外加進 versions.json（新到舊）。
+# 同時更新網站根目錄的轉址頁；正式版另外加進 versions.json（依版號新到舊）。
 # 用法：scripts/publish-pages.sh <建好的網站目錄> <版本資料夾：main 或 v1.2.3> [要加入 versions.json 的版本]
 # 在 GitHub Actions 裡執行（用工作流程的 token 推送）。
 set -euo pipefail
@@ -37,7 +37,10 @@ if [ -n "$ADD_VERSION" ]; then
   node -e '
     const fs = require("fs"); const file = process.argv[1]; const v = process.argv[2];
     const list = JSON.parse(fs.readFileSync(file, "utf8"));
-    const next = [{ version: v }, ...list.filter((x) => x.version !== v)];
+    // 依版號新到舊排（重新發布舊版時不會跑到最前面）
+    const num = (s) => s.slice(1).split(".").map(Number);
+    const desc = (a, b) => { const x = num(a.version), y = num(b.version); return y[0] - x[0] || y[1] - x[1] || y[2] - x[2]; };
+    const next = [{ version: v }, ...list.filter((x) => x.version !== v)].sort(desc);
     fs.writeFileSync(file, JSON.stringify(next, null, 2) + "\n");
   ' "$WORK/versions.json" "$ADD_VERSION"
 fi
