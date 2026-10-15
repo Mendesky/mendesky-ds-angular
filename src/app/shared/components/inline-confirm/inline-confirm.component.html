@@ -31,7 +31,7 @@
     [attr.aria-describedby]="uid + '-details'"
     [disabled]="disabled() || undefined"
     [appErrorTooltip]="errorMessage()"
-    errorPosition="top"
+    [errorPosition]="errorPosition()"
     (click)="toggle()"
     (keydown.space)="$event.preventDefault(); toggle()">
     <app-icon [name]="confirmed() ? 'CheckedBox' : 'CheckBox'" [size]="size() === 'lg' ? '24' : '16'"></app-icon>

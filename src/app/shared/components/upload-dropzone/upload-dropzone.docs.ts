@@ -36,7 +36,13 @@ export const uploadDropzoneDoc: ComponentDoc = {
       name: 'errorMessage',
       type: 'string',
       default: "''",
-      desc: '欄位驗證錯誤訊息；有值時在 dropzone 正上方顯示 tooltip ＋ 框線轉錯誤紅（--border/error，與 app-input 錯誤框線同 token；hover/drag-over 期間錯誤紅優先）。空字串 = 無錯誤狀態（2026-07-08 一致化）',
+      desc: '欄位驗證錯誤訊息；有值時顯示 tooltip（位置見 errorPosition，預設下方）＋ 框線轉錯誤紅（--border/error，與 app-input 錯誤框線同 token；hover/drag-over 期間錯誤紅優先）。空字串 = 無錯誤狀態（2026-07-08 一致化）',
+    },
+    {
+      name: 'errorPosition',
+      type: "'top' | 'bottom'",
+      default: "'bottom'",
+      desc: '錯誤提示位置。欄位錯誤統一預設在下方；只有版面放不下（下方緊接其他內容會被遮住）時才改 top（2026-10-14 定案）',
     },
     {
       name: 'fileSelected',

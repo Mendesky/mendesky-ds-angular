@@ -34,8 +34,8 @@
 | <ComponentLink id="autocomplete" /> | `errorMessage`、`errorPosition` | |
 | <ComponentLink id="date-picker" /> | `errorMessage`、`errorPosition` | |
 | <ComponentLink id="button-group" /> | `errorMessage`、`errorPosition` | 只有 `type="form"` 有效 |
-| <ComponentLink id="inline-confirm" /> | `error`、`errorMessage` | `error` 切換警示色框；`errorMessage` 顯示在勾選項正上方 |
-| <ComponentLink id="upload-dropzone" /> | `errorMessage` | 顯示在上傳區正上方，框線同時轉成錯誤紅 |
+| <ComponentLink id="inline-confirm" /> | `error`、`errorMessage`、`errorPosition` | `error` 切換警示色框；`errorMessage` 預設顯示在勾選項下方 |
+| <ComponentLink id="upload-dropzone" /> | `errorMessage`、`errorPosition` | 預設顯示在上傳區下方，框線同時轉成錯誤紅 |
 
 在有明確送出按鈕的 Modal 或 Wizard 裡，使用者點了停用的主按鈕時，所有錯誤同時顯示，畫面捲到第一個錯誤欄位。這個流程寫在[浮層怎麼選](./overlays)的底部按鈕段落。
 

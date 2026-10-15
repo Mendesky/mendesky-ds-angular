@@ -72,7 +72,13 @@ export const inlineConfirmDoc: ComponentDoc = {
       name: 'errorMessage',
       type: 'string',
       default: "''",
-      desc: '欄位驗證錯誤訊息；有值時在 chip 正上方顯示 tooltip（空字串 = 不顯示）。與 error prop 通常一起使用。',
+      desc: '欄位驗證錯誤訊息；有值時顯示 tooltip（位置見 errorPosition，預設下方；空字串 = 不顯示）。與 error prop 通常一起使用。',
+    },
+    {
+      name: 'errorPosition',
+      type: "'top' | 'bottom'",
+      default: "'bottom'",
+      desc: '錯誤提示位置。欄位錯誤統一預設在下方；只有版面放不下（下方緊接其他內容會被遮住）時才改 top（2026-10-14 定案）',
     },
   ],
   usage: [
