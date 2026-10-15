@@ -77,6 +77,8 @@
       .catch(function () { return []; })
       .then(function (list) {
         var versions = ['main'].concat(list.map(function (v) { return v.version; }));
+        // 文件網站出現前的舊版只有一頁 README（legacy），切過去時開該版首頁
+        var legacy = list.filter(function (v) { return v.legacy; }).map(function (v) { return v.version; });
         if (versions.indexOf(current) < 0) versions.push(current);
         var bar = document.createElement('div');
         bar.style.cssText = 'position:fixed;top:8px;right:12px;z-index:1000;display:flex;gap:8px;align-items:center;font-size:12px;';
@@ -90,12 +92,13 @@
         versions.forEach(function (v) {
           var opt = document.createElement('option');
           opt.value = v;
-          opt.textContent = v === 'main' ? 'main（開發中）' : v;
+          opt.textContent = v === 'main' ? 'main（開發中）' : v + (legacy.indexOf(v) >= 0 ? '（僅 README）' : '');
           if (v === current) opt.selected = true;
           select.appendChild(opt);
         });
         select.addEventListener('change', function () {
-          location.href = siteRoot + select.value + '/components/' + location.search;
+          var v = select.value;
+          location.href = legacy.indexOf(v) >= 0 ? siteRoot + v + '/' : siteRoot + v + '/components/' + location.search;
         });
         bar.appendChild(guide);
         bar.appendChild(select);
