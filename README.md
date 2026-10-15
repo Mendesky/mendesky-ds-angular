@@ -190,9 +190,12 @@ cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
 
 `--font-family/inter` 與 `.inter-*` 已淘汰（Inter 從未被任何消費端載入），目前改指 Noto Sans TC 以免舊用法壞掉；新程式請用 `noto-*`。
 
-## License
+## 授權
 
-MIT
+Copyright (c) 2026 嘉威聯合會計師事務所. All rights reserved.
+
+本 repo 公開僅供檢視，未授權任何使用、複製、修改或散布，完整條款見 [LICENSE](./LICENSE)。
+取自第三方的圖示（Heroicons、Lucide）依其原授權使用，見 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md)。
 
 ## Spec 政策：與 mendesky-web 同步
 
