@@ -1,0 +1,45 @@
+name: Docs release
+
+# 推正式版 tag（vX.Y.Z，不含 -beta）時，建該版的完整文件網站，發布到 gh-pages 的 /<版本>/，
+# 並加進 versions.json（版本選單與根目錄轉址都讀它）。main 的文件由 docs.yml 負責。
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要重新發布文件的正式版 tag，例如 v0.1.12
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: 發布 ${{ inputs.tag || github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: 檢查 tag 格式
+        run: '[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "不是正式版 tag：$TAG"; exit 1; }'
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: bash scripts/build-site.sh "$TAG"
+      - name: 推到 gh-pages（只換這個版本的資料夾，並加進 versions.json）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-pages.sh site/.vitepress/dist "$TAG" "$TAG"
