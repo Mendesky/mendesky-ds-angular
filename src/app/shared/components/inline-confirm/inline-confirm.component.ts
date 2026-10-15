@@ -22,8 +22,10 @@ export class InlineConfirmComponent {
   hideRequiredIcon = input<boolean>(false);
   disabled = input<boolean>(false);
   error = input<boolean>(false);
-  /** 欄位驗證錯誤訊息；有值時在 chip 正上方顯示 tooltip（空字串 = 不顯示）*/
+  /** 欄位驗證錯誤訊息；有值時顯示 tooltip（空字串 = 不顯示）*/
   errorMessage = input<string>('');
+  /** 錯誤提示位置：預設 bottom（欄位錯誤統一放下方）；版面放不下時才改 top */
+  errorPosition = input<'top' | 'bottom'>('bottom');
 
   private static _seq = 0;
   readonly uid = `inline-confirm-${++InlineConfirmComponent._seq}`;

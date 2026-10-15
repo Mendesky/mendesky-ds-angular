@@ -1,0 +1,40 @@
+<script>
+  // 元件頁右上角的版本選單：讀網站根目錄的 versions.json（發布流程維護）。
+  // 網址結構：/<repo>/<版本>/components/，版本是 main 或 vX.Y.Z；本機開發不顯示。
+  (function () {
+    var parts = location.pathname.split('/').filter(Boolean);
+    var i = parts.indexOf('components');
+    var current = i > 0 ? parts[i - 1] : null;
+    if (!current || !(current === 'main' || /^v\d+\.\d+\.\d+$/.test(current))) return;
+    var siteRoot = '/' + parts.slice(0, i - 1).join('/') + (i > 1 ? '/' : '');
+    fetch(siteRoot + 'versions.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .catch(function () { return []; })
+      .then(function (list) {
+        var versions = ['main'].concat(list.map(function (v) { return v.version; }));
+        if (versions.indexOf(current) < 0) versions.push(current);
+        var bar = document.createElement('div');
+        bar.style.cssText = 'position:fixed;top:8px;right:12px;z-index:1000;display:flex;gap:8px;align-items:center;font-size:12px;';
+        var guide = document.createElement('a');
+        guide.href = siteRoot + current + '/';
+        guide.textContent = '← 指南';
+        guide.style.cssText = 'color:#19779f;text-decoration:none;background:#fff;padding:4px 8px;border-radius:6px;border:1px solid #d3d3d3;';
+        var select = document.createElement('select');
+        select.setAttribute('aria-label', '文件版本');
+        select.style.cssText = 'height:28px;border:1px solid #d3d3d3;border-radius:6px;background:#fff;font-size:12px;padding:0 6px;';
+        versions.forEach(function (v) {
+          var opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v === 'main' ? 'main（開發中）' : v;
+          if (v === current) opt.selected = true;
+          select.appendChild(opt);
+        });
+        select.addEventListener('change', function () {
+          location.href = siteRoot + select.value + '/components/' + location.search;
+        });
+        bar.appendChild(guide);
+        bar.appendChild(select);
+        document.body.appendChild(bar);
+      });
+  })();
+</script>

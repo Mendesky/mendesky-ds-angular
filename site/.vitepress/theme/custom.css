@@ -1,0 +1,20 @@
+:root {
+  --vp-font-family-base: 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
+  --vp-font-family-mono: 'Roboto Mono', ui-monospace, monospace;
+  --vp-c-brand-1: #19779f;
+  --vp-c-brand-2: #3a9ccd;
+  --vp-c-brand-3: #3a9ccd;
+}
+.dark {
+  --vp-c-brand-1: #6cc0e8;
+  --vp-c-brand-2: #9ad4f0;
+}
+.ds-table { display: table; width: 100%; font-size: 14px; }
+.ds-table code { white-space: nowrap; }
+.ds-swatch { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.1); vertical-align: middle; margin-right: 6px; }
+.ds-pattern { border: 1px solid var(--vp-c-divider); border-radius: 10px; padding: 4px 20px 16px; margin: 20px 0; }
+.ds-pattern h3 { margin-top: 16px; }
+.ds-principle { background: var(--vp-c-tip-soft); border-left: 4px solid var(--vp-c-tip-1); padding: 8px 14px; border-radius: 4px; }
+.ds-anti li { color: var(--vp-c-danger-1); }
+.ds-story { width: 100%; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: #fff; margin: 12px 0; }
+.ds-version select { height: 30px; border: 1px solid var(--vp-c-divider); border-radius: 6px; padding: 0 8px; background: var(--vp-c-bg); color: var(--vp-c-text-1); font-size: 13px; margin-left: 12px; }

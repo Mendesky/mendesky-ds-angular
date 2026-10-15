@@ -1,0 +1,19 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<div id="storybook-root"></div><div id="storybook-docs"></div>
+<script>
+  // 模擬 Storybook iframe 的契約：依網址的 id 畫出內容；id 含 "bad" 時丟錯
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  const mode = params.get('viewMode');
+  setTimeout(() => {
+    if (id.includes('bad')) throw new Error('故意丟出的錯誤：' + id);
+    const target = document.getElementById(mode === 'docs' ? 'storybook-docs' : 'storybook-root');
+    const el = document.createElement('div');
+    el.className = 'sbdocs';
+    el.textContent = '畫出 ' + id;
+    target.appendChild(el);
+  }, 50);
+</script>
+</body></html>

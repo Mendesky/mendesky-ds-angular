@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mendesky Design System</title>
+  <script>
+    // 網站根目錄：轉到最新正式版的文件；還沒有正式版時轉到 main
+    fetch('versions.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .catch(function () { return []; })
+      .then(function (list) { location.replace((list[0] ? list[0].version : 'main') + '/'); });
+  </script>
+</head>
+<body>
+  <p>正在前往文件……若沒有自動跳轉，請開啟 <a href="main/">最新文件</a>。</p>
+</body>
+</html>

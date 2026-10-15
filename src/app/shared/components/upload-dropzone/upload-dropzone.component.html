@@ -7,7 +7,7 @@
   [attr.role]="disabled ? null : 'button'"
   [attr.aria-label]="disabled ? null : '點擊或拖曳上傳文件'"
   [appErrorTooltip]="errorMessage"
-  errorPosition="top"
+  [errorPosition]="errorPosition"
   (dragover)="onDragOver($event)"
   (dragenter)="onDragEnter($event)"
   (dragleave)="onDragLeave()"
