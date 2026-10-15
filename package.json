@@ -4,7 +4,7 @@
   "description": "Mendesky Design System component library for Angular (source-consumed)",
   "main": "src/index.ts",
   "sideEffects": false,
-  "license": "MIT",
+  "license": "UNLICENSED",
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
