@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "version": "v0.1.11",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.10",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.9",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.8",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.7",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.6",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.5",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.4",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.3",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.2",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.1",
+    "legacy": true
+  },
+  {
+    "version": "v0.1.0",
+    "legacy": true
+  }
+]

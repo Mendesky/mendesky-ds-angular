@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mendesky Design System v0.1.8</title>
+  <style>
+    :root { --bg: #fff; --fg: #1f2328; --muted: #59636e; --line: #d1d9e0; --code: #f6f8fa; --note: #fff8c5; --link: #19779f; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --line: #3d444d; --code: #151b23; --note: #3a3000; --link: #4fb3dc; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", sans-serif; }
+    header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    header strong { font-size: 15px; }
+    header select { height: 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); padding: 0 6px; font-size: 13px; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+    .note { background: var(--note); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 14px; }
+    a { color: var(--link); }
+    pre { background: var(--code); padding: 12px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+    :not(pre) > code { background: var(--code); padding: 0.1em 0.35em; border-radius: 4px; }
+    table { border-collapse: collapse; display: block; overflow-x: auto; }
+    th, td { border: 1px solid var(--line); padding: 6px 12px; }
+    h1, h2, h3 { line-height: 1.3; }
+    h1, h2 { border-bottom: 1px solid var(--line); padding-bottom: 0.3em; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Mendesky Design System</strong>
+    <select id="version" aria-label="文件版本"><option value="v0.1.8" selected>v0.1.8（僅 README）</option></select>
+  </header>
+  <main>
+    <p class="note">v0.1.8（2026-10-05）發布時還沒有文件網站，這裡保留的是該版 tag 當時的 README。
+      原始碼：<a href="https://github.com/Mendesky/mendesky-ds-angular/tree/v0.1.8">v0.1.8</a>。</p>
+    <h1>@mendesky/ds-angular</h1>
+<p>Mendesky Design System component library for Angular (source-consumed package).</p>
+<h2>快速開始</h2>
+<p>此套件以 source-consumed 模式提供，消費端應用需遵循以下設定：</p>
+<h3>1. 安裝依賴</h3>
+<p>直接從 GitHub 安裝（需有 <code>Mendesky/mendesky-ds-angular</code> 的 SSH 讀取權限）：</p>
+<pre><code class="language-bash">npm i &quot;git+ssh://git@github.com/Mendesky/mendesky-ds-angular.git#main&quot;
+</code></pre>
+<p><code>package.json</code> 會長這樣：</p>
+<pre><code class="language-json">{
+  &quot;dependencies&quot;: {
+    &quot;@mendesky/ds-angular&quot;: &quot;git+ssh://git@github.com/Mendesky/mendesky-ds-angular.git#main&quot;
+  }
+}
+</code></pre>
+<p><code>package-lock.json</code> 釘的是 commit SHA，所以 <code>#main</code> 不會造成不同人裝到不同版本；要升到最新版跑
+<code>npm update @mendesky/ds-angular</code>（記得連 lockfile 一起 commit）。本套件不需 build，npm 會直接
+把原始碼放進 <code>node_modules/@mendesky/ds-angular</code>。</p>
+<h3>2. TypeScript 路徑對應</h3>
+<p><code>tsconfig.json</code> 的 <code>paths</code> <strong>必須指向 consumer 專案根目錄下的一個 symlink</strong>，而不是 <code>node_modules</code>，也不是 <code>../</code> 這種 sibling 相對路徑：</p>
+<pre><code class="language-json">{
+  &quot;compilerOptions&quot;: {
+    &quot;paths&quot;: {
+      &quot;@mendesky/ds-angular&quot;: [&quot;mendesky-ds-angular/src/index.ts&quot;]
+    }
+  }
+}
+</code></pre>
+<p>其中 <code>./mendesky-ds-angular</code> 是 consumer 專案根目錄下的一個 symlink（建議 gitignore），指向真正的
+<code>mendesky-ds-angular</code> repo。這個設計並非隨意，兩種常見的錯誤配置都會在實測中踩坑：</p>
+<ul>
+<li><strong>指向 <code>node_modules/@mendesky/ds-angular/...</code></strong>：Karma 測試建構器（<code>@ngtools/webpack</code>）使用的
+ivy 編譯器，只要解析路徑含有 <code>/node_modules/</code>，就會判定為 <code>isExternalLibraryImport</code> 並跳過
+<code>ɵcmp</code>/<code>ɵfac</code> 的產生（因為它預期那裡放的是已編譯發佈的 library，而非本套件這種直接消費原始
+<code>.ts</code> 原始碼的形式）。<code>ng build</code>（esbuild pipeline 沒有這條限制）仍會過，但 <code>ng test</code> 會炸成
+<code>TypeError: Cannot read properties of undefined (reading 'ɵcmp')</code>。</li>
+<li><strong>指向 <code>../mendesky-ds-angular/src/index.ts</code>（sibling 相對路徑）</strong>：webpack 為測試建的 builder
+會把這個路徑解析到專案樹外、另一份獨立的 <code>node_modules</code>，導致 <code>@angular/core</code>、<code>rxjs</code> 等 peer
+依賴出現重複實例，測試炸出 <code>NG0203</code>。</li>
+</ul>
+<p>根目錄的 symlink 讓套件檔案「掛在 node_modules 之外、但仍在專案自己的目錄樹底下」，同時保證第三方
+依賴（<code>@angular/core</code>、<code>rxjs</code>…）解析到與應用程式本身相同的那份 <code>node_modules</code>，兩個雷都避開。</p>
+<h3>3. 自動建立 symlink（postinstall）</h3>
+<p>上述 symlink 應該由 consumer 專案的 <code>postinstall</code> script 自動建立/刷新，解析
+<code>node_modules/@mendesky/ds-angular</code>（<code>npm install</code> 已從 git 依賴抓下來）的 realpath 後建立
+symlink，不需要手動維護。可參考 <code>mendesky-platform-console</code> 的
+<code>scripts/link-ds-angular.js</code> 作為標準範例。</p>
+<h3>4. Angular 編譯配置</h3>
+<p>在 consumer 的 <code>angular.json</code> 中，<code>build</code> 與 <code>test</code> 兩個 architect target <strong>都要</strong>啟用
+<code>preserveSymlinks: true</code>——讓 ivy 編譯器把 symlink 出來的套件檔案視為專案自己 tsconfig path 對應的
+一部分，而不是 realpath 解析到編譯範圍之外後拒絕它（&quot;is missing from the TypeScript compilation&quot;）：</p>
+<pre><code class="language-json">{
+  &quot;projects&quot;: {
+    &quot;your-app&quot;: {
+      &quot;architect&quot;: {
+        &quot;build&quot;: {
+          &quot;options&quot;: {
+            &quot;preserveSymlinks&quot;: true
+          }
+        },
+        &quot;test&quot;: {
+          &quot;options&quot;: {
+            &quot;preserveSymlinks&quot;: true
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre>
+<h2>PDF 功能依賴</h2>
+<p>套件內的 <code>doc-preview</code> 元件與 <code>pdf-render.util</code> 工具需要 PDF 處理能力，在 runtime 會讀取：</p>
+<ul>
+<li><strong>路徑</strong>：<code>assets/pdf.worker.min.js</code></li>
+<li><strong>版本</strong>：pdfjs-dist 3.11.174</li>
+</ul>
+<p><strong>消費端必須</strong>手動在 web root 的 <code>assets/</code> 資料夾下提供此檔案。可從 pdfjs-dist 套件中複製：</p>
+<pre><code class="language-bash">cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
+</code></pre>
+<p>若缺少此檔案，PDF 預覽與渲染功能將無法正常運作。</p>
+<p><strong>安全</strong>：讀 PDF 一律呼叫 <code>loadPdfDocument()</code>（<code>pdf-render.util</code>），不要直接呼叫 <code>pdfjsLib.getDocument()</code>。
+它關閉了 pdf.js 的 eval（<code>isEvalSupported: false</code>），避免惡意 PDF 在本站執行任意 JavaScript（CVE-2024-4367）。</p>
+<h2>全域樣式引入</h2>
+<p>套件提供的所有元件依賴設計系統的 token 與 typography 定義。在 consumer 的 <code>angular.json</code> 中，於
+<code>build</code> 與 <code>test</code> 兩個 architect target 都加上 <code>stylePreprocessorOptions.includePaths</code>，指向套件在
+<code>node_modules</code> 底下的 styles 目錄（樣式解析走 Sass 的 load path，不受 <code>preserveSymlinks</code> 影響，維持
+<code>node_modules</code> 路徑即可）：</p>
+<pre><code class="language-json">{
+  &quot;stylePreprocessorOptions&quot;: {
+    &quot;includePaths&quot;: [&quot;node_modules/@mendesky/ds-angular/src/styles&quot;]
+  }
+}
+</code></pre>
+<p>接著在 consumer 的全域樣式（如 <code>src/styles.scss</code>）中<strong>必須引入</strong>：</p>
+<pre><code class="language-scss">@use 'core';
+</code></pre>
+<p><code>core</code> 包含：</p>
+<ul>
+<li><strong>Token CSS 變數</strong>：色彩、間距、陰影等設計符號</li>
+<li><strong>Typography</strong>：字體與排版規則</li>
+<li><strong>Utility class</strong>：通用 helper class</li>
+</ul>
+<p>元件編譯期額外依賴 <code>_mixins.scss</code> 與 <code>_breakpoints.scss</code>（自動隨套件載入），消費端無需手動引入。若未引入 <code>core</code>，元件將在 runtime 缺乏樣式，呈現色碼裸奔狀態。</p>
+<h2>字型載入</h2>
+<p>本套件<strong>不</strong>自帶字型檔，由消費端在 <code>index.html</code> 載入：</p>
+<ul>
+<li><strong>Noto Sans TC（必載）</strong>：所有文字與一般數字。Noto Sans TC 的數字本身等寬，數字欄位不需另加 <code>tabular-nums</code>。</li>
+<li><strong>Roboto Mono（用到 <code>mono-*</code> class 才需要）</strong>：只用在報價與附加服務的金額。</li>
+</ul>
+<pre><code class="language-html">&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&amp;family=Roboto+Mono:wght@400..700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+</code></pre>
+<p><code>--font-family/inter</code> 與 <code>.inter-*</code> 已淘汰（Inter 從未被任何消費端載入），目前改指 Noto Sans TC 以免舊用法壞掉；新程式請用 <code>noto-*</code>。</p>
+<h2>License</h2>
+<p>MIT</p>
+<h2>Spec 政策：與 mendesky-web 同步</h2>
+<p>本套件的 <code>*.spec.ts</code> 與 mendesky-web 中對應的 consumer contract tests 是<strong>同一份契約的兩份拷貝</strong>，
+必須同步更新：改了元件行為，兩邊的 spec 一起改。web 的 CI（karma）是行為閘門，本 repo 的 CI 只跑
+<code>tsc --noEmit</code>（typecheck 閘門）。回灌（backport）元件程式碼時，對應 spec 檔一併回灌，
+不得留下「程式碼是新的、spec 斷言舊行為」的打架狀態。</p>
+
+  </main>
+  <script>
+    // 版本選單：讀網站根目錄的 versions.json；切換時開該版首頁
+    (function () {
+      var current = "v0.1.8";
+      var select = document.getElementById('version');
+      fetch('../versions.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .catch(function () { return []; })
+        .then(function (list) {
+          var all = [{ version: 'main' }].concat(list);
+          if (!all.some(function (v) { return v.version === current; })) all.push({ version: current, legacy: true });
+          select.innerHTML = '';
+          all.forEach(function (v) {
+            var opt = document.createElement('option');
+            opt.value = v.version;
+            opt.textContent = v.version === 'main' ? 'main（開發中）' : v.version + (v.legacy ? '（僅 README）' : '');
+            if (v.version === current) opt.selected = true;
+            select.appendChild(opt);
+          });
+        });
+      select.addEventListener('change', function () { location.href = '../' + select.value + '/'; });
+    })();
+  </script>
+</body>
+</html>

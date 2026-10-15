@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mendesky Design System</title>
   <script>
-    // 網站根目錄：轉到最新正式版的文件；還沒有正式版時轉到 main
+    // 網站根目錄：轉到最新有完整文件的正式版；還沒有時轉到 main（只有 README 的舊版 legacy 不算）
     fetch('versions.json', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : []; })
       .catch(function () { return []; })
-      .then(function (list) { location.replace((list[0] ? list[0].version : 'main') + '/'); });
+      .then(function (list) {
+        var latest = list.filter(function (v) { return !v.legacy; })[0];
+        location.replace((latest ? latest.version : 'main') + '/');
+      });
   </script>
 </head>
 <body>
