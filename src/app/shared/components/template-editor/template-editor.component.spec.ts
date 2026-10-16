@@ -104,14 +104,14 @@ describe('TemplateEditorComponent — variableDefs 動態變更（glance defs �
   let component: TemplateEditorComponent;
   let fixture: ComponentFixture<TemplateEditorComponent>;
 
-  const plainDef: TemplateVarDef = { key: 'AccountingPeriod', label: '記帳收費說明', group: 'accounting' };
+  const plainDef: TemplateVarDef = { key: 'PeriodNote', label: '期間說明', group: 'detail' };
   const glanceDef: TemplateVarDef = {
-    key: 'AccountingPeriod',
-    label: '記帳收費說明',
-    group: 'accounting',
+    key: 'PeriodNote',
+    label: '期間說明',
+    group: 'detail',
     options: [
-      { label: '系統依情境判斷', value: 'AccountingPeriod' },
-      { label: '以全年計算', value: 'AccountingPeriod|1' },
+      { label: '系統依情境判斷', value: 'PeriodNote' },
+      { label: '以全年計算', value: 'PeriodNote|1' },
     ],
   };
 
@@ -129,29 +129,29 @@ describe('TemplateEditorComponent — variableDefs 動態變更（glance defs �
     }).compileComponents();
     fixture = TestBed.createComponent(TemplateEditorComponent);
     component = fixture.componentInstance;
-    component.template = '記帳公費%AccountingPeriod%。';
-    component.variables = { 'AccountingPeriod': '一年以十四個月計算', 'AccountingPeriod|1': '以全年計算' };
+    component.template = '費用%PeriodNote%。';
+    component.variables = { 'PeriodNote': '以實際使用月份計算', 'PeriodNote|1': '以全年計算' };
     component.variableDefs = [plainDef];
     fixture.detectChanges();
   });
 
   it('defs 從無 options 換成有 options（晚到的 glance defs）→ chip 升級為 tpl--select', () => {
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelector('.tpl--select[data-var="AccountingPeriod"]')).toBeNull(); // 初始 plain
+    expect(el.querySelector('.tpl--select[data-var="PeriodNote"]')).toBeNull(); // 初始 plain
 
     defsChange([glanceDef]);
-    expect(el.querySelector('.tpl--select[data-var="AccountingPeriod"]')).toBeTruthy();
+    expect(el.querySelector('.tpl--select[data-var="PeriodNote"]')).toBeTruthy();
   });
 
-  it('同 signature 的新 reference（p4-5 每次 CD 的 getter 形態）→ 不重渲染（DOM 節點 identity 不變）', () => {
+  it('同 signature 的新 reference（使用端每次 CD 的 getter 形態）→ 不重渲染（DOM 節點 identity 不變）', () => {
     const el: HTMLElement = fixture.nativeElement;
     defsChange([glanceDef]);
-    const chipBefore = el.querySelector('.tpl--select[data-var="AccountingPeriod"]');
+    const chipBefore = el.querySelector('.tpl--select[data-var="PeriodNote"]');
     expect(chipBefore).toBeTruthy();
 
     // 內容相同、reference 不同（深拷貝）
     defsChange([JSON.parse(JSON.stringify(glanceDef))]);
-    const chipAfter = el.querySelector('.tpl--select[data-var="AccountingPeriod"]');
+    const chipAfter = el.querySelector('.tpl--select[data-var="PeriodNote"]');
     expect(chipAfter).toBe(chipBefore); // 同一個 DOM 節點 = 沒有全量重建
   });
 
@@ -159,10 +159,10 @@ describe('TemplateEditorComponent — variableDefs 動態變更（glance defs �
     const el: HTMLElement = fixture.nativeElement;
     component.onFocus(); // isEditing = true
     defsChange([glanceDef]);
-    expect(el.querySelector('.tpl--select[data-var="AccountingPeriod"]')).toBeNull(); // 編輯中不動
+    expect(el.querySelector('.tpl--select[data-var="PeriodNote"]')).toBeNull(); // 編輯中不動
 
     component.onBlur();
-    expect(el.querySelector('.tpl--select[data-var="AccountingPeriod"]')).toBeTruthy(); // blur 補渲染
+    expect(el.querySelector('.tpl--select[data-var="PeriodNote"]')).toBeTruthy(); // blur 補渲染
   });
 });
 
@@ -181,7 +181,7 @@ describe('TemplateEditorComponent — %% autocomplete', () => {
     fixture = TestBed.createComponent(TemplateEditorComponent);
     component = fixture.componentInstance;
     component.variableDefs = [{ key: 'DefaultFromName', label: '寄件者', group: 'basic' }];
-    component.variables = { DefaultFromName: '嘉威' };
+    component.variables = { DefaultFromName: '寄件者甲' };
     component.template = '';
     document.body.appendChild(fixture.nativeElement); // 真實佈局/選區
     fixture.detectChanges(); // ngAfterViewInit + 渲染 panel（filteredVarDefs 有值）
@@ -287,7 +287,7 @@ describe('TemplateEditorComponent — 結尾 chip 的游標落點（渲染側）
     fixture = TestBed.createComponent(TemplateEditorComponent);
     component = fixture.componentInstance;
     component.variableDefs = [{ key: 'DefaultFromName', label: '寄件者', group: 'basic' }];
-    component.variables = { DefaultFromName: '嘉威' };
+    component.variables = { DefaultFromName: '寄件者甲' };
   });
 
   it('首次渲染：template 以變數結尾 → chip 後有 text node 當游標落點', () => {
@@ -387,7 +387,7 @@ describe('TemplateEditorComponent — 結尾 chip 的游標落點（渲染側）
 
 // ── updateVariableSpans：值沒變就不得寫 DOM（待辦 2）───────────────────────────
 //
-// p4-5-fee 的 `[variables]="getItemVarsCtx(...)"` 用 spread 產新物件 → `changes['variables']`
+// 使用端常見寫法 `[variables]="getVars(...)"` 用 spread 產新物件 → `changes['variables']`
 // 每輪 CD 都成立 → 舊實作無條件重寫每顆 chip 的 textContent。使用者真 app 診斷檔 2630 行中
 // 2627 行都是同一種 MutationRecord（`{target:"SPAN",added:["#text"],removed:["#text"]}`）。
 // 已驗證不傷游標（RCA 實測），但每輪 CD 的無謂 DOM 寫入該消掉。
@@ -410,16 +410,16 @@ describe('TemplateEditorComponent — updateVariableSpans 的 DOM 寫入', () =>
     component.variableDefs = [
       { key: 'DefaultFromName', label: '寄件者', group: 'basic' },
       {
-        key: 'FilingMethod', label: '申報方式', group: 'basic',
-        options: [{ label: '書審', value: '書審' }, { label: '查帳', value: '查帳' }],
+        key: 'DeliveryMethod', label: '寄送方式', group: 'basic',
+        options: [{ label: '郵寄', value: '郵寄' }, { label: '自取', value: '自取' }],
       },
     ];
-    component.variables = { DefaultFromName: '嘉威', FilingMethod: '書審' };
-    component.template = '%DefaultFromName%與%FilingMethod%';
+    component.variables = { DefaultFromName: '寄件者甲', DeliveryMethod: '郵寄' };
+    component.template = '%DefaultFromName%與%DeliveryMethod%';
     fixture.detectChanges();
   });
 
-  it('variables 內容相同但 reference 換新（p4-5 每次 CD 的形態）→ 零 DOM 寫入', () => {
+  it('variables 內容相同但 reference 換新（使用端每次 CD 的形態）→ 零 DOM 寫入', () => {
     const observer = new MutationObserver(() => undefined);
     observer.observe(editorEl(), { subtree: true, childList: true, characterData: true, attributes: true });
 
@@ -435,19 +435,19 @@ describe('TemplateEditorComponent — updateVariableSpans 的 DOM 寫入', () =>
 
   it('variables 值真的改變 → chip 文字仍要更新（plain 與 select 兩種都要）', () => {
     const prev = component.variables;
-    component.variables = { DefaultFromName: '嘉威台北', FilingMethod: '查帳' };
+    component.variables = { DefaultFromName: '新寄件者', DeliveryMethod: '自取' };
     component.ngOnChanges({ variables: new SimpleChange(prev, component.variables, false) });
 
     const plain = editorEl().querySelector('.tpl[data-var="DefaultFromName"]') as HTMLElement;
-    const select = editorEl().querySelector('.tpl[data-var="FilingMethod"]') as HTMLElement;
-    expect(plain.textContent).toBe('嘉威台北');
-    expect(select.childNodes[0].textContent).toBe('查帳');
+    const select = editorEl().querySelector('.tpl[data-var="DeliveryMethod"]') as HTMLElement;
+    expect(plain.textContent).toBe('新寄件者');
+    expect(select.childNodes[0].textContent).toBe('自取');
     expect(select.querySelector('svg')).withContext('select chip 的 caret 不得被清掉').toBeTruthy();
   });
 
   it('值變成空 → 顯示 [key] 佔位並掛上 tpl--empty', () => {
     const prev = component.variables;
-    component.variables = { DefaultFromName: '', FilingMethod: '書審' };
+    component.variables = { DefaultFromName: '', DeliveryMethod: '郵寄' };
     component.ngOnChanges({ variables: new SimpleChange(prev, component.variables, false) });
 
     const plain = editorEl().querySelector('.tpl[data-var="DefaultFromName"]') as HTMLElement;
@@ -492,7 +492,7 @@ describe('TemplateEditorComponent — 連續插入變數時的游標存續', () 
     }
   });
 
-  /** 模擬 controlled parent：把 emit 出來的 template 原封不動回寫（p4-5-fee 的行為） */
+  /** 模擬 controlled parent：把 emit 出來的 template 原封不動回寫（常見的使用端寫法） */
   function echoBackToParent(emitted: string): void {
     const prev = component.template;
     component.template = emitted;
@@ -925,11 +925,11 @@ describe('TemplateEditorComponent — ⓘ 搜尋後插入的游標位置', () =>
 // 這次的範圍收斂成「只在同一格編輯器內重排」（使用者 2026-09-14 選項 A），四個舊坑各自對應：
 //  坑1 dragstart 的 target 可能是文字節點 → 一律先正規化成 element 再 closest
 //  坑2 `.tpl` 的 user-select:all 讓瀏覽器把拖曳當「選取文字」→ 可拖的 chip 改 user-select:none
-//  坑3 dragstart 冒泡到 `.p4-fee__item`（宿主對非握把來源無條件 preventDefault）→ 整個拖曳被殺
+//  坑3 dragstart 冒泡到 宿主的清單項目（宿主對非握把來源無條件 preventDefault）→ 整個拖曳被殺
 //      → chip 的 dragstart/dragover/drop 一律 stopPropagation
 //  坑4 原生 DnD 一旦啟動瀏覽器全權接管、可拖出框落到別的編輯器 → 改成自己算落點自己搬，
 //      並且「來源不是自己這格的 chip」時完全不碰事件（不 preventDefault、不 stopPropagation），
-//      讓宿主的酬金項目重排照常運作
+//      讓宿主的清單項目重排照常運作
 describe('TemplateEditorComponent — chip 拖曳重排（同格內）', () => {
   let component: TemplateEditorComponent;
   let fixture: ComponentFixture<TemplateEditorComponent>;
@@ -997,7 +997,7 @@ describe('TemplateEditorComponent — chip 拖曳重排（同格內）', () => {
   });
 
   it('dragstart：stopPropagation 擋住宿主的 preventDefault（坑 3）', () => {
-    // 忠實重現宿主：`.p4-fee__item` 也是 draggable，其 onDragStart 對非握把來源
+    // 忠實重現宿主：宿主的清單項目也是 draggable，其 onDragStart 對非握把來源
     // 無條件 preventDefault —— dragstart 冒泡上去就會把整個拖曳殺掉。
     const outer = document.createElement('div');
     const hostSpy = jasmine.createSpy('hostDragStart').and.callFake((e: DragEvent) => e.preventDefault());
@@ -1088,7 +1088,7 @@ describe('TemplateEditorComponent — chip 拖曳重排（同格內）', () => {
 
     expect(pd).not.toHaveBeenCalled();
     expect(sp)
-      .withContext('無條件 stopPropagation 會吃掉宿主酬金項目重排的 drop')
+      .withContext('無條件 stopPropagation 會吃掉宿主清單項目重排的 drop')
       .not.toHaveBeenCalled();
   });
 
@@ -1156,15 +1156,15 @@ describe('TemplateEditorComponent — chip 拖曳重排（同格內）', () => {
 });
 
 // ── 拖曳時的落點指示線（2026-09-14 使用者回報「看不出會放到哪」）──────────────
-// 對照組「酬金補充說明」用的是 ProseMirror StarterKit 內含的 Dropcursor（一條線）。
+// 對照組（以 ProseMirror 實作的編輯器）用的是 StarterKit 內含的 Dropcursor（一條線）。
 // 這裡自己畫一條對應的線，顏色對齊產品既有的落點指示語彙 `--button/action`
-// （p4-5-fee.component.scss:57 的 drag-over-top / drag-over-bot 用同一個）。
+// （清單拖曳的 drag-over 指示也用同一個）。
 //
 // 實作形態：線**永遠存在於 template 裡**（不是 document.createElement）。
 // 理由：Angular emulated encapsulation 會給 component scss 的選擇器加 `[_ngcontent-xxx]`，
 // 命令式建立的元素沒有那個屬性、吃不到樣式。放進 template 才有；同時用 ViewChild 直接改
 // 它的 inline style（不走 Angular 綁定），dragover 每幀更新才不會觸發 CD ——
-// 本元件沒有 OnPush，一頁有 9 個以上實例，每幀 tick 全 app 會拖垮 P4。
+// 本元件沒有 OnPush，一頁有 9 個以上實例，每幀 tick 全 app 會拖垮整頁。
 describe('TemplateEditorComponent — 拖曳落點指示線', () => {
   let component: TemplateEditorComponent;
   let fixture: ComponentFixture<TemplateEditorComponent>;
@@ -1349,12 +1349,12 @@ describe('TemplateEditorComponent — 拖曳落點指示線', () => {
 // ── 拖曳縮圖（2026-09-14 使用者回報「變數字數多時拖著一張很大的圖」）─────────────
 // 不設 setDragImage 時瀏覽器用預設＝被拖元素的整張截圖，長變數就是一大塊跟著滑鼠跑。
 // 改成固定寬度上限的小膠囊：保留 chip 的藍底藍框（知道在拖哪一顆），超出用省略號截斷。
-// 形態照 p4-6-notes.component.ts:306-329 的既有前例（clone → 定位到畫面外 → setDragImage → rAF 移除）。
+// 形態照常見做法（clone → 定位到畫面外 → setDragImage → rAF 移除）。
 describe('TemplateEditorComponent — 拖曳縮圖', () => {
   let component: TemplateEditorComponent;
   let fixture: ComponentFixture<TemplateEditorComponent>;
 
-  const LONG = '財務報表查核簽證暨稅務簽證申報作業（含年度結算）';
+  const LONG = '年度活動場地、餐飲與交通安排（含備案場地）';
 
   function editorEl(): HTMLElement {
     return fixture.nativeElement.querySelector('[contenteditable]') as HTMLElement;

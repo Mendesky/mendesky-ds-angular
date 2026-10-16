@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TemplateVarPanelComponent } from './template-var-panel.component';
+import { TEMPLATE_VAR_GROUPS, TEMPLATE_VAR_CONTEXT_TEXT } from './template-var-panel.tokens';
 
 /**
  * varGroups getter 的搜尋行為：除了比對變數 label(中) / key(英)，
@@ -23,14 +24,14 @@ describe('TemplateVarPanelComponent — search by resolved value', () => {
   const keysOf = (): string[] => component.varGroups.flatMap(g => g.defs.map(d => d.key));
 
   it('label/key 都不含 query 時，靠 resolved value 命中', () => {
-    component.varDefs = [{ key: 'QuotingCaseName', label: '案件名稱', group: 'basic' }];
-    component.variables = { QuotingCaseName: '宏達電股份有限公司' };
-    component.searchQuery = '宏達'; // 既不在 label('案件名稱') 也不在 key('QuotingCaseName')
-    expect(keysOf()).toContain('QuotingCaseName');
+    component.varDefs = [{ key: 'DocumentTitle', label: '文件標題', group: 'basic' }];
+    component.variables = { DocumentTitle: '年度活動企劃' };
+    component.searchQuery = '活動'; // 既不在 label('文件標題') 也不在 key('DocumentTitle')
+    expect(keysOf()).toContain('DocumentTitle');
   });
 
   it('value 比對大小寫不敏感', () => {
-    component.varDefs = [{ key: 'DefaultFromName', label: '預設信件寄件者', group: 'basic' }];
+    component.varDefs = [{ key: 'DefaultFromName', label: '預設寄件者', group: 'basic' }];
     component.variables = { DefaultFromName: 'ACME LLP' };
     component.searchQuery = 'acme';
     expect(keysOf()).toContain('DefaultFromName');
@@ -62,14 +63,14 @@ describe('TemplateVarPanelComponent — search by resolved value', () => {
   });
 
   it('label / key 既有搜尋路徑仍有效（回歸）', () => {
-    component.varDefs = [{ key: 'TotalAssets', label: '資產總額', group: 'financial' }];
-    component.variables = { TotalAssets: '5,000萬元' };
+    component.varDefs = [{ key: 'Budget', label: '預算', group: 'financial' }];
+    component.variables = { Budget: '5,000元' };
 
-    component.searchQuery = 'total'; // 命中 key
-    expect(keysOf()).toContain('TotalAssets');
+    component.searchQuery = 'budg'; // 命中 key
+    expect(keysOf()).toContain('Budget');
 
-    component.searchQuery = '資產'; // 命中 label
-    expect(keysOf()).toContain('TotalAssets');
+    component.searchQuery = '預算'; // 命中 label
+    expect(keysOf()).toContain('Budget');
   });
 
   it('query 為空 → 回完整清單（空 query 行為不受 value 比對影響）', () => {
@@ -147,9 +148,9 @@ describe('TemplateVarPanelComponent — inline autocomplete 模式', () => {
     component = fixture.componentInstance;
     component.varDefs = [
       { key: 'DefaultFromName', label: '寄件者', group: 'basic' },
-      { key: 'QuotingCaseName', label: '案件名稱', group: 'basic' },
+      { key: 'DocumentTitle', label: '文件標題', group: 'basic' },
     ];
-    component.variables = { DefaultFromName: '嘉威', QuotingCaseName: '案件A' };
+    component.variables = { DefaultFromName: '範例團隊', DocumentTitle: '文件A' };
   });
 
   it('openAt 開 inline 模式並設 query', () => {
@@ -161,10 +162,10 @@ describe('TemplateVarPanelComponent — inline autocomplete 模式', () => {
 
   it('inline query 過濾用 query（非 searchQuery）', () => {
     component.inline = true;
-    component.query = 'Quoting';
+    component.query = 'Document';
     component.searchQuery = ''; // 確認不靠 searchQuery
     const keys = component.varGroups.flatMap(g => g.defs.map(d => d.key));
-    expect(keys).toEqual(['QuotingCaseName']);
+    expect(keys).toEqual(['DocumentTitle']);
   });
 
   it('moveActive 切換 activeKey（環繞）', () => {
@@ -173,11 +174,11 @@ describe('TemplateVarPanelComponent — inline autocomplete 模式', () => {
     component.activeIndex = 0;
     expect(component.activeKey).toBe('DefaultFromName');
     component.moveActive(1);
-    expect(component.activeKey).toBe('QuotingCaseName');
+    expect(component.activeKey).toBe('DocumentTitle');
     component.moveActive(1); // wrap 回第一個
     expect(component.activeKey).toBe('DefaultFromName');
     component.moveActive(-1); // 往上 wrap 到最後
-    expect(component.activeKey).toBe('QuotingCaseName');
+    expect(component.activeKey).toBe('DocumentTitle');
   });
 
   it('selectActive emit insert(activeKey) 並關閉', () => {
@@ -187,7 +188,7 @@ describe('TemplateVarPanelComponent — inline autocomplete 模式', () => {
     let emitted = '';
     component.insert.subscribe((k: string) => (emitted = k));
     component.selectActive();
-    expect(emitted).toBe('QuotingCaseName');
+    expect(emitted).toBe('DocumentTitle');
     expect(component.showPanel).toBeFalse();
   });
 
@@ -205,5 +206,96 @@ describe('TemplateVarPanelComponent — inline autocomplete 模式', () => {
     const active = fixture.nativeElement.querySelector('.tvp-chip[aria-selected="true"]') as HTMLElement;
     expect(active).toBeTruthy();
     expect(active.textContent).toContain('寄件者');
+  });
+});
+
+/** 分組由使用端以 TEMPLATE_VAR_GROUPS 提供；DS 不內建任何分組名稱或順序。 */
+describe('TemplateVarPanelComponent — 分組由使用端提供', () => {
+  const defs = [
+    { key: 'A', label: 'AAA', group: 'second' },
+    { key: 'B', label: 'BBB', group: 'first' },
+    { key: 'C', label: 'CCC', group: 'unlisted' },
+  ];
+
+  it('沒提供分組 → 依出現順序顯示全部分組，標題用分組 key', async () => {
+    await TestBed.configureTestingModule({ imports: [TemplateVarPanelComponent], schemas: [NO_ERRORS_SCHEMA] }).compileComponents();
+    const component = TestBed.createComponent(TemplateVarPanelComponent).componentInstance;
+    component.varDefs = defs;
+    expect(component.varGroups.map(g => [g.group, g.label])).toEqual([
+      ['second', 'second'], ['first', 'first'], ['unlisted', 'unlisted'],
+    ]);
+  });
+
+  it('有提供分組 → 只顯示清單內的分組、照清單順序、用清單的標題', async () => {
+    await TestBed.configureTestingModule({
+      imports: [TemplateVarPanelComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [{ provide: TEMPLATE_VAR_GROUPS, useValue: [{ key: 'first', label: '第一組' }, { key: 'second', label: '第二組' }] }],
+    }).compileComponents();
+    const component = TestBed.createComponent(TemplateVarPanelComponent).componentInstance;
+    component.varDefs = defs;
+    expect(component.varGroups.map(g => [g.group, g.label])).toEqual([
+      ['first', '第一組'], ['second', '第二組'],
+    ]);
+  });
+});
+
+/** 兩層 context 選擇：文字由使用端提供；切換時 emit { contextId, optionId }。 */
+describe('TemplateVarPanelComponent — 兩層 context 選擇', () => {
+  const contexts = [
+    { id: 'c1', label: '甲', options: [{ id: 'o1', label: '一' }, { id: 'o2', label: '二' }] },
+    { id: 'c2', label: '乙', options: [{ id: 'o3', label: '三' }] },
+  ];
+
+  async function create(providers: unknown[] = []) {
+    await TestBed.configureTestingModule({
+      imports: [TemplateVarPanelComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: providers as never[],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(TemplateVarPanelComponent);
+    return { fixture, component: fixture.componentInstance };
+  }
+
+  it('預設選取：找得到 default 就用它，找不到落第一個', async () => {
+    const { component } = await create();
+    component.contexts = contexts;
+    component.defaultContextId = 'c1';
+    component.defaultOptionId = 'o2';
+    component.ngOnChanges({ contexts: {} as never });
+    expect(component.selectedContextId).toBe('c1');
+    expect(component.selectedOptionId).toBe('o2');
+
+    component.defaultContextId = 'missing';
+    component.defaultOptionId = 'missing';
+    component.ngOnChanges({ defaultContextId: {} as never });
+    expect(component.selectedContextId).toBe('c1');
+    expect(component.selectedOptionId).toBe('o1');
+  });
+
+  it('切 context → option 落該 context 第一個，emit { contextId, optionId }', async () => {
+    const { component } = await create();
+    component.contexts = contexts;
+    component.ngOnChanges({ contexts: {} as never });
+    let emitted: unknown;
+    component.contextChange.subscribe(e => (emitted = e));
+    component.onContextChange('c2');
+    expect(emitted).toEqual({ contextId: 'c2', optionId: 'o3' });
+    component.onOptionChange('o3');
+    expect(component.optionOptions).toEqual([{ value: 'o3', label: '三' }]);
+  });
+
+  it('選擇器文字來自 TEMPLATE_VAR_CONTEXT_TEXT', async () => {
+    const { fixture, component } = await create([{
+      provide: TEMPLATE_VAR_CONTEXT_TEXT,
+      useValue: { contextLabel: '來源', contextPlaceholder: '選來源', optionLabel: '版本', optionPlaceholder: '選版本' },
+    }]);
+    component.contexts = contexts;
+    component.ngOnChanges({ contexts: {} as never });
+    component.showPanel = true;
+    fixture.detectChanges();
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('.tvp-context__label') as NodeListOf<HTMLElement>)
+      .map(l => l.textContent?.trim());
+    expect(labels).toEqual(['來源', '版本']);
   });
 });

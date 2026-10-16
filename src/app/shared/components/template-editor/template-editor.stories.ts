@@ -2,47 +2,38 @@ import { componentWrapperDecorator } from '@storybook/angular';
 import type { Meta, StoryObj } from '@storybook/angular';
 import { TemplateEditorComponent, TemplateVarDef } from '../../../../index';
 
-// 範例內容一律取自 dashboard-app 主線（Github/main）的實際用法與 spec fixture，不自行編寫：
-// - 範本字串、placeholder、minRows：
-//     src/app/features/quoting-cases/components/case-edit-modal/pages/p5-letter/p5-letter.component.{ts,html}
-//     （LETTER_CONTENT_TEMPLATE、CONSENT_SUBJECT_TEMPLATE、信件 To 的 %DefaultToName%）
-//     p4-6-notes.component.html（備註：placeholder「請輸入備註內容」、minRows 3）
-// - 變數定義（key / label / group）：src/app/features/quoting-cases/models/p4-contract.model.ts 的 GLOBAL_TEMPLATE_VAR_DEFS
-// - 變數值：p5-letter.component.spec.ts（DefaultToName）、template-variable-node.spec.ts（DefaultFromName）、
-//     template-text.util.spec.ts（QuotingCaseName）、template-var-context.spec.ts（ServiceItemNames）
-// - 可切換版本的變數（AccountingPeriod）：本元件 template-editor.component.spec.ts 的 glance fixture
-// - 錯誤訊息「此為必填欄位」：p5-letter / p4-6-notes 的 fieldError / getNoteError
+// 範例內容是通用的示意資料，不代表任何使用端產品的實際欄位。
 
 const LETTER_CONTENT_TEMPLATE =
-  '茲將附上 %QuotingCaseName% %ServiceItemNames% 之專業服務公費報價單。\n' +
-  '我們希望以最專業多元的服務與 貴公司長久配合，公費內容若經確認，煩請將最後一頁同意函簽章並回傳至敝事務所，謝謝您的合作。';
+  '附上 %DocumentTitle% 的 %ItemNames% 清單，請參考。\n' +
+  '若內容沒有問題，請回覆確認，謝謝。';
 
-const CONSENT_SUBJECT_TEMPLATE =
-  '本公司同意委託 貴事務所執行本公司有關 %ServiceItemNames% 之專業報價項目及公費，請查照。';
+const NOTICE_SUBJECT_TEMPLATE =
+  '%RecipientName% 您好：關於 %ItemNames% 的安排，請查照。';
 
-/** GLOBAL_TEMPLATE_VAR_DEFS 中「基本資訊」群組的四個變數 */
+/** 「基本資訊」分組的四個變數 */
 const BASIC_VAR_DEFS: TemplateVarDef[] = [
-  { key: 'DefaultFromName', label: '預設信件寄件者', group: 'basic' },
-  { key: 'QuotingCaseName', label: '案件名稱', group: 'basic' },
-  { key: 'DefaultToName', label: '預設信件收件者', group: 'basic' },
-  { key: 'ServiceItemNames', label: '報價服務', group: 'basic' },
+  { key: 'SenderName', label: '寄件者', group: 'basic' },
+  { key: 'DocumentTitle', label: '文件標題', group: 'basic' },
+  { key: 'RecipientName', label: '收件者', group: 'basic' },
+  { key: 'ItemNames', label: '項目清單', group: 'basic' },
 ];
 
 const BASIC_VARIABLES: Record<string, string> = {
-  DefaultFromName: '嘉威聯合會計師事務所',
-  QuotingCaseName: '中華大雄股份有限公司',
-  DefaultToName: '嘉威股份有限公司',
-  ServiceItemNames: '記帳、稅簽',
+  SenderName: '範例團隊',
+  DocumentTitle: '年度活動企劃',
+  RecipientName: '王小明',
+  ItemNames: '場地、餐飲',
 };
 
 /** 可切換版本的變數（glance）：選項 value 是變體 key，選擇結果寫回範本字串裡 */
-const ACCOUNTING_PERIOD_DEF: TemplateVarDef = {
-  key: 'AccountingPeriod',
-  label: '記帳收費說明',
-  group: 'accounting',
+const PERIOD_NOTE_DEF: TemplateVarDef = {
+  key: 'PeriodNote',
+  label: '期間說明',
+  group: 'detail',
   options: [
-    { label: '系統依情境判斷', value: 'AccountingPeriod' },
-    { label: '以全年計算', value: 'AccountingPeriod|1' },
+    { label: '系統依情境判斷', value: 'PeriodNote' },
+    { label: '以全年計算', value: 'PeriodNote|1' },
   ],
 };
 
@@ -87,14 +78,14 @@ const meta: Meta<TemplateEditorComponent> = {
       description: '禁用狀態',
       table: { defaultValue: { summary: 'false' } },
     },
-    varContexts: { control: false, description: '集團案件的公司／方案清單，範例不示範' },
-    defaultCaseId: { control: false, description: '變數面板預設公司，範例不示範' },
-    defaultBundleId: { control: false, description: '變數面板預設方案，範例不示範' },
+    varContexts: { control: false, description: '變數面板的兩層 context 清單，範例不示範' },
+    defaultContextId: { control: false, description: '變數面板預設 context，範例不示範' },
+    defaultOptionId: { control: false, description: '變數面板預設 option，範例不示範' },
     templateChange: { action: 'templateChange', description: '編輯後 emit 帶 %key% 的範本字串' },
     textChange: { action: 'textChange', description: '編輯後 emit 純文字' },
     blurChange: { action: 'blurChange', description: '失焦時 emit 目前的範本字串' },
     optionSelect: { action: 'optionSelect', description: '下拉 chip 切換選項後 emit { key, value }' },
-    contextChange: { action: 'contextChange', description: '變數面板切換公司／方案時 emit' },
+    contextChange: { action: 'contextChange', description: '變數面板切換 context／option 時 emit' },
   },
   args: {
     template: LETTER_CONTENT_TEMPLATE,
@@ -111,7 +102,7 @@ const meta: Meta<TemplateEditorComponent> = {
 export default meta;
 type Story = StoryObj<TemplateEditorComponent>;
 
-// ── 主範例：P5 信件內容（多變數混合範本）─────────────────────────
+// ── 主範例：信件內容（多變數混合範本）───────────────────────────
 export const Default: Story = {
   name: '預設（信件內容）',
 };
@@ -120,21 +111,20 @@ export const Default: Story = {
 export const SingleLine: Story = {
   name: '單行（信件收件人）',
   args: {
-    template: '%DefaultToName%',
+    template: '%RecipientName%',
     minRows: 1,
-    placeholder: '請輸入公司名稱',
+    placeholder: '請輸入收件者',
   },
 };
 
 // ── 可切換版本的變數（下拉 chip）──────────────────────────────────
 // 元件只 emit optionSelect，不自己換字；由父層把範本裡的 %Key% 換成選到的變體 key 再傳回來
-// （與 dashboard-app p5-letter 的做法相同）。
 export const SelectChip: Story = {
   name: '可切換版本的變數（下拉 chip）',
   args: {
-    template: '記帳公費%AccountingPeriod%。',
-    variables: { AccountingPeriod: '一年以十四個月計算', 'AccountingPeriod|1': '以全年計算' },
-    variableDefs: [ACCOUNTING_PERIOD_DEF],
+    template: '費用%PeriodNote%。',
+    variables: { PeriodNote: '以實際使用月份計算', 'PeriodNote|1': '以全年計算' },
+    variableDefs: [PERIOD_NOTE_DEF],
     minRows: 1,
     placeholder: '',
   },
@@ -175,9 +165,9 @@ export const ErrorState: Story = {
 export const Disabled: Story = {
   name: '停用（信件載入中）',
   args: {
-    template: CONSENT_SUBJECT_TEMPLATE,
+    template: NOTICE_SUBJECT_TEMPLATE,
     minRows: 3,
-    placeholder: '請輸入同意函主旨',
+    placeholder: '請輸入主旨',
     disabled: true,
   },
 };
