@@ -2,9 +2,6 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ProgressBarComponent } from './progress-bar.component';
 
 /**
- * DS 契約測試（套件側）。與 mendesky-web 的同名 spec 是同一份契約的兩份拷貝，
- * 改行為時兩邊一起改（見 ds-angular README「Spec 政策」）。
- *
  * app-progress-bar 只畫比例、不內建文字；value 夾在 0～max，max ≤ 0 或非有限數字時為 0%。
  */
 describe('ProgressBarComponent', () => {

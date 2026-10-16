@@ -20,7 +20,12 @@ class HostComponent {
 })
 class ClassSelectorHostComponent {}
 
+// 本檔在 beforeEach 把 window.ResizeObserver 換成 stub；每條結束必須還原，
+// 否則整包隨機順序跑到後面、依賴真 ResizeObserver 的 spec（例 priority-overflow）會靜默收不到 callback。
+const REAL_RESIZE_OBSERVER = window.ResizeObserver;
+
 describe('AutoHeightDirective — 偵測容器高度變化的過渡（ResizeObserver + WAAPI）', () => {
+  afterEach(() => { window.ResizeObserver = REAL_RESIZE_OBSERVER; });
   let fixture: ComponentFixture<HostComponent>;
   let box: HTMLElement;
   let animateSpy: jasmine.Spy;
@@ -105,6 +110,7 @@ describe('AutoHeightDirective — 偵測容器高度變化的過渡（ResizeObse
 });
 
 describe('AutoHeightDirective — class selector（.cem-section-card 自動套用）', () => {
+  afterEach(() => { window.ResizeObserver = REAL_RESIZE_OBSERVER; });
   let classObserved: HTMLElement | null;
 
   beforeEach(() => {

@@ -13,6 +13,11 @@ import { ModalStackService } from '../../core/services/modal-stack.service';
 const resizeCbMap = new Map<Element, ResizeObserverCallback>();
 const intersectCbMap = new Map<Element, IntersectionObserverCallback>();
 
+// beforeEach 會把 window 上的 ResizeObserver / IntersectionObserver 換成 fake；afterEach 必須還原，
+// 否則整包隨機順序跑到後面、依賴真 observer 的 spec（例 priority-overflow）會靜默收不到 callback。
+const REAL_RESIZE_OBSERVER = window.ResizeObserver;
+const REAL_INTERSECTION_OBSERVER = window.IntersectionObserver;
+
 class FakeResizeObserver {
   private observed: Element[] = [];
   constructor(private cb: ResizeObserverCallback) {}
@@ -166,6 +171,8 @@ describe('PortalPositioningService', () => {
   });
 
   afterEach(() => {
+    window.ResizeObserver = REAL_RESIZE_OBSERVER;
+    window.IntersectionObserver = REAL_INTERSECTION_OBSERVER;
     cleanupEls.forEach(el => el.parentElement?.removeChild(el));
     cleanupEls.length = 0;
     if (capturedPointerdown) {

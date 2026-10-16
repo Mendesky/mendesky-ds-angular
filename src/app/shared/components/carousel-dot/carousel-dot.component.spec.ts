@@ -2,9 +2,6 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CarouselDotComponent } from './carousel-dot.component';
 
 /**
- * DS 契約測試（DS 側拷貝）。與 mendesky-web 的同名 spec 是同一份契約的兩份拷貝，
- * 行為閘門在 consumer 的 karma；這一份隨程式碼同步保存（見 README「Spec 政策」）。
- *
  * 兩個變體會並排在同一列表示「目前這一則 vs 其餘」，所以高度必須一致——
  * 2026-09-10 實測：Line 原本是 18×2 的髮絲線，混在 8px 圓點裡看起來像浮在中線上。
  */
@@ -47,6 +44,8 @@ describe('CarouselDotComponent', () => {
         fixture.nativeElement.querySelector('.carousel-dot') as HTMLElement
       ).getBoundingClientRect().height;
 
+      // OnPush：直接改 plain 屬性 fixture.detectChanges() 偵測不到，須用 setInput 走 Angular
+      // 的 input 綁定機制。
       fixture.componentRef.setInput('variant', 'Line');
       fixture.detectChanges();
       const lineHost = (

@@ -2,6 +2,9 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { SortHeaderComponent } from './sort-header.component';
 import { nextSort } from './sort-header.model';
 
+/**
+ * app-sort-header 是可點擊排序的列表表頭：點了發出這欄的 key，排序狀態與排法由呼叫端負責。
+ */
 describe('SortHeaderComponent', () => {
   let fixture: ComponentFixture<SortHeaderComponent>;
   let component: SortHeaderComponent;

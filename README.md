@@ -197,9 +197,15 @@ Copyright (c) 2026 嘉威聯合會計師事務所. All rights reserved.
 本 repo 公開僅供檢視，未授權任何使用、複製、修改或散布，完整條款見 [LICENSE](./LICENSE)。
 取自第三方的圖示（Heroicons、Lucide）依其原授權使用，見 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md)。
 
-## Spec 政策：與 mendesky-web 同步
+## Spec 政策：測試只放這個 repo
 
-本套件的 `*.spec.ts` 與 mendesky-web 中對應的 consumer contract tests 是**同一份契約的兩份拷貝**，
-必須同步更新：改了元件行為，兩邊的 spec 一起改。web 的 CI（karma）是行為閘門，本 repo 的 CI 只跑
-`tsc --noEmit`（typecheck 閘門）。回灌（backport）元件程式碼時，對應 spec 檔一併回灌，
-不得留下「程式碼是新的、spec 斷言舊行為」的打架狀態。
+元件的 `*.spec.ts` 只放在這個 repo，使用端專案（mendesky-web）不保留複製品。
+本 repo 的 CI 在每次 push 與每個發到 `main` 的 PR 跑型別檢查、說明檢查、單元測試（Karma）、
+文件網站建置與冒煙測試，任何一項失敗都不能合併。各項內容見
+[貢獻指南「CI 會擋什麼」](./site/guide/contributing.md)。
+
+- 單元測試是元件行為的閘門。改了元件行為，在同一個 PR 改對應的 spec，
+  不得留下「程式碼是新的、spec 斷言舊行為」的打架狀態。
+- 新元件的 spec 放在元件旁邊，只放這裡。
+- 使用端只測自己的程式（自己的 directive、頁面怎麼組元件），不複製 DS 的 spec。
+- 從使用端搬元件進來時，spec 一起搬，使用端那份刪掉。

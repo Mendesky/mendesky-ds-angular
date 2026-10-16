@@ -1,5 +1,5 @@
 // DS 單元測試設定：與 mendesky-web（dashboard-app）的 karma 設定對齊，
-// 讓 src/**/*.spec.ts 在本 repo 的 CI 跑。與 mendesky-web 之間的 spec 同步方式見 README「Spec 政策」。
+// 讓 src/**/*.spec.ts 在本 repo 的 CI 跑。spec 只放本 repo，政策見 README「Spec 政策」。
 module.exports = function (config) {
   config.set({
     basePath: '',
