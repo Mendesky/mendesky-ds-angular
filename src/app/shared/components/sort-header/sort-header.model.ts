@@ -9,7 +9,7 @@ export interface SortState<K extends string = string> {
 
 /**
  * 點表頭後的下一個排序狀態：點同一欄就反轉方向，點別欄就從那欄的預設方向開始。
- * 兩段切換（升冪 ↔ 降冪），與 dashboard-app 案件列表一致。
+ * 兩段切換（升冪 ↔ 降冪），不含「取消排序」的第三段。
  *
  * 用法：
  *   onSortChange(key: string) { this.sort.set(nextSort(this.sort(), key)); }

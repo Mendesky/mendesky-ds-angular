@@ -171,8 +171,7 @@
 @include bp.tablet-down {
   /* 手機：所有 process-toast 一律上方置中（避開底部 CTA / 鍵盤 / home indicator）。
      standalone（position:fixed）用下列 top/margin 自我置中；stackMode（position:static）
-     由所屬容器定位（.toast-container 為主；.cem-toast-stack 尚有客戶管理 toast 在用，
-     .p2-toast-stack 已於 2026-07-27 隨 P2 遷移全域而移除），
+     由所屬容器定位（以 .toast-container 為主；少數使用點仍有自己的 toast 堆疊容器），
      此處只吃寬度與掉落動畫。進出場一律改為「從上方掉落」（margin 置中、不佔 transform，
      避免與掉落動畫的 translateY 打架）。 */
   .toast {

@@ -36,10 +36,10 @@ type Story = StoryObj<KanbanMinimapComponent>;
 const realisticColumns: MinimapColumn[] = [
   { label: '待聯繫', color: '#7d7d7d', cardCount: 8 },
   { label: '需求確認', color: '#4ba5b2', cardCount: 5 },
-  { label: '報價中', color: '#af8e4d', cardCount: 12 },
-  { label: '核保審查', color: '#b36a56', cardCount: 3 },
-  { label: '等待簽約', color: '#5da26b', cardCount: 6 },
-  { label: '已成交', color: '#4ba5b2', cardCount: 20 },
+  { label: '進行中', color: '#af8e4d', cardCount: 12 },
+  { label: '審查中', color: '#b36a56', cardCount: 3 },
+  { label: '等待確認', color: '#5da26b', cardCount: 6 },
+  { label: '已完成', color: '#4ba5b2', cardCount: 20 },
 ];
 
 export const Default: Story = {
@@ -53,9 +53,9 @@ export const FewColumns: Story = {
   name: '少量欄位（三欄）',
   args: {
     columns: [
-      { label: '待報價', color: '#7d7d7d', cardCount: 4 },
-      { label: '報價中', color: '#af8e4d', cardCount: 9 },
-      { label: '已成交', color: '#5da26b', cardCount: 15 },
+      { label: '待處理', color: '#7d7d7d', cardCount: 4 },
+      { label: '進行中', color: '#af8e4d', cardCount: 9 },
+      { label: '已完成', color: '#5da26b', cardCount: 15 },
     ] satisfies MinimapColumn[],
   },
 };

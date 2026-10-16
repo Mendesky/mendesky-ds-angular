@@ -5,14 +5,14 @@ export const richTextEditorDoc: ComponentDoc = {
   name: 'Rich Text Editor',
   selector: 'app-rich-text-editor',
   group: '表單元件',
-  summary: 'Tiptap base 富文字編輯器。toolbar（標題/粗體/斜體/底線/刪除線/文字顏色/清單/表格，hiddenTools 可縮減）+ readOnly + placeholder + paste pipeline。fee-supplement-editor、P4-4 客戶狀況、issue-report-dialog 共用 base。',
-  when: '需要 rich text 輸入的場景（markdown 語法、表格、圖片由 wrapper 擴充）。純文字用 app-textarea；含範本變數用 app-template-editor；含圖片上傳用 app-fee-supplement-editor。',
+  summary: 'Tiptap base 富文字編輯器。toolbar（標題/粗體/斜體/底線/刪除線/文字顏色/清單/表格，hiddenTools 可縮減）+ readOnly + placeholder + paste pipeline。一般富文字欄位直接用，需要圖片上傳或範本變數時在外面包一層 wrapper。',
+  when: '需要 rich text 輸入的場景（markdown 語法、表格、圖片由 wrapper 擴充）。純文字用 app-textarea；含範本變數用 app-template-editor；含圖片上傳時自行包一層 wrapper，透過 extraExtensions 與 extraToolbar 擴充。',
   props: [
     {
       name: 'value',
       type: 'ProseMirrorJSON | null',
       default: 'null',
-      desc: 'Tiptap 文件 JSON（見 p4-contract.model.ts ProseMirrorJSON）；null 時顯示空編輯器',
+      desc: 'Tiptap 文件 JSON（見 prosemirror.model.ts 的 ProseMirrorJSON）；null 時顯示空編輯器',
     },
     {
       name: 'placeholder',
@@ -36,19 +36,19 @@ export const richTextEditorDoc: ComponentDoc = {
       name: 'ignoredAttrs',
       type: 'string[]',
       default: '[]',
-      desc: "docEquals 比對時忽略的 attr key（fee-supplement-editor 傳 ['displayUrl']）",
+      desc: "docEquals 比對時忽略的 attr key（例如會把 blob URL 寫進 displayUrl 的圖片上傳 wrapper 傳 ['displayUrl']）",
     },
     {
       name: 'hiddenTools',
       type: "ReadonlyArray<'underline' | 'color' | 'table'>",
       default: '[]',
-      desc: '要隱藏的工具：按鈕 + 對應 extension 一併關閉（快捷鍵/貼上也進不了 schema）。消費端序列化目標不支援某格式時傳入——issue-report-dialog 傳全部三個（Notion 轉換不支援）；須於 editor 初始化前設定',
+      desc: '要隱藏的工具：按鈕 + 對應 extension 一併關閉（快捷鍵/貼上也進不了 schema）。消費端序列化目標不支援某格式時傳入——例如要轉成 Notion blocks 時傳全部三個（Notion 轉換不支援）；須於 editor 初始化前設定',
     },
     {
       name: 'tableStructureEditing',
       type: 'boolean',
       default: 'false',
-      desc: 'opt-in 開啟 Notion 式表格結構編輯：hover/tap 列或欄邊緣浮出情境把手（app-rte-table-grip，portal 到 body），點開得增刪列欄 / 建立複本 / 清除內容選單，選單開啟時以 ProseMirror Decoration 高亮該列/欄操作範圍（整塊外框 + 淡底）。表頭列不出「上方插入列」、整表刪除不放選單。目前 fee-supplement-editor 與訪談表的客戶狀況卡（P4-4）傳 true；issue-report／唯讀 view 不開。設計原則見 ds-patterns interaction.contextual-selection-toolbar',
+      desc: 'opt-in 開啟 Notion 式表格結構編輯：hover/tap 列或欄邊緣浮出情境把手（app-rte-table-grip，portal 到 body），點開得增刪列欄 / 建立複本 / 清除內容選單，選單開啟時以 ProseMirror Decoration 高亮該列/欄操作範圍（整塊外框 + 淡底）。表頭列不出「上方插入列」、整表刪除不放選單。只在需要讓使用者調整表格結構的欄位傳 true；唯讀 view 不開。設計原則見 ds-patterns interaction.contextual-selection-toolbar',
     },
     {
       name: '(valueChange)',
@@ -71,10 +71,10 @@ export const richTextEditorDoc: ComponentDoc = {
   ],
   usage: [
     {
-      label: 'P4-4 客戶狀況段落',
+      label: '一般段落欄位',
       code: `<app-rich-text-editor
   [value]="situationDoc"
-  placeholder="請輸入客戶背景概況…"
+  placeholder="請輸入背景說明…"
   [readOnly]="readOnly"
   (valueChange)="onSituationChange($event)"
   (composedBlur)="onBlur()">
@@ -137,11 +137,11 @@ export const richTextEditorDoc: ComponentDoc = {
     },
     {
       type: 'info',
-      content: 'issue-report-dialog（回報問題詳細說明）直接使用 base：hiddenTools 隱藏 underline/color/table（後端 MarkdownToNotionBlocks 不支援），送出時以 proseMirrorToMarkdown 序列化；template 以 @defer 包裹讓 TipTap 留在 lazy chunk（dialog 掛在 eager header）',
+      content: '要轉成 Notion blocks 的欄位可直接使用 base：hiddenTools 隱藏 underline/color/table（Notion 轉換不支援），送出時以 proseMirrorToMarkdown 序列化；放在 eager 載入的元件裡（例如常駐 header 的 dialog）時，template 以 @defer 包裹讓 TipTap 留在 lazy chunk',
     },
     {
       type: 'info',
-      content: 'fee-supplement-editor 是此 base 的 wrapper，封裝了 FeeSupplementDraft 格式、圖片上傳、template var panel；範本變數 chip 支援打 %% inline autocomplete、打字 %Key% 自動轉 chip（手寫 InputRule + nodePasteRule，未知 key 不轉）、chip 可拖曳重排（ProseMirror draggable + Dropcursor）',
+      content: '需要圖片上傳與範本變數的欄位，可在此 base 外包一層 wrapper，封裝自己的 draft 格式、圖片上傳、template var panel；範本變數 chip 支援打 %% inline autocomplete、打字 %Key% 自動轉 chip（手寫 InputRule + nodePasteRule，未知 key 不轉）、chip 可拖曳重排（ProseMirror draggable + Dropcursor）',
     },
     {
       type: 'warn',

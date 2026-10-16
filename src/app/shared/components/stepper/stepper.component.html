@@ -56,7 +56,7 @@
 
     @for (section of navSections; track $index) {
 
-      <!-- 區段標題（companyName / 集團共用） -->
+      <!-- 區段標題（例如名稱 / 共用資料） -->
       @if (section.label !== undefined) {
         <div class="sn-section" [class.sn-section--spaced]="$index > 0">
           <span class="sn-section-label">{{ section.label }}</span>

@@ -10,11 +10,11 @@ const FLIP_THRESHOLD_PX = 1;
 /**
  * 資料驅動清單重排的平滑滑動（reactive FLIP）。
  *
- * 用途：當清單背後的資料（如報價卡 allCases）重新排序，`*ngFor`（搭配 trackBy: c.id）
+ * 用途：當清單背後的資料（如卡片清單的 items）重新排序，`*ngFor`（搭配 trackBy: c.id）
  * 會「搬動」既有 DOM 節點到新位置。本 directive 讓被搬動的卡片以動畫從舊位置滑到新位置，
  * 而非瞬間跳位。
  *
- * 與 dashboard 拖曳 FLIP（flexbox order、節點不離 DOM、imperative onDrop）機制不同：
+ * 與拖曳排序的 FLIP（flexbox order、節點不離 DOM、imperative onDrop）機制不同：
  * 那邊由使用者拖曳觸發、節點不動只改視覺 order；這裡由「資料重排」觸發、節點真的被 Angular 搬移，
  * 故採 MutationObserver（監聽容器 childList）偵測重排，無法用同一份 imperative 抽出。
  *
@@ -56,7 +56,7 @@ export class FlipReorderDirective implements AfterViewInit, OnDestroy {
     this.resizeObserver?.disconnect();
   }
 
-  /** 目前所有直接子 `[data-flip-id]` 的 layout 位置（offset 座標、scroll-immune）。 */
+  /** 當下所有直接子 `[data-flip-id]` 的 layout 位置（offset 座標、scroll-immune）。 */
   private snapshot(): Map<string, { el: HTMLElement; top: number; left: number }> {
     const map = new Map<string, { el: HTMLElement; top: number; left: number }>();
     const children = Array.from(this.host.nativeElement.children) as HTMLElement[];

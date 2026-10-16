@@ -2,14 +2,13 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { OptionCardComponent } from '../../../../index';
 
 // 中性的插圖佔位。實際插圖由使用端傳入 120×120 的 SVG 字串
-// （dashboard-app 的帳務類型／設立現況插圖很大，不搬進 DS）。
+// （各產品的插圖通常很大，不搬進 DS）。
 const PLACEHOLDER_ILLUSTRATION = `<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="24" y="30" width="72" height="60" rx="6" fill="#d6ebf5" stroke="#3a9ccd" stroke-width="2"/>
   <circle cx="46" cy="50" r="7" fill="#3a9ccd"/>
   <path d="M30 84 L52 62 L66 74 L76 66 L90 84 Z" fill="#3a9ccd"/>
 </svg>`;
 
-// 卡片標籤與說明取自 dashboard-app models/account-type.model.ts 的 ACCOUNT_TYPE_CARDS
 const CARD_WIDTH = 'width:160px;';
 
 const meta: Meta<OptionCardComponent> = {
@@ -56,9 +55,9 @@ type Story = StoryObj<OptionCardComponent>;
 export const Default: Story = {
   name: '預設',
   args: {
-    value: '稅務帳',
-    label: '稅務帳',
-    description: '稅務帳\n會計師簽證',
+    value: '卡片',
+    label: '卡片',
+    description: '卡片式排列\n適合看圖辨識',
     illustration: PLACEHOLDER_ILLUSTRATION,
     selected: false,
     disabled: false,
@@ -90,15 +89,15 @@ export const AllStates: Story = {
     template: `
       <div style="display:grid;grid-template-columns:repeat(3,160px);gap:10px;">
         <div>
-          <app-option-card value="純簽證" label="純簽證" [description]="'無記帳服務\\n會計師簽證'" [illustration]="illus"></app-option-card>
+          <app-option-card value="清單" label="清單" [description]="'逐列顯示\\n適合大量資料'" [illustration]="illus"></app-option-card>
           <div style="font-size:11px;color:#686868;margin-top:6px;text-align:center;">一般（滑過看說明）</div>
         </div>
         <div>
-          <app-option-card value="稅務帳" label="稅務帳" [description]="'稅務帳\\n會計師簽證'" [illustration]="illus" [selected]="true"></app-option-card>
+          <app-option-card value="卡片" label="卡片" [description]="'卡片式排列\\n適合看圖辨識'" [illustration]="illus" [selected]="true"></app-option-card>
           <div style="font-size:11px;color:#686868;margin-top:6px;text-align:center;">選中</div>
         </div>
         <div>
-          <app-option-card value="管理帳" label="管理帳" [description]="'客戶內部使用\\n，金流及管理性報表等內容'" [illustration]="illus" [disabled]="true"></app-option-card>
+          <app-option-card value="看板" label="看板" [description]="'依狀態分欄\\n可拖曳調整順序'" [illustration]="illus" [disabled]="true"></app-option-card>
           <div style="font-size:11px;color:#686868;margin-top:6px;text-align:center;">停用（插圖灰階）</div>
         </div>
       </div>
@@ -111,8 +110,8 @@ export const AllStates: Story = {
 export const WithoutDescription: Story = {
   name: '沒有說明',
   args: {
-    value: '財務帳',
-    label: '財務帳',
+    value: '時間軸',
+    label: '時間軸',
     description: '',
     illustration: PLACEHOLDER_ILLUSTRATION,
     selected: false,

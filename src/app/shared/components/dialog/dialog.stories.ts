@@ -1,6 +1,4 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/components/case-edit-modal/pages/p3-basic-info/p3-basic-info.component.html（刪除聯絡窗口，Warning）、
-// .../case-edit-modal/pages/p2-quoting/components/p2-config-wizard/p2-config-wizard.component.html（放棄設定，Normal）、
-// .../case-edit-modal/pages/p4-contract/components/p4-6-notes/p4-6-notes.component.html（永久刪除服務備註，Warning）
+// 範例情境：刪除聯絡窗口（Warning）、放棄設定（Normal）、永久刪除備註（Warning）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { DialogComponent } from '../../../../index';
 
@@ -90,7 +88,7 @@ export const Interactive: Story = {
         <app-dialog
           [isOpen]="open"
           header="永久刪除無法回復"
-          content="此操作將永久刪除此服務備註，無法撤回，是否繼續？"
+          content="此操作將永久刪除此則備註，無法撤回，是否繼續？"
           propClass="Warning"
           confirmText="確認刪除"
           (cancel)="open = false"

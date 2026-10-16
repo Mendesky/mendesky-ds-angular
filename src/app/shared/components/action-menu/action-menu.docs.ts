@@ -72,7 +72,7 @@ export const actionMenuDoc: ComponentDoc = {
       name: 'autoFocusFirst',
       type: 'boolean',
       default: 'true',
-      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如報價案件搜尋框的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。DS v0.1.7 起。',
+      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。DS v0.1.7 起。',
     },
     {
       name: '(closeMenu)',
@@ -187,7 +187,7 @@ export const actionMenuDoc: ComponentDoc = {
           'variant="filled" color="primary" size="S"',
         ],
         [
-          '危險操作（刪除、封存、撤回成交）',
+          '危險操作（刪除、封存、撤回已送出的申請）',
           'app-button',
           'variant="ghost" color="danger" size="S" leftIcon="Trash-Del"',
         ],

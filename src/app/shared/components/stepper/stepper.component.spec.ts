@@ -12,8 +12,8 @@ describe('StepperComponent — nav variant 收合子項不佔 tab 順序', () =>
 
   const sections: NavSection[] = [{
     pages: [
-      { id: 'p1', num: '1', label: '客戶基本資料', subItems: [{ id: 'p1-1', label: '基本資料' }, { id: 'p1-2', label: '負責人' }] },
-      { id: 'p2', num: '2', label: '申報資料', subItems: [{ id: 'p2-1', label: '申報' }] },
+      { id: 'p1', num: '1', label: '成員資料', subItems: [{ id: 'p1-1', label: '基本資料' }, { id: 'p1-2', label: '聯絡人' }] },
+      { id: 'p2', num: '2', label: '設定', subItems: [{ id: 'p2-1', label: '通知' }] },
     ],
   }];
 

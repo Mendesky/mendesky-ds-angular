@@ -259,12 +259,12 @@ export const DS_TOKENS: TokenGroup[] = [
       {
         name: '--label\\/accent-purple',
         value: '#8b5c91',
-        desc: '報價類型「專案」標籤（Color/Purple/70）',
+        desc: '紫色分類標籤（Color/Purple/70）',
       },
       {
         name: '--label\\/outline-green',
         value: '#5a8c2c',
-        desc: '報價類型「所客」標籤的框與字（Color/Green/80）',
+        desc: '綠色外框標籤的框與字（Color/Green/80）',
       },
       {
         name: '--label\\/kanban-draft',

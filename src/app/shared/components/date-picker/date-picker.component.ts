@@ -28,7 +28,7 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
   @Input() errorPosition: 'top' | 'bottom' = 'bottom';
   @Input() placeholder = '';
   /** 空值時顯示的「實心」語意文字（深色，非灰色 placeholder）。用於空值本身有明確業務語意的情境
-   *  （如 startDate 空＝「設立後開始」）；點擊仍可開面板選日期。空字串時退回一般 placeholder 行為。 */
+   *  （如 startDate 空＝「審核通過後開始」）；點擊仍可開面板選日期。空字串時退回一般 placeholder 行為。 */
   @Input() emptyLabel = '';
   @Input() minYear = 110;
   @Input() maxYear = 125;
@@ -162,7 +162,7 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     ref.setInput('width', rect.width);
 
     ref.instance.dateSelected.subscribe(({ year, month, day }) => {
-      // Restore focus to trigger BEFORE any downstream state updates (P2 signal chain, etc.)
+      // Restore focus to trigger BEFORE any downstream state updates (e.g. a parent's signal chain)
       // to prevent focus from being displaced by Angular re-renders or event handlers.
       (this.el.nativeElement.querySelector('.dp-trigger') as HTMLElement | null)?.focus();
 

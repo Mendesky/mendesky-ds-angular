@@ -1,11 +1,11 @@
 import { componentWrapperDecorator, type Meta, type StoryObj } from '@storybook/angular';
 import { DrawerShellComponent, IconComponent } from '../../../../index';
 
-// 範例內容取自 dashboard-app 主線實際用法：
-// - 左側導覽抽屜（layout/nav-drawer）：side="left"、width="min(280px, 85vw)"、品牌字「嘉威資訊平台」、
-//   導覽項目來自 layout/nav-items.ts（儀表板 / 報價案件管理 / 分配歸屬管理）
-// - 右側個人抽屜（shared/components/profile-drawer）：side="right"、width="280px"、
-//   選單項目「查詢訪談表」「安全性與隱私資料維護」
+// 範例內容：
+// - 左側導覽抽屜：side="left"、width="min(280px, 85vw)"、品牌字「範例平台」、
+//   導覽項目（儀表板 / 項目管理 / 成員管理）
+// - 右側個人抽屜：side="right"、width="280px"、
+//   選單項目「查詢文件」「安全性與隱私設定」
 //
 // drawer 的 overlay 與 panel 都是 position:fixed。外層舞台加 transform，讓 fixed 以舞台為準，
 // 範例才會關在框內，不會蓋住整個說明頁。
@@ -16,7 +16,7 @@ const STAGE_STYLE =
 const NAV_CONTENT = `
   <div style="display:flex;flex-direction:column;gap:4px;padding:16px;">
     <div style="display:flex;align-items:center;gap:8px;padding:4px 8px 16px;">
-      <span style="flex:1;font-size:16px;font-weight:500;color:#3e3e3e;">嘉威資訊平台</span>
+      <span style="flex:1;font-size:16px;font-weight:500;color:#3e3e3e;">範例平台</span>
       <button type="button" aria-label="關閉導覽" (click)="close()" style="border:none;background:none;cursor:pointer;color:#686868;display:inline-flex;">
         <app-icon name="No-X-Cancel" size="16"></app-icon>
       </button>
@@ -25,10 +25,10 @@ const NAV_CONTENT = `
       <app-icon name="Dashboard" size="24"></app-icon>儀表板
     </button>
     <button type="button" style="display:flex;align-items:center;gap:12px;padding:10px 8px;border:none;border-radius:6px;background:rgba(58,156,205,0.12);color:#3a9ccd;font-size:14px;cursor:pointer;">
-      <app-icon name="Briefcase" size="24"></app-icon>報價案件管理
+      <app-icon name="Briefcase" size="24"></app-icon>項目管理
     </button>
     <button type="button" style="display:flex;align-items:center;gap:12px;padding:10px 8px;border:none;border-radius:6px;background:none;color:#3e3e3e;font-size:14px;cursor:pointer;">
-      <app-icon name="Assign" size="24"></app-icon>分配歸屬管理
+      <app-icon name="Assign" size="24"></app-icon>成員管理
     </button>
   </div>
 `;
@@ -41,10 +41,10 @@ const PROFILE_CONTENT = `
       </button>
     </div>
     <button type="button" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;border-radius:6px;background:none;color:#3e3e3e;font-size:14px;cursor:pointer;">
-      <app-icon name="Search" size="16"></app-icon>查詢訪談表
+      <app-icon name="Search" size="16"></app-icon>查詢文件
     </button>
     <button type="button" style="display:flex;align-items:center;gap:8px;padding:8px;border:none;border-radius:6px;background:none;color:#3e3e3e;font-size:14px;cursor:pointer;">
-      <app-icon name="Key" size="16"></app-icon>安全性與隱私資料維護
+      <app-icon name="Key" size="16"></app-icon>安全性與隱私設定
     </button>
   </div>
 `;

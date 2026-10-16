@@ -1,4 +1,4 @@
-// 自 mendesky-web features/quoting-cases/models/p4-contract.model.ts 抽出的 ProseMirror doc 形狀
+// ProseMirror（Tiptap）文件 JSON 的形狀
 export interface ProseMirrorJSON {
   type: string;
   content?: ProseMirrorJSON[];

@@ -34,7 +34,7 @@ const meta: Meta<ActionMenuComponent> = {
 |---|---|---|
 | 一般操作（清除、還原預設） | \`app-button\` | \`variant="elevated"\` |
 | 搭配 check-chip 的確認動作（套用） | \`app-button\` | \`variant="filled" color="primary"\` |
-| 危險操作（刪除、封存、撤回成交） | \`app-button\` | \`variant="ghost" color="danger"\` |
+| 危險操作（刪除、封存、撤回已送出的申請） | \`app-button\` | \`variant="ghost" color="danger"\` |
 | 多選篩選項目 | \`app-check-chip\` | \`theme="transparent-grey"\` |
 
 > \`app-button\` 尺寸統一用 **\`size="S"\`**（28px）
@@ -101,12 +101,12 @@ export const DangerActions: Story = {
       <app-action-menu>
         <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#686868;cursor:pointer;">
           <span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">✏️</span>
-          編輯案件
+          編輯項目
         </div>
         <div style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
         <div style="padding:3px 0;display:flex;flex-direction:column;gap:2px;">
-          <app-button variant="ghost" color="danger" size="S" text="封存案件" leftIcon="Archive" [fullWidth]="true"></app-button>
-          <app-button variant="ghost" color="danger" size="S" text="刪除案件" leftIcon="Trash-Del" [fullWidth]="true"></app-button>
+          <app-button variant="ghost" color="danger" size="S" text="封存項目" leftIcon="Archive" [fullWidth]="true"></app-button>
+          <app-button variant="ghost" color="danger" size="S" text="刪除項目" leftIcon="Trash-Del" [fullWidth]="true"></app-button>
         </div>
       </app-action-menu>
     `,

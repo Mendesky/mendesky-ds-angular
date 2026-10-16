@@ -107,18 +107,18 @@ export const YearOnly: Story = {
   }),
 };
 
-// ── 選期別（dashboard-app 統購開始期別） ─────────────────────
+// ── 選期別（雙月為一期） ─────────────────────────────
 export const PeriodMode: Story = {
   name: '選期別（1 期 = 2 個月）',
   render: () => ({
     props: { pickerValue: '' },
     template: `
       <div style="${WRAP_STYLE}">
-        <app-field label="統購開始期別">
+        <app-field label="開始期別">
           <app-year-month-picker
             size="L"
             mode="period"
-            placeholder="請選擇統購開始期別"
+            placeholder="請選擇開始期別"
             [(ngModel)]="pickerValue">
           </app-year-month-picker>
         </app-field>

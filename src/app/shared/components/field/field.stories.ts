@@ -1,6 +1,3 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/components/handover-document-modal/pages/hdm-page3-filing/cards/p3-1-national-tax-bureau-card/（稅籍編號）、
-// src/app/features/quoting-cases/components/shared/client-basic-info-form/client-basic-info-form.component.html（公司名稱、核准設立日期）、
-// .../case-edit-modal/pages/p4-contract/components/p4-1-letter-info/、p4-2-purpose/（受文者、服務目的，emphasis 用法）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { FieldComponent } from '../../../../index';
 
@@ -53,8 +50,8 @@ export const Required: Story = {
   render: () => ({
     template: `
       <div style="width:320px;padding:24px;">
-        <app-field label="稅籍編號" [required]="true">
-          <input style="${INPUT_STYLE}" placeholder="請輸入稅籍編號" />
+        <app-field label="編號" [required]="true">
+          <input style="${INPUT_STYLE}" placeholder="請輸入編號" />
         </app-field>
       </div>
     `,
@@ -81,11 +78,11 @@ export const Emphasis: Story = {
   render: () => ({
     template: `
       <div style="width:360px;padding:24px;display:flex;flex-direction:column;gap:16px;">
-        <app-field label="受文者" [emphasis]="true">
-          <div style="padding:8px 0;font-size:14px;color:#333;">台灣企業股份有限公司</div>
+        <app-field label="收件人" [emphasis]="true">
+          <div style="padding:8px 0;font-size:14px;color:#333;">王小明</div>
         </app-field>
-        <app-field label="服務目的" [emphasis]="true" [required]="true">
-          <div style="padding:8px 0;font-size:14px;color:#333;white-space:pre-wrap;">貴公司委託本事務所辦理有關稅務帳務處理作業之專業服務。</div>
+        <app-field label="說明" [emphasis]="true" [required]="true">
+          <div style="padding:8px 0;font-size:14px;color:#333;white-space:pre-wrap;">本次申請用於更新聯絡資料，送出後會寄送確認信到您的信箱。</div>
         </app-field>
       </div>
     `,
@@ -98,10 +95,10 @@ export const WithInput: Story = {
   render: () => ({
     template: `
       <div style="width:360px;padding:24px;display:flex;flex-direction:column;gap:16px;">
-        <app-field label="公司名稱" [required]="true">
-          <input style="${INPUT_STYLE}" placeholder="請輸入公司名稱" />
+        <app-field label="顯示名稱" [required]="true">
+          <input style="${INPUT_STYLE}" placeholder="請輸入顯示名稱" />
         </app-field>
-        <app-field label="核准設立日期" [required]="true">
+        <app-field label="開始日期" [required]="true">
           <input style="${INPUT_STYLE}" type="date" />
         </app-field>
         <app-field label="電子郵件" [optional]="true">

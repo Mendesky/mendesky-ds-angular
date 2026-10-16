@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { BadgeComponent, IconBtnComponent, IconComponent } from '../../../../index';
 
 // 徽章以 position: absolute 凸出宿主右上角，宿主必須自己是 position: relative。
-// 宿主樣式比照 dashboard-app header 的 .header-icon-badge。
+// 宿主樣式比照一般 app header 的圖示按鈕外框。
 const HOST_STYLE = 'position:relative;display:inline-flex;align-items:center;justify-content:center;';
 const CAPTION_STYLE = 'font-size:11px;color:#686868;margin-top:8px;text-align:center;';
 
@@ -46,7 +46,7 @@ export default meta;
 type Story = StoryObj<BadgeComponent>;
 
 // ── 主範例：可用 Controls 調整數量、上限與退化方式 ──────────
-// ariaLabel 寫法取自 dashboard-app header 通知鈴：`unreadCount() + ' 則未讀通知'`
+// ariaLabel 寫法比照一般 app header 的通知鈴：`unreadCount() + ' 則未讀通知'`
 export const Default: Story = {
   name: '預設',
   args: {
@@ -76,7 +76,7 @@ export const Default: Story = {
   }),
 };
 
-// ── 圓點：只表示「有未讀」，不講數量（dashboard-app 版本更新入口） ──
+// ── 圓點：只表示「有未讀」，不講數量（例如版本更新入口） ──
 export const Dot: Story = {
   name: '圓點（有未讀）',
   args: {
@@ -151,7 +151,7 @@ export const CountRules: Story = {
   }),
 };
 
-// ── 疊在圖示按鈕上：比照 dashboard-app header 的通知鈴與版本更新入口 ──
+// ── 疊在圖示按鈕上：比照一般 app header 的通知鈴與版本更新入口 ──
 export const OnIconButton: Story = {
   name: '疊在圖示按鈕上',
   render: () => ({

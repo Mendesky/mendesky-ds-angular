@@ -1,18 +1,17 @@
-// 範例資料取自 dashboard-app 主線：src/assets/json/NTB_unitcode.json（國稅局所別，經 src/app/features/quoting-cases/mocks/mock-ntb-units.ts 轉成選項）、
-// src/app/features/quoting-cases/components/handover-document-modal/pages/hdm-page3-filing/cards/p3-1-national-tax-bureau-card/（placeholder 與錯誤訊息）
+// 範例資料：台灣縣市行政區（多選的地區欄位）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { action } from '@storybook/addon-actions';
 import { AutocompleteComponent, AutocompleteOption } from '../../../../index';
 
-const NTB_UNIT_OPTIONS: AutocompleteOption[] = [
-  { value: 'A0300', label: '台北市信義分局﹝信義區﹞' },
-  { value: 'A1000', label: '台北市中正分局﹝中正區﹞' },
-  { value: 'A1100', label: '台北市松山分局﹝松山區﹞' },
-  { value: 'A1400', label: '台北市大安分局﹝大安區﹞' },
-  { value: 'F3014', label: '板橋分局﹝板橋區﹞' },
-  { value: 'B4801', label: '台中市民權稽徵所﹝中區﹞' },
-  { value: 'D7001', label: '台南市台南分局﹝東區﹞' },
-  { value: 'E0200', label: '高雄市新興稽徵所﹝新興區﹞' },
+const DISTRICT_OPTIONS: AutocompleteOption[] = [
+  { value: 'TPE-XY', label: '台北市信義區' },
+  { value: 'TPE-ZZ', label: '台北市中正區' },
+  { value: 'TPE-SS', label: '台北市松山區' },
+  { value: 'TPE-DA', label: '台北市大安區' },
+  { value: 'NTP-BQ', label: '新北市板橋區' },
+  { value: 'TXG-ZQ', label: '台中市中區' },
+  { value: 'TNN-DQ', label: '台南市東區' },
+  { value: 'KHH-XX', label: '高雄市新興區' },
 ];
 
 const meta: Meta<AutocompleteComponent> = {
@@ -47,14 +46,14 @@ const meta: Meta<AutocompleteComponent> = {
       control: { type: 'boolean' },
     },
     selectionChange: {
-      description: '選取項目變更時觸發，回傳目前所有已選項目',
+      description: '選取項目變更時觸發，回傳當下所有已選項目',
       action: 'selectionChange',
     },
   },
   args: {
     size: 'L',
-    placeholder: '請輸入縣市或分局名稱搜尋',
-    options: NTB_UNIT_OPTIONS,
+    placeholder: '請輸入縣市或行政區名稱搜尋',
+    options: DISTRICT_OPTIONS,
     value: [],
     errorMessage: '',
     disabled: false,
@@ -67,17 +66,17 @@ type Story = StoryObj<AutocompleteComponent>;
 export const Default: Story = {
   name: '預設',
   args: {
-    placeholder: '請輸入縣市或分局名稱搜尋',
-    options: NTB_UNIT_OPTIONS,
+    placeholder: '請輸入縣市或行政區名稱搜尋',
+    options: DISTRICT_OPTIONS,
   },
 };
 
 export const WithError: Story = {
   name: '錯誤狀態',
   args: {
-    placeholder: '請輸入縣市或分局名稱搜尋',
-    options: NTB_UNIT_OPTIONS,
-    errorMessage: '請選擇國稅局所別',
+    placeholder: '請輸入縣市或行政區名稱搜尋',
+    options: DISTRICT_OPTIONS,
+    errorMessage: '請選擇服務地區',
   },
 };
 
@@ -85,8 +84,8 @@ export const Disabled: Story = {
   name: '禁用狀態',
   args: {
     placeholder: '此欄位已鎖定',
-    options: NTB_UNIT_OPTIONS,
-    value: [{ value: 'A0300', label: '台北市信義分局﹝信義區﹞' }],
+    options: DISTRICT_OPTIONS,
+    value: [{ value: 'TPE-XY', label: '台北市信義區' }],
     disabled: true,
   },
 };
@@ -98,19 +97,19 @@ export const AllSizes: Story = {
       <div style="display:flex; flex-direction:column; gap:16px; padding:16px;">
         <div>
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">Large (L)</p>
-          <app-autocomplete size="L" placeholder="L 尺寸 — 請輸入縣市或分局名稱搜尋" [options]="options"></app-autocomplete>
+          <app-autocomplete size="L" placeholder="L 尺寸 — 請輸入縣市或行政區名稱搜尋" [options]="options"></app-autocomplete>
         </div>
         <div>
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">Medium (M)</p>
-          <app-autocomplete size="M" placeholder="M 尺寸 — 請輸入縣市或分局名稱搜尋" [options]="options"></app-autocomplete>
+          <app-autocomplete size="M" placeholder="M 尺寸 — 請輸入縣市或行政區名稱搜尋" [options]="options"></app-autocomplete>
         </div>
         <div>
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">Small (S)</p>
-          <app-autocomplete size="S" placeholder="S 尺寸 — 請輸入縣市或分局名稱搜尋" [options]="options"></app-autocomplete>
+          <app-autocomplete size="S" placeholder="S 尺寸 — 請輸入縣市或行政區名稱搜尋" [options]="options"></app-autocomplete>
         </div>
       </div>
     `,
-    props: { options: NTB_UNIT_OPTIONS },
+    props: { options: DISTRICT_OPTIONS },
   }),
 };
 
@@ -120,11 +119,11 @@ export const Interactive: Story = {
     template: `
       <div style="padding:16px; max-width:480px;">
         <p style="font-size:13px;color:#686868;margin-bottom:8px;">
-          請搜尋並選擇國稅局所別（可多選），已選項目會顯示於下方：
+          請搜尋並選擇服務地區（可多選），已選項目會顯示於下方：
         </p>
         <app-autocomplete
           size="L"
-          placeholder="請輸入縣市或分局名稱搜尋（可多選）"
+          placeholder="請輸入縣市或行政區名稱搜尋（可多選）"
           [options]="options"
           (selectionChange)="onSelectionChange($event)"
         ></app-autocomplete>
@@ -137,7 +136,7 @@ export const Interactive: Story = {
       </div>
     `,
     props: {
-      options: NTB_UNIT_OPTIONS,
+      options: DISTRICT_OPTIONS,
       selected: [] as AutocompleteOption[],
       onSelectionChange(items: AutocompleteOption[]) {
         (this as any).selected = items;

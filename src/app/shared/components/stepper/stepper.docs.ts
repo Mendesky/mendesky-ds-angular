@@ -91,7 +91,7 @@ export const stepperDoc: ComponentDoc = {
     {
       label: 'horizontal — Wizard 步驟指示器',
       code: `<app-stepper
-  [steps]="['統編查詢', '帳務類型', '基本資料', '客戶來源']"
+  [steps]="['選擇類型', '身分驗證', '基本資料', '偏好設定']"
   [currentStep]="stepIndex"
   (stepClick)="goToStep($event)"
 ></app-stepper>`,
@@ -111,8 +111,8 @@ export const stepperDoc: ComponentDoc = {
 
 // 消費端 computed 範例
 navSections = computed((): NavSection[] => [
-  { label: companyName, pages: clientPages() },
-  ...(isGroup ? [{ label: '集團報價共用資料', pages: sharedPages() }] : []),
+  { label: memberName, pages: memberPages() },
+  ...(hasSharedPages ? [{ label: '共用資料', pages: sharedPages() }] : []),
 ]);
 expandedPageIdsArray = computed(() => Array.from(expandedPages()));
 lockedPageIdsArray   = computed(() => PAGE_ORDER.filter(id => isPageLocked(id)));

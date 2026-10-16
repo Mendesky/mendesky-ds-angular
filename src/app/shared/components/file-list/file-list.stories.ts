@@ -2,22 +2,15 @@ import { componentWrapperDecorator } from '@storybook/angular';
 import type { Meta, StoryObj } from '@storybook/angular';
 import { FileListComponent, FileItem } from '../../../../index';
 
-// 範例資料來源：
-// - 檔名／大小／類型：file-list.component.spec.ts（a.pdf、2048 bytes、結算申報書）、
-//   dashboard-app p1-operation spec（a.jpeg、b.jpeg、類型「其他」、size 0）、
-//   dashboard-app hdm-page1-documents spec（風控表.pdf、100 bytes）
-// - 類型 chip 文字：dashboard-app p1-operation.component.ts 的 DOC_TYPE_FROM_API
-// - 空狀態文字：dashboard-app report-original-file-modal（「尚未上傳報價單原檔」）
-
-/** 有類型模式（P1 報價依據文件）：type 由父層帶入，渲染成 label chip */
+/** 有類型模式（例如依文件類型分類的附件）：type 由父層帶入，渲染成 label chip */
 const typedDocs: FileItem[] = [
-  { id: 'd1', name: 'a.pdf', size: 2048, type: '結算申報書' },
+  { id: 'd1', name: 'a.pdf', size: 2048, type: '企劃書' },
   { id: 'd2', name: 'a.jpeg', size: 0, type: '其他' },
 ];
 
-/** 無類型模式（wizard 報價單、HDM 風控表）：不帶 type，不渲染 chip */
+/** 無類型模式（例如 wizard 裡只收單一種文件）：不帶 type，不渲染 chip */
 const untypedDocs: FileItem[] = [
-  { id: 'doc-1', name: '風控表.pdf', size: 100 },
+  { id: 'doc-1', name: '檢核表.pdf', size: 100 },
 ];
 
 const meta: Meta<FileListComponent> = {
@@ -75,7 +68,7 @@ export const ReadOnly: Story = {
 // ── 空狀態 ─────────────────────────────────────────────────────
 export const Empty: Story = {
   name: '空狀態',
-  args: { docs: [], emptyText: '尚未上傳報價單原檔' },
+  args: { docs: [], emptyText: '尚未上傳原始檔案' },
 };
 
 // ── 空清單且不顯示空狀態 ───────────────────────────────────────

@@ -42,7 +42,7 @@ export const inlineAddDoc: ComponentDoc = {
   usage: [
     {
       label: 'chip 群組新增自訂項',
-      code: `<div class="cem-chip-wrap">
+      code: `<div class="chip-wrap">
   @for (opt of options(); track opt) {
     <app-check-chip [text]="opt" [(ngModel)]="checked[opt]"></app-check-chip>
   }

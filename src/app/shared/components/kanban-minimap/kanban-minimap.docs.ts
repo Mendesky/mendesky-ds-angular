@@ -38,7 +38,7 @@ minimapColumns = computed(() =>
   columns().map(col => ({
     label: col.label,
     color: col.dotColor,
-    cardCount: col.cases.length,
+    cardCount: col.cards.length,
   }))
 );`,
     },

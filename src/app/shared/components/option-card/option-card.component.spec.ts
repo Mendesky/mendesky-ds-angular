@@ -19,8 +19,8 @@ import { OptionCardComponent } from './option-card.component';
   `,
 })
 class HostComponent {
-  value = 'tax';
-  label = '稅務帳';
+  value = 'board';
+  label = '看板';
   description = '';
   illustration = '<svg data-illus="1"></svg>';
   selected = false;
@@ -46,13 +46,13 @@ describe('OptionCardComponent', () => {
   });
 
   it('renders the label', () => {
-    expect(fixture.nativeElement.querySelector('.option-card__label')?.textContent).toContain('稅務帳');
+    expect(fixture.nativeElement.querySelector('.option-card__label')?.textContent).toContain('看板');
   });
 
   it('exposes radio semantics with a stable testid', () => {
     const card = cardEl();
     expect(card.getAttribute('role')).toBe('radio');
-    expect(card.getAttribute('data-testid')).toBe('option-card-tax');
+    expect(card.getAttribute('data-testid')).toBe('option-card-board');
     expect(card.getAttribute('aria-checked')).toBe('false');
   });
 
@@ -88,11 +88,11 @@ describe('OptionCardComponent', () => {
 
   it('renders the description node only when description is provided', () => {
     expect(fixture.nativeElement.querySelector('.option-card__desc')).toBeNull();
-    host.description = '報稅及稅務機關審查的稅務帳／會計師簽證';
+    host.description = '依狀態分欄顯示，可拖曳卡片調整順序';
     fixture.detectChanges();
     const desc = fixture.nativeElement.querySelector('.option-card__desc');
     expect(desc).toBeTruthy();
-    expect(desc.textContent).toContain('報稅及稅務機關審查');
+    expect(desc.textContent).toContain('依狀態分欄顯示');
   });
 
   it('injects the illustration SVG markup', () => {

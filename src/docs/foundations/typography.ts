@@ -152,7 +152,7 @@ export const DS_TYPOGRAPHY: TypographyFamily[] = [
   {
     family: 'Roboto Mono',
     cssVar: '--font-family\\/mono',
-    role: '報價與附加服務的金額（其他數字用 Noto）',
+    role: '指定的金額欄位（其他數字用 Noto）',
     classes: [
       {
         name: '.mono-12-medium',

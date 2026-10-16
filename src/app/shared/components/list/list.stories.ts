@@ -1,6 +1,4 @@
-// 範例資料取自 dashboard-app 主線（欄位名稱＋選項值）：new-case-wizard.component.html＋config/case-type.config.ts（客戶設立現況／已設立）、
-// client-edit-modal.component.html＋models/account-type.model.ts（組織型態、帳務類型）、
-// case-edit-modal/pages/p1-operation/p1-operation.component.html／.ts（過往營業稅申報類型／按期申報、前所服務業務／財稅簽證＋記帳整包）；路徑皆在 src/app/features/quoting-cases/ 下
+// 範例資料：唯讀「欄位名稱＋欄位值」清單（帳號資料的各層欄位）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { ListComponent } from '../../../../index';
 
@@ -67,8 +65,8 @@ type Story = StoryObj<ListComponent>;
 export const Level1: Story = {
   args: {
     level: '1',
-    title: '客戶設立現況',
-    value: '已設立',
+    title: '帳號狀態',
+    value: '啟用中',
     itemNumber: '1',
     showItemNumber: true,
     showTitle: true,
@@ -82,8 +80,8 @@ export const Level1: Story = {
 export const Level2: Story = {
   args: {
     level: '2',
-    title: '組織型態',
-    value: '股份有限公司',
+    title: '所屬部門',
+    value: '產品設計部',
     itemNumber: '1',
     showItemNumber: true,
     showTitle: true,
@@ -97,8 +95,8 @@ export const Level2: Story = {
 export const Level3: Story = {
   args: {
     level: '3',
-    title: '帳務類型',
-    value: '稅務帳',
+    title: '職稱',
+    value: '資深設計師',
     itemNumber: '1',
     showItemNumber: true,
     showTitle: true,
@@ -112,8 +110,8 @@ export const Level3: Story = {
 export const Level4: Story = {
   args: {
     level: '4',
-    title: '過往營業稅申報類型',
-    value: '按期申報',
+    title: '通知方式',
+    value: '電子郵件',
     itemNumber: '1',
     showItemNumber: true,
     showTitle: true,
@@ -127,8 +125,8 @@ export const Level4: Story = {
 export const WithChildren: Story = {
   args: {
     level: '1',
-    title: '前所服務業務',
-    value: '財稅簽證＋記帳整包',
+    title: '權限設定',
+    value: '檢視＋編輯',
     itemNumber: '1',
     showItemNumber: true,
     showTitle: true,
@@ -142,8 +140,8 @@ export const WithChildren: Story = {
 export const HoverStatus: Story = {
   args: {
     level: '1',
-    title: '組織型態',
-    value: '有限公司',
+    title: '所屬部門',
+    value: '行銷部',
     itemNumber: '2',
     showItemNumber: true,
     showTitle: true,
@@ -160,29 +158,29 @@ export const AllLevels: Story = {
       <div style="width:480px;padding:16px;background:#fff;border:1px solid #e7e7e7;border-radius:8px;">
         <app-list
           level="1"
-          title="客戶設立現況"
-          value="已設立"
+          title="帳號狀態"
+          value="啟用中"
           itemNumber="1"
           [showItemNumber]="true">
         </app-list>
         <app-list
           level="2"
-          title="組織型態"
-          value="股份有限公司"
+          title="所屬部門"
+          value="產品設計部"
           itemNumber="1"
           [showItemNumber]="true">
         </app-list>
         <app-list
           level="3"
-          title="帳務類型"
-          value="稅務帳"
+          title="職稱"
+          value="資深設計師"
           itemNumber="1"
           [showItemNumber]="true">
         </app-list>
         <app-list
           level="4"
-          title="過往營業稅申報類型"
-          value="按期申報"
+          title="通知方式"
+          value="電子郵件"
           itemNumber="1"
           [showItemNumber]="true">
         </app-list>

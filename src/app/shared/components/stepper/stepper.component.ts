@@ -16,7 +16,7 @@ export interface NavPage {
 }
 
 export interface NavSection {
-  /** 區段標題（companyName 或「集團報價共用資料」）。傳 undefined 則不顯示標題列 */
+  /** 區段標題（例如成員名稱或「共用資料」）。傳 undefined 則不顯示標題列 */
   label?: string;
   pages: NavPage[];
 }
