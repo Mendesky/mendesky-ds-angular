@@ -2,9 +2,6 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BadgeComponent } from './badge.component';
 
 /**
- * DS 契約測試（套件側）。與 mendesky-web 的同名 spec 是同一份契約的兩份拷貝，
- * 改行為時兩邊一起改（見 ds-angular README「Spec 政策」）。
- *
  * app-badge 是未讀徽章：疊在宿主元素右上角，表示「有未讀」或「未讀幾則」。
  * 語意上不是錯誤也不是警告，所以底色用 --badge/unread，不借用 --button/error。
  */

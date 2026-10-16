@@ -52,6 +52,45 @@ class AsyncContentHostComponent {
   showButton = false;
 }
 
+/** 搜尋框下拉情境：錨點是輸入框、打開選單時使用者還在打字。autoFocusFirst 控制要不要把焦點搶進選單。 */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent],
+  template: `
+    <div class="anchor-container">
+      <input #typingInput data-testid="typing-input">
+      @if (open) {
+        <app-action-menu [anchorEl]="typingInput" [autoFocusFirst]="autoFocusFirst">
+          <button type="button" data-testid="menu-item">item</button>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class InputAnchoredHostComponent {
+  open = false;
+  autoFocusFirst = true;
+}
+
+/** 同上但完全不綁 autoFocusFirst——驗 DS 的預設值本身 */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent],
+  template: `
+    <div class="anchor-container">
+      <input #typingInput data-testid="typing-input">
+      @if (open) {
+        <app-action-menu [anchorEl]="typingInput">
+          <button type="button" data-testid="menu-item">item</button>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class InputAnchoredDefaultHostComponent {
+  open = false;
+}
+
 describe('ActionMenuComponent — portal 到 document.body', () => {
   afterEach(() => {
     // ngOnDestroy 會把搬到 body 的 host 移除；保險再清一次殘留
@@ -117,5 +156,37 @@ describe('ActionMenuComponent — portal 到 document.body', () => {
 
     expect(reachedDocument).toBeFalse();
     fixture.destroy();
+  });
+
+  describe('#3 autoFocusFirst：打開時要不要把焦點移進選單', () => {
+    /** autoFocusFirst = null → 用完全不綁 input 的 host，驗 DS 預設值 */
+    async function openFromFocusedInput(autoFocusFirst: boolean | null) {
+      const fixture = autoFocusFirst === null
+        ? TestBed.createComponent(InputAnchoredDefaultHostComponent)
+        : TestBed.createComponent(InputAnchoredHostComponent);
+      fixture.detectChanges();
+      const input = fixture.nativeElement.querySelector('[data-testid="typing-input"]') as HTMLInputElement;
+      input.focus();
+      if (autoFocusFirst !== null) (fixture.componentInstance as InputAnchoredHostComponent).autoFocusFirst = autoFocusFirst;
+      fixture.componentInstance.open = true;
+      fixture.detectChanges();
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      await new Promise<void>(r => setTimeout(r, 0));
+      return { fixture, input, item: document.querySelector('[data-testid="menu-item"]') };
+    }
+
+    it('預設（不設定）：焦點移到第一個選項（既有行為不變）', async () => {
+      const { fixture, item } = await openFromFocusedInput(null);
+      expect(item).not.toBeNull();
+      expect(document.activeElement).toBe(item);
+      fixture.destroy();
+    });
+
+    it('autoFocusFirst=false：焦點留在原本的輸入框，使用者可以繼續打字', async () => {
+      const { fixture, input, item } = await openFromFocusedInput(false);
+      expect(item).not.toBeNull();
+      expect(document.activeElement).toBe(input);
+      fixture.destroy();
+    });
   });
 });
