@@ -10,10 +10,10 @@ import {
   type ToastType,
 } from '../../../../index';
 
-// 範例訊息取自 dashboard-app 主線 ToastService.show() 的實際呼叫：
+// 範例訊息：
 // - success「已開始下載」、error「下載失敗，請稍後再試」
-// - loading「訪談表生成中」（client-view-modal / handover-share-viewer）
-// - 含復原：「已匯入主要公司資料」＋「復原」（import-main-client-btn）
+// - loading「文件產生中」
+// - 含復原：「已匯入範本資料」＋「復原」
 //
 // toast-container 沒有任何 @Input，內容全來自 ToastService。為了讓範例一打開就看得到 toast、
 // 也能用 Controls 調整，下面放一個只在範例頁使用的小元件：它 inject 同一個 ToastService，
@@ -65,7 +65,7 @@ class ToastPreviewComponent implements OnChanges, OnDestroy {
   showUndo(): void {
     const id = this.toast.show({
       type: 'success',
-      message: '已匯入主要公司資料',
+      message: '已匯入範本資料',
       action: {
         label: '復原',
         onClick: () => {
@@ -163,7 +163,7 @@ export const Stacked: Story = {
       toasts: [
         { type: 'success', message: '已開始下載' },
         { type: 'error', message: '下載失敗，請稍後再試' },
-        { type: 'loading', message: '訪談表生成中' },
+        { type: 'loading', message: '文件產生中' },
       ] satisfies ToastInput[],
     },
     template: `<story-toast-preview [toasts]="toasts"></story-toast-preview>`,
@@ -178,7 +178,7 @@ export const WithUndo: Story = {
   render: () => ({
     props: {
       toasts: [
-        { type: 'success', message: '已匯入主要公司資料', action: { label: '復原', onClick: action('復原') } },
+        { type: 'success', message: '已匯入範本資料', action: { label: '復原', onClick: action('復原') } },
       ] satisfies ToastInput[],
     },
     template: `<story-toast-preview [toasts]="toasts"></story-toast-preview>`,

@@ -3,11 +3,11 @@ import { IconComponent, TooltipDirective } from '../../../../index';
 import { tooltipDirectiveDoc } from './tooltip.docs';
 
 // 範例文字來源：
-// - 「編輯報價案件」：dashboard-app 主線 case-view-modal（appTooltipDirection="bottom"）
-// - 「回報問題」：dashboard-app 主線 header 的回報問題鈕（appTooltipDirection="left"）
+// - 「編輯項目」：檢視視窗右上角的編輯 icon 按鈕（appTooltipDirection="bottom"）
+// - 「回報問題」：頁首的回報問題 icon 按鈕（appTooltipDirection="left"）
 // - 「此欄位為必填」：tooltip.docs.ts 的警告樣式範例
 // - 截斷與長檔名：tooltip.directive.spec.ts 的 fixture
-// - grey 樣式在主線用於「欄位停用原因」，原因文字由資料決定，這裡用中性佔位文字
+// - grey 樣式常用於「欄位停用原因」，原因文字由資料決定，這裡用中性佔位文字
 
 /** directive 沒有元件可放進 meta.component，Controls 直接對應 directive 的 @Input */
 interface TooltipArgs {
@@ -18,7 +18,7 @@ interface TooltipArgs {
   appTooltipWrap: boolean;
 }
 
-// 觸發元素：比照主線的 icon 按鈕（hover 或 Tab 聚焦後 300ms 顯示）
+// 觸發元素：一般的 icon 按鈕（hover 或 Tab 聚焦後 300ms 顯示）
 const TRIGGER_STYLE =
   'display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;' +
   'border:1px solid #d9d9d9;border-radius:6px;background:#fff;color:#686868;cursor:pointer;';
@@ -67,7 +67,7 @@ type Story = StoryObj<TooltipArgs>;
 export const Default: Story = {
   name: '基本用法',
   args: {
-    appTooltip: '編輯報價案件',
+    appTooltip: '編輯項目',
     appTooltipDirection: 'bottom',
     appTooltipStyle: 'default',
     appTooltipOnlyWhenTruncated: false,
@@ -79,7 +79,7 @@ export const Default: Story = {
       <div style="display:flex;justify-content:center;padding:56px 24px;">
         <button
           type="button"
-          aria-label="編輯報價案件"
+          aria-label="編輯項目"
           style="${TRIGGER_STYLE}"
           [appTooltip]="appTooltip"
           [appTooltipDirection]="appTooltipDirection"
@@ -124,7 +124,7 @@ export const Styles: Story = {
   render: () => ({
     template: `
       <div style="display:flex;gap:48px;justify-content:center;flex-wrap:wrap;padding:56px 24px;font-size:14px;color:#3e3e3e;">
-        <span tabindex="0" appTooltip="編輯報價案件" appTooltipStyle="default">default</span>
+        <span tabindex="0" appTooltip="編輯項目" appTooltipStyle="default">default</span>
         <span tabindex="0" appTooltip="此欄位為必填" appTooltipStyle="warning">warning</span>
         <span tabindex="0" appTooltip="提示文字" appTooltipStyle="grey">grey</span>
       </div>

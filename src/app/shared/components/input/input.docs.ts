@@ -6,7 +6,7 @@ export const inputDoc: ComponentDoc = {
   selector: 'app-input',
   group: '表單元件',
   summary: 'size: S|M|L · placeholder type inputMode sanitize initialValue errorMessage errorPosition: top|bottom · [disabled] [readonly] · (valueChange) (blur)',
-  when: '單行文字輸入。禁止原生 <input>。type=\'password\' 時自動顯示 eye toggle。電話/統編等純數字欄位用 inputMode="numeric" sanitize="digits"。',
+  when: '單行文字輸入。禁止原生 <input>。type=\'password\' 時自動顯示 eye toggle。電話、編號等純數字欄位用 inputMode="numeric" sanitize="digits"。',
   props: [
     {
       name: 'size',
@@ -84,10 +84,10 @@ export const inputDoc: ComponentDoc = {
   usage: [
     {
       label: '搭配 app-field 提供標題與必填標示',
-      code: `<app-field label="案件名稱" [required]="true">
+      code: `<app-field label="項目名稱" [required]="true">
   <app-input
     size="L"
-    placeholder="請輸入案件名稱"
+    placeholder="請輸入項目名稱"
     [errorMessage]="form.nameError"
     (valueChange)="onNameChange($event)"
   ></app-input>

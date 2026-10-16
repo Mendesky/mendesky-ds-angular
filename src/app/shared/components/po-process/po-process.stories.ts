@@ -39,7 +39,7 @@ export const Success: Story = {
   name: '成功',
   args: {
     status: 'Success',
-    message: '成功！案件已完成',
+    message: '成功！項目已完成',
   },
 };
 
@@ -52,10 +52,10 @@ export const Error: Story = {
 };
 
 export const Congratulation: Story = {
-  name: '恭喜成交',
+  name: '恭喜完成',
   args: {
     status: 'Congratulation',
-    message: '恭喜！案件已成交',
+    message: '恭喜！申請已送出',
   },
 };
 
@@ -70,7 +70,7 @@ export const AllStatuses: Story = {
         </div>
         <div style="flex:1; min-width:200px;">
           <p style="font-size:12px;color:#686868;margin-bottom:8px;">Success</p>
-          <app-po-process status="Success" message="成功！案件已完成"></app-po-process>
+          <app-po-process status="Success" message="成功！項目已完成"></app-po-process>
         </div>
         <div style="flex:1; min-width:200px;">
           <p style="font-size:12px;color:#686868;margin-bottom:8px;">Error</p>
@@ -78,7 +78,7 @@ export const AllStatuses: Story = {
         </div>
         <div style="flex:1; min-width:200px;">
           <p style="font-size:12px;color:#686868;margin-bottom:8px;">Congratulation</p>
-          <app-po-process status="Congratulation" message="恭喜！案件已成交"></app-po-process>
+          <app-po-process status="Congratulation" message="恭喜！申請已送出"></app-po-process>
         </div>
       </div>
     `,

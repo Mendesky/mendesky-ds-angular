@@ -5,7 +5,7 @@ import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive'
 
 // 錯誤狀態一致化（2026-07-08 使用者定案）：errorMessage 有值 → appErrorTooltip（既有）+ 紅色框線
 // （--error class，border 用 --border/error，與 app-input 錯誤框線同 token）。
-// 所有複用處（wizard / HDM / client-edit / p1 / closed-deal）自動獲得同一視覺。
+// 所有使用處（wizard、多頁 modal、編輯表單等）自動獲得同一視覺。
 describe('UploadDropzoneComponent — 錯誤狀態（紅框 + tooltip）', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({ imports: [UploadDropzoneComponent] }).compileComponents();
@@ -19,7 +19,7 @@ describe('UploadDropzoneComponent — 錯誤狀態（紅框 + tooltip）', () =>
   }
 
   it('errorMessage 有值 → dropzone 帶 --error class（紅色框線）', () => {
-    expect(createZone('請至少上傳一份報價單原檔').classList.contains('upload-dropzone--error')).toBeTrue();
+    expect(createZone('請至少上傳一份原始檔案').classList.contains('upload-dropzone--error')).toBeTrue();
   });
 
   it('errorMessage 空字串 → 無 --error class', () => {
@@ -35,7 +35,7 @@ describe('UploadDropzoneComponent — 錯誤提示位置', () => {
 
   function tooltipPosition(set?: (c: UploadDropzoneComponent) => void): 'top' | 'bottom' {
     const fixture = TestBed.createComponent(UploadDropzoneComponent);
-    fixture.componentInstance.errorMessage = '請至少上傳一份報價單原檔';
+    fixture.componentInstance.errorMessage = '請至少上傳一份原始檔案';
     set?.(fixture.componentInstance);
     fixture.detectChanges();
     const host = fixture.debugElement.query(By.directive(ErrorTooltipDirective));

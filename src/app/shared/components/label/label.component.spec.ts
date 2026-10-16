@@ -25,14 +25,14 @@ describe('LabelComponent', () => {
 
   it('wrap=true 的 label 實際 computed white-space 不是 nowrap（外框換行修正）', () => {
     component.wrap = true;
-    component.text = '客戶同時諮詢114年財稅簽服務及115起財稅簽+記帳，但客戶覺得嘉威比較專業。';
+    component.text = '使用者回饋：希望下個版本能支援批次匯入與匯出，並保留目前設定好的篩選條件。';
     fixture.detectChanges();
     const labelEl = fixture.nativeElement.querySelector('.label') as HTMLElement;
     expect(getComputedStyle(labelEl).whiteSpace).not.toBe('nowrap');
   });
 });
 
-describe('LabelComponent — 報價類型 variant（Purple / GreenOutline）', () => {
+describe('LabelComponent — 類別標示 variant（Purple / GreenOutline）', () => {
   let fixture: ComponentFixture<LabelComponent>;
   let component: LabelComponent;
 
@@ -62,7 +62,7 @@ describe('LabelComponent — 報價類型 variant（Purple / GreenOutline）', (
   it('GreenOutline 的字重 600 由 DS 這一格提供，不需呼叫端補', () => {
     component.color = 'GreenOutline';
     component.size = 'S';
-    component.text = '所客';
+    component.text = '精選';
     fixture.detectChanges();
     const textEl = fixture.nativeElement.querySelector('.label__text') as HTMLElement;
     expect(getComputedStyle(textEl).fontWeight).toBe('600');
@@ -70,7 +70,7 @@ describe('LabelComponent — 報價類型 variant（Purple / GreenOutline）', (
 
   it('GreenOutline 框與字同色（#5a8c2c）', () => {
     component.color = 'GreenOutline';
-    component.text = '所客';
+    component.text = '精選';
     fixture.detectChanges();
     const labelEl = fixture.nativeElement.querySelector('.label') as HTMLElement;
     const textEl = fixture.nativeElement.querySelector('.label__text') as HTMLElement;

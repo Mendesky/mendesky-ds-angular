@@ -6,7 +6,7 @@ export const docPreviewDoc: ComponentDoc = {
   selector: 'app-doc-preview',
   group: '浮層元件',
   summary: 'docs: DocPreviewItem[]（必填）· startIndex · (closed) · PDF 走 pdfjs 渲染、其餘走圖片 · ESC 關閉 · 納入 ModalStackService',
-  when: '預覽已上傳的附件（訪談表檔案、報價附件）。可傳多份，元件自帶前後切換。PDF 與圖片可混在同一份清單，元件依 mimeType 或副檔名自行分派渲染方式。不負責下載或刪除，那些由呼叫端的清單元件處理。',
+  when: '預覽已上傳的附件（表單檔案、掃描文件）。可傳多份，元件自帶前後切換。PDF 與圖片可混在同一份清單，元件依 mimeType 或副檔名自行分派渲染方式。不負責下載或刪除，那些由呼叫端的清單元件處理。',
   props: [
     {
       name: 'docs',
@@ -51,7 +51,7 @@ export const docPreviewDoc: ComponentDoc = {
   notes: [
     {
       type: 'info',
-      content: 'z-index 2000。低於 app-toast-container 的 2100（2026-08-13 定案：預覽開著時的操作回饋必須看得到），低於 tooltip 與 global-api-error-host 的 9999。',
+      content: 'z-index 2000。低於 app-toast-container 的 2100（2026-08-13 定案：預覽開著時的操作回饋必須看得到），低於 tooltip 與使用端全域 API 錯誤浮層的 9999。',
     },
     {
       type: 'warning',

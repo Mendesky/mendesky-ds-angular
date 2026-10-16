@@ -9,16 +9,7 @@ import { IconComponent } from '../icon/icon.component';
 import { TooltipsComponent } from '../tooltips/tooltips.component';
 import { SelectComponent, SelectOption } from '../select/select.component';
 import { TemplateVarDef, TemplateVarContext } from '../../models/template-var.model';
-
-const GROUP_LABELS: Record<string, string> = {
-  basic:      '基本資訊',
-  financial:  '財務資訊',
-  accounting: '記帳事務',
-  payroll:    '薪資人力',
-  cashier:    '出納事務',
-  reform:     '整帳事務',
-  settlement: '結算覆核',
-};
+import { TEMPLATE_VAR_GROUPS, TEMPLATE_VAR_CONTEXT_TEXT } from './template-var-panel.tokens';
 
 type CloseReason = 'outside' | 'chipClick' | 'esc' | 'anchorGone' | 'destroy' | 'toggle';
 
@@ -36,31 +27,35 @@ export class TemplateVarPanelComponent implements OnDestroy, OnChanges {
   @Input() headerText = '藍色文字為可套用的範本變數，點擊插入至游標位置。';
   @Output() insert = new EventEmitter<string>();
 
-  /** 公司/方案選擇 contexts（集團案件才傳；空 = 不顯示下拉、行為同現狀） */
+  /** 兩層選擇的 contexts（空 = 不顯示下拉）；只有一個 context 時只顯示第二層 */
   @Input() contexts: TemplateVarContext[] = [];
-  /** 預設選取公司（由 host 依使用點語意算好；見 resolveDefaultContext） */
-  @Input() defaultCaseId?: string;
-  /** 預設選取方案 */
-  @Input() defaultBundleId?: string;
-  /** 使用者切換公司/方案時 emit；host 據此重算 qualified varDefs / variables */
-  @Output() contextChange = new EventEmitter<{ caseId: string; bundleId: string }>();
+  /** 預設選取的 context id（由 host 依使用點語意算好） */
+  @Input() defaultContextId?: string;
+  /** 預設選取的 option id */
+  @Input() defaultOptionId?: string;
+  /** 使用者切換 context / option 時 emit；host 據此重算 varDefs / variables */
+  @Output() contextChange = new EventEmitter<{ contextId: string; optionId: string }>();
 
-  /** 目前選取的公司 caseId */
-  selectedCaseId?: string;
-  /** 目前選取的方案 bundleId */
-  selectedBundleId?: string;
+  /** 兩層選擇器的文字（使用端以 TEMPLATE_VAR_CONTEXT_TEXT 提供） */
+  readonly contextText = inject(TEMPLATE_VAR_CONTEXT_TEXT);
+  private readonly groups = inject(TEMPLATE_VAR_GROUPS);
 
-  get caseOptions(): SelectOption[] {
-    return this.contexts.map((c) => ({ value: c.caseId, label: c.companyName }));
+  /** 目前選取的 context id */
+  selectedContextId?: string;
+  /** 目前選取的 option id */
+  selectedOptionId?: string;
+
+  get contextOptions(): SelectOption[] {
+    return this.contexts.map((c) => ({ value: c.id, label: c.label }));
   }
 
-  get bundleOptions(): SelectOption[] {
-    const ctx = this.contexts.find((c) => c.caseId === this.selectedCaseId);
-    return (ctx?.bundles ?? []).map((b) => ({ value: b.bundleId, label: b.bundleName }));
+  get optionOptions(): SelectOption[] {
+    const ctx = this.contexts.find((c) => c.id === this.selectedContextId);
+    return (ctx?.options ?? []).map((o) => ({ value: o.id, label: o.label }));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['contexts'] || changes['defaultCaseId'] || changes['defaultBundleId']) {
+    if (changes['contexts'] || changes['defaultContextId'] || changes['defaultOptionId']) {
       this._initSelection();
     }
   }
@@ -68,36 +63,36 @@ export class TemplateVarPanelComponent implements OnDestroy, OnChanges {
   /** 依 default 初始化下拉選取（不 emit：host 已為 default context 準備好 varDefs/variables） */
   private _initSelection(): void {
     if (!this.contexts.length) {
-      this.selectedCaseId = undefined;
-      this.selectedBundleId = undefined;
+      this.selectedContextId = undefined;
+      this.selectedOptionId = undefined;
       return;
     }
-    const caseId = this.contexts.find((c) => c.caseId === this.defaultCaseId)?.caseId
-      ?? this.contexts[0].caseId;
-    this.selectedCaseId = caseId;
-    const bundles = this.contexts.find((c) => c.caseId === caseId)?.bundles ?? [];
-    this.selectedBundleId = bundles.some((b) => b.bundleId === this.defaultBundleId)
-      ? this.defaultBundleId
-      : bundles[0]?.bundleId;
+    const contextId = this.contexts.find((c) => c.id === this.defaultContextId)?.id
+      ?? this.contexts[0].id;
+    this.selectedContextId = contextId;
+    const options = this.contexts.find((c) => c.id === contextId)?.options ?? [];
+    this.selectedOptionId = options.some((o) => o.id === this.defaultOptionId)
+      ? this.defaultOptionId
+      : options[0]?.id;
   }
 
-  /** 切公司 → 方案自動落該公司第一個 → emit */
-  onCaseChange(caseId: string): void {
-    this.selectedCaseId = caseId;
-    const bundles = this.contexts.find((c) => c.caseId === caseId)?.bundles ?? [];
-    this.selectedBundleId = bundles[0]?.bundleId;
+  /** 切 context → option 自動落該 context 第一個 → emit */
+  onContextChange(contextId: string): void {
+    this.selectedContextId = contextId;
+    const options = this.contexts.find((c) => c.id === contextId)?.options ?? [];
+    this.selectedOptionId = options[0]?.id;
     this._emitContext();
   }
 
-  /** 切方案 → emit */
-  onBundleChange(bundleId: string): void {
-    this.selectedBundleId = bundleId;
+  /** 切 option → emit */
+  onOptionChange(optionId: string): void {
+    this.selectedOptionId = optionId;
     this._emitContext();
   }
 
   private _emitContext(): void {
-    if (this.selectedCaseId && this.selectedBundleId) {
-      this.contextChange.emit({ caseId: this.selectedCaseId, bundleId: this.selectedBundleId });
+    if (this.selectedContextId && this.selectedOptionId) {
+      this.contextChange.emit({ contextId: this.selectedContextId, optionId: this.selectedOptionId });
     }
     this._scheduleUpdate(); // 清單高度可能變 → 重新定位 portal 面板
   }
@@ -132,8 +127,8 @@ export class TemplateVarPanelComponent implements OnDestroy, OnChanges {
     const target = e.target as Node;
     if (this._panelEl?.contains(target))  return; // click inside panel
     if (this._anchorEl?.contains(target)) return; // click on trigger (toggle handles it)
-    // 公司/方案下拉（app-select）的選項清單 portal 到 body、是本面板的兄弟節點，
-    // 點選項不算「點面板外」——否則選方案就會誤關整個變數面板（閃退）。
+    // 兩層 context 下拉（app-select）的選項清單 portal 到 body、是本面板的兄弟節點，
+    // 點選項不算「點面板外」——否則選 option 就會誤關整個變數面板（閃退）。
     if (target instanceof Element && target.closest('app-select-panel')) return;
     this.closePanel('outside');
   };
@@ -172,10 +167,13 @@ export class TemplateVarPanelComponent implements OnDestroy, OnChanges {
       map[def.group].push(def);
     }
 
-    const order = ['basic', 'financial', 'accounting', 'payroll', 'cashier', 'reform', 'settlement'];
-    return order
-      .filter(g => map[g]?.length > 0)
-      .map(g => ({ group: g, label: GROUP_LABELS[g] ?? g, defs: map[g] }));
+    // 使用端有提供分組 → 只顯示清單內的分組、照清單順序；沒提供 → 依出現順序顯示全部
+    if (this.groups.length) {
+      return this.groups
+        .filter(g => map[g.key]?.length > 0)
+        .map(g => ({ group: g.key, label: g.label, defs: map[g.key] }));
+    }
+    return Object.keys(map).map(g => ({ group: g, label: g, defs: map[g] }));
   }
 
   varSyntax(key: string): string { return `%${key}%`; }

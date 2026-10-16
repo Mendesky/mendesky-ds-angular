@@ -52,7 +52,7 @@ export class CheckboxComponent implements ControlValueAccessor {
   @Input() size: CheckboxSize = 'm';
   /** 框右邊的文字；點文字也算點勾選框。可省略 */
   @Input() label = '';
-  /** 沒有 label 時一定要給，讀螢幕軟體才唸得出這是什麼（例：「報價案件管理 整組檢視」） */
+  /** 沒有 label 時一定要給，讀螢幕軟體才唸得出這是什麼（例：「使用者管理 整組檢視」） */
   @Input() ariaLabel = '';
   /** Template 直接 disable；與 ngModel 一起用時 setDisabledState 不會觸發，比照 check-chip 補這個入口 */
   @Input() set disabled(d: boolean) { this.isDisabled = !!d; }

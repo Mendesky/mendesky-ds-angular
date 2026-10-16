@@ -19,17 +19,16 @@ export interface ToastItem extends ToastInput {
 }
 
 /**
- * 型別決定自動消失時長（2026-07-27 使用者拍板：**成功 3 秒 / 失敗 5 秒**）：
+ * 型別決定自動消失時長（**成功 3 秒 / 失敗 5 秒**）：
  * `error` → 5000、有 `action`（undo 視窗）→ 5000、其餘（success / loading）→ 3000。
  * 呼叫端顯式帶 `duration` 一律優先。
  *
  * `show()` 與 `update()` **共用**此函式：`update()` 會改 type（loading→error 轉場），
  * 若只有 `show()` 套規則，轉場後的 error toast 會只停 3 秒。
  *
- * 先前 error 的 5000ms 是靠每個呼叫點手打 `duration: 5000`，漏帶就退回 3000；升為預設後那些
- * 手打值成為冗餘並已清除（實測 22 處：18 為 error＝純冗餘、4 為 success＝原本刻意設 5 秒，
- * 依「成功 3 秒」政策一併 normalise）。唯一保留顯式值的是 `global-api-error-host`——它不走本容器
- * （自有 z-index 9999 層），顯式帶值是正確的自我文件化。
+ * 時長由這裡統一決定，呼叫點不必再手打 `duration: 5000`（手打容易漏帶，漏帶就退回 3000）。
+ * 只有不走本容器的浮層（例如使用端自己的全域 API 錯誤浮層，自有 z-index 9999 層）才需要
+ * 顯式帶值，那是正確的自我文件化。
  */
 function resolveDuration(item: Pick<ToastInput, 'duration' | 'type' | 'action'>): number {
   if (item.duration !== undefined) return item.duration;

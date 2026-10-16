@@ -18,11 +18,11 @@ describe('EmptyStateComponent', () => {
     });
 
     it('給 message → 顯示文字', () => {
-      component.message = '查無符合的報價案件';
+      component.message = '查無符合的項目';
       fixture.detectChanges();
       const p = fixture.debugElement.query(By.css('.es-message'));
       expect(p).toBeTruthy();
-      expect(p.nativeElement.textContent).toContain('查無符合的報價案件');
+      expect(p.nativeElement.textContent).toContain('查無符合的項目');
     });
 
     it('message 為空字串 → 不顯示 .es-message', () => {

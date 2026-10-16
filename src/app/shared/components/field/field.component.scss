@@ -11,7 +11,7 @@
   gap: 6px;
   /* 放不下就換行，不要壓縮標籤文字。中文可逐字斷行 → 文字的 min-content 只有 1 個字寬，
      flex 因此能把 label / hint 壓成「一字一行」而不溢出（瀏覽器視為合法收縮）。
-     實例：HDM「營業稅申報類型」label + hint 旁有長按鈕（field-action）時被壓成 4 行
+     實例：某表單欄位的 label + hint 旁有長按鈕（field-action）時被壓成 4 行
      （2026-07-25 真機回報；Karma 量到 labelH 78.4px＝19.6×4）。
      flex-wrap 讓 field-action 整塊換到下一行（margin-left:auto 使其仍靠右，與桌機一致）。 */
   flex-wrap: wrap;

@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from 
 import { IconComponent } from '../icon/icon.component';
 
 /**
- * 共用 Modal 關閉鈕。視覺對齊 new-case-wizard 的 .wiz-close-btn：
+ * 共用 Modal 關閉鈕。視覺對齊 wizard 的關閉鈕：
  * transparent 底、無邊框、4px 小圓角、grey hover、No-X-Cancel icon（16）。
  * 放進各 modal 自己的 header，關閉決策交 parent：`(closeClick)="requestClose()"`。
  */
@@ -15,7 +15,7 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalCloseBtnComponent {
-  /** 無障礙標籤；情境特定可覆寫（如「關閉酬金拆分」），預設「關閉」 */
+  /** 無障礙標籤；情境特定可覆寫（如「關閉費用設定」），預設「關閉」 */
   @Input() ariaLabel = '關閉';
   /** 停用（如 saving 中不可關） */
   @Input() disabled = false;

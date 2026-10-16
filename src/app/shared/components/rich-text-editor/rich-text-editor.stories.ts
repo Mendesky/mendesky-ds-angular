@@ -1,19 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { ProseMirrorJSON, RichTextEditorComponent, RichTextEditorTool } from '../../../../index';
 
-// 範例內容一律取自 dashboard-app 主線（Github/main）的實際用法與 spec fixture，不自行編寫：
-// - 客戶狀況文件（標題／清單／粗斜刪底線／文字顏色）：
-//     src/app/features/quoting-cases/services/situation-markdown.spec.ts
-// - 酬金補充文件（標題＋清單＋含 rowspan 的表格）：
-//     src/app/features/quoting-cases/services/fee-supplement-serializer.spec.ts
-//     （原 fixture 內的 templateVariable / imageAsset 節點屬於 wrapper 注入的 extension，base 不認得，已拿掉）
-// - 服務內容清單：p2-custom-wizard.component.spec.ts（「每月帳務」）
-// - placeholder 與 hiddenTools：
-//     P4-4 客戶狀況卡 p4-4-customer-situation-card.component.ts、
-//     P2 服務內容 p2-item-card.component.ts（contentHiddenTools）、
-//     回報問題 issue-report-dialog.component.html
+// 範例內容是中性的示意文字，用來展示各種格式（標題／清單／行內格式／文字顏色／含 rowspan 的表格）
+// 與工具列組合。templateVariable / imageAsset 這類節點屬於 wrapper 注入的 extension，base 不認得，範例不放。
 
-/** P4-4「未來預期及追蹤事項」：標題 + 項目符號 + 編號列表 */
+/** 標題 + 項目符號 + 編號列表 */
 const situationDoc: ProseMirrorJSON = {
   type: 'doc',
   content: [
@@ -21,13 +12,13 @@ const situationDoc: ProseMirrorJSON = {
     {
       type: 'bulletList',
       content: [
-        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '增資' }] }] },
+        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '確認上線時程' }] }] },
       ],
     },
     {
       type: 'orderedList',
       content: [
-        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '廢棄物申報' }] }] },
+        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '整理需求清單' }] }] },
       ],
     },
   ],
@@ -51,23 +42,23 @@ const formattedDoc: ProseMirrorJSON = {
   ],
 };
 
-/** 酬金補充：標題 + 清單 + 含 rowspan 的表格 */
-const feeSupplementDoc: ProseMirrorJSON = {
+/** 標題 + 清單 + 含 rowspan 的表格 */
+const tableDoc: ProseMirrorJSON = {
   type: 'doc',
   content: [
-    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '酬金說明' }] },
+    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '費用說明' }] },
     {
       type: 'bulletList',
       content: [
         {
           type: 'listItem',
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: '財務簽證', marks: [{ type: 'bold' }] }] }],
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: '基本版', marks: [{ type: 'bold' }] }] }],
         },
         {
           type: 'listItem',
           content: [{
             type: 'paragraph',
-            content: [{ type: 'text', text: '稅務簽證', marks: [{ type: 'textStyle', attrs: { color: '#cc5252' } }] }],
+            content: [{ type: 'text', text: '進階版', marks: [{ type: 'textStyle', attrs: { color: '#cc5252' } }] }],
           }],
         },
       ],
@@ -78,23 +69,23 @@ const feeSupplementDoc: ProseMirrorJSON = {
         {
           type: 'tableRow',
           content: [
-            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '年度' }] }] },
-            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '簽證' }] }] },
-            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '報價' }] }] },
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '規模' }] }] },
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '項目' }] }] },
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '金額' }] }] },
           ],
         },
         {
           type: 'tableRow',
           content: [
-            { type: 'tableCell', attrs: { rowspan: 2 }, content: [{ type: 'paragraph', content: [{ type: 'text', text: '5億' }] }] },
-            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '財簽' }] }] },
+            { type: 'tableCell', attrs: { rowspan: 2 }, content: [{ type: 'paragraph', content: [{ type: 'text', text: '大型' }] }] },
+            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '設計' }] }] },
             { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '130000' }] }] },
           ],
         },
         {
           type: 'tableRow',
           content: [
-            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '稅簽' }] }] },
+            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '開發' }] }] },
             { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '160000' }] }] },
           ],
         },
@@ -103,26 +94,26 @@ const feeSupplementDoc: ProseMirrorJSON = {
   ],
 };
 
-/** P2 服務內容：只有項目符號 */
+/** 只有項目符號 */
 const serviceContentDoc: ProseMirrorJSON = {
   type: 'doc',
   content: [{
     type: 'bulletList',
     content: [
-      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '每月帳務' }] }] },
+      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '每月例行維護' }] }] },
     ],
   }],
 };
 
-const P4_4_TRACKING_PLACEHOLDER =
-  '請輸入未來預期及追蹤事項，公司的發展方向、潛在的風險、以及需要進一步確認的問題，如：未來會有工廠（目前還在確認地點）、老闆有 3 個已成年的小孩、今年上市櫃公司預計增資 3,000 萬…目前尚有未報價部分 1.廢棄物容積申報 2.先進後退(進出口貿易)…';
-const P4_4_BACKGROUND_PLACEHOLDER =
-  '請輸入客戶背景概況，如：以生鮮食品為主的電商公司、主要業務為B2C，需要處理商品的進貨、銷售、庫存等相關事宜…';
-const P2_SERVICE_PLACEHOLDER = '說明此服務項目的內容，會顯示在報價單與公費合約的服務範圍';
+const TRACKING_PLACEHOLDER =
+  '請輸入未來預期及追蹤事項，例如後續的發展方向、潛在的風險、以及需要進一步確認的問題：下一季預計擴編團隊、新據點還在確認地點…目前尚待確認的部分 1.上線時程 2.預算上限…';
+const BACKGROUND_PLACEHOLDER =
+  '請輸入背景說明，例如：以生鮮食品為主的電商公司、主要業務為 B2C，需要處理商品的進貨、銷售、庫存等相關事宜…';
+const LIST_PLACEHOLDER = '列出這個項目包含的內容，會顯示在匯出的文件裡';
 
 const ALL_TOOLS: RichTextEditorTool[] = ['heading', 'bold', 'italic', 'strike', 'underline', 'color', 'table'];
-/** P2 服務內容的 contentHiddenTools：只留清單 */
-const P2_CONTENT_HIDDEN_TOOLS: RichTextEditorTool[] = ['heading', 'bold', 'italic', 'strike', 'underline', 'color', 'table'];
+/** 只留清單的 hiddenTools */
+const LIST_ONLY_HIDDEN_TOOLS: RichTextEditorTool[] = ['heading', 'bold', 'italic', 'strike', 'underline', 'color', 'table'];
 
 const meta: Meta<RichTextEditorComponent> = {
   title: '表單元件/Rich Text Editor',
@@ -163,7 +154,7 @@ const meta: Meta<RichTextEditorComponent> = {
   },
   args: {
     value: situationDoc,
-    placeholder: P4_4_TRACKING_PLACEHOLDER,
+    placeholder: TRACKING_PLACEHOLDER,
     readOnly: false,
     hiddenTools: [],
     tableStructureEditing: false,
@@ -199,7 +190,7 @@ const meta: Meta<RichTextEditorComponent> = {
       source: {
         code: `<app-rich-text-editor
   [value]="situationDoc"
-  placeholder="請輸入客戶背景概況…"
+  placeholder="請輸入背景說明…"
   [readOnly]="readOnly"
   (valueChange)="onSituationChange($event)"
   (composedBlur)="onBlur()">
@@ -209,28 +200,27 @@ const meta: Meta<RichTextEditorComponent> = {
   },
 };
 
-/** 變體的程式碼範例（取自 dashboard-app 實際用法） */
+/** 變體的程式碼範例 */
 const sourceOf = (code: string) => ({ docs: { source: { code } } });
 
 export default meta;
 type Story = StoryObj<RichTextEditorComponent>;
 
-// ── 主範例：P4-4 客戶狀況（未來預期及追蹤事項）───────────────────
+// ── 主範例：標題＋清單的一般段落 ─────────────────────────────────
 export const Default: Story = {
-  name: '預設（客戶狀況段落）',
+  name: '預設（一般段落）',
 };
 
 // ── 空白：顯示佔位文字 ───────────────────────────────────────────
 export const Empty: Story = {
   name: '空白（顯示佔位文字）',
-  args: { value: null, placeholder: P4_4_BACKGROUND_PLACEHOLDER },
+  args: { value: null, placeholder: BACKGROUND_PLACEHOLDER },
 };
 
 // ── 唯讀檢視 ─────────────────────────────────────────────────────
 export const ReadOnly: Story = {
-  name: '唯讀（客戶檢視頁）',
+  name: '唯讀（檢視頁）',
   args: { value: formattedDoc, readOnly: true },
-  // client-view-modal view-tab4
   parameters: sourceOf(`<app-rich-text-editor
   [readOnly]="true"
   [value]="section.doc">
@@ -241,7 +231,6 @@ export const ReadOnly: Story = {
 export const IssueReport: Story = {
   name: '隱藏底線／顏色／表格（回報問題）',
   args: { value: null, placeholder: '請詳細描述問題', hiddenTools: ['underline', 'color', 'table'] },
-  // issue-report-dialog
   parameters: sourceOf(`<app-rich-text-editor
   [value]="descriptionDoc()"
   placeholder="請詳細描述問題"
@@ -252,25 +241,24 @@ export const IssueReport: Story = {
 </app-rich-text-editor>`),
 };
 
-// ── 只留清單：P2 服務內容 ────────────────────────────────────────
+// ── 只留清單 ─────────────────────────────────────────────────────
 export const ListOnly: Story = {
-  name: '只留清單工具（服務內容）',
-  args: { value: serviceContentDoc, placeholder: P2_SERVICE_PLACEHOLDER, hiddenTools: P2_CONTENT_HIDDEN_TOOLS },
-  // p2-item-card（contentHiddenTools = ['heading', 'bold', 'italic', 'strike', 'underline', 'color', 'table']）
+  name: '只留清單工具',
+  args: { value: serviceContentDoc, placeholder: LIST_PLACEHOLDER, hiddenTools: LIST_ONLY_HIDDEN_TOOLS },
   parameters: sourceOf(`<app-rich-text-editor
   [value]="serviceContentDoc()"
-  placeholder="說明此服務項目的內容，會顯示在報價單與公費合約的服務範圍"
+  placeholder="列出這個項目包含的內容，會顯示在匯出的文件裡"
   [hiddenTools]="contentHiddenTools"
   (valueChange)="onServiceContentInput($event)"
   (composedBlur)="onServiceContentBlur()">
 </app-rich-text-editor>`),
 };
 
-// ── 表格結構編輯：酬金補充 ───────────────────────────────────────
+// ── 表格結構編輯 ─────────────────────────────────────────────────
 export const TableStructureEditing: Story = {
-  name: '表格結構編輯（酬金補充）',
-  args: { value: feeSupplementDoc, placeholder: '', tableStructureEditing: true },
-  // fee-supplement-editor（base 部分）
+  name: '表格結構編輯',
+  args: { value: tableDoc, placeholder: '', tableStructureEditing: true },
+  // 包在 wrapper 內使用時的 base 部分
   parameters: sourceOf(`<app-rich-text-editor
   [value]="draft?.docJson ?? null"
   [placeholder]="placeholder"

@@ -2,65 +2,65 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { ButtonComponent, NavPage, NavSection, StepperComponent } from '../../../../index';
 
 // ── 範例資料 ───────────────────────────────────────────────
-// 水平步驟：取自 dashboard-app new-case-wizard 的 STEP_LABELS（新客戶、已設立時的步驟順序）
-const WIZARD_STEPS = ['客戶設立現況', '統編查詢', '帳務類型', '基本資料', '業績來源'];
+// 水平步驟：精靈式表單的步驟順序
+const WIZARD_STEPS = ['選擇類型', '身分驗證', '基本資料', '偏好設定', '確認送出'];
 
-// 導覽頁面：取自 dashboard-app case-edit-modal 的 buildNavPages（已設立案件）
-const P1: NavPage = {
-  id: 'p1', num: '1', label: '營運資料',
+// 導覽頁面：多頁 modal 的左側導覽
+const BASIC_PAGE: NavPage = {
+  id: 'basic', num: '1', label: '基本資料',
   subItems: [
-    { id: 'p1-doc', label: '報價依據文件' },
-    { id: 'p1-operation', label: '營運資料' },
-    { id: 'p1-voucher', label: '憑證資料' },
-    { id: 'p1-former', label: '前所服務資料' },
+    { id: 'basic-files', label: '參考文件' },
+    { id: 'basic-profile', label: '個人資料' },
+    { id: 'basic-contact', label: '聯絡方式' },
+    { id: 'basic-history', label: '過往紀錄' },
   ],
 };
-const P2: NavPage = { id: 'p2', num: '2', label: '報價項目' };
-const P4_SUB_ITEMS = [
-  { id: 'p4-1', label: '發文資料' },
-  { id: 'p4-2', label: '目的' },
-  { id: 'p4-3', label: '服務範圍及內容' },
-  { id: 'p4-4', label: '貴公司之協助辦理事項' },
-  { id: 'p4-5', label: '酬金' },
-  { id: 'p4-6', label: '服務備註' },
-  { id: 'p4-7', label: '其它約定事項' },
+const ITEMS_PAGE: NavPage = { id: 'items', num: '2', label: '項目清單' };
+const TERMS_SUB_ITEMS = [
+  { id: 'terms-1', label: '發送資訊' },
+  { id: 'terms-2', label: '目的' },
+  { id: 'terms-3', label: '範圍及內容' },
+  { id: 'terms-4', label: '需配合事項' },
+  { id: 'terms-5', label: '費用' },
+  { id: 'terms-6', label: '備註' },
+  { id: 'terms-7', label: '其他約定事項' },
 ];
 
-// 單一客戶：第一段標題是客戶名稱（此處用佔位文字），第二段不顯示標題
-const SINGLE_CASE_SECTIONS: NavSection[] = [
-  { label: '客戶名稱', pages: [P1, P2] },
+// 單一成員：第一段標題是成員名稱（此處用佔位文字），第二段不顯示標題
+const SINGLE_MEMBER_SECTIONS: NavSection[] = [
+  { label: '成員名稱', pages: [BASIC_PAGE, ITEMS_PAGE] },
   {
     label: undefined,
     pages: [
-      { id: 'p3', num: '3', label: '報價基本資料' },
-      { id: 'p5', num: '4', label: '信件及同意函' },
-      { id: 'p4', num: '5', label: '公費合約', subItems: P4_SUB_ITEMS },
-      { id: 'p6', num: '6', label: '報價單預覽' },
+      { id: 'settings', num: '3', label: '基本設定' },
+      { id: 'notice', num: '4', label: '通知及同意書' },
+      { id: 'terms', num: '5', label: '條款內容', subItems: TERMS_SUB_ITEMS },
+      { id: 'preview', num: '6', label: '文件預覽' },
     ],
   },
 ];
 
-// 集團案件：每位客戶各自的頁面在第一段，共用資料在「集團報價共用資料」段
-const GROUP_CASE_SECTIONS: NavSection[] = [
-  { label: '客戶名稱', pages: [P1, P2, { id: 'p5', num: '3', label: '信件及同意函' }] },
+// 多位成員：每位成員各自的頁面在第一段，共用資料在「共用資料」段
+const MULTI_MEMBER_SECTIONS: NavSection[] = [
+  { label: '成員名稱', pages: [BASIC_PAGE, ITEMS_PAGE, { id: 'notice', num: '3', label: '通知及同意書' }] },
   {
-    label: '集團報價共用資料',
+    label: '共用資料',
     pages: [
-      { id: 'p3', num: '4', label: '報價基本資料' },
-      { id: 'p4', num: '5', label: '公費合約', subItems: P4_SUB_ITEMS },
-      { id: 'p6', num: '6', label: '報價單預覽' },
+      { id: 'settings', num: '4', label: '基本設定' },
+      { id: 'terms', num: '5', label: '條款內容', subItems: TERMS_SUB_ITEMS },
+      { id: 'preview', num: '6', label: '文件預覽' },
     ],
   },
 ];
 
-// 成交：取自 dashboard-app closed-deal-modal 的 navSections（非集團），只有一段、不顯示標題
-const CLOSED_DEAL_SECTIONS: NavSection[] = [
+// 送出流程：只有一段、不顯示標題
+const SUBMIT_SECTIONS: NavSection[] = [
   {
     pages: [
-      { id: 'consent', num: '1', label: '客戶同意函' },
-      { id: 'company-0', num: '2', label: '酬金' },
-      { id: 'deal-date', num: '3', label: '成交日期' },
-      { id: 'confirm', num: '4', label: '成交前確認' },
+      { id: 'consent', num: '1', label: '同意書' },
+      { id: 'fee', num: '2', label: '費用' },
+      { id: 'submit-date', num: '3', label: '送出日期' },
+      { id: 'confirm', num: '4', label: '送出前確認' },
     ],
   },
 ];
@@ -146,11 +146,11 @@ export const Default: Story = {
     variant: 'horizontal',
     steps: WIZARD_STEPS,
     currentStep: 2,
-    navSections: SINGLE_CASE_SECTIONS,
-    activePage: 'p1-operation',
-    expandedPageIds: ['p1'],
+    navSections: SINGLE_MEMBER_SECTIONS,
+    activePage: 'basic-profile',
+    expandedPageIds: ['basic'],
     lockedPageIds: [],
-    sectionStatuses: { 'p1-doc': 'complete' },
+    sectionStatuses: { 'basic-files': 'complete' },
     validationTriggeredIds: [],
     hideNum: false,
   },
@@ -204,12 +204,12 @@ export const NavWithStatuses: Story = {
   name: '導覽：完成、鎖定與警告',
   render: () => ({
     props: {
-      navSections: SINGLE_CASE_SECTIONS,
-      activePage: 'p1-operation',
-      expandedPageIds: ['p1'],
-      lockedPageIds: ['p4', 'p6'],
-      sectionStatuses: { 'p1-doc': 'complete', p2: 'complete' },
-      validationTriggeredIds: ['p1-voucher', 'p1-former'],
+      navSections: SINGLE_MEMBER_SECTIONS,
+      activePage: 'basic-profile',
+      expandedPageIds: ['basic'],
+      lockedPageIds: ['terms', 'preview'],
+      sectionStatuses: { 'basic-files': 'complete', items: 'complete' },
+      validationTriggeredIds: ['basic-contact', 'basic-history'],
     },
     template: `
       <div style="${NAV_WRAP_STYLE}">
@@ -229,14 +229,14 @@ export const NavWithStatuses: Story = {
   }),
 };
 
-// ── 導覽：集團案件的兩段標題 ───────────────────────────────────
+// ── 導覽：多位成員時的兩段標題 ─────────────────────────────────
 export const NavGroupSections: Story = {
-  name: '導覽：集團區段標題',
+  name: '導覽：兩段區段標題',
   render: () => ({
     props: {
-      navSections: GROUP_CASE_SECTIONS,
-      activePage: 'p4-1',
-      expandedPageIds: ['p4'],
+      navSections: MULTI_MEMBER_SECTIONS,
+      activePage: 'terms-1',
+      expandedPageIds: ['terms'],
     },
     template: `
       <div style="${NAV_WRAP_STYLE}">
@@ -253,15 +253,15 @@ export const NavGroupSections: Story = {
   }),
 };
 
-// ── 導覽：隱藏數字（dashboard-app 成交視窗） ─────────────────────
+// ── 導覽：隱藏數字（送出流程） ─────────────────────────────────
 export const NavHideNum: Story = {
   name: '導覽：隱藏數字',
   render: () => ({
     props: {
-      navSections: CLOSED_DEAL_SECTIONS,
-      activePage: 'company-0',
+      navSections: SUBMIT_SECTIONS,
+      activePage: 'fee',
       sectionStatuses: { consent: 'complete' },
-      validationTriggeredIds: ['deal-date'],
+      validationTriggeredIds: ['submit-date'],
     },
     template: `
       <div style="${NAV_WRAP_STYLE}">

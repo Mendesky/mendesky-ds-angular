@@ -15,13 +15,13 @@ describe('FileListComponent — 檔名與大小顯示', () => {
     (fixture.nativeElement as HTMLElement).textContent ?? '';
 
   it('size > 0 → 顯示「檔名 (大小)」', () => {
-    component.docs = [{ id: 'd1', name: 'a.pdf', size: 2048, type: '結算申報書' }];
+    component.docs = [{ id: 'd1', name: 'a.pdf', size: 2048, type: '企劃書' }];
     fixture.detectChanges();
     expect(renderedText()).toContain('a.pdf (2 KB)');
   });
 
   it('size 為 0（後端列表只回 metadata，無大小）→ 只顯示檔名，不顯示「(0 KB)」', () => {
-    component.docs = [{ id: 'd1', name: 'a.pdf', size: 0, type: '結算申報書' }];
+    component.docs = [{ id: 'd1', name: 'a.pdf', size: 0, type: '企劃書' }];
     fixture.detectChanges();
     const text = renderedText();
     expect(text).toContain('a.pdf');

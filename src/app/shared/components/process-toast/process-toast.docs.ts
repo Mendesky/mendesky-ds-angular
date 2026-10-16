@@ -6,7 +6,7 @@ export const processToastDoc: ComponentDoc = {
   selector: 'app-process-toast',
   group: '浮層元件',
   summary: 'type: success|error|loading · message [duration] · size: S|M · action?: {label,onClick} · (dismissed)',
-  when: '非同步操作的回饋通知。提供 action 時顯示 undo 按鈕（reversibleToast pattern）。loading 型別搭配 ToastService.show({persist:true}) + update(id, patch) 可做「進行中→完成」單一 toast 原地轉場（如列印產 PDF：訪談表生成中→已開始下載）——**update() 僅限這種「同一件事的兩個階段」，不同事件各自一顆、堆疊**（2026-07-27 起；先前 HDM 逐欄存檔誤用 update() 取代，已修正）。渲染一律經全域 `app-toast-container`（掛 app root），元件不自建本地 toast stack；唯一例外是 `app-global-api-error-host`（自有 z-index 9999 層，需壓在 doc-preview 之上）。層級規則（2026-08-13 定案）：`app-toast-container` 為 2100，必須壓過 doc-preview 與 template-var-panel 的 2000 層——否則檔案預覽開啟時的操作回饋會被蓋住看不到（先前為 1600，實際被 doc-preview 蓋住）；`app-global-api-error-host` 與 tooltip portal 維持 9999（API 錯誤與游標提示更優先）。duration 由型別決定、呼叫端不自帶：success/loading 3000ms、error 5000ms、有 action 5000ms。容器內 toast 預設 `pointer-events: none`，僅帶 action 者可點（toast 位於卡片右下角，無條件可點會吃掉數秒點擊）。文案長度上限：success/loading 16 全形寬、error 24、有 action 18（`.toast__msg` 的 line-clamp:2 約在 29 全形寬靜默截斷）；插值長度必須有界，守門用 `npm run check:toast-copy`。',
+  when: '非同步操作的回饋通知。提供 action 時顯示 undo 按鈕（reversibleToast pattern）。loading 型別搭配 ToastService.show({persist:true}) + update(id, patch) 可做「進行中→完成」單一 toast 原地轉場（如匯出 PDF：文件產生中→已開始下載）——**update() 僅限這種「同一件事的兩個階段」，不同事件各自一顆、堆疊**（例如逐欄存檔時，每一欄的存檔結果各自一顆，不要用 update() 互相取代）。渲染一律經全域 `app-toast-container`（掛 app root），元件不自建本地 toast stack；唯一例外是使用端自己的全域 API 錯誤浮層（若有，自有 z-index 9999 層，需壓在 doc-preview 之上）。層級規則（2026-08-13 定案）：`app-toast-container` 為 2100，必須壓過 doc-preview 與 template-var-panel 的 2000 層——否則檔案預覽開啟時的操作回饋會被蓋住看不到（先前為 1600，實際被 doc-preview 蓋住）；全域 API 錯誤浮層與 tooltip portal 維持 9999（API 錯誤與游標提示更優先）。duration 由型別決定、呼叫端不自帶：success/loading 3000ms、error 5000ms、有 action 5000ms。容器內 toast 預設 `pointer-events: none`，僅帶 action 者可點（toast 位於卡片右下角，無條件可點會吃掉數秒點擊）。文案長度：`.toast__msg` 的 line-clamp:2 約在 29 全形寬靜默截斷；各類型的字數上限（例如 success/loading 16 全形寬、error 24、有 action 18）由使用端自訂；插值長度必須有界。',
   props: [
     {
       name: 'type',
@@ -73,7 +73,7 @@ interface ToastAction {
       code: `@if (showToast) {
   <app-process-toast
     type="success"
-    message="案件已成功建立"
+    message="項目已成功建立"
     [duration]="3000"
     (dismissed)="showToast = false"
   ></app-process-toast>

@@ -69,8 +69,8 @@ export const numberListDoc: ComponentDoc = {
       code: `<app-number-list
   size="S"
   background="grey10"
-  label="發票"
-  text="使用發票份數"
+  label="簡報"
+  text="季度簡報.pdf"
   number1="1,234"
   [actions]="['download', 'delete']"
   (actionClick)="onAction($event)"
@@ -80,7 +80,7 @@ export const numberListDoc: ComponentDoc = {
   notes: [
     {
       type: 'info',
-      content: '**條件式 tooltip 已恢復**（2026-10-13，DS `dev/clientDocument`）：label 與 text 掛 `[appTooltip]` ＋ `[appTooltipOnlyWhenTruncated]`（只在真的被截斷時顯示、才給 `tabindex=0`）＋ `[appTooltipWrap]`（tooltip 文字最寬 520px 換行）。2026-08-18 撤除的那一版改在元件內部量測；這版把量測放進 tooltip directive，其他截斷文字元件也能直接用。消費端**不要**再自己對 `.nl-text` 掛 tooltip。',
+      content: '**條件式 tooltip 已恢復**（2026-10-13）：label 與 text 掛 `[appTooltip]` ＋ `[appTooltipOnlyWhenTruncated]`（只在真的被截斷時顯示、才給 `tabindex=0`）＋ `[appTooltipWrap]`（tooltip 文字最寬 520px 換行）。2026-08-18 撤除的那一版改在元件內部量測；這版把量測放進 tooltip directive，其他截斷文字元件也能直接用。消費端**不要**再自己對 `.nl-text` 掛 tooltip。',
     },
     {
       type: 'info',

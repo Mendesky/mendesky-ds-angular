@@ -173,8 +173,8 @@
 }
 
 /* ── 拖曳落點指示線 ──
-   對應對照組（酬金補充說明）的 ProseMirror Dropcursor。顏色取產品既有的落點指示語彙
-   `--button/action`（p4-5-fee.component.scss:57 的 drag-over-top/bot 用同一個），
+   對應 ProseMirror Dropcursor 的落點線。顏色取既有的落點指示語彙
+   `--button/action`（清單拖曳的 drag-over 指示用同一個），
    粗細 2px：dropcursor 預設 1px 在這個字級偏細，而既有卡片指示是 3px（那是整條邊，不同量級）。
    定位基準是 .te-wrap（本檔開頭已設 position: relative），且 .te-wrap / .te-box / .te-field
    都沒有 overflow → 不會被裁切、不需要 portal 到 body。 */

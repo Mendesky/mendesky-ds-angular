@@ -16,7 +16,7 @@ export interface OptionCardItem {
  * 一組互斥的插圖卡片（WAI-ARIA radiogroup）。負責 radiogroup 語意與方向鍵 roving focus；
  * 各卡視覺與選取互動委派給 app-option-card。
  *
- * 取代散落在 new-case-wizard / client-edit-modal 的手刻 .at-grid + onAtGridKeydown（Three-Location 根本解）。
+ * 取代各處手刻的卡片 grid 與方向鍵 handler，讓同一套互動只維護一份。
  */
 @Component({
   selector: 'app-option-card-group',
@@ -31,7 +31,7 @@ export class OptionCardGroupComponent {
   /** 目前選中的 value */
   @Input() value: string | null = null;
   @Input() ariaLabel = '';
-  /** 額外停用的 value（疊加在 option.disabled 之上，供集團配額等情境） */
+  /** 額外停用的 value（疊加在 option.disabled 之上，供名額已滿等情境） */
   @Input() disabledValues: string[] = [];
 
   @Output() valueChange = new EventEmitter<string>();

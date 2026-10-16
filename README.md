@@ -180,7 +180,7 @@ cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
 本套件**不**自帶字型檔，由消費端在 `index.html` 載入：
 
 - **Noto Sans TC（必載）**：所有文字與一般數字。Noto Sans TC 的數字本身等寬，數字欄位不需另加 `tabular-nums`。
-- **Roboto Mono（用到 `mono-*` class 才需要）**：只用在報價與附加服務的金額。
+- **Roboto Mono（用到 `mono-*` class 才需要）**：用在需要逐位對齊的金額；哪些金額要用它，由使用端規定。
 
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">

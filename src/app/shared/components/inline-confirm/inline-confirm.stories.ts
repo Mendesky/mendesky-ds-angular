@@ -34,8 +34,8 @@ const meta: Meta<InlineConfirmComponent> = {
     },
   },
   args: {
-    label: '請確認事務所已承接客戶帳務帳',
-    checkLabel: '我已確認承接客戶帳務帳',
+    label: '發布前請確認內容已經過審核',
+    checkLabel: '我已確認內容經過審核',
     requirement: 'required',
   },
 };
@@ -44,49 +44,49 @@ export default meta;
 type Story = StoryObj<InlineConfirmComponent>;
 
 export const RequiredPremise: Story = {
-  name: 'Required — 開管理帳前確認（阻塞主按鈕）',
+  name: 'Required — 發布前確認（阻塞主按鈕）',
   render: () => ({
     template: `
       <div style="padding:16px; max-width:520px; display:flex; flex-direction:column; gap:16px;">
         <app-inline-confirm
           requirement="required"
-          label="請確認事務所已承接客戶帳務帳，否則無法開立管理帳。"
-          description="管理帳一旦開立，後續的稅務申報與核對流程將以此為依據。"
-          checkLabel="我已確認承接客戶帳務帳"
-          [(confirmed)]="accounted">
+          label="請確認內容已經過審核，否則無法發布。"
+          description="內容一旦發布，所有成員都會看到這個版本。"
+          checkLabel="我已確認內容經過審核"
+          [(confirmed)]="approved">
         </app-inline-confirm>
         <div style="display:flex; gap:8px;">
-          <app-button text="下一步" [disabled]="!accounted"></app-button>
+          <app-button text="下一步" [disabled]="!approved"></app-button>
         </div>
         <p style="font-size:12px;color:#686868;margin:0;">
-          confirmed = {{ accounted }}；主按鈕 disabled = {{ !accounted }}
+          confirmed = {{ approved }}；主按鈕 disabled = {{ !approved }}
         </p>
       </div>
     `,
     props: {
-      accounted: false,
+      approved: false,
     },
   }),
 };
 
 export const OptionalReview: Story = {
-  name: 'Optional — 成交前複核（主按鈕常 enabled）',
+  name: 'Optional — 送出前複核（主按鈕常 enabled）',
   render: () => ({
     template: `
       <div style="padding:16px; max-width:520px; display:flex; flex-direction:column; gap:16px;">
         <app-inline-confirm
           requirement="optional"
-          label="成交前設定複核"
+          label="送出前確認設定"
           checkLabel="我已複核以上設定"
           [(confirmed)]="reviewed">
           <ul inlineConfirmDetails style="margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px;">
-            <li>報價金額：<strong>NT$ 120,000</strong></li>
+            <li>金額：<strong>NT$ 120,000</strong></li>
             <li>連絡窗口：王小姐</li>
-            <li>合約條款：標準版</li>
+            <li>條款：標準版</li>
           </ul>
         </app-inline-confirm>
         <div style="display:flex; gap:8px;">
-          <app-button text="確認成交"></app-button>
+          <app-button text="確認送出"></app-button>
         </div>
         <p style="font-size:12px;color:#686868;margin:0;">
           confirmed = {{ reviewed }}；主按鈕永遠 enabled
@@ -108,9 +108,9 @@ export const SideBySide: Story = {
           <p style="font-size:12px;color:#686868;margin:0;">requirement="required"</p>
           <app-inline-confirm
             requirement="required"
-            label="請確認已承接客戶帳務帳"
-            description="未確認前無法開立管理帳。"
-            checkLabel="我已確認承接客戶帳務帳"
+            label="發布前請確認內容已經過審核"
+            description="未確認前無法發布。"
+            checkLabel="我已確認內容經過審核"
             [(confirmed)]="a">
           </app-inline-confirm>
         </div>
@@ -118,11 +118,11 @@ export const SideBySide: Story = {
           <p style="font-size:12px;color:#686868;margin:0;">requirement="optional"</p>
           <app-inline-confirm
             requirement="optional"
-            label="成交前設定複核"
+            label="送出前確認設定"
             checkLabel="我已複核以上設定"
             [(confirmed)]="b">
             <ul inlineConfirmDetails style="margin:0; padding-left:20px;">
-              <li>報價 NT$ 120,000</li>
+              <li>金額 NT$ 120,000</li>
               <li>王小姐</li>
             </ul>
           </app-inline-confirm>
@@ -136,7 +136,7 @@ export const SideBySide: Story = {
   }),
 };
 
-// 錯誤狀態：取自 mendesky-web 成交視窗（closed-deal-modal）「成交前確認」——未勾選就送出時
+// 錯誤狀態：送出前的確認勾選——未勾選就送出時
 // [error] 打開警示框、[errorMessage] 顯示「請勾選確認後再送出」。勾選後錯誤自動消失。
 export const ErrorState: Story = {
   name: '錯誤狀態（未勾選就送出）',
@@ -145,7 +145,7 @@ export const ErrorState: Story = {
       <div style="padding:48px 16px 16px; max-width:520px;">
         <app-inline-confirm
           label=""
-          checkLabel="我已確認報價內容皆正確無誤"
+          checkLabel="我已確認內容皆正確無誤"
           requirement="required"
           [error]="!confirmed"
           [errorMessage]="confirmed ? '' : '請勾選確認後再送出'"
@@ -165,7 +165,7 @@ export const ErrorStateTop: Story = {
       <div style="padding:48px 16px 16px; max-width:520px;">
         <app-inline-confirm
           label=""
-          checkLabel="我已確認報價內容皆正確無誤"
+          checkLabel="我已確認內容皆正確無誤"
           requirement="required"
           errorPosition="top"
           [error]="!confirmed"

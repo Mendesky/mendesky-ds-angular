@@ -86,27 +86,27 @@ export const inlineConfirmDoc: ComponentDoc = {
       label: 'Required — 阻塞主按鈕',
       code: `<app-inline-confirm
   requirement="required"
-  label="請確認事務所已承接客戶帳務帳"
-  description="未確認前無法開立管理帳。"
-  checkLabel="我已確認承接客戶帳務帳"
-  [(confirmed)]="accounted">
+  label="發布前請確認內容已經過審核"
+  description="未確認前無法發布。"
+  checkLabel="我已確認內容經過審核"
+  [(confirmed)]="approved">
 </app-inline-confirm>
-<app-button text="下一步" [disabled]="!accounted()"></app-button>`,
+<app-button text="下一步" [disabled]="!approved()"></app-button>`,
     },
     {
       label: 'Optional — 複核式（bullets 用 ng-content）',
       code: `<app-inline-confirm
   requirement="optional"
-  label="成交前設定複核"
+  label="送出前確認設定"
   checkLabel="我已複核以上設定"
   [(confirmed)]="reviewed">
   <ul inlineConfirmDetails>
-    <li>報價金額：<strong>NT$ 120,000</strong></li>
+    <li>金額：<strong>NT$ 120,000</strong></li>
     <li>連絡窗口：王小姐</li>
-    <li>合約條款：<a href="...">標準版</a></li>
+    <li>條款：<a href="...">標準版</a></li>
   </ul>
 </app-inline-confirm>
-<app-button text="確認成交"></app-button>`,
+<app-button text="確認送出"></app-button>`,
     },
   ],
   notes: [
@@ -137,13 +137,13 @@ export const inlineConfirmDoc: ComponentDoc = {
           'required',
           '淡灰底 + Alert icon + label 加重',
           '[disabled]="!confirmed()"',
-          '阻塞型前提：開管理帳、簽核主檔、成案確認',
+          '阻塞型前提：發布前確認已審核、匯入前確認格式、同意條款後才能繼續',
         ],
         [
           'optional',
           '透明底 + 細邊框 + 「（選填）」suffix',
           '常 enabled',
-          '複核式提醒：成交前逐項 review、風險提示',
+          '複核式提醒：送出前逐項 review、風險提示',
         ],
       ],
     },

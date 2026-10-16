@@ -262,8 +262,8 @@
 }
 
 /* 防禦性安全網：locked + complete 並存時，complete 綠圈 + 可讀標籤蓋過 locked 的白底淺灰。
-   CEM 導覽改完成度驅動後此並存態理論上不再出現（complete → 自動解鎖）；此為安全網，防未來 P4/P6
-   eager 上線或 client 切換瞬態出現「白勾印白底」的隱形 bug。specificity 0,2,0 + 置於 locked 規則之後 → 勝出。 */
+   導覽改由完成度驅動後此並存態理論上不再出現（complete → 自動解鎖）；此為安全網，防未來頁面改成
+   eager 載入或切換資料的瞬態出現「白勾印白底」的隱形 bug。specificity 0,2,0 + 置於 locked 規則之後 → 勝出。 */
 .sn-pill--locked .sn-pill-num--complete {
   background: var(--button\/success, #74ae3e);
   border-color: var(--button\/success, #74ae3e);

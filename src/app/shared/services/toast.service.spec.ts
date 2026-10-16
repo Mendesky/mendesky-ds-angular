@@ -93,7 +93,7 @@ describe('ToastService', () => {
 
   // ── persist（loading toast 不自動消失）─────────────────
   it('show({ persist: true }) 不自動消失（超過預設 duration 仍未 hiding）', fakeAsync(() => {
-    service.show({ type: 'loading', message: '訪談表生成中', persist: true });
+    service.show({ type: 'loading', message: '檔案生成中', persist: true });
     tick(10000);
     expect(service.toasts().length).toBe(1);
     expect(service.toasts()[0].hiding).toBeFalse();
@@ -101,7 +101,7 @@ describe('ToastService', () => {
 
   // ── update（同一顆 toast 原地轉場）─────────────────────
   it('update() 原地改 type/message、toast 數維持 1（同一顆轉場、同 id）', () => {
-    const id = service.show({ type: 'loading', message: '訪談表生成中', persist: true });
+    const id = service.show({ type: 'loading', message: '檔案生成中', persist: true });
     service.update(id, { type: 'success', message: '已開始下載', duration: 3000 });
     const toasts = service.toasts();
     expect(toasts.length).toBe(1);
@@ -111,7 +111,7 @@ describe('ToastService', () => {
   });
 
   it('update() 帶新 duration → persist toast 轉為有限時、依新 duration 自動消失', fakeAsync(() => {
-    const id = service.show({ type: 'loading', message: '訪談表生成中', persist: true });
+    const id = service.show({ type: 'loading', message: '檔案生成中', persist: true });
     tick(10000);
     expect(service.toasts()[0].hiding).toBeFalse();      // persist：仍在
     service.update(id, { type: 'success', message: '已開始下載', duration: 3000 });
@@ -123,10 +123,10 @@ describe('ToastService', () => {
 
   // 2026-07-27 推翻先前「update 轉 error 用預設 3000」的設計：error 一律 5000（使用者拍板「失敗請留 5 秒」）。
   it('update() 轉 error（無 duration → 用 error 預設 5000，非 3000）', fakeAsync(() => {
-    const id = service.show({ type: 'loading', message: '訪談表生成中', persist: true });
-    service.update(id, { type: 'error', message: '訪談表生成失敗' });
+    const id = service.show({ type: 'loading', message: '檔案生成中', persist: true });
+    service.update(id, { type: 'error', message: '檔案生成失敗' });
     expect(service.toasts()[0].type).toBe('error');
-    expect(service.toasts()[0].message).toBe('訪談表生成失敗');
+    expect(service.toasts()[0].message).toBe('檔案生成失敗');
     tick(4999);
     expect(service.toasts()[0].hiding)
       .withContext('error 應撐到 5000ms；若 3000ms 就 hiding 代表 update() 沒套 error 規則').toBeFalse();

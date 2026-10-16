@@ -6,19 +6,19 @@ export const templateEditorDoc: ComponentDoc = {
   selector: 'app-template-editor',
   group: '表單元件',
   summary: 'contenteditable 富文字編輯器，%PascalCase% 範本變數渲染為藍色 badge。template variables minRows · placeholder errorMessage disabled · (templateChange) (textChange)',
-  when: '含範本變數的可編輯文字欄位（如 P5 信件及同意函、P4 合約備註）。與 app-textarea 功能相似但支援 inline badge。',
+  when: '含範本變數的可編輯文字欄位（如信件內容、備註）。與 app-textarea 功能相似但支援 inline badge。',
   props: [
     {
       name: 'template',
       type: 'string',
       default: "''",
-      desc: '範本字串，含 %key% 標記，例：「茲將附上 %CompanyName% 有關 %ServiceItemNames% 之…」；canonical 變數清單見 ia-quoting templateVariables / p5TemplateVariables',
+      desc: '範本字串，含 %key% 標記，例：「附上 %DocumentTitle% 的 %ItemNames% 清單…」；有哪些變數由使用端定義',
     },
     {
       name: 'variables',
       type: 'Record<string, string>',
       default: '{}',
-      desc: '變數 map，key 對應 %key% 標記，值為藍色 badge 顯示文字；canonical 清單見 ia-quoting templateVariables',
+      desc: '變數 map，key 對應 %key% 標記，值為藍色 badge 顯示文字',
     },
     {
       name: 'variableDefs',
@@ -72,22 +72,22 @@ export const templateEditorDoc: ComponentDoc = {
       name: 'varContexts',
       type: 'TemplateVarContext[]',
       default: '[]',
-      desc: '公司／方案選擇清單，傳給變數面板；空陣列時不顯示下拉',
+      desc: '變數面板頂部的兩層選擇清單（先選 context，再選它底下的 option）；空陣列時不顯示下拉。兩層的文字由使用端以 TEMPLATE_VAR_CONTEXT_TEXT 提供',
     },
     {
-      name: 'defaultCaseId',
+      name: 'defaultContextId',
       type: 'string | undefined',
-      desc: '變數面板預設選取的公司',
+      desc: '變數面板預設選取的 context id',
     },
     {
-      name: 'defaultBundleId',
+      name: 'defaultOptionId',
       type: 'string | undefined',
-      desc: '變數面板預設選取的方案',
+      desc: '變數面板預設選取的 option id',
     },
     {
       name: '(contextChange)',
-      type: 'EventEmitter<{ caseId: string; bundleId: string }>',
-      desc: '變數面板切換公司／方案時觸發，讓父層重算變數定義與值',
+      type: 'EventEmitter<{ contextId: string; optionId: string }>',
+      desc: '變數面板切換 context／option 時觸發，讓父層重算變數定義與值',
       isOutput: true,
     },
     {
@@ -99,13 +99,13 @@ export const templateEditorDoc: ComponentDoc = {
   ],
   usage: [
     {
-      label: '搭配 app-field，信件 To（單一變數）',
-      code: `<app-field label="信件 To" [required]="true">
+      label: '搭配 app-field，收件者（單一變數）',
+      code: `<app-field label="收件者" [required]="true">
   <app-template-editor
-    template="%DefaultToName%"
+    template="%RecipientName%"
     [variables]="templateVars()"
     [minRows]="1"
-    placeholder="請輸入公司名稱"
+    placeholder="請輸入收件者"
     [errorMessage]="fieldError('letter-to')"
     (textChange)="onTextChange('letter-to', $event)">
   </app-template-editor>
@@ -125,8 +125,8 @@ export const templateEditorDoc: ComponentDoc = {
 </app-field>
 
 <!-- TS: templateVars = computed(() => ({
-  CompanyName: this.companyName,
-  ServiceItemNames: this.serviceModuleNames,
+  DocumentTitle: this.documentTitle,
+  ItemNames: this.itemNames,
 })) -->`,
     },
   ],
@@ -139,7 +139,7 @@ export const templateEditorDoc: ComponentDoc = {
     'variables 變更時只更新 span.textContent，不重建 innerHTML（保留游標位置）',
     'paste 事件攔截，只貼純文字防 XSS',
     '支援 Enter 斷行（white-space: pre-wrap）',
-    'canonical 變數清單（23 個 key，三層 scope + glance + noteExtraVarDefs 3 筆）見 ia-quoting.js templateVariables；P5 binding map 見 ia-quoting.js p5TemplateVariables',
+    '變數清單與分組由使用端定義：變數面板的分組標題與順序用 TEMPLATE_VAR_GROUPS 提供，兩層選擇器的文字用 TEMPLATE_VAR_CONTEXT_TEXT 提供（皆在 app config 以 provider 設定一次）',
   ],
   customTables: [],
 };

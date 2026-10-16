@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { SortHeaderComponent, nextSort, type SortState } from '../../../../index';
 
-// 欄名與 key 取自 dashboard-app 主線案件列表表頭（quoting-cases.component.html 的 .lt-hd--sortable），
-// 本元件的外觀即比照該表頭：
-// company「統一編號及案件名稱」、status「狀態」、recurring「持續性費用」、onetime「一次性費用」、
-// person「負責人員」、time「最後修改時間」
+// 欄名與 key 為示意的列表表頭：
+// name「編號及名稱」、status「狀態」、recurring「持續性費用」、onetime「一次性費用」、
+// person「承辦人員」、time「最後修改時間」
 const meta: Meta<SortHeaderComponent> = {
   title: '展示元件/Sort Header',
   id: 'sort-header',
@@ -43,7 +42,7 @@ type Story = StoryObj<SortHeaderComponent>;
 export const Default: Story = {
   name: '基本用法',
   args: {
-    label: '負責人員',
+    label: '承辦人員',
     key: 'person',
     sort: null,
     align: 'start',
@@ -54,9 +53,9 @@ export const Default: Story = {
 export const Ascending: Story = {
   name: '升冪（作用中）',
   args: {
-    label: '統一編號及案件名稱',
-    key: 'company',
-    sort: { key: 'company', dir: 'asc' },
+    label: '編號及名稱',
+    key: 'name',
+    sort: { key: 'name', dir: 'asc' },
   },
 };
 
@@ -96,11 +95,11 @@ export const HeaderRow: Story = {
     template: `
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;font-size:13px;">
-          <app-sort-header label="統一編號及案件名稱" key="company" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="編號及名稱" key="name" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="狀態" key="status" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="持續性費用" key="recurring" align="end" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="一次性費用" key="onetime" align="end" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="負責人員" key="person" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="承辦人員" key="person" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="最後修改時間" key="time" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
         </div>
         <span style="font-size:12px;color:#686868;">
@@ -111,11 +110,11 @@ export const HeaderRow: Story = {
     props: {
       sort: null as SortState | null,
       labels: {
-        company: '統一編號及案件名稱',
+        name: '編號及名稱',
         status: '狀態',
         recurring: '持續性費用',
         onetime: '一次性費用',
-        person: '負責人員',
+        person: '承辦人員',
         time: '最後修改時間',
       } as Record<string, string>,
       onSort(key: string) {

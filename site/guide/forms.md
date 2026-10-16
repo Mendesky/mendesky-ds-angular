@@ -48,11 +48,11 @@
 <StoryEmbed id="date-picker--error-state" :height="420" title="日期欄位的錯誤狀態" />
 
 ```html
-<app-field label="核准設立日期" [required]="true">
+<app-field label="出生日期" [required]="true">
   <app-date-picker
     mode="day"
     size="M"
-    [errorMessage]="pickerValue ? '' : '請選擇核准設立日期'"
+    [errorMessage]="pickerValue ? '' : '請選擇出生日期'"
     [(ngModel)]="pickerValue">
   </app-date-picker>
 </app-field>
@@ -61,21 +61,21 @@
 `app-input`、`app-select` 的寫法一樣：
 
 ```html
-<app-field label="案件名稱" [required]="true">
+<app-field label="項目名稱" [required]="true">
   <app-input
     size="L"
-    placeholder="請輸入案件名稱"
+    placeholder="請輸入項目名稱"
     [errorMessage]="form.nameError"
     (valueChange)="onNameChange($event)"
   ></app-input>
 </app-field>
 
-<app-field label="所別" [required]="true">
+<app-field label="部門" [required]="true">
   <app-select
-    [options]="officeOptions"
-    placeholder="請選擇所別"
-    [errorMessage]="form.officeError"
-    formControlName="office"
+    [options]="departmentOptions"
+    placeholder="請選擇部門"
+    [errorMessage]="form.departmentError"
+    formControlName="department"
   ></app-select>
 </app-field>
 ```
@@ -92,7 +92,7 @@
 - 新增後立刻勾選並送後端。失敗時怎麼處理，見[載入與回饋](./feedback)。
 
 ```html
-<div class="cem-chip-wrap">
+<div class="chip-wrap">
   @for (opt of options(); track opt) {
     <app-check-chip [text]="opt" [(ngModel)]="checked[opt]"></app-check-chip>
   }

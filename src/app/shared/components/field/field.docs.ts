@@ -30,14 +30,14 @@ export const fieldDoc: ComponentDoc = {
       name: 'emphasis',
       type: 'boolean',
       default: 'false',
-      desc: '強調樣式：label 加粗（700）+ 標題色（--text/title）+ label 下方 1px 分隔線；用於唯讀展示區塊（如 P4 發文資料 / 目的）',
+      desc: '強調樣式：label 加粗（700）+ 標題色（--text/title）+ label 下方 1px 分隔線；用於唯讀展示區塊（如信件的收件人 / 說明）',
     },
   ],
   usage: [
     {
       label: '必填欄位',
-      code: `<app-field label="案件名稱" [required]="true">
-  <app-input placeholder="請輸入案件名稱" [errorMessage]="form.nameError"></app-input>
+      code: `<app-field label="項目名稱" [required]="true">
+  <app-input placeholder="請輸入項目名稱" [errorMessage]="form.nameError"></app-input>
 </app-field>`,
     },
     {
@@ -54,8 +54,8 @@ export const fieldDoc: ComponentDoc = {
     },
     {
       label: '強調樣式（唯讀展示）',
-      code: `<app-field label="受文者" [emphasis]="true">
-  <div class="cem-readonly-value noto-14-regular">{{ recipientText }}</div>
+      code: `<app-field label="收件人" [emphasis]="true">
+  <div class="readonly-value noto-14-regular">{{ recipientText }}</div>
 </app-field>`,
     },
   ],

@@ -28,7 +28,7 @@ export function loadPdfDocument(data: ArrayBuffer | Uint8Array): Promise<pdfjsLi
 }
 
 /**
- * 把 PDF blob render 成「每頁一張 JPEG data URL」，供與報價單預覽一致的頁面圖卡片呈現
+ * 把 PDF blob render 成「每頁一張 JPEG data URL」，供與文件預覽一致的頁面圖卡片呈現
  * （不用瀏覽器原生 iframe PDF viewer）。
  * scale=2、toDataURL('image/jpeg') 對齊 doc-preview.component；單頁 render 失敗則略過該頁。
  */

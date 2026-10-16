@@ -1,6 +1,4 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/models/account-type.model.ts（ORG_TYPE_OPTIONS 組織型態、ACCOUNT_TYPE_OPTIONS 帳務類型、OFFSHORE_ALLOWED_ACCOUNT_TYPES）、
-// src/app/features/quoting-cases/config/case-type.config.ts（CASE_TYPE_LABELS 客戶設立現況）、src/app/shared/data/taiwan-locations.ts（TAIWAN_CITIES 縣市）、
-// placeholder／錯誤訊息見 new-case-wizard.component.html／.ts、client-edit-modal.component.html、shared/components/address-input/address-input.component.html
+// 範例資料：組織類型、目前狀態、使用等級、縣市（皆為示意選項）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { action } from '@storybook/addon-actions';
 import { FormsModule } from '@angular/forms';
@@ -8,18 +6,18 @@ import { CommonModule } from '@angular/common';
 import { SelectComponent, SelectOption } from '../../../../index';
 
 const ORG_TYPE_OPTIONS: SelectOption[] = [
-  { value: '有限公司',       label: '有限公司' },
-  { value: '股份有限公司',   label: '股份有限公司' },
-  { value: '獨資合夥',       label: '獨資合夥（行號、企業社、工作室等）' },
-  { value: '非營利事務組織', label: '非營利事務組織' },
-  { value: '執行業務所得',   label: '執行業務所得' },
-  { value: '境外公司',       label: '境外公司' },
+  { value: '公司',       label: '公司' },
+  { value: '學校',       label: '學校' },
+  { value: '個人工作室', label: '個人工作室（自由工作者、接案者等）' },
+  { value: '非營利組織', label: '非營利組織' },
+  { value: '政府機關',   label: '政府機關' },
+  { value: '其他',       label: '其他' },
 ];
 
-const CASE_TYPE_OPTIONS: SelectOption[] = [
-  { value: 'established',   label: '已設立' },
-  { value: 'establishing',  label: '設立中' },
-  { value: 'unestablished', label: '新設立' },
+const STATUS_OPTIONS: SelectOption[] = [
+  { value: 'active',  label: '啟用中' },
+  { value: 'pending', label: '審核中' },
+  { value: 'draft',   label: '草稿' },
 ];
 
 const meta: Meta<SelectComponent> = {
@@ -45,7 +43,7 @@ const meta: Meta<SelectComponent> = {
   },
   args: {
     options: ORG_TYPE_OPTIONS,
-    placeholder: '請選擇組織型態',
+    placeholder: '請選擇組織類型',
     errorMessage: '',
   },
 };
@@ -57,7 +55,7 @@ export const Default: Story = {
   name: '預設',
   args: {
     options: ORG_TYPE_OPTIONS,
-    placeholder: '請選擇組織型態',
+    placeholder: '請選擇組織類型',
     errorMessage: '',
   },
 };
@@ -66,8 +64,8 @@ export const WithError: Story = {
   name: '錯誤狀態',
   args: {
     options: ORG_TYPE_OPTIONS,
-    placeholder: '請選擇組織型態',
-    errorMessage: '請選擇組織型態',
+    placeholder: '請選擇組織類型',
+    errorMessage: '請選擇組織類型',
   },
 };
 
@@ -77,11 +75,11 @@ export const Interactive: Story = {
     template: `
       <div style="padding:16px; max-width:360px;">
         <p style="font-size:13px;color:#686868;margin-bottom:12px;">
-          從下拉選單選擇組織型態，選取結果將顯示於下方：
+          從下拉選單選擇組織類型，選取結果將顯示於下方：
         </p>
         <app-select
           [options]="options"
-          placeholder="請選擇組織型態"
+          placeholder="請選擇組織類型"
           [(ngModel)]="selectedValue"
         ></app-select>
         <div style="margin-top:12px;font-size:13px;">
@@ -89,23 +87,23 @@ export const Interactive: Story = {
           <strong>{{ selectedValue ?? '（未選取）' }}</strong>
         </div>
         <hr style="margin:16px 0;border:none;border-top:1px solid #e7e7e7;">
-        <p style="font-size:13px;color:#686868;margin-bottom:12px;">客戶設立現況：</p>
+        <p style="font-size:13px;color:#686868;margin-bottom:12px;">目前狀態：</p>
         <app-select
-          [options]="caseOptions"
-          placeholder="請選擇客戶設立現況"
-          [(ngModel)]="selectedCase"
+          [options]="statusOptions"
+          placeholder="請選擇目前狀態"
+          [(ngModel)]="selectedStatus"
         ></app-select>
         <div style="margin-top:12px;font-size:13px;">
           <span style="color:#686868;">目前選取值：</span>
-          <strong>{{ selectedCase ?? '（未選取）' }}</strong>
+          <strong>{{ selectedStatus ?? '（未選取）' }}</strong>
         </div>
       </div>
     `,
     props: {
       options: ORG_TYPE_OPTIONS,
-      caseOptions: CASE_TYPE_OPTIONS,
+      statusOptions: STATUS_OPTIONS,
       selectedValue: null as string | null,
-      selectedCase: null as string | null,
+      selectedStatus: null as string | null,
     },
     moduleMetadata: { imports: [SelectComponent, FormsModule, CommonModule] },
   }),
@@ -114,14 +112,14 @@ export const Interactive: Story = {
 export const DisabledOption: Story = {
   name: '含禁用選項',
   args: {
-    // 組織型態為「境外公司」時只允許 財務帳／純簽證（OFFSHORE_ALLOWED_ACCOUNT_TYPES）
+    // 某些條件下（例如個人帳號）只開放部分等級，其餘選項照樣列出但禁用
     options: [
-      { value: '純簽證', label: '純簽證' },
-      { value: '稅務帳', label: '稅務帳', disabled: true },
-      { value: '管理帳', label: '管理帳', disabled: true },
-      { value: '財務帳', label: '財務帳' },
+      { value: '免費版', label: '免費版' },
+      { value: '團隊版', label: '團隊版', disabled: true },
+      { value: '企業版', label: '企業版', disabled: true },
+      { value: '個人進階版', label: '個人進階版' },
     ],
-    placeholder: '請選擇帳務類型',
+    placeholder: '請選擇使用等級',
     errorMessage: '',
   },
 };

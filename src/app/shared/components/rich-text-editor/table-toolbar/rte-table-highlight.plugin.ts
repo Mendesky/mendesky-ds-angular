@@ -7,7 +7,7 @@ import { CellSelection, cellAround } from '@tiptap/pm/tables';
  * 選單開啟時「整列/整欄操作範圍」高亮的 ProseMirror Decoration plugin。
  *
  * 為什麼是 Decoration 而非 classList：table cell 的 DOM 由 ProseMirror 管理，任何重繪
- * （feeSupplement 的 TemplateVariable autocomplete plugin 在點把手＝editor blur 時會觸發）
+ * （例如 wrapper 掛的範本變數 autocomplete plugin，在點把手＝editor blur 時會觸發）
  * 會把手動加在 <td>/<th> 上的 class 連同整個 nodeview 替換掉（實測 07-25：class 加了 5 次、
  * 結束卻 0，且無 classList.remove ＝ 節點被替換）。Decoration 由 PM 在每次 render 重新套用，
  * 抹不掉；doc 變動時透過 mapping 保持有效。對應 feedback_richtext_inline_editing_pitfalls。

@@ -12,8 +12,8 @@
   user-select: none;
 
   /* 長文字折行而非撐破容器。
-     text 並非只有固定 enum 短標籤：CEM P1 / HDM P4-2 的「前所資訊及更換原因／前所服務業務」
-     選項由 app-inline-add 讓使用者自由輸入（無長度上限），實務值為整段敘述。
+     text 並非只有固定 enum 短標籤：搭配 app-inline-add 的多選欄位，
+     選項由使用者自由輸入（無長度上限），實務值常是整段敘述。
      nowrap 會讓 min-content ＝ 整串寬 → chip 作為 flex item 完全不可收縮 → 必定溢出。
      短標籤在放得下時渲染結果與 nowrap 相同（normal 只在空間不足時才斷行）。 */
   white-space: normal;

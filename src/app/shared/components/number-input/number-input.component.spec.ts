@@ -195,7 +195,7 @@ describe('NumberInputComponent — dirty flag commit', () => {
     expect(emittedCommits).toEqual([7]);
   }));
 
-  it('AC7: focused 中 parent echo initialValue（P1 signal 回寫場景），blur 仍 emit', fakeAsync(() => {
+  it('AC7: focused 中 parent echo initialValue（父層 signal 回寫場景），blur 仍 emit', fakeAsync(() => {
     fixture.componentRef.setInput('initialValue', 3);
     fixture.detectChanges();
 
@@ -206,7 +206,7 @@ describe('NumberInputComponent — dirty flag commit', () => {
     component.onInput({ target: el } as unknown as Event); // isDirty = true
     tick(0);
 
-    // 模擬 P1 onNumberChange：signal 更新 → [initialValue] echo 回來
+    // 模擬父層 onNumberChange：signal 更新 → [initialValue] echo 回來
     fixture.componentRef.setInput('initialValue', 7);
     fixture.detectChanges(); // ngOnChanges，focused=true 時不應重置 dirty
 

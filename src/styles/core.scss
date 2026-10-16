@@ -1,5 +1,5 @@
 /* ========================================
-   Global Styles - 業績儀表板
+   Global Styles
    ======================================== */
 
 :root {
@@ -58,8 +58,8 @@
   --label\/accent-green: #5da26b;
   --label\/accent-green-light: #8fd053;
   --label\/accent-blue: #14b6d4;
-  --label\/accent-purple: #8b5c91;      /* Color/Purple/70 — 報價類型「專案」 */
-  --label\/outline-green: #5a8c2c;      /* Color/Green/80 — 報價類型「所客」框與字 */
+  --label\/accent-purple: #8b5c91;      /* Color/Purple/70 — 紫色分類標籤 */
+  --label\/outline-green: #5a8c2c;      /* Color/Green/80 — 綠色外框標籤的框與字 */
   --label\/warning: #cc5252;
 
   /* 未讀徽章專用（app-badge）。值與 --button/error 相同，但語意不同：
@@ -567,7 +567,7 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* P4 list drag */
+  /* 清單拖曳排序 */
   .drag-flip { transition-duration: 0ms !important; }
   .drag-settled { animation: none !important; }
   /* Dashboard card drag */
@@ -575,7 +575,7 @@ button {
   .card--settled { animation: none !important; }
 }
 
-/* ── 新增報價案件 CTA 按鈕（header + empty-state 共用） ──────────── */
+/* ── 新增 CTA 按鈕（header + empty-state 共用） ──────────── */
 .app-action-cta-btn {
   display: inline-flex;
   align-items: center;
@@ -605,7 +605,7 @@ button {
 @media (max-width: 767px) {
   /* element-level 涵蓋 textarea 與所有原生 input（text/date/number/search/
      inline-rename 等曾漏網的 class）＋原生 select＋contenteditable 富文本編輯器的
-     可編輯根（回報問題 dialog / P4 合約 / 交接文件的 ProseMirror・.te-field；iOS 對
+     可編輯根（ProseMirror 編輯器與 .te-field；iOS 對
      contenteditable 同樣 computed <16px 就 zoom，非只原生表單）。用 [contenteditable]
      精確命中「可編輯」根、不誤及唯讀預覽（唯讀不觸發 zoom）。保留原 4 個 class 以維持
      app-select 顯示值（.select-field 為 div、非原生元素）的 16px。整塊限制在

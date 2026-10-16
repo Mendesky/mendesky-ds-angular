@@ -35,12 +35,12 @@ describe('detectInlineTrigger', () => {
     expect(detectInlineTrigger('一般文字沒有觸發')).toBeNull();
   });
 
-  it('補充：公費百分比「持有超過 10%」單一 % → null（不誤觸）', () => {
+  it('補充：一般百分比「持有超過 10%」單一 % → null（不誤觸）', () => {
     expect(detectInlineTrigger('持有超過 10%')).toBeNull();
   });
 
   it('補充：中文 query「%%預設」→ { query: "預設" }（可用中文名稱過濾）', () => {
     expect(detectInlineTrigger('%%預設')).toEqual({ query: '預設', start: 0 });
-    expect(detectInlineTrigger('信件 %%案件名')).toEqual({ query: '案件名', start: 3 });
+    expect(detectInlineTrigger('信件 %%項目名')).toEqual({ query: '項目名', start: 3 });
   });
 });

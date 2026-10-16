@@ -1,4 +1,4 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/components/case-edit-modal/case-edit-modal.component.ts（報價案件編輯頁 p1～p4 的頁面標題）
+// 範例資料：四步驟編輯頁的頁面標題
 import type { Meta, StoryObj } from '@storybook/angular';
 import { action } from '@storybook/addon-actions';
 import { CarouselDotComponent, CarouselDotVariant } from '../../../../index';
@@ -91,7 +91,7 @@ export const AllVariants: Story = {
           <span style="font-size:11px;color:#686868;">Line 選中</span>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-          <app-carousel-dot variant="Dot" [active]="false" text="營運資料"></app-carousel-dot>
+          <app-carousel-dot variant="Dot" [active]="false" text="基本資料"></app-carousel-dot>
           <span style="font-size:11px;color:#686868;">Dot 含文字（hover）</span>
         </div>
       </div>
@@ -105,10 +105,10 @@ export const WithTextLabel: Story = {
   render: () => ({
     template: `
       <div style="display:flex; align-items:center; gap:16px; padding:24px;">
-        <app-carousel-dot variant="Dot" [active]="false" text="營運資料"></app-carousel-dot>
-        <app-carousel-dot variant="Dot" [active]="true" text="報價項目"></app-carousel-dot>
-        <app-carousel-dot variant="Dot" [active]="false" text="報價基本資料"></app-carousel-dot>
-        <app-carousel-dot variant="Dot" [active]="false" text="公費合約"></app-carousel-dot>
+        <app-carousel-dot variant="Dot" [active]="false" text="基本資料"></app-carousel-dot>
+        <app-carousel-dot variant="Dot" [active]="true" text="選擇項目"></app-carousel-dot>
+        <app-carousel-dot variant="Dot" [active]="false" text="填寫內容"></app-carousel-dot>
+        <app-carousel-dot variant="Dot" [active]="false" text="確認送出"></app-carousel-dot>
       </div>
     `,
     props: {},

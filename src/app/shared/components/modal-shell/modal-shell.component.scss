@@ -118,7 +118,7 @@
 }
 
 /* ── Floating-right variant（Issue Report Dock 等右下角浮層）── */
-/* 永遠最上層：z 必須高於 wizard (.wiz-center: 501) 與 CEM 等一般 modal */
+/* 永遠最上層：z 必須高於 wizard（z-index 501）等一般 modal */
 .modal-backdrop--floating-right {
   z-index: 600;
 }
@@ -171,7 +171,7 @@
 
   /* 手機版預設 overflow hidden：
      wizard 的 stepper 在 <1024px 已 position: static，不需要 overflow-visible；
-     但明確加上 overflowVisible 的 modal（如 share-modal）需保留 visible */
+     但明確加上 overflowVisible 的 modal（如內含下拉選單需溢出卡片的分享 modal）需保留 visible */
   .modal-card:not(.modal-card--overflow-visible):not(.modal-card--floating-right) {
     overflow: hidden;
   }

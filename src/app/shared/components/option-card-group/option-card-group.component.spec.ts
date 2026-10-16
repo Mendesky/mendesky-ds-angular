@@ -9,7 +9,7 @@ import { OptionCardGroupComponent, OptionCardItem } from './option-card-group.co
     <app-option-card-group
       [options]="options"
       [value]="value"
-      ariaLabel="帳務類型"
+      ariaLabel="版面樣式"
       [disabledValues]="disabledValues"
       (valueChange)="onChange($event)"
     ></app-option-card-group>
@@ -45,7 +45,7 @@ describe('OptionCardGroupComponent', () => {
 
   it('renders one card per option as a radiogroup', () => {
     expect(cards().length).toBe(3);
-    expect(fixture.nativeElement.querySelector('[role="radiogroup"]')?.getAttribute('aria-label')).toBe('帳務類型');
+    expect(fixture.nativeElement.querySelector('[role="radiogroup"]')?.getAttribute('aria-label')).toBe('版面樣式');
   });
 
   it('marks the selected card from value', () => {

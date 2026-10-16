@@ -12,7 +12,7 @@ export interface ShortcutItem {
   keys: string[];
 }
 
-/** 快速鍵分組（e.g. 報價案件、全域） */
+/** 快速鍵分組（e.g. 項目管理、全域） */
 export interface ShortcutGroup {
   label: string;
   items: ShortcutItem[];

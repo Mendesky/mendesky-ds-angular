@@ -60,7 +60,7 @@ export const datePickerDoc: ComponentDoc = {
       name: 'emptyLabel',
       type: 'string',
       default: "''",
-      desc: '空值時顯示的「實心」語意文字（深色，非灰色 placeholder）。用於空值本身有明確業務語意的情境（如報價起始日空＝「設立後開始」）；點擊仍可開面板選日期。空字串時退回一般 placeholder 行為。',
+      desc: '空值時顯示的「實心」語意文字（深色，非灰色 placeholder）。用於空值本身有明確業務語意的情境（如開始日期空＝「審核通過後開始」）；點擊仍可開面板選日期。空字串時退回一般 placeholder 行為。',
     },
     {
       name: 'maxMonth',
@@ -128,7 +128,7 @@ export const datePickerDoc: ComponentDoc = {
     },
     {
       type: 'info',
-      content: '（2026-07 更新）快速跳年：month/day 模式的標題年份為可點按鈕（帶下箭頭），點擊展開可捲動的年份清單（minYear..maxYear，開啟時自動聚焦/捲到目前年），選年後回到月份 grid 繼續選月/日——用於 minYear 距今較遠（如核准設立日期民國40年起）時免逐年點箭頭。year 模式的年份清單是根視圖、選年即最終值（emit），行為不變。',
+      content: '（2026-07 更新）快速跳年：month/day 模式的標題年份為可點按鈕（帶下箭頭），點擊展開可捲動的年份清單（minYear..maxYear，開啟時自動聚焦/捲到目前年），選年後回到月份 grid 繼續選月/日——用於 minYear 距今較遠（如出生日期民國40年起）時免逐年點箭頭。year 模式的年份清單是根視圖、選年即最終值（emit），行為不變。',
     },
     {
       type: 'info',

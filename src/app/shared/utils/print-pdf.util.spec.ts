@@ -1,4 +1,4 @@
-import { handoverPdfFilename, printPdfBlob, supportsIframePrint } from './print-pdf.util';
+import { printPdfBlob, supportsIframePrint } from './print-pdf.util';
 
 /**
  * 列印契約（2026-07-22 定案）：任何路徑都不開新分頁。
@@ -16,18 +16,18 @@ describe('printPdfBlob', () => {
       downloadName = this.download;
     });
 
-    const outcome = printPdfBlob(blob, '91078532 瘋飯糰國際貿易有限公司.pdf', false);
+    const outcome = printPdfBlob(blob, '2026 年度報表.pdf', false);
 
     expect(openSpy).not.toHaveBeenCalled();
     expect(clickSpy).toHaveBeenCalledTimes(1);
-    expect(downloadName).toBe('91078532 瘋飯糰國際貿易有限公司.pdf');
+    expect(downloadName).toBe('2026 年度報表.pdf');
     expect(outcome).toBe('downloaded');
   });
 
   it('iframe 路徑（Chromium）：不開分頁，同分頁 iframe 列印', () => {
     const openSpy = spyOn(window, 'open');
 
-    const outcome = printPdfBlob(blob, undefined, true);
+    const outcome = printPdfBlob(blob, '報表.pdf', true);
 
     expect(openSpy).not.toHaveBeenCalled();
     expect(outcome).toBe('printed');
@@ -37,11 +37,11 @@ describe('printPdfBlob', () => {
   it('iframe 路徑：blob 包成具名 File 再產 object URL（Chrome 列印「另存 PDF」預設檔名 = File.name）', () => {
     const urlSpy = spyOn(URL, 'createObjectURL').and.callThrough();
 
-    printPdfBlob(blob, '91078532 瘋飯糰國際貿易有限公司.pdf', true);
+    printPdfBlob(blob, '2026 年度報表.pdf', true);
 
     const arg = urlSpy.calls.mostRecent().args[0] as File;
     expect(arg instanceof File).toBeTrue();
-    expect(arg.name).toBe('91078532 瘋飯糰國際貿易有限公司.pdf');
+    expect(arg.name).toBe('2026 年度報表.pdf');
     expect(arg.type).toBe('application/pdf');
     document.querySelectorAll('iframe[aria-hidden="true"]').forEach(f => f.remove());
   });
@@ -77,32 +77,5 @@ describe('supportsIframePrint', () => {
 
   it('iOS Chrome（WebKit 核，CriOS）→ false（走下載）', () => {
     expect(supportsIframePrint({ userAgent: IOS_CHROME_UA })).toBeFalse();
-  });
-});
-
-/** 下載檔名規則：統編＋公司名稱；缺值降級、非法檔名字元剔除、設立中「統編欄＝公司名」去重。 */
-describe('handoverPdfFilename', () => {
-  it('統編 + 公司名稱', () => {
-    expect(handoverPdfFilename('91078532', '瘋飯糰國際貿易有限公司'))
-      .toBe('91078532 瘋飯糰國際貿易有限公司.pdf');
-  });
-
-  it('缺統編（新設立尚無）→ 只用公司名稱', () => {
-    expect(handoverPdfFilename(undefined, '瘋飯糰國際貿易有限公司'))
-      .toBe('瘋飯糰國際貿易有限公司.pdf');
-  });
-
-  it('設立中：統編欄位放的是公司預期名稱（與公司名相同）→ 去重不重複', () => {
-    expect(handoverPdfFilename('○○股份有限公司', '○○股份有限公司'))
-      .toBe('○○股份有限公司.pdf');
-  });
-
-  it('兩者皆缺 → 通用檔名 fallback', () => {
-    expect(handoverPdfFilename(null, undefined)).toBe('訪談紀錄表.pdf');
-  });
-
-  it('剔除檔名非法字元（/ \\ : * ? " < > |）', () => {
-    expect(handoverPdfFilename('12345678', 'A/B:公司*名?稱'))
-      .toBe('12345678 AB公司名稱.pdf');
   });
 });

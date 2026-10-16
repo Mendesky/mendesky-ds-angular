@@ -8,10 +8,12 @@
  * - **Safari/Firefox（`useIframe=false`）**：iframe 內 PDF 列印會印空白（瀏覽器限制，無法同分頁列印）
  *   → 直接下載 PDF 檔，由使用者開啟檔案列印（產品決策，取代先前「開新分頁載入 PDF」方案）。
  *   caller 據回傳值 `'downloaded'` 提示使用者。
+ *
+ * `filename` 由使用端決定（含 `.pdf`），也是列印對話窗「另存 PDF」的預設檔名。
  */
 export function printPdfBlob(
   blob: Blob,
-  filename: string = handoverPdfFilename(),
+  filename: string,
   useIframe: boolean = supportsIframePrint(),
 ): 'printed' | 'downloaded' {
   if (typeof document === 'undefined') return 'printed';
@@ -24,19 +26,6 @@ export function printPdfBlob(
   }
   downloadViaAnchor(url, filename);
   return 'downloaded';
-}
-
-/**
- * 訪談紀錄表下載檔名：「統編 公司名稱.pdf」。
- * - 任一缺值 → 只用有的那個；兩者皆缺 → 通用名「訪談紀錄表.pdf」
- * - 設立中／新設立案件的統編欄位可能放公司預期名稱（與公司名相同）→ 去重
- * - 剔除檔名非法字元（`/ \ : * ? " < > |`）
- */
-export function handoverPdfFilename(businessId?: string | null, companyName?: string | null): string {
-  const parts = [businessId?.trim(), companyName?.trim()].filter((p): p is string => !!p);
-  const deduped = parts[0] === parts[1] ? parts.slice(0, 1) : parts;
-  const base = deduped.join(' ').replace(/[\\/:*?"<>|]/g, '').trim();
-  return base ? `${base}.pdf` : '訪談紀錄表.pdf';
 }
 
 /** Safari/Firefox：下載 PDF 檔（同分頁列印不可行的替代方案）。 */
@@ -71,7 +60,7 @@ export function supportsIframePrint(
  * Chromium：隱藏 iframe 無縫列印。jobTitle = 另存 PDF 的預設檔名（不含副檔名）。
  *
  * Chrome 列印對話窗「另存為 PDF」的預設檔名取自「頂層頁面 document.title」（2026-07-23 實測：
- * PDF metadata Title 是「新客戶訪談記錄表」但對話窗顯示網站標題 → 來源是頁標題），且快照
+ * 對話窗顯示的是網站標題而不是 PDF metadata 的 Title → 來源是頁標題），且快照
  * 發生在 print() 返回之後（同步還原實測無效）→ 標題須保持替換直到對話窗關閉才還原。
  * 關閉偵測：afterprint（PDF iframe 常不觸發）＋ document.hasFocus() 輪詢（對話窗開啟時
  * 頁面失焦、關閉時回焦）＋ 60s 保底。

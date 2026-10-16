@@ -1,9 +1,8 @@
 /* ── Host ── */
 /* shrink-safety guards：在 flex/grid 容器內 host 已被 blockify，此規則生效＝把元件
-   夾在容器寬度內、可收縮，避免回退到原生 <input> 的 Safari 固有寬(~369px)撐破卡片
-   （RWD Rule 13/14）；純 inline 情境則自然 inert。刻意「不」改 display，避免波及全站
-   ~85 處 app-number-input 用例的桌機版面（需就地約束的情境由使用點各自處理，如成交
-   modal 的 .fee-amount-col）。 */
+   夾在容器寬度內、可收縮，避免回退到原生 <input> 的 Safari 固有寬(~369px)撐破卡片；
+   純 inline 情境則自然 inert。刻意「不」改 display，避免波及既有 app-number-input
+   用例的桌機版面（需就地約束的情境由使用點各自處理，例如在使用點的欄位容器上限寬）。 */
 :host {
   min-width: 0;
   max-width: 100%;

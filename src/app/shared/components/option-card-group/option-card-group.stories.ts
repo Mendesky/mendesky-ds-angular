@@ -2,27 +2,26 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { OptionCardGroupComponent, OptionCardItem } from '../../../../index';
 
 // 中性的插圖佔位。實際插圖由使用端傳入 120×120 的 SVG 字串
-// （dashboard-app 的帳務類型／設立現況插圖很大，不搬進 DS）。
+// （各產品的插圖通常很大，不搬進 DS）。
 const PLACEHOLDER_ILLUSTRATION = `<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="24" y="30" width="72" height="60" rx="6" fill="#d6ebf5" stroke="#3a9ccd" stroke-width="2"/>
   <circle cx="46" cy="50" r="7" fill="#3a9ccd"/>
   <path d="M30 84 L52 62 L66 74 L76 66 L90 84 Z" fill="#3a9ccd"/>
 </svg>`;
 
-// 帳務類型：取自 dashboard-app models/account-type.model.ts 的 ACCOUNT_TYPE_CARDS
-const ACCOUNT_TYPE_OPTIONS: OptionCardItem[] = [
-  { value: '純簽證', label: '純簽證', description: '無記帳服務\n會計師簽證', illustration: PLACEHOLDER_ILLUSTRATION },
-  { value: '稅務帳', label: '稅務帳', description: '稅務帳\n會計師簽證', illustration: PLACEHOLDER_ILLUSTRATION },
-  { value: '管理帳', label: '管理帳', description: '客戶內部使用\n，金流及管理性報表等內容', illustration: PLACEHOLDER_ILLUSTRATION },
-  { value: '財務帳', label: '財務帳', description: '金流一套帳\n，包括稅務及財務用途', illustration: PLACEHOLDER_ILLUSTRATION },
+// 版面樣式（4 張）
+const LAYOUT_OPTIONS: OptionCardItem[] = [
+  { value: '清單', label: '清單', description: '逐列顯示\n適合大量資料', illustration: PLACEHOLDER_ILLUSTRATION },
+  { value: '卡片', label: '卡片', description: '卡片式排列\n適合看圖辨識', illustration: PLACEHOLDER_ILLUSTRATION },
+  { value: '看板', label: '看板', description: '依狀態分欄\n可拖曳調整順序', illustration: PLACEHOLDER_ILLUSTRATION },
+  { value: '時間軸', label: '時間軸', description: '依日期排序\n適合追蹤進度', illustration: PLACEHOLDER_ILLUSTRATION },
 ];
 
-// 客戶設立現況：value／說明取自 dashboard-app models/establishment-status.svgs.ts 的 ESTABLISHMENT_STATUS_CARDS，
-// 標籤取自 config/case-type.config.ts 的 CASE_TYPE_LABELS
-const ESTABLISHMENT_OPTIONS: OptionCardItem[] = [
-  { value: 'established', label: '已設立', description: '客戶已完成公司設立、已有統一編號', illustration: PLACEHOLDER_ILLUSTRATION },
-  { value: 'establishing', label: '設立中', description: '客戶正在跑工商設立流程，尚未取得統編', illustration: PLACEHOLDER_ILLUSTRATION },
-  { value: 'unestablished', label: '新設立', description: '客戶尚未設立，需辦理工商登記等處理作業', illustration: PLACEHOLDER_ILLUSTRATION },
+// 主題外觀（3 張）
+const THEME_OPTIONS: OptionCardItem[] = [
+  { value: 'light', label: '淺色', description: '白底深字\n適合明亮環境', illustration: PLACEHOLDER_ILLUSTRATION },
+  { value: 'dark', label: '深色', description: '深底淺字\n適合昏暗環境', illustration: PLACEHOLDER_ILLUSTRATION },
+  { value: 'system', label: '跟隨系統', description: '依作業系統設定\n自動切換', illustration: PLACEHOLDER_ILLUSTRATION },
 ];
 
 const meta: Meta<OptionCardGroupComponent> = {
@@ -58,13 +57,13 @@ const meta: Meta<OptionCardGroupComponent> = {
 export default meta;
 type Story = StoryObj<OptionCardGroupComponent>;
 
-// ── 主範例：帳務類型（4 張）。點卡片或用方向鍵切換；父層把 valueChange 寫回 value ──
+// ── 主範例：版面樣式（4 張）。點卡片或用方向鍵切換；父層把 valueChange 寫回 value ──
 export const Default: Story = {
   name: '預設',
   args: {
-    options: ACCOUNT_TYPE_OPTIONS,
-    value: '稅務帳',
-    ariaLabel: '帳務類型',
+    options: LAYOUT_OPTIONS,
+    value: '卡片',
+    ariaLabel: '版面樣式',
     disabledValues: [],
   },
   render: (args) => ({
@@ -84,15 +83,15 @@ export const Default: Story = {
   }),
 };
 
-// ── 客戶設立現況（3 張） ─────────────────────────────────────
+// ── 主題外觀（3 張） ─────────────────────────────────────────
 export const Establishment: Story = {
-  name: '客戶設立現況（3 張）',
+  name: '主題外觀（3 張）',
   render: () => ({
-    props: { options: ESTABLISHMENT_OPTIONS, value: null as string | null },
+    props: { options: THEME_OPTIONS, value: null as string | null },
     template: `
       <div style="max-width:520px;">
         <app-option-card-group
-          ariaLabel="客戶設立現況"
+          ariaLabel="主題外觀"
           [options]="options"
           [value]="value"
           (valueChange)="value = $event">
@@ -104,19 +103,19 @@ export const Establishment: Story = {
   }),
 };
 
-// ── 部分停用：境外公司只能選純簽證／財務帳（dashboard-app OFFSHORE_ALLOWED_ACCOUNT_TYPES） ──
+// ── 部分停用：例如資料量太大時只開放清單／時間軸 ──
 export const WithDisabledValues: Story = {
   name: '部分停用',
   render: () => ({
     props: {
-      options: ACCOUNT_TYPE_OPTIONS,
-      value: '純簽證',
-      disabledValues: ['稅務帳', '管理帳'],
+      options: LAYOUT_OPTIONS,
+      value: '清單',
+      disabledValues: ['卡片', '看板'],
     },
     template: `
       <div style="max-width:680px;">
         <app-option-card-group
-          ariaLabel="帳務類型"
+          ariaLabel="版面樣式"
           [options]="options"
           [value]="value"
           [disabledValues]="disabledValues"

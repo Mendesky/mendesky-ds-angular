@@ -3,8 +3,6 @@
  *
  * 正本在 src/docs/patterns.ts，以 `領域.主題` 為 key（例如 `modal.dismissal`），
  * 每條前面有 `// KEY: <key>` 註解方便搜尋。
- * scenarios 與 references 提到的 `src/app/` 路徑是 mendesky-web（dashboard-app）的平台實作，
- * 不在本套件內。
  */
 export interface PatternScenario {
   type: string;
@@ -32,7 +30,7 @@ export interface PatternDoc {
   relatedComponents: string[];
   /** 相關原則的 key，可在 key 後面用全形括號補充，例如 `modal.dismissal（savingLocked type）` */
   relatedPatterns?: string[];
-  /** 相關的 AI 協作記憶檔名（dashboard-app 端） */
+  /** 相關的 AI 協作記憶檔名（由使用端維護） */
   relatedMemory?: string[];
   references: PatternReference[];
 }

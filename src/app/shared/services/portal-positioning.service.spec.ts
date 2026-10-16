@@ -376,7 +376,7 @@ describe('PortalPositioningService', () => {
     });
 
     it('stacked overlays (point-anchored child + ancestorAnchorEl): clicking inside child panel does NOT close ancestor', () => {
-      // 父選單 A，內含巢狀 flyout 的觸發鈕（如卡片選單的「下載報價單」row）
+      // 父選單 A，內含巢狀 flyout 的觸發鈕（如卡片選單的「下載檔案」row）
       const panelA = track(makePanelEl());
       const onCloseA = jasmine.createSpy('onCloseA');
       const refA = service.attach(tRef(), new ElementRef(panelA), { closeOnClickOutside: true, onClose: onCloseA });

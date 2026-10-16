@@ -1,5 +1,3 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/components/case-edit-modal/pages/p1-operation/p1-operation.component.ts（DEFAULT_PREVIOUS_SERVICES 前所服務業務預設選項）、
-// p1-operation.component.html（欄位「前所服務業務」hint「可複選」）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { FormsModule } from '@angular/forms';
 import { CheckChipComponent, CheckChipSize, CheckChipTheme } from '../../../../index';
@@ -38,7 +36,7 @@ type Story = StoryObj<CheckChipComponent>;
 export const Default: Story = {
   name: '預設',
   args: {
-    text: '財務簽證',
+    text: '網頁設計',
     size: 's',
     theme: 'default',
   },
@@ -109,11 +107,11 @@ export const Checked: Story = {
     imports: [FormsModule, CheckChipComponent],
     template: `
       <div style="display:flex; align-items:center; gap:12px; padding:16px; flex-wrap:wrap;">
-        <app-check-chip text="財務簽證" size="s" theme="default" [(ngModel)]="c1"></app-check-chip>
-        <app-check-chip text="稅務簽證" size="s" theme="default" [(ngModel)]="c2"></app-check-chip>
-        <app-check-chip text="記帳" size="s" theme="default" [(ngModel)]="c3"></app-check-chip>
-        <app-check-chip text="財稅簽證整包" size="s" theme="default" [(ngModel)]="c4"></app-check-chip>
-        <app-check-chip text="年度CTP" size="s" theme="default" [(ngModel)]="c5"></app-check-chip>
+        <app-check-chip text="網頁設計" size="s" theme="default" [(ngModel)]="c1"></app-check-chip>
+        <app-check-chip text="平面設計" size="s" theme="default" [(ngModel)]="c2"></app-check-chip>
+        <app-check-chip text="攝影" size="s" theme="default" [(ngModel)]="c3"></app-check-chip>
+        <app-check-chip text="影音剪輯與後製" size="s" theme="default" [(ngModel)]="c4"></app-check-chip>
+        <app-check-chip text="UI/UX" size="s" theme="default" [(ngModel)]="c5"></app-check-chip>
       </div>
     `,
     props: {
@@ -127,19 +125,19 @@ export const Checked: Story = {
 };
 
 export const Interactive: Story = {
-  name: '互動示範 — 前所服務業務',
+  name: '互動示範 — 擅長領域',
   render: () => ({
     imports: [FormsModule, CheckChipComponent],
     template: `
       <div style="padding:16px; max-width:480px;">
-        <p style="font-size:13px;font-weight:600;margin-bottom:12px;">前所服務業務（可複選）</p>
+        <p style="font-size:13px;font-weight:600;margin-bottom:12px;">擅長領域（可複選）</p>
         <div style="display:flex; flex-wrap:wrap; gap:8px;">
-          <app-check-chip text="財務簽證" size="s" [(ngModel)]="fca"></app-check-chip>
-          <app-check-chip text="稅務簽證" size="s" [(ngModel)]="tca"></app-check-chip>
-          <app-check-chip text="記帳" size="s" [(ngModel)]="bookkeeping"></app-check-chip>
-          <app-check-chip text="財稅簽證整包" size="s" [(ngModel)]="auditPackage"></app-check-chip>
-          <app-check-chip text="年度CTP" size="s" [(ngModel)]="ctp"></app-check-chip>
-          <app-check-chip text="綜所申報" size="s" [(ngModel)]="iit"></app-check-chip>
+          <app-check-chip text="網頁設計" size="s" [(ngModel)]="web"></app-check-chip>
+          <app-check-chip text="平面設計" size="s" [(ngModel)]="graphic"></app-check-chip>
+          <app-check-chip text="攝影" size="s" [(ngModel)]="photo"></app-check-chip>
+          <app-check-chip text="影音剪輯與後製" size="s" [(ngModel)]="video"></app-check-chip>
+          <app-check-chip text="UI/UX" size="s" [(ngModel)]="uiux"></app-check-chip>
+          <app-check-chip text="文案撰寫" size="s" [(ngModel)]="copy"></app-check-chip>
         </div>
         <p style="font-size:12px;color:#686868;margin-top:12px;">
           已勾選：{{ selectedLabels() }}
@@ -147,22 +145,22 @@ export const Interactive: Story = {
       </div>
     `,
     props: {
-      fca: false,
-      tca: false,
-      bookkeeping: false,
-      auditPackage: false,
-      ctp: false,
-      iit: false,
+      web: false,
+      graphic: false,
+      photo: false,
+      video: false,
+      uiux: false,
+      copy: false,
       // Storybook 以 Object.assign 把 props 複製到 wrapper 元件：getter 只會在複製當下求值一次，之後勾選不會更新顯示。
       // 改成方法，由模板每次變更偵測時呼叫（this 為 wrapper 元件，讀得到 ngModel 回寫的最新值）。與 radio-chip 的 Selected 修法一致。
       selectedLabels() {
         const labels = [];
-        if ((this as any).fca) labels.push('財務簽證');
-        if ((this as any).tca) labels.push('稅務簽證');
-        if ((this as any).bookkeeping) labels.push('記帳');
-        if ((this as any).auditPackage) labels.push('財稅簽證整包');
-        if ((this as any).ctp) labels.push('年度CTP');
-        if ((this as any).iit) labels.push('綜所申報');
+        if ((this as any).web) labels.push('網頁設計');
+        if ((this as any).graphic) labels.push('平面設計');
+        if ((this as any).photo) labels.push('攝影');
+        if ((this as any).video) labels.push('影音剪輯與後製');
+        if ((this as any).uiux) labels.push('UI/UX');
+        if ((this as any).copy) labels.push('文案撰寫');
         return labels.length ? labels.join('、') : '（未選）';
       },
     },

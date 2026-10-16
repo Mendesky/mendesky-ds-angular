@@ -1,4 +1,4 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/config/service-item-type.config.ts（SERVICE_ITEM_TYPE_LABEL 服務項目中文短名）
+// 範例資料：帶序號的工作項目短名
 import type { Meta, StoryObj } from '@storybook/angular';
 import { ListTagComponent } from '../../../../index';
 
@@ -39,7 +39,7 @@ const meta: Meta<ListTagComponent> = {
     showBadge: true,
     showBadgeB: false,
     showBadgeC: false,
-    text: '稅務簽證',
+    text: '介面設計',
   },
 };
 
@@ -53,7 +53,7 @@ export const Default: Story = {
     showBadge: true,
     showBadgeB: false,
     showBadgeC: false,
-    text: '稅務簽證',
+    text: '介面設計',
   },
 };
 
@@ -64,7 +64,7 @@ export const WithBadgeB: Story = {
     showBadge: true,
     showBadgeB: true,
     showBadgeC: false,
-    text: '財務簽證',
+    text: '前端開發',
   },
 };
 
@@ -75,7 +75,7 @@ export const AllBadges: Story = {
     showBadge: true,
     showBadgeB: true,
     showBadgeC: true,
-    text: '稅務簽證（含未分配盈餘）',
+    text: '介面設計（含設計規範）',
   },
 };
 
@@ -86,7 +86,7 @@ export const NoNumber: Story = {
     showBadge: false,
     showBadgeB: false,
     showBadgeC: false,
-    text: '代辦工商憑證申請',
+    text: '活動場地申請',
   },
 };
 
@@ -97,19 +97,19 @@ export const AllVariants: Story = {
       <div style="display:flex; flex-direction:column; gap:8px; padding:16px; max-width:400px;">
         <div>
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">預設（showBadge）</p>
-          <app-list-tag itemNumber="1" [showBadge]="true" text="稅務簽證"></app-list-tag>
+          <app-list-tag itemNumber="1" [showBadge]="true" text="介面設計"></app-list-tag>
         </div>
         <div>
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">Badge A + B</p>
-          <app-list-tag itemNumber="2" [showBadge]="true" [showBadgeB]="true" text="財務簽證"></app-list-tag>
+          <app-list-tag itemNumber="2" [showBadge]="true" [showBadgeB]="true" text="前端開發"></app-list-tag>
         </div>
         <div>
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">全部 Badge</p>
-          <app-list-tag itemNumber="3" [showBadge]="true" [showBadgeB]="true" [showBadgeC]="true" text="稅務簽證（含未分配盈餘）"></app-list-tag>
+          <app-list-tag itemNumber="3" [showBadge]="true" [showBadgeB]="true" [showBadgeC]="true" text="介面設計（含設計規範）"></app-list-tag>
         </div>
         <div>
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">無 Badge</p>
-          <app-list-tag itemNumber="4" [showBadge]="false" text="代刻發票章"></app-list-tag>
+          <app-list-tag itemNumber="4" [showBadge]="false" text="名片印製"></app-list-tag>
         </div>
       </div>
     `,

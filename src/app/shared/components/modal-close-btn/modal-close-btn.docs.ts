@@ -12,7 +12,7 @@ export const modalCloseBtnDoc: ComponentDoc = {
       name: 'ariaLabel',
       type: 'string',
       default: "'關閉'",
-      desc: '無障礙標籤；情境特定可覆寫（如「關閉酬金拆分」）',
+      desc: '無障礙標籤；情境特定可覆寫（如「關閉費用設定」）',
     },
     {
       name: 'disabled',
