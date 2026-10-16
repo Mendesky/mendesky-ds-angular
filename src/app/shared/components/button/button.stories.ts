@@ -97,7 +97,7 @@ export const TonalPrimary: Story = {
 };
 
 export const TonalNeutral: Story = {
-  args: { variant: 'tonal', color: 'neutral', size: 'S', text: '同登記地址' },
+  args: { variant: 'tonal', color: 'neutral', size: 'S', text: '同上方地址' },
 };
 
 export const OutlinedPrimary: Story = {
@@ -145,7 +145,7 @@ export const AllSizes: Story = {
 export const WithLeftIcon: Story = {
   args: {
     variant: 'filled', color: 'primary', size: 'M',
-    text: '新增案件', leftIcon: 'Plus',
+    text: '新增項目', leftIcon: 'Plus',
   },
 };
 
@@ -186,7 +186,7 @@ export const WithAllLabels: Story = {
     leftIcon: 'Briefcase',
     leftLabel:   { text: 'NEW',  color: 'Red'      } satisfies BtnLabelConfig,
     centerLabel: { text: '5',    color: 'SoftBlue'  } satisfies BtnLabelConfig,
-    text: '報價案件',
+    text: '我的項目',
     rightLabel:  { text: '全部', color: 'GreyOutline' } satisfies BtnLabelConfig,
   },
 };
