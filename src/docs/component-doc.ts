@@ -2,7 +2,7 @@
  * DS 元件說明檔的格式。
  *
  * 每個公開元件旁邊放一個 `<名稱>.docs.ts`，export 一個 `ComponentDoc`。
- * 這是元件說明的正本：文件網站（Storybook）與 mendesky-web 的 AI 協作索引（.claude/ds-index.md）都從這裡產生，
+ * 這是元件說明的正本：文件網站（Storybook）與使用端的 AI 協作索引都從這裡產生，
  * 不要在別處手改說明。改元件時，在同一個 PR 更新對應的說明檔；`npm run check:docs`
  * 會比對說明裡的屬性名稱與元件程式碼是否一致。
  */

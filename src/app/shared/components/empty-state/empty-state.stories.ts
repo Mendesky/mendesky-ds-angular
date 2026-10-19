@@ -1,5 +1,3 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/components/case-edit-modal/pages/p3-basic-info/p3-basic-info.component.html、
-// src/app/features/assign-board/assign-board.component.html（app-empty-state 的 message）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { EmptyStateComponent } from '../../../../index';
 
@@ -34,7 +32,7 @@ export const NoMessage: Story = {
   },
 };
 
-// ── 自訂訊息（報價案件聯絡窗口情境）──────────────────
+// ── 自訂訊息（聯絡窗口清單情境）──────────────────────
 export const CustomMessage: Story = {
   args: {
     message: '尚無聯絡窗口資料！請至少建立 1 位聯絡窗口',
@@ -52,7 +50,7 @@ export const AllVariants: Story = {
         </div>
         <div style="flex:1;min-width:200px;">
           <p style="font-size:12px;color:#999;margin:0 0 8px;text-align:center;">自訂訊息</p>
-          <app-empty-state message="目前沒有待處理的分配案件"></app-empty-state>
+          <app-empty-state message="目前沒有待處理的項目"></app-empty-state>
         </div>
         <div style="flex:1;min-width:200px;">
           <p style="font-size:12px;color:#999;margin:0 0 8px;text-align:center;">不顯示文字</p>

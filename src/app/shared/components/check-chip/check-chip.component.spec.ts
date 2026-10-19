@@ -9,9 +9,8 @@ import { expectWrappedInto, isSingleLine, unwrappedTextWidth } from '../../testi
  *
  * bug 根因：`.chip` 原本 `white-space: nowrap` → min-content ＝ 整串文字寬 → 作為 flex item
  * 完全不可收縮 → 必定溢出容器。而 chip 的 text 並非只有固定 enum 短標籤：
- * CEM P1「前所資訊及更換原因／前所服務業務」與 HDM P4-2 同名欄位的選項清單，
- * 是由 `app-inline-add` 讓使用者自由輸入 push 進去的（addCustomReason / addCustomService
- * 只 trim + 去重，無長度限制），實務值為整段敘述。
+ * 搭配 `app-inline-add` 的多選欄位，選項清單是由使用者自由輸入 push 進去的
+ * （呼叫端通常只 trim + 去重，無長度限制），實務值常是整段敘述。
  *
  * 修法選的是「改預設」而非加 opt-in `wrap` prop：nowrap 撐破容器在任何 call site 都不是想要的
  * 行為，而 `white-space: normal` 對放得下的短標籤渲染結果相同（本檔第 3、4 條鎖住這點）。
@@ -22,11 +21,11 @@ import { expectWrappedInto, isSingleLine, unwrappedTextWidth } from '../../testi
  * 字寬 14 vs 12px，比值與像素常數兩種寫法都會壞。詳見 text-layout.helpers.ts 檔頭。
  */
 
-/** 真實資料形狀：使用者在 inline-add 打的整段更換原因（重複兩次，確保任何字型下都遠超容器） */
+/** 真實資料形狀：使用者在 inline-add 打的整段敘述（重複兩次，確保任何字型下都遠超容器） */
 const LONG_TEXT =
   '這會是一個很長的測試我不知道會不會被截斷聽說今天的天氣超熱的不過我不知道因為我今天整天在辦公室裡我老公的阿姨說要來看我'
   + '而且我還想再補充一點就是這個欄位真的沒有字數上限所以使用者想打多長都可以';
-const SHORT_TEXT = '稅務簽證';
+const SHORT_TEXT = '網頁設計';
 /** 長不可斷 ASCII token（overflow-wrap: anywhere 才擋得住） */
 const LONG_URL = 'https://www.example.com/very/long/path/without/any/break/opportunity/at/all/1234567890';
 
@@ -40,7 +39,7 @@ const LONG_URL = 'https://www.example.com/very/long/path/without/any/break/oppor
     </div>
   `,
   styles: [`
-    /* 對齊真實現場：CEM P1 / HDM P4-2 的 .cem-chip-wrap */
+    /* 對齊常見用法：chip 放在 flex-wrap 容器裡 */
     .wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   `],
 })

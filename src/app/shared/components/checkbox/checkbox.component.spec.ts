@@ -17,7 +17,7 @@ import { ICON_REGISTRY } from '../icon/icon.registry';
   imports: [CheckboxComponent, FormsModule],
   template: `
     <app-checkbox class="ctl" [checked]="checked" [indeterminate]="indeterminate" [size]="size"
-      [disabled]="disabled" [label]="label" ariaLabel="報價案件管理 整組檢視"
+      [disabled]="disabled" [label]="label" ariaLabel="使用者管理 整組檢視"
       (checkedChange)="changes.push($event)"></app-checkbox>
     <app-checkbox class="model" [(ngModel)]="model" ariaLabel="綁 ngModel"></app-checkbox>
   `,
@@ -161,7 +161,7 @@ describe('CheckboxComponent', () => {
   describe('讀螢幕軟體', () => {
     it('沒有 label 時用 ariaLabel', () => {
       render({ label: '' });
-      expect(button().getAttribute('aria-label')).toBe('報價案件管理 整組檢視');
+      expect(button().getAttribute('aria-label')).toBe('使用者管理 整組檢視');
     });
 
     it('有 label 時用 label 文字，不再另外給 aria-label', () => {

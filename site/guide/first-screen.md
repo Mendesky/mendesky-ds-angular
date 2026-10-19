@@ -13,12 +13,12 @@ import { Component } from '@angular/core';
 import { ButtonComponent, FieldComponent, InputComponent } from '@mendesky/ds-angular';
 
 @Component({
-  selector: 'app-case-name-form',
+  selector: 'app-item-name-form',
   standalone: true,
   imports: [FieldComponent, InputComponent, ButtonComponent],
-  templateUrl: './case-name-form.component.html',
+  templateUrl: './item-name-form.component.html',
 })
-export class CaseNameFormComponent {
+export class ItemNameFormComponent {
   name = '';
   nameError = '';
 
@@ -27,7 +27,7 @@ export class CaseNameFormComponent {
   }
 
   onConfirm(): void {
-    this.nameError = this.name.trim() ? '' : '請輸入案件名稱';
+    this.nameError = this.name.trim() ? '' : '請輸入項目名稱';
   }
 }
 ```
@@ -41,10 +41,10 @@ template 用三個元件：
 - <ComponentLink id="button" />：按鈕。
 
 ```html
-<app-field label="案件名稱" [required]="true">
+<app-field label="項目名稱" [required]="true">
   <app-input
     size="L"
-    placeholder="請輸入案件名稱"
+    placeholder="請輸入項目名稱"
     [errorMessage]="nameError"
     (valueChange)="onNameChange($event)"
   ></app-input>
@@ -109,28 +109,28 @@ import { FormsModule } from '@angular/forms';
 import { FieldComponent, SelectComponent, SelectOption } from '@mendesky/ds-angular';
 
 @Component({
-  selector: 'app-office-form',
+  selector: 'app-department-form',
   standalone: true,
   imports: [FormsModule, FieldComponent, SelectComponent],
-  templateUrl: './office-form.component.html',
+  templateUrl: './department-form.component.html',
 })
-export class OfficeFormComponent {
-  office: string | null = null;
+export class DepartmentFormComponent {
+  department: string | null = null;
 
-  officeOptions: SelectOption[] = [
-    { value: 'taipei', label: '台北所' },
-    { value: 'taichung', label: '台中所' },
-    { value: 'kaohsiung', label: '高雄所', disabled: true },
+  departmentOptions: SelectOption[] = [
+    { value: 'design', label: '設計部' },
+    { value: 'engineering', label: '工程部' },
+    { value: 'admin', label: '行政部', disabled: true },
   ];
 }
 ```
 
 ```html
-<app-field label="所別" [required]="true">
+<app-field label="部門" [required]="true">
   <app-select
-    [options]="officeOptions"
-    placeholder="請選擇所別"
-    [(ngModel)]="office"
+    [options]="departmentOptions"
+    placeholder="請選擇部門"
+    [(ngModel)]="department"
   ></app-select>
 </app-field>
 ```
@@ -147,7 +147,7 @@ export class OfficeFormComponent {
 
 ```html
 <app-input
-  placeholder="請輸入案件名稱"
+  placeholder="請輸入項目名稱"
   [errorMessage]="nameError"
   errorPosition="top"
 ></app-input>
@@ -176,7 +176,7 @@ export class OfficeFormComponent {
   text="送出"
   [disabled]="!canSubmit"
   [clickableWhenDisabled]="true"
-  [disabledMessage]="'請先填寫案件名稱'"
+  [disabledMessage]="'請先填寫項目名稱'"
   (btnClick)="onSubmit()"
   (disabledClick)="onDisabledClick()"
 ></app-button>

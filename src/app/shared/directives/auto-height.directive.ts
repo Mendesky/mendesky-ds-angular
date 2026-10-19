@@ -5,7 +5,7 @@ import { Directive, ElementRef, Input, AfterViewInit, OnChanges, OnDestroy, Simp
  *
  * 與 trigger-based 的過渡不同：本 directive **偵測元素自身高度的任何變化**——切步、step 內
  * button-group 切換、欄位顯示/隱藏、skeleton↔內容 都自動過渡，不需手動綁「切換訊號」。
- * 用於不走 modal-shell 的容器（如 new-case-wizard 的 .wiz-card）；走 modal-shell 的 wizard
+ * 用於不走 modal-shell 的容器（如自訂的 wizard 卡片）；走 modal-shell 的 wizard
  * 改用 modal-shell 的 `animateContentHeight`（同機制、內建在 card 層）。
  *
  * 機制（與 modal-shell.animateContentHeight 一致）：
@@ -13,15 +13,15 @@ import { Directive, ElementRef, Input, AfterViewInit, OnChanges, OnDestroy, Simp
  * - WAAPI FLIP：偵測到高度變化 → 從舊高 animate 到新高（DS Component tier 300ms + --ease-enter）。
  * - 動畫期間 disconnect observer：WAAPI animate height 逐幀改 layout，會讓 observer 迴圈觸發。
  * - 動畫期間動態設 overflow:hidden（結束清除回 stylesheet 值）：容器平時可能 overflow:visible
- *   （如 .cem-section-card 的 save-fx 錨點），不裁切會讓展開瞬間內容溢出破圖。
+ *   （如卡片右上角浮出的儲存提示），不裁切會讓展開瞬間內容溢出破圖。
  * - 連續/高頻變化 snap：拖拉 textarea、auto-grow 等連續變化不補間（否則卡片會「一格格追」而卡頓），
  *   只對離散跳變（欄位顯示/隱藏、skeleton↔內容）補間。
  * - 尊重 prefers-reduced-motion。
  *
- * 用法：`[appAutoHeight]` opt-in，或元素帶 class `.cem-section-card`（需該 component import 本 directive）自動套用。
+ * 用法：在元素上加 `appAutoHeight`（裸屬性即啟用），或綁 `[appAutoHeight]="條件"`。
  */
 @Directive({
-  selector: '[appAutoHeight], .cem-section-card',
+  selector: '[appAutoHeight]',
   standalone: true,
 })
 export class AutoHeightDirective implements AfterViewInit, OnChanges, OnDestroy {

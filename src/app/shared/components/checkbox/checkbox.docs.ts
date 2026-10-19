@@ -36,7 +36,7 @@ export const checkboxDoc: ComponentDoc = {
       name: 'ariaLabel',
       type: 'string',
       default: "''",
-      desc: '沒有 label 時一定要給，讀螢幕軟體才唸得出這是什麼（例：「報價案件管理 整組檢視」）',
+      desc: '沒有 label 時一定要給，讀螢幕軟體才唸得出這是什麼（例：「使用者管理 整組檢視」）',
     },
     {
       name: 'disabled',
@@ -57,7 +57,7 @@ export const checkboxDoc: ComponentDoc = {
       code: `<app-checkbox
   [checked]="allSelected()"
   [indeterminate]="someSelected()"
-  label="報價案件管理"
+  label="使用者管理"
   (checkedChange)="toggleGroup($event)"
 ></app-checkbox>`,
     },

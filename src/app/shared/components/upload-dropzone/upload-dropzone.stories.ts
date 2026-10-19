@@ -1,10 +1,10 @@
 import { componentWrapperDecorator, type Meta, type StoryObj } from '@storybook/angular';
 import { UploadDropzoneComponent } from '../../../../index';
 
-// 範例資料取自 dashboard-app 主線實際用法：
-// - 結案文件 / 回填報價單原檔：acceptedTypes ['.pdf', '.jpg', '.jpeg', '.png']、maxSize 20
-// - p1-operation：disabledHint「請先選擇文件類型」
-// - new-case-wizard / report-original-file-modal：errorMessage「請至少上傳一份報價單原檔」
+// 範例設定：
+// - 收文件與圖片：acceptedTypes ['.pdf', '.jpg', '.jpeg', '.png']、maxSize 20
+// - 要先選類型才能上傳：disabledHint「請先選擇文件類型」
+// - 必填驗證：errorMessage「請至少上傳一份原始檔案」
 const meta: Meta<UploadDropzoneComponent> = {
   title: '互動元件/Upload Dropzone',
   id: 'upload-dropzone',
@@ -84,7 +84,7 @@ export const WithError: Story = {
   args: {
     acceptedTypes: ['.pdf'],
     maxSize: 20,
-    errorMessage: '請至少上傳一份報價單原檔',
+    errorMessage: '請至少上傳一份原始檔案',
   },
 };
 
@@ -94,7 +94,7 @@ export const WithErrorTop: Story = {
   args: {
     acceptedTypes: ['.pdf'],
     maxSize: 20,
-    errorMessage: '請至少上傳一份報價單原檔',
+    errorMessage: '請至少上傳一份原始檔案',
     errorPosition: 'top',
   },
 };

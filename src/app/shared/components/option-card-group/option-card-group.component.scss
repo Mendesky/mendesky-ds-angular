@@ -2,11 +2,11 @@
   display: block;
 }
 
-/* grid 欄數由 options 數量決定（3 設立現況 / 4 帳務類型）。
+/* grid 欄數由 options 數量決定（例如 3 張或 4 張）。
    平板以下的「隱藏 grid、改用 app-select」由 consumer 負責（保留各自既有斷點）。 */
 .option-card-group {
   display: grid;
   gap: 10px;
-  /* 欄數隨容器寬自適應（3 設立現況 / 4 帳務類型）；過窄時由 consumer 切換成 app-select */
+  /* 欄數隨容器寬自適應（3 張或 4 張）；過窄時由 consumer 切換成 app-select */
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }

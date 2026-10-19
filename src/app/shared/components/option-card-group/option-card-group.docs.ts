@@ -6,7 +6,7 @@ export const optionCardGroupDoc: ComponentDoc = {
   selector: 'app-option-card-group',
   group: '表單元件',
   summary: 'options: OptionCardItem[] · value · ariaLabel · [disabledValues]: string[] · (valueChange) — role=radiogroup、方向鍵 roving focus、@for track value',
-  when: '一組互斥的插圖選擇卡（帳務類型 / 客戶設立現況等）。取代散落各處手刻的 .at-grid + onAtGridKeydown 鍵盤 handler。',
+  when: '一組互斥的插圖選擇卡（版面樣式 / 主題外觀等）。取代各處手刻的卡片 grid 與鍵盤 handler。',
   props: [
     {
       name: 'options',
@@ -30,7 +30,7 @@ export const optionCardGroupDoc: ComponentDoc = {
       name: 'disabledValues',
       type: 'string[]',
       default: '[]',
-      desc: '額外停用的 value（疊加在 option.disabled 之上，供集團配額 / 境外規則等情境）',
+      desc: '額外停用的 value（疊加在 option.disabled 之上，供名額已滿 / 條件不符等情境）',
     },
     {
       name: '(valueChange)',
@@ -41,28 +41,28 @@ export const optionCardGroupDoc: ComponentDoc = {
   ],
   usage: [
     {
-      label: '帳務類型（含手機 fallback）',
+      label: '版面樣式（含手機 fallback）',
       code: `<!-- Desktop / Tablet：卡片 -->
 <app-option-card-group
-  class="at-card-group"
-  ariaLabel="帳務類型"
-  [options]="accountTypeOptions"
-  [value]="selectedAccountType"
-  [disabledValues]="disabledAccountTypeValues"
-  (valueChange)="onAccountTypeSelect($event)">
+  class="layout-card-group"
+  ariaLabel="版面樣式"
+  [options]="layoutOptions"
+  [value]="selectedLayout"
+  [disabledValues]="disabledLayoutValues"
+  (valueChange)="onLayoutSelect($event)">
 </app-option-card-group>
 
 <!-- Mobile：app-select fallback（卡片在 tablet-down 隱藏，consumer 必配） -->
-<div class="at-mobile-select">
-  <app-select [options]="enabledOptions" [ngModel]="selectedAccountType"
-    (ngModelChange)="onAccountTypeSelect($event)"></app-select>
+<div class="layout-mobile-select">
+  <app-select [options]="enabledOptions" [ngModel]="selectedLayout"
+    (ngModelChange)="onLayoutSelect($event)"></app-select>
 </div>`,
     },
   ],
   notes: [
     {
       type: 'warning',
-      content: '群組在 tablet-down 會 display:none（由 consumer 的 .at-card-group + scss 斷點規則控制）→ 每個 consumer 都必須額外配一個 app-select 作手機 fallback，否則手機完全無法選取。（設立現況曾因漏此導致手機無法選。）',
+      content: '群組在 tablet-down 會 display:none（由 consumer 的 .layout-card-group + scss 斷點規則控制）→ 每個 consumer 都必須額外配一個 app-select 作手機 fallback，否則手機完全無法選取。（曾有頁面因漏配而在手機上無法選取。）',
     },
     {
       type: 'info',

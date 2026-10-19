@@ -209,7 +209,7 @@ console.log(`[link-ds-angular] ${path.basename(linkPath)} -> ${target}`);
 ```
 
 - **Noto Sans TC（必載）**：所有文字與一般數字。它的數字本身就是等寬的，數字欄位不用另外加 `tabular-nums`。
-- **Roboto Mono（用到 `mono-*` class 才需要）**：只用在報價與附加服務的金額。
+- **Roboto Mono（用到 `mono-*` class 才需要）**：用在需要逐位對齊的金額；哪些金額要用它，由使用端規定。
 
 舊的 `--font-family/inter` 和 `.inter-*` 已淘汰，目前改指向 Noto Sans TC，只是為了讓舊程式不壞。新程式請用 `noto-*`。各個文字樣式見[字型與文字樣式](./typography)。
 

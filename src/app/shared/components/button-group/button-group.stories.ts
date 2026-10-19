@@ -96,7 +96,7 @@ export const WithError: Story = {
     type: 'form',
     options: POLICY_OPTIONS,
     value: null,
-    errorMessage: '請選擇一種案件類型',
+    errorMessage: '請選擇一種申請類型',
   },
 };
 
@@ -116,7 +116,7 @@ export const Interactive: Story = {
     template: `
       <div style="display:flex; flex-direction:column; gap:24px; padding:16px; max-width:480px;">
         <div>
-          <p style="font-size:12px;color:#686868;margin-bottom:6px;">Form 類型 — 案件性質</p>
+          <p style="font-size:12px;color:#686868;margin-bottom:6px;">Form 類型 — 申請性質</p>
           <app-button-group
             type="form"
             [options]="policyOptions"

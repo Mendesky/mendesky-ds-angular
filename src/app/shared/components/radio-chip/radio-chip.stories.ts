@@ -1,4 +1,3 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/models/account-type.model.ts（ACCOUNT_TYPE_OPTIONS 帳務類型：純簽證／稅務帳／管理帳／財務帳）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { action } from '@storybook/addon-actions';
 import { FormsModule } from '@angular/forms';
@@ -36,7 +35,7 @@ const meta: Meta<RadioChipComponent> = {
     },
   },
   args: {
-    text: '稅務帳',
+    text: '待審核',
     size: 's',
     showRadio: true,
     showCancel: false,
@@ -49,7 +48,7 @@ type Story = StoryObj<RadioChipComponent>;
 export const Default: Story = {
   name: '預設',
   args: {
-    text: '稅務帳',
+    text: '待審核',
     size: 's',
     showRadio: true,
     showCancel: false,
@@ -59,7 +58,7 @@ export const Default: Story = {
 export const WithCancel: Story = {
   name: '含取消按鈕',
   args: {
-    text: '管理帳',
+    text: '已完成',
     size: 's',
     showRadio: true,
     showCancel: true,
@@ -69,7 +68,7 @@ export const WithCancel: Story = {
 export const NoRadio: Story = {
   name: '無 Radio 圖示',
   args: {
-    text: '財務帳',
+    text: '已封存',
     size: 's',
     showRadio: false,
     showCancel: false,
@@ -83,15 +82,15 @@ export const AllSizes: Story = {
       <div style="display:flex; align-items:center; gap:16px; padding:16px; flex-wrap:wrap;">
         <div style="text-align:center;">
           <p style="font-size:12px;color:#686868;margin-bottom:6px;">m（大）</p>
-          <app-radio-chip size="m" text="純簽證" [showRadio]="true"></app-radio-chip>
+          <app-radio-chip size="m" text="進行中" [showRadio]="true"></app-radio-chip>
         </div>
         <div style="text-align:center;">
           <p style="font-size:12px;color:#686868;margin-bottom:6px;">s（中，預設）</p>
-          <app-radio-chip size="s" text="稅務帳" [showRadio]="true"></app-radio-chip>
+          <app-radio-chip size="s" text="待審核" [showRadio]="true"></app-radio-chip>
         </div>
         <div style="text-align:center;">
           <p style="font-size:12px;color:#686868;margin-bottom:6px;">xs（小）</p>
-          <app-radio-chip size="xs" text="管理帳" [showRadio]="true"></app-radio-chip>
+          <app-radio-chip size="xs" text="已完成" [showRadio]="true"></app-radio-chip>
         </div>
       </div>
     `,
@@ -109,7 +108,7 @@ export const Selected: Story = {
         </p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <app-radio-chip
-            text="純簽證"
+            text="進行中"
             size="s"
             [showRadio]="true"
             [showCancel]="true"
@@ -117,7 +116,7 @@ export const Selected: Story = {
             (cancelClick)="val1 = false"
           ></app-radio-chip>
           <app-radio-chip
-            text="稅務帳"
+            text="待審核"
             size="s"
             [showRadio]="true"
             [showCancel]="true"
@@ -125,7 +124,7 @@ export const Selected: Story = {
             (cancelClick)="val2 = false"
           ></app-radio-chip>
           <app-radio-chip
-            text="管理帳"
+            text="已完成"
             size="s"
             [showRadio]="true"
             [showCancel]="true"
@@ -133,7 +132,7 @@ export const Selected: Story = {
             (cancelClick)="val3 = false"
           ></app-radio-chip>
           <app-radio-chip
-            text="財務帳"
+            text="已封存"
             size="s"
             [showRadio]="true"
             [showCancel]="true"
@@ -157,10 +156,10 @@ export const Selected: Story = {
       selectedLabels() {
         const self = this as any;
         const labels = [
-          self.val1 && '純簽證',
-          self.val2 && '稅務帳',
-          self.val3 && '管理帳',
-          self.val4 && '財務帳',
+          self.val1 && '進行中',
+          self.val2 && '待審核',
+          self.val3 && '已完成',
+          self.val4 && '已封存',
         ].filter(Boolean);
         return labels.length ? labels.join('、') : '（無）';
       },

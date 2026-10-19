@@ -408,10 +408,10 @@ export function isMarkdownLike(text: string): boolean {
 /**
  * 比對兩個 ProseMirror doc 是否語意相同，忽略 ignoredAttrs 內的 attr key。
  *
- * 抽自 fee-supplement-editor 的 docEqualsIgnoringDisplayUrl，泛化為可接受任意
- * ignoredAttrs 清單，讓不同場景指定各自需要略過的 runtime-only attr：
- * - fee-supplement-editor：['displayUrl']（blob URL 由 hydrate 動態寫入）
- * - P4-4 等其他場景：[]（不需略過任何 attr）
+ * 由原本只略過 displayUrl 的比對泛化而來，可接受任意 ignoredAttrs 清單，
+ * 讓不同場景指定各自需要略過的 runtime-only attr：
+ * - 圖片上傳 wrapper：['displayUrl']（blob URL 由 hydrate 動態寫入）
+ * - 一般場景：[]（不需略過任何 attr）
  *
  * 深度結構比較而非 JSON.stringify（避免 object key 順序問題）。
  * 尾部空段落修剪與 content:[] 等價空 content 邏輯維持不變。
@@ -463,7 +463,7 @@ export function docEqualsIgnoringAttrs(
 
 /**
  * 遞迴移除 ProseMirrorJSON 中所有節點的 ignoredAttrs（runtime-only attrs）。
- * fee-supplement-editor 傳 ['displayUrl'] 防止 blob URL 混入持久化 draft。
+ * 圖片上傳 wrapper 傳 ['displayUrl'] 防止 blob URL 混入持久化 draft。
  */
 export function stripNodeAttrs(node: ProseMirrorJSON, ignoredAttrs: string[]): ProseMirrorJSON {
   const result: ProseMirrorJSON = { ...node };

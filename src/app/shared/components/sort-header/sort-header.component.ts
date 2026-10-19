@@ -12,7 +12,7 @@ import { SortState } from './sort-header.model';
  *   <app-sort-header class="col-name" label="姓名" key="name" [sort]="sort()" (sortChange)="onSort($event)" />
  *   onSort(key: string) { this.sort.set(nextSort(this.sort(), key)); }
  *
- * 外觀比照 dashboard-app 案件列表的 .lt-hd--sortable：
+ * 外觀規則：
  * - 沒在排序的欄：跟一般表頭一樣是淺灰字，滑過或鍵盤聚焦時才出現排序圖示。
  * - 正在排序的欄：動作色、半粗，一直顯示上 / 下箭頭。
  * - 欄寬由呼叫端放在 host 上的 class（例：col-name）決定。

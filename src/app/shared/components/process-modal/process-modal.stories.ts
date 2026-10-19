@@ -9,7 +9,7 @@ const meta: Meta<ProcessModalComponent> = {
   tags: ['autodocs'],
   argTypes: {
     type: {
-      description: '彈窗類型：running（處理中）/ congratulation（成交慶祝）',
+      description: '彈窗類型：running（處理中）/ congratulation（完成慶祝）',
       control: { type: 'select' },
       options: ['running', 'congratulation'] satisfies ProcessModalType[],
       table: { defaultValue: { summary: 'running' } },
@@ -48,11 +48,11 @@ export const RunningOpen: Story = {
 };
 
 export const CongratulationOpen: Story = {
-  name: '成交慶祝（開啟）',
+  name: '完成慶祝（開啟）',
   args: {
     isOpen: true,
     type: 'congratulation',
-    message: '恭喜！本次報價案件已正式成交，感謝您的努力！',
+    message: '恭喜！申請已全部完成，感謝您的努力！',
   },
 };
 
@@ -84,7 +84,7 @@ export const Interactive: Story = {
             (click)="openCongrats()"
             style="padding:8px 16px;background:#5da26b;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;"
           >
-            開啟「成交慶祝」
+            開啟「完成慶祝」
           </button>
         </div>
         <app-process-modal
@@ -107,7 +107,7 @@ export const Interactive: Story = {
       },
       openCongrats() {
         (this as any).type = 'congratulation';
-        (this as any).message = '恭喜！本次報價案件已正式成交，感謝您的努力！';
+        (this as any).message = '恭喜！申請已全部完成，感謝您的努力！';
         (this as any).isOpen = true;
       },
       onDismissed() {

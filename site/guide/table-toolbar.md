@@ -26,11 +26,11 @@
 
 ```html
 <app-rich-text-editor
-  [value]="situationDoc"
-  placeholder="請輸入客戶背景概況…"
+  [value]="contentDoc"
+  placeholder="請輸入背景說明…"
   [readOnly]="readOnly"
   [tableStructureEditing]="true"
-  (valueChange)="onSituationChange($event)"
+  (valueChange)="onContentChange($event)"
   (composedBlur)="onBlur()">
 </app-rich-text-editor>
 ```

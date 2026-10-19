@@ -60,7 +60,7 @@ const COL_GRIP_ITEMS: readonly GripMenuItem[] = [
  *
  * **隱藏是連 capability 一起關**，不只是藏按鈕：StarterKit 帶鍵盤快速鍵（⌘B）與 markdown
  * input rule（打 `**粗體**`），只藏按鈕的話那些格式照樣進得了文件。呼叫端之所以要隱藏，
- * 通常正是因為下游（Notion 轉換、報價單 PDF）不接受那個格式。
+ * 通常正是因為下游（Notion 轉換、匯出的 PDF）不接受那個格式。
  */
 export type RichTextEditorTool =
   | 'underline'
@@ -87,7 +87,7 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
   @Input() extraExtensions: Extensions = [];
   /**
    * 比對 docJson 相等時要忽略的 attr key 清單。
-   * fee-supplement-editor 傳 ['displayUrl']；一般場景傳 []。
+   * 會把 blob URL 動態寫進 attr 的 wrapper（如圖片上傳 wrapper）傳 ['displayUrl']；一般場景傳 []。
    */
   @Input() ignoredAttrs: string[] = [];
   /**
@@ -99,7 +99,7 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
   /**
    * 開啟表格結構編輯：hover（滑鼠）或 tap 進 cell（觸控/鍵盤）時，於列左緣 / 欄上緣浮出把手，
    * 點把手 → 該列/欄增刪選單（Notion 式）。
-   * opt-in 預設 false——只有 fee-supplement-editor 傳 true；HDM 客戶狀況卡 / issue-report / 唯讀 view 維持現狀（gate 不外溢）。
+   * opt-in 預設 false——只有明確需要編輯表格結構的呼叫端傳 true；其他呼叫端與唯讀 view 維持現狀（gate 不外溢）。
    */
   @Input() tableStructureEditing = false;
 
@@ -172,7 +172,7 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
         ...(this.isHidden('table')
           ? []
           : [Table.configure({ resizable: false }), TableRow, TableHeader, TableCell]),
-        // 表格結構編輯（fee-supplement）才掛：選單開啟時整列/整欄高亮的 decoration plugin。
+        // 開啟表格結構編輯時才掛：選單開啟時整列/整欄高亮的 decoration plugin。
         ...(this.tableStructureEditing && !this.isHidden('table') ? [TableHighlightExtension] : []),
         Placeholder.configure({ placeholder: this.placeholder, showOnlyWhenEditable: true }),
         Link.configure({ openOnClick: false, autolink: true }),
@@ -434,7 +434,7 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
   }
 
   // ── 選單開啟時高亮該列/欄的操作範圍（Notion 式整塊外框 + 淡藍底）──
-  // 用 ProseMirror Decoration（非 classList）：table cell DOM 由 PM 管理，feeSupplement 的
+  // 用 ProseMirror Decoration（非 classList）：table cell DOM 由 PM 管理，wrapper 掛的
   // autocomplete plugin 在點把手（editor blur）時會觸發重繪、把手動加的 classList 連 nodeview 一起替換掉
   // （07-25 實測：class 加了 5 次結束卻 0、且無 classList.remove ＝節點被換）。Decoration 由 PM 每次
   // render 重新套用，抹不掉；透過 setMeta 派送、不動 doc（docChanged=false → 不 emit valueChange）。
@@ -621,11 +621,11 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy, OnChan
     // ② 有語意結構的 HTML → 交還 ProseMirror 預設解析。
     //    **這條必須排在 image 之前**：2026-08-03 實測 Excel 與 Word 的 clipboard `items`
     //    都同時帶 `image/png`（儲存格截圖 / 文件快照）。若先走 image 分支，會把整包文字換成
-    //    一張圖，或在未綁 `(imagePasted)` 的宿主（如 p4-4 客戶狀況卡片）直接吞掉貼上。
+    //    一張圖，或在未綁 `(imagePasted)` 的宿主直接吞掉貼上。
     if (htmlData && isRichHtml(htmlData)) return false;
 
     // ③ 純圖片貼上（clipboard 沒有可用 HTML）。只有宿主真的訂閱了 `imagePasted` 才接手，
-    //    否則就是「emit 進虛空 ＋ 吞掉貼上」——p4-4 客戶狀況卡片沒有綁這個 output。
+    //    否則就是「emit 進虛空 ＋ 吞掉貼上」——不是每個宿主都有綁這個 output。
     if (this.imagePasted.observed) {
       const items = data.items;
       for (let i = 0; i < items.length; i++) {

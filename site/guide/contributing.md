@@ -15,6 +15,17 @@
 | 指南文章 | `site/guide/*.md` |
 | 圖示 | `src/app/shared/components/icon/icon.registry.ts` |
 
+## 不放業務內容
+
+設計系統只放畫面與前端的規則和邏輯。使用端產品的業務規則、業務用詞、資料結構，不放進這個 repo。
+
+判斷方式：換成另一個產品，這段內容還成立嗎？成立就屬於設計系統；不成立就屬於使用端，由使用端自己的文件與程式碼管理。
+
+- 元件不內建業務文字或業務資料。需要的文字與清單（例如分組名稱、選擇器標題）由使用端用 input 或 provider 傳進來。
+- 說明檔、範例頁、指南、測試的示範資料用中性內容，不用某個產品的實際欄位或客戶名稱。
+- 互動原則與註解不寫「出自使用端哪個檔案、哪一頁」，只寫畫面上的情境。
+- 哪些欄位要套用某種樣式（例如哪些金額用等寬字型）是產品規則，寫在使用端；設計系統只提供樣式本身。
+
 ## 新增或修改元件時要補什麼
 
 ### 1. 說明檔 `<名稱>.docs.ts`
@@ -51,8 +62,8 @@ export const fieldDoc: ComponentDoc = {
   usage: [
     {
       label: '必填欄位',
-      code: `<app-field label="案件名稱" [required]="true">
-  <app-input placeholder="請輸入案件名稱" [errorMessage]="form.nameError"></app-input>
+      code: `<app-field label="名稱" [required]="true">
+  <app-input placeholder="請輸入名稱" [errorMessage]="form.nameError"></app-input>
 </app-field>`,
     },
   ],

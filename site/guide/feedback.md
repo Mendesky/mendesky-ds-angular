@@ -81,7 +81,7 @@ this.toast.show({ type: 'success', message: '已儲存' });
 
 ```ts
 // 同一件事的兩個階段：先顯示進行中，完成後原地更新
-const id = this.toast.show({ type: 'loading', message: '訪談表生成中', persist: true });
+const id = this.toast.show({ type: 'loading', message: '文件產生中', persist: true });
 // …完成後
 this.toast.update(id, { type: 'success', message: '已開始下載' });
 ```

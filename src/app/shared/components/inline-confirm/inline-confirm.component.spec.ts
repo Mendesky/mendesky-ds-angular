@@ -12,7 +12,7 @@ describe('InlineConfirmComponent — 錯誤提示位置', () => {
   function tooltipPosition(position?: 'top' | 'bottom'): 'top' | 'bottom' {
     const fixture = TestBed.createComponent(InlineConfirmComponent);
     fixture.componentRef.setInput('label', '');
-    fixture.componentRef.setInput('checkLabel', '我已確認報價內容皆正確無誤');
+    fixture.componentRef.setInput('checkLabel', '我已確認內容皆正確無誤');
     fixture.componentRef.setInput('errorMessage', '請勾選確認後再送出');
     if (position) fixture.componentRef.setInput('errorPosition', position);
     fixture.detectChanges();

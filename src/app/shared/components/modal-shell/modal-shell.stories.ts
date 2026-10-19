@@ -8,11 +8,10 @@ import {
   ModalShellComponent,
 } from '../../../../index';
 
-// 範例內容取自 dashboard-app 主線實際用法：
-// - 封存案件（quoting-cases/components/archive-modal）：width 520px、maxHeight 85vh、frostedGlass；
-//   標題「封存案件」、說明文字、取消 / 確認封存按鈕
-// - 查詢訪談表（handover-search-modal）：variant="search"、placeholder「請輸入統編、公司名稱進行查詢」
-// - 版本更新（release-notes-dialog）：darkBackdrop、frostedGlass、標題「版本更新」
+// 範例內容：
+// - 封存項目：width 520px、maxHeight 85vh、frostedGlass；標題「封存項目」、說明文字、取消 / 確認封存按鈕
+// - 搜尋：variant="search"、placeholder「請輸入名稱或編號進行查詢」
+// - 版本更新：darkBackdrop、frostedGlass、標題「版本更新」
 //
 // modal-shell 開啟時會把自己搬到 document.body，並以 position:fixed 蓋滿畫面。
 // 說明頁若直接內嵌，開著的 modal 會蓋住整頁，所以這裡讓每個範例在說明頁中以獨立 iframe 呈現。
@@ -22,12 +21,12 @@ const ARCHIVE_CONTENT = (close: string) => `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:24px 24px 0;">
       <div id="archive-modal-title" style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;color:var(--text\\/title, #3e3e3e);">
         <app-icon name="Archive" size="24"></app-icon>
-        <span>封存案件</span>
+        <span>封存項目</span>
       </div>
       <app-modal-close-btn (closeClick)="${close}"></app-modal-close-btn>
     </div>
     <p style="margin:0;padding:12px 24px 0;font-size:13px;line-height:1.6;color:var(--text\\/secondary, #686868);">
-      封存後，案件狀態將更新為 <strong>已封存</strong>，後續可於列表中查閱封存紀錄與原因。
+      封存後，項目狀態將更新為 <strong>已封存</strong>，後續可於列表中查閱封存紀錄與原因。
     </p>
     <div style="display:flex;justify-content:space-between;gap:12px;padding:16px 24px 24px;margin-top:16px;border-top:1px solid var(--border\\/primary, #e5e5e5);">
       <app-button variant="elevated" color="neutral" size="M" text="取消" (btnClick)="${close}"></app-button>
@@ -110,7 +109,7 @@ const meta: Meta<ModalShellComponent> = {
 export default meta;
 type Story = StoryObj<ModalShellComponent>;
 
-// ── 主範例：開啟中的封存案件 modal（可在 Controls 調整）──────
+// ── 主範例：開啟中的封存項目 modal（可在 Controls 調整）──────
 export const Default: Story = {
   name: '基本用法',
   args: {
@@ -170,7 +169,7 @@ export const Search: Story = {
         (escapePress)="escapePress()">
         <div style="display:flex;align-items:center;gap:12px;padding:16px 24px;">
           <app-icon name="Search" size="24" style="color:#686868;flex-shrink:0;"></app-icon>
-          <app-input size="L" placeholder="請輸入統編、公司名稱進行查詢" style="flex:1;min-width:0;"></app-input>
+          <app-input size="L" placeholder="請輸入名稱或編號進行查詢" style="flex:1;min-width:0;"></app-input>
           <app-button variant="outlined" color="primary" size="M" text="搜尋"></app-button>
         </div>
       </app-modal-shell>

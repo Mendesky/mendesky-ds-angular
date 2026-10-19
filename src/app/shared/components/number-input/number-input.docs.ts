@@ -60,7 +60,7 @@ export const numberInputDoc: ComponentDoc = {
       name: 'allowEmpty',
       type: 'boolean',
       default: 'true',
-      desc: 'false = 必填欄位不可清空：隱藏清除鈕，且鍵盤刪空後 blur 自動還原為上次值（畫面永遠等於後端）。用於後端無法持久化空值的欄位（如 P2 酬金）',
+      desc: 'false = 必填欄位不可清空：隱藏清除鈕，且鍵盤刪空後 blur 自動還原為上次值（畫面永遠等於後端）。用於後端無法持久化空值的欄位（如必填的金額）',
     },
     {
       name: 'disabled',

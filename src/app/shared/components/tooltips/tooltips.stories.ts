@@ -1,4 +1,3 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/quoting-cases.component.html（卡片選單「成交客戶」停用時的 tooltip 文字）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { TooltipsComponent } from '../../../../index';
 
@@ -90,6 +89,6 @@ export const WithLongText: Story = {
   args: {
     propClass: 'Down',
     styles: 'Default',
-    text: '無任何報價項目，請新增報價項目後再進行成交',
+    text: '目前沒有任何項目，請先新增項目後再送出',
   },
 };

@@ -54,7 +54,7 @@ export const Default: Story = {
     checked: false,
     indeterminate: false,
     size: 'm',
-    label: '報價案件管理',
+    label: '使用者管理',
     ariaLabel: '',
     disabled: false,
   },

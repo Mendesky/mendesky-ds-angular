@@ -40,7 +40,7 @@ const meta: Meta<ProcessToastComponent> = {
   },
   args: {
     type: 'success',
-    message: '案件已成功建立',
+    message: '項目已成功建立',
     duration: 99999,
     size: 'M',
     stackMode: true,
@@ -54,7 +54,7 @@ export const Success: Story = {
   name: '成功',
   args: {
     type: 'success',
-    message: '案件已成功建立',
+    message: '項目已成功建立',
     duration: 99999,
   },
 };
@@ -155,7 +155,7 @@ export const Interactive: Story = {
       message: '',
       showSuccess() {
         (this as any).type = 'success';
-        (this as any).message = '案件已成功建立，請至案件清單查看';
+        (this as any).message = '項目已成功建立，請至項目清單查看';
         (this as any).visible = true;
       },
       showError() {

@@ -22,7 +22,7 @@ export const emptyStateDoc: ComponentDoc = {
     },
     {
       label: '自訂文字',
-      code: '<app-empty-state message="查無符合的報價案件"></app-empty-state>',
+      code: '<app-empty-state message="查無符合的項目"></app-empty-state>',
     },
     {
       label: '不顯示文字',

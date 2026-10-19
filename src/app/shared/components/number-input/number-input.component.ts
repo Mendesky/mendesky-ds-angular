@@ -28,7 +28,7 @@ export class NumberInputComponent implements OnChanges, OnDestroy {
   @Input() initialValue: number | null = null;
   @Input() suffix = '';
   /** false = 必填欄位不可被清空：隱藏清除鈕，且鍵盤刪空後 blur 時還原為上次值（baseline）。
-   *  預設 true 維持既有行為。用於後端無法持久化「空值」的欄位（如 P2 酬金）。 */
+   *  預設 true 維持既有行為。用於後端無法持久化「空值」的欄位（如必填的金額）。 */
   @Input() allowEmpty = true;
 
   @Output() valueChange = new EventEmitter<number | null>();

@@ -56,6 +56,7 @@ export * from './app/shared/components/sort-header/sort-header.model';
 export * from './app/shared/components/stepper/stepper.component';
 export * from './app/shared/components/template-editor/template-editor.component';
 export * from './app/shared/components/template-var-panel/template-var-panel.component';
+export * from './app/shared/components/template-var-panel/template-var-panel.tokens';
 export * from './app/shared/components/textarea/textarea.component';
 export * from './app/shared/components/toast-container/toast-container.component';
 export * from './app/shared/components/toggle/toggle.component';

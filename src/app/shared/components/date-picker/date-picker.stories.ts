@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { FormsModule } from '@angular/forms';
 import { DatePickerComponent, FieldComponent } from '../../../../index';
 
-// 今天的民國年月日（用於「不可選未來日期」範例，比照 dashboard-app 的 todayRoc）
+// 今天的民國年月日（用於「不可選未來日期」範例）
 const now = new Date();
 const TODAY_ROC = { year: now.getFullYear() - 1911, month: now.getMonth() + 1, day: now.getDate() };
 
@@ -127,7 +127,7 @@ export const Default: Story = {
   }),
 };
 
-// ── 只選年（dashboard-app 過往成本分析需求） ───────────────
+// ── 只選年（回顧過往年度） ─────────────────────────────
 export const YearMode: Story = {
   name: '只選年',
   render: () => ({
@@ -148,14 +148,14 @@ export const YearMode: Story = {
   }),
 };
 
-// ── 選年月日、不可選未來日期（dashboard-app 成交日期） ──────────
+// ── 選年月日、不可選未來日期（完成日期） ──────────────────
 export const DayModeWithMaxDate: Story = {
   name: '選年月日（不可選未來日期）',
   render: () => ({
     props: { pickerValue: '', maxYear: TODAY_ROC.year, maxDate: TODAY_ROC },
     template: `
       <div style="${WRAP_STYLE}">
-        <app-field label="成交日期" [required]="true">
+        <app-field label="完成日期" [required]="true">
           <app-date-picker
             mode="day"
             size="L"
@@ -171,7 +171,7 @@ export const DayModeWithMaxDate: Story = {
   }),
 };
 
-// ── 空值有業務語意＋可清除（dashboard-app 報價起始日：空＝設立完成後開始） ──
+// ── 空值有語意＋可清除（開始日期：空＝審核通過後開始） ──
 export const EmptyLabelClearable: Story = {
   name: '空值語意文字＋可清除',
   render: () => ({
@@ -182,31 +182,31 @@ export const EmptyLabelClearable: Story = {
           size="M"
           mode="month"
           [clearable]="true"
-          emptyLabel="設立完成後開始"
+          emptyLabel="審核通過後開始"
           [(ngModel)]="pickerValue">
         </app-date-picker>
-        <div style="${VALUE_STYLE}">選取後欄位內出現清除鈕，清除後回到「設立完成後開始」。目前值：'{{ pickerValue }}'</div>
+        <div style="${VALUE_STYLE}">選取後欄位內出現清除鈕，清除後回到「審核通過後開始」。目前值：'{{ pickerValue }}'</div>
       </div>
     `,
     moduleMetadata: { imports: [DatePickerComponent, FormsModule] },
   }),
 };
 
-// ── 錯誤狀態＋年份跨度大（dashboard-app 核准設立日期，最小民國 40 年） ──
+// ── 錯誤狀態＋年份跨度大（出生日期，最小民國 40 年） ──
 export const ErrorState: Story = {
   name: '錯誤狀態',
   render: () => ({
     props: { pickerValue: '', minYear: 40, maxYear: TODAY_ROC.year, maxDate: TODAY_ROC },
     template: `
       <div style="${WRAP_STYLE}">
-        <app-field label="核准設立日期" [required]="true">
+        <app-field label="出生日期" [required]="true">
           <app-date-picker
             mode="day"
             size="M"
             [minYear]="minYear"
             [maxYear]="maxYear"
             [maxDate]="maxDate"
-            [errorMessage]="pickerValue ? '' : '請選擇核准設立日期'"
+            [errorMessage]="pickerValue ? '' : '請選擇出生日期'"
             [(ngModel)]="pickerValue">
           </app-date-picker>
         </app-field>

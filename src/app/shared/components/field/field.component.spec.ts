@@ -6,8 +6,8 @@ import { FieldComponent } from './field.component';
  * `.field-header` 的排版不變式：空間不足時**換行**，不得壓縮標籤文字。
  *
  * 中文（CJK）可以逐字斷行 → 文字的 min-content 只有 1 個字寬，因此 flex 容器在空間不足時
- * 可以把標籤壓成「一字一行」而完全不溢出（瀏覽器認為這是合法收縮）。實測後果：HDM
- * 「營業稅申報類型」欄位的 label + hint 被壓成 2–3 字一行、旁邊留著長按鈕（2026-07-25 真機回報）。
+ * 可以把標籤壓成「一字一行」而完全不溢出（瀏覽器認為這是合法收縮）。實測後果：某表單
+ * 欄位的 label + hint 被壓成 2–3 字一行、旁邊留著長按鈕（2026-07-25 真機回報）。
  * `flex-wrap: wrap` 讓「放不下就換行」優先於「壓縮文字」。
  */
 @Component({
@@ -15,8 +15,8 @@ import { FieldComponent } from './field.component';
   imports: [FieldComponent],
   template: `
     <div class="host-box" style="width: 366px">
-      <app-field label="營業稅申報類型" hint="（按期申報、按月申報）" [required]="true">
-        <button field-action style="width: 230px">從 過往營業稅申報類型 匯入設定</button>
+      <app-field label="通知信寄送頻率" hint="（每週寄送、每月寄送）" [required]="true">
+        <button field-action style="width: 230px">從 過往通知信寄送頻率 匯入設定</button>
         <div style="height: 36px">控制項</div>
       </app-field>
     </div>

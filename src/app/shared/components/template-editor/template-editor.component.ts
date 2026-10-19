@@ -13,7 +13,7 @@ import { detectInlineTrigger } from '../../utils/inline-trigger';
 import { splitTemplateVarRe, fullTemplateVarRe, endTemplateVarRe, globalTemplateVarRe } from '../../utils/template-var-key';
 
 /** 自訂拖曳型別：只用來讓瀏覽器承認這是合法拖曳，不設 text/plain（避免把 `%Key%` 字面
- *  字串灑進外部 drop target，例如 p4-6-notes 那類讀 text/plain 決定重排的宿主）。 */
+ *  字串灑進外部 drop target，例如讀 text/plain 決定重排的宿主清單）。 */
 const DRAG_MIME = 'application/x-mendesky-template-var';
 
 /** 拖曳縮圖的寬度上限（px）。夠放約 10 個中文字，超出以省略號截斷。 */
@@ -30,7 +30,7 @@ const CARET_SVG = '<svg class="tpl__caret" viewBox="0 0 24 24" width="12" height
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDestroy {
-  /** 範本字串，含 %key% 標記，例：「茲將附上 %CompanyName% 有關 %ServiceItemNames% 之…」 */
+  /** 範本字串，含 %key% 標記，例：「附上 %DocumentTitle% 的 %ItemNames% 清單…」 */
   @Input() template = '';
   /** 變數 map，key 對應 %key% 標記 */
   @Input() variables: Record<string, string> = {};
@@ -42,14 +42,14 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
   /** 可用變數定義清單（傳入後顯示 ⓘ 浮動按鈕與變數面板） */
   @Input() variableDefs: TemplateVarDef[] = [];
 
-  /** 公司/方案選擇 contexts（passthrough 給 panel；空 = 不顯示下拉） */
+  /** 兩層 context 選擇（passthrough 給 panel；空 = 不顯示下拉） */
   @Input() varContexts: TemplateVarContext[] = [];
-  /** 預設選取公司（passthrough） */
-  @Input() defaultCaseId?: string;
-  /** 預設選取方案（passthrough） */
-  @Input() defaultBundleId?: string;
-  /** panel 切換公司/方案時往上 emit，供 host 重算 varDefs/variables */
-  @Output() contextChange = new EventEmitter<{ caseId: string; bundleId: string }>();
+  /** 預設選取的 context id（passthrough） */
+  @Input() defaultContextId?: string;
+  /** 預設選取的 option id（passthrough） */
+  @Input() defaultOptionId?: string;
+  /** panel 切換 context / option 時往上 emit，供 host 重算 varDefs/variables */
+  @Output() contextChange = new EventEmitter<{ contextId: string; optionId: string }>();
 
   @Output() templateChange = new EventEmitter<string>();
   @Output() textChange = new EventEmitter<string>();
@@ -127,7 +127,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
   private findDef(key: string): TemplateVarDef | undefined {
     const exact = this.variableDefs.find(v => v.key === key);
     if (exact) return exact;
-    // 既有 chip 存 plain/variant key（`%X%` 或 `%X|exact%`），但 varDefs 可能已完全限定（`%X|Case:..|Bundle:..%`）。
+    // 既有 chip 存 plain/variant key（`%X%` 或 `%X|exact%`），但 varDefs 可能已完全限定（`%X|<身份後綴>%`）。
     // 以 concept（第一段 `|` 前）互相比對，讓 plain chip 找得到其對應 def（含帶 options 的 glance def）→
     // 內嵌變體下拉不因 varDefs 被限定而消失。
     const concept = key.split('|')[0];
@@ -143,7 +143,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
 
     // 方向鍵 / Home / End / 滑鼠點選會移動游標但**不觸發 input**，只靠 onInput + onBlur 會漏。
     // 綁在編輯器元素自己身上（非 document）：一頁有 9 個以上實例，document 級監聽會互相乘上去。
-    // 註冊在 zone 外：本元件沒有 OnPush，游標每動一次就 tick 全 app 會拖垮 p4-5 的那堆 getter；
+    // 註冊在 zone 外：本元件沒有 OnPush，游標每動一次就 tick 全 app 會拖垮宿主頁面的 getter；
     // 回呼只寫私有欄位、不碰任何 template 綁定，所以不需要 CD。
     const el = this.editorRef?.nativeElement;
     if (el) {
@@ -167,11 +167,11 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.isRendered) return;
 
-    // defs 簽章比對：plain↔select 升降級需全量重建，但 p4-5 的 [variableDefs] 綁定
+    // defs 簽章比對：plain↔select 升降級需全量重建，但宿主的 [variableDefs] 綁定常
     // 每次 CD 回新 reference——只在「key 集合或 options 數」實際變化時才重渲染
     const defsSigChanged = changes['variableDefs'] ? this._updateVarDefsSig() : false;
 
-    // 先擋自己的 echo：controlled parent（p4-5-fee / p4-6-notes / p5-letter）會把剛 emit 的
+    // 先擋自己的 echo：controlled parent 會把剛 emit 的
     // template 原封不動回寫成 [template]。此時 DOM 已經是正確狀態，重繪只會把使用者的游標打掉
     // （innerHTML 整批換節點 → selection 塌回編輯器 offset 0 → Backspace 變 no-op，症狀就是
     //  「剛插入的範本變數刪不掉」；2026-08-11 使用者第二輪回報，測試已鎖）。
@@ -285,7 +285,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
   }
 
   /**
-   * chip 顯示值同步。**值沒變就不寫 DOM**——`p4-5-fee` 的 `[variables]` 綁定用 spread 產新物件，
+   * chip 顯示值同步。**值沒變就不寫 DOM**——宿主的 `[variables]` 綁定常用 spread 產新物件，
    * 每次 CD 都是新 reference → `changes['variables']` 每輪成立 → 無條件寫會讓每顆 chip 每輪
    * 產生一筆 MutationRecord（2026-08-11 真 app 診斷檔 2630 行中 2627 行都是
    * `{target:"SPAN",added:["#text"],removed:["#text"]}`，即下面 plain 那條路）。
@@ -360,7 +360,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
 
   private buildHTML(tpl: string, vars: Record<string, string>): string {
     return tpl
-      // key 可含 `|variant` 及 `|Case:frag|Bundle:frag` 身份後綴（字元集見 template-var-key）
+      // key 可含 `|variant` 及身份後綴（字元集見 template-var-key）
       .split(splitTemplateVarRe())
       .map(part => {
         const match = part.match(fullTemplateVarRe());
@@ -618,7 +618,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
     // 點 <input> 才轉移，relatedTarget 正好落在 .tvp-panel 內 → 會 early return）。
     this._snapshotCaret();
 
-    // 焦點移進「公司/方案選擇器」或其下拉 overlay（皆 portal 到 body、非編輯器子節點）→ 使用者正在切
+    // 焦點移進「兩層 context 選擇器」或其下拉 overlay（皆 portal 到 body、非編輯器子節點）→ 使用者正在切
     // context，不要關 autocomplete、也不要重繪（否則 %% 面板一點下拉就消失、無法選）。焦點稍後會回編輯器。
     const to = event?.relatedTarget;
     if (to instanceof Element && (to.closest('.tvp-panel') || to.closest('app-select-panel'))) {
@@ -665,7 +665,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
 
   private _replaceVarsInTextNode(node: Text, knownKeys: Set<string>): void {
     const text = node.textContent ?? '';
-    // key 可含 `|variant` 及 `|Case:frag|Bundle:frag` 身份後綴（字元集見 template-var-key）
+    // key 可含 `|variant` 及身份後綴（字元集見 template-var-key）
     const pattern = globalTemplateVarRe();
     let match: RegExpExecArray | null;
     let hasKnown = false;
@@ -793,7 +793,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
   /**
    * 坑 1：dragstart 的 `event.target` 可能是**文字節點**（chip 內的 text node），
    * 直接 `.closest()` 會 TypeError。一律先正規化成 element。
-   * 坑 3：宿主 `.p4-fee__item` 也是 draggable，其 onDragStart 對非握把來源無條件
+   * 坑 3：宿主的清單項目也是 draggable，其 onDragStart 對非握把來源無條件
    * `preventDefault()`。dragstart 會冒泡，preventDefault 在任何一層都會取消整個拖曳 →
    * 必須 stopPropagation，否則 chip 根本拖不動（這就是 2026-06-27 那次的死因）。
    */
@@ -836,7 +836,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
 
   /**
    * 坑 4：自己算落點、自己搬。外來拖曳（`_dragChip` 為 null）**完全不碰事件**——
-   * 無條件 stopPropagation 會吃掉宿主酬金項目重排的 drop。
+   * 無條件 stopPropagation 會吃掉宿主清單項目重排的 drop。
    */
   onFieldDrop(event: DragEvent): void {
     if (!this._isOwnDrag()) return;
@@ -901,7 +901,7 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
    * （2026-09-14 使用者回報）。改成寬度有上限的小膠囊：保留 chip 的藍底藍框讓使用者知道
    * 在拖哪一顆，超出的字用省略號截掉。
    *
-   * 形態照 p4-6-notes 的既有前例（p4-6-notes.component.ts:306-329）：clone 必須在 document
+   * 形態照常見做法：clone 必須在 document
    * 內且完成 layout 瀏覽器才抓得到，所以先 append 到 body（樣式把它定位到畫面外），
    * 抓完（下一幀）移除。
    */
@@ -1026,9 +1026,9 @@ export class TemplateEditorComponent implements AfterViewInit, OnChanges, OnDest
 
   // ── 落點指示線 ─────────────────────────────────────────────────────────
   //
-  // 對照組（酬金補充說明）靠 ProseMirror 內含的 Dropcursor 畫線。這邊自己畫一條等價的。
+  // 對照組（以 ProseMirror 實作的編輯器）靠內含的 Dropcursor 畫線。這邊自己畫一條等價的。
   // 更新走**直接改 inline style**，不經 Angular 綁定：dragover 每幀觸發，而本元件沒有
-  // OnPush、一頁有 9 個以上實例，每幀 tick 全 app 會拖垮 P4 的那堆 getter。
+  // OnPush、一頁有 9 個以上實例，每幀 tick 全 app 會拖垮宿主頁面的 getter。
 
   /** 上一次畫的位置，值沒變就不寫 DOM（對齊 updateVariableSpans 的既有紀律） */
   private _lastCaretPos = '';

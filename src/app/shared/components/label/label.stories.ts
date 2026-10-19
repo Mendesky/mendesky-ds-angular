@@ -77,16 +77,16 @@ export const AllColors: Story = {
   }),
 };
 
-// ── 案件類型（實際使用場景）────────────────────────────
+// ── 類別標籤（實際使用場景）────────────────────────────
 export const CaseTypeTags: Story = {
   render: () => ({
     template: `
       <div style="display:flex;gap:6px;flex-wrap:wrap;padding:12px;">
         <app-label color="Grey70"    size="L" text="一般"></app-label>
-        <app-label color="SoftBlue"  size="L" text="集團 (3)"></app-label>
-        <app-label color="SeaGreen"  size="L" text="新客戶"></app-label>
+        <app-label color="SoftBlue"  size="L" text="群組 (3)"></app-label>
+        <app-label color="SeaGreen"  size="L" text="新成員"></app-label>
         <app-label color="Golden"    size="L" text="VIP"></app-label>
-        <app-label color="Red"       size="L" text="回補"></app-label>
+        <app-label color="Red"       size="L" text="優先"></app-label>
       </div>
     `,
     moduleMetadata: { imports: [LabelComponent] },

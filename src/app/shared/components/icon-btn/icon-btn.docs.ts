@@ -17,7 +17,7 @@ export const iconBtnDoc: ComponentDoc = {
       name: 'propClass',
       type: 'IconBtnClass',
       default: "'Normal'",
-      desc: 'Normal | Warning | CardBtn | CardBtnPdSmall | Modal | SectionBtn | Drag | Block | Block-Transparent | Icon+Text。**沒有 Floating**（2026-08-18 撤除）：DS 外部化成 @mendesky/ds-angular 後該 variant 不存在。要「浮在 backdrop 上的白底圓鈕」請用 SectionBtn（size=24 剛好 44×44、透明底），白底圓形與落影由消費端的 wrapper 出——見客戶文件 modal 的 .client-docs-close-wrap。',
+      desc: 'Normal | Warning | CardBtn | CardBtnPdSmall | Modal | SectionBtn | Drag | Block | Block-Transparent | Icon+Text。**沒有 Floating**（2026-08-18 撤除）：DS 外部化成 @mendesky/ds-angular 後該 variant 不存在。要「浮在 backdrop 上的白底圓鈕」請用 SectionBtn（size=24 剛好 44×44、透明底），白底圓形與落影由消費端的 wrapper 出（外包一層白底圓形容器並加落影）。',
     },
     {
       name: 'active',

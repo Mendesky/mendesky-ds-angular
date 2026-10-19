@@ -175,7 +175,7 @@ export const ICON_REGISTRY: Record<string, string> = {
 
   /**
    * Output（macOS-style 分享盒：方框 + 向上箭頭）— 視覺與 Upload 相同，
-   * 命名對齊舊前端 outputIcon，用於「分享」語意（搬移舊前端 handover-doc-viewer 視覺）。
+   * 命名對齊舊版的 outputIcon，用於「分享」語意。
    */
   'Output': `<g transform="translate(-324,-64)"><path fill-rule="evenodd" clip-rule="evenodd" d="M327 78C327.552 78 328 78.4477 328 79V83C328 83.2652 328.105 83.5196 328.293 83.7071C328.48 83.8946 328.735 84 329 84H343C343.265 84 343.52 83.8946 343.707 83.7071C343.895 83.5196 344 83.2652 344 83V79C344 78.4477 344.448 78 345 78C345.552 78 346 78.4477 346 79V83C346 83.7957 345.684 84.5587 345.121 85.1213C344.559 85.6839 343.796 86 343 86H329C328.204 86 327.441 85.6839 326.879 85.1213C326.316 84.5587 326 83.7957 326 83V79C326 78.4477 326.448 78 327 78Z" fill="currentColor"/>
     <path fill-rule="evenodd" clip-rule="evenodd" d="M335.293 66.2929C335.683 65.9024 336.317 65.9024 336.707 66.2929L341.707 71.2929C342.098 71.6834 342.098 72.3166 341.707 72.7071C341.317 73.0976 340.683 73.0976 340.293 72.7071L336 68.4142L331.707 72.7071C331.317 73.0976 330.683 73.0976 330.293 72.7071C329.902 72.3166 329.902 71.6834 330.293 71.2929L335.293 66.2929Z" fill="currentColor"/>
@@ -418,7 +418,7 @@ export const ICON_REGISTRY: Record<string, string> = {
   'Shield': `<path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/>`,
   'UserGroup': `<path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/>`,
 
-  // 客戶文件「下載全部客戶文件」（整頁打包下載）；registry 原無 zip／壓縮檔語意 icon
+  // 「整頁打包下載」用的壓縮檔圖示；registry 原無 zip／壓縮檔語意 icon
   // （Package／Unpackage 帶 ＋／− 小標記，看起來像新增／移除）。
   // 補自 Lucide folder-archive（lucide-static 0.460.0, ISC），線條屬性寫在每個元素上，前例 Link
   'FolderArchive': `<circle cx="15" cy="19" r="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.9 19.8A2 2 0 0 0 22 18V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h5.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 11v-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 17v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,

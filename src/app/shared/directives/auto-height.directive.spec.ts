@@ -12,13 +12,13 @@ class HostComponent {
   inner = signal(50);
 }
 
-// class selector 匹配（不帶 [appAutoHeight]，靠 .cem-section-card 自動套用）
+// 裸屬性 appAutoHeight（不綁值）→ 視為啟用
 @Component({
   standalone: true,
   imports: [AutoHeightDirective],
-  template: `<div class="cem-section-card" [autoHeightDelay]="0"></div>`,
+  template: `<div class="card" appAutoHeight [autoHeightDelay]="0"></div>`,
 })
-class ClassSelectorHostComponent {}
+class BareAttributeHostComponent {}
 
 // 本檔在 beforeEach 把 window.ResizeObserver 換成 stub；每條結束必須還原，
 // 否則整包隨機順序跑到後面、依賴真 ResizeObserver 的 spec（例 priority-overflow）會靜默收不到 callback。
@@ -109,7 +109,7 @@ describe('AutoHeightDirective — 偵測容器高度變化的過渡（ResizeObse
   }));
 });
 
-describe('AutoHeightDirective — class selector（.cem-section-card 自動套用）', () => {
+describe('AutoHeightDirective — 裸屬性 appAutoHeight', () => {
   afterEach(() => { window.ResizeObserver = REAL_RESIZE_OBSERVER; });
   let classObserved: HTMLElement | null;
 
@@ -124,11 +124,11 @@ describe('AutoHeightDirective — class selector（.cem-section-card 自動套�
     spyOn(HTMLElement.prototype, 'animate').and.callFake(() => ({ onfinish: null, oncancel: null, cancel: () => {} } as unknown as Animation));
   });
 
-  it('元素僅帶 .cem-section-card（無 [appAutoHeight]）→ 延遲後仍 observe', fakeAsync(() => {
-    const fx = TestBed.configureTestingModule({ imports: [ClassSelectorHostComponent] })
-      .createComponent(ClassSelectorHostComponent);
+  it('元素只寫 appAutoHeight（不綁值）→ 延遲後 observe', fakeAsync(() => {
+    const fx = TestBed.configureTestingModule({ imports: [BareAttributeHostComponent] })
+      .createComponent(BareAttributeHostComponent);
     fx.detectChanges();
-    const el = fx.nativeElement.querySelector('.cem-section-card');
+    const el = fx.nativeElement.querySelector('.card');
     tick(0);
     expect(classObserved).toBe(el);
   }));

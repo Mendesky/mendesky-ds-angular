@@ -16,7 +16,7 @@ export const processModalDoc: ComponentDoc = {
     {
       name: 'message',
       type: 'string',
-      desc: '顯示文字（running 預設「執行中請稍候」）',
+      desc: '顯示文字（running 預設「執行中請稍候」；congratulation 預設「恭喜！」，使用端應傳入具體的完成訊息）',
     },
     {
       name: 'isOpen',

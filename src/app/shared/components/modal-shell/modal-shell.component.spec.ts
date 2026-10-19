@@ -9,7 +9,7 @@ import { ModalShellComponent } from './modal-shell.component';
  * 且 pointer-events 預設 auto，全螢幕 fixed（z-index 500）攔截關閉後第一個 click →
  * 「關閉版本更新公告後第一次點卡片 menu 被吞」。修法：leaving 狀態加 pointer-events: none。
  *
- * 行為層的完整紅→綠在 e2e `post-modal-close-menu-click.spec.ts`；此處是不需 server 的快速 guard。
+ * 行為層的完整紅→綠要靠使用端的 e2e；此處是不需 server 的快速 guard。
  */
 describe('ModalShellComponent — leaving overlay pointer-events 回歸', () => {
   let fixture: ComponentFixture<ModalShellComponent>;

@@ -133,9 +133,9 @@ describe('NumberListComponent — label / text 截斷（寬度 1024px 以上）'
 
 // ── 2026-10-13：窄螢幕換行、按鈕對齊檔名、手機兩行排法 ───────────────────────
 
-/** 實際長度取自客戶文件原型的示意資料：標題約 40 字、檔名是沒有空白的長英文 */
-const LONG_TITLE = '銀行對帳單 113 年 1–3 月（含外幣帳戶與定存明細，請審計組比對期末餘額後回填）';
-const LONG_FILE = 'Bank_Statement_2024Q1_TWD_USD_FixedDeposit_Reconciliation_final_v3.pdf';
+/** 長度參考文件清單原型的示意資料：標題約 40 字、檔名是沒有空白的長英文 */
+const LONG_TITLE = '活動照片 113 年 1–3 月（含戶外場次與室內講座的紀錄，請行政組確認檔名後回填）';
+const LONG_FILE = 'Event_Photos_2024Q1_Outdoor_Indoor_Workshop_SpeakerArchive_final_v3.pdf';
 
 function centerY(node: Element): number {
   const r = node.getBoundingClientRect();
@@ -240,7 +240,7 @@ describe('NumberListComponent — 標題＋檔名＋按鈕的列：按鈕對齊�
   it('沒有 label 的單行列維持置中', async () => {
     const { fixture, q, cleanup } = mount(1280, 360);
     try {
-      fixture.componentRef.setInput('text', '401 營業稅申報書.pdf');
+      fixture.componentRef.setInput('text', '年度活動報告書.pdf');
       fixture.componentRef.setInput('actions', ['view', 'delete'] satisfies NumberListAction[]);
       await settle(fixture);
 
@@ -305,7 +305,7 @@ describe('NumberListComponent — 手機（小於 768px）', () => {
   it('按鈕只留圖示：文字隱藏、按鈕寬 24px，按鈕名稱保留在 aria-label', async () => {
     const { fixture, q, cleanup } = mount(390, 342);
     try {
-      fixture.componentRef.setInput('text', '401 營業稅申報書.pdf');
+      fixture.componentRef.setInput('text', '年度活動報告書.pdf');
       fixture.componentRef.setInput('actions', ['view', 'download', 'edit', 'delete'] satisfies NumberListAction[]);
       await settle(fixture);
 
@@ -323,7 +323,7 @@ describe('NumberListComponent — 手機（小於 768px）', () => {
   it('寬螢幕維持「圖示＋文字」按鈕', async () => {
     const { fixture, q, cleanup } = mount(1280, 600);
     try {
-      fixture.componentRef.setInput('text', '401 營業稅申報書.pdf');
+      fixture.componentRef.setInput('text', '年度活動報告書.pdf');
       fixture.componentRef.setInput('actions', ['view', 'delete'] satisfies NumberListAction[]);
       await settle(fixture);
 

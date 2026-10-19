@@ -1,20 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { ButtonComponent, KeyboardHelpComponent, type ShortcutGroup } from '../../../../index';
 
-// 快速鍵資料取自 dashboard-app 主線實際註冊內容（ShortcutRegistryService 的來源）：
-// - 「報價案件管理」：quoting-cases.component.ts buildQuotingCasesShortcutItems()
-// - 「全域」：core/services/keyboard-shortcut.service.ts（⌘K 全域搜尋在 Windows 顯示為 Ctrl K）
-const QUOTING_CASES_GROUP: ShortcutGroup = {
-  label: '報價案件管理',
+// 快速鍵資料為示意：一組頁面專屬快速鍵（「項目管理」）＋一組「全域」快速鍵
+// （⌘K 全域搜尋在 Windows 顯示為 Ctrl K）
+const ITEMS_GROUP: ShortcutGroup = {
+  label: '項目管理',
   items: [
-    { description: '新增報價案件', keys: ['C'] },
+    { description: '新增項目', keys: ['C'] },
     { description: '卡片／列導覽：上', keys: ['W'] },
     { description: '卡片／列導覽：下', keys: ['S'] },
     { description: '卡片導覽：左欄（限看板）', keys: ['A'] },
     { description: '卡片導覽：右欄（限看板）', keys: ['D'] },
-    { description: '開啟案件', keys: ['Enter'] },
+    { description: '開啟項目', keys: ['Enter'] },
     { description: '取消選取', keys: ['Esc'] },
-    { description: '搜尋報價案件', keys: ['/'] },
+    { description: '搜尋項目', keys: ['/'] },
   ],
 };
 
@@ -59,11 +58,11 @@ export const Default: Story = {
   name: '基本用法',
   args: {
     isOpen: true,
-    shortcuts: [QUOTING_CASES_GROUP, GLOBAL_GROUP],
+    shortcuts: [ITEMS_GROUP, GLOBAL_GROUP],
   },
 };
 
-// ── 只有全域群組（不在報價案件頁時）─────────────────────
+// ── 只有全域群組（不在項目管理頁時）─────────────────────
 export const GlobalOnly: Story = {
   name: '只有全域群組',
   args: {
@@ -94,7 +93,7 @@ export const Interactive: Story = {
     `,
     props: {
       open: false,
-      shortcuts: [QUOTING_CASES_GROUP, GLOBAL_GROUP],
+      shortcuts: [ITEMS_GROUP, GLOBAL_GROUP],
     },
     moduleMetadata: { imports: [KeyboardHelpComponent, ButtonComponent] },
   }),

@@ -195,7 +195,7 @@ describe('extractAndCleanExcelTable', () => {
           <th>金額</th>
         </tr>
         <tr>
-          <td class="xl66">記帳</td>
+          <td class="xl66">文具</td>
           <td>3000</td>
         </tr>
       </table>
@@ -608,7 +608,7 @@ describe('RichTextEditorComponent toolbar formats', () => {
     expect(saved).toContain('underline');
     expect(saved).toContain('strike');
     expect(saved).toContain('#cc5252');
-    // 3. 經 fee-supplement 持久化序列化 stripNodeAttrs → 不得丟 marks/heading
+    // 3. 經持久化前的 stripNodeAttrs → 不得丟 marks/heading
     const stripped = JSON.stringify(stripNodeAttrs(ed().getJSON() as ProseMirrorJSON, ['displayUrl']));
     expect(stripped).toContain('"type":"heading"');
     expect(stripped).toContain('underline');
@@ -658,7 +658,7 @@ describe('RichTextEditorComponent hiddenTools', () => {
     return fixture.nativeElement.querySelector(`[data-testid="${testid}"]`);
   }
 
-  it('預設（[]）：underline/color/table 按鈕與 extension 全部存在（酬金補充說明迴歸）', () => {
+  it('預設（[]）：underline/color/table 按鈕與 extension 全部存在（預設工具列迴歸）', () => {
     create([]);
     expect(query('rte-underline')).not.toBeNull();
     expect(query('rte-color')).not.toBeNull();
@@ -670,7 +670,7 @@ describe('RichTextEditorComponent hiddenTools', () => {
     expect(names).toContain('color');
   });
 
-  // 服務內容（自訂服務項目）只要兩種清單：文字格式會一路存成 markdown 並印進報價單，
+  // 某些欄位只要兩種清單：文字格式會一路存成 markdown 並印進匯出的 PDF，
   // 出現粗體／標題不是想要的結果。**藏按鈕不夠**——StarterKit 帶鍵盤快速鍵與 markdown
   // input rule，⌘B 與打 `**粗體**` 照樣生效，所以 extension 必須一起關（比照既有的 underline）。
   it('hiddenTools 含 bold/italic/strike/heading：按鈕與 extension 都不存在', () => {
@@ -799,7 +799,7 @@ describe('RichTextEditorComponent tableStructureEditing', () => {
     expect(gripInBody('col')).not.toBeNull();
   });
 
-  it('flag=false：hover cell 不掛把手（gate 不外溢 HDM/其他 consumer）', () => {
+  it('flag=false：hover cell 不掛把手（gate 不外溢到其他 consumer）', () => {
     create({ tableStructureEditing: false });
     hoverFirstCell();
     expect(gripInBody('row')).toBeNull();
@@ -1117,7 +1117,7 @@ describe('RichTextEditorComponent paste dispatch', () => {
 
   // ── image flavor 共存：Excel 與 Word 的 clipboard 都同時帶 image/png（2026-08-03 實測）──
   // 若 image 分支排在 HTML 之前，或未檢查宿主是否訂閱 imagePasted，會把整包文字換成一張
-  // 儲存格截圖、或在未綁 (imagePasted) 的宿主（如 p4-4）直接吞掉貼上。
+  // 儲存格截圖、或在未綁 (imagePasted) 的宿主直接吞掉貼上。
 
   it('Word HTML ＋ image/png 共存 → 走文字路徑，不得 emit imagePasted', () => {
     create();
@@ -1132,7 +1132,7 @@ describe('RichTextEditorComponent paste dispatch', () => {
     create();
     let emitted = 0;
     comp.imagePasted.subscribe(() => emitted++);
-    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '客戶\t項目\t酬金', withImage: true }))).toBeTrue();
+    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '編號\t項目\t金額', withImage: true }))).toBeTrue();
     expect(emitted).toBe(0);
   });
 
@@ -1145,7 +1145,7 @@ describe('RichTextEditorComponent paste dispatch', () => {
   });
 
   it('只有圖片（無 HTML）但宿主未訂閱 imagePasted → 回 false，不得吞掉貼上', () => {
-    // p4-4 客戶狀況卡片沒有綁 (imagePasted)：若無此守衛就是「emit 進虛空 + 吞掉貼上」
+    // 不是每個宿主都有綁 (imagePasted)：若無此守衛就是「emit 進虛空 + 吞掉貼上」
     create();
     expect(callOnPaste(pasteEvent({ withImage: true }))).toBeFalse();
   });
@@ -1163,9 +1163,9 @@ describe('RichTextEditorComponent paste dispatch', () => {
 
   it('macOS Mail → 交還 PM（現況正常的 baseline，不得回歸）', () => {
     create();
-    expect(callOnPaste(pasteEvent({ html: MAC_MAIL_HTML, text: '為解決奇勝系統、JWMIS 及財會 TACS' }))).toBeFalse();
-    ed().view.dom.dispatchEvent(pasteEvent({ html: MAC_MAIL_HTML, text: '為解決奇勝系統' }));
-    expect(ed().getText()).toContain('奇勝系統');
+    expect(callOnPaste(pasteEvent({ html: MAC_MAIL_HTML, text: '為解決排班系統、ERP 及人資 HRS' }))).toBeFalse();
+    ed().view.dom.dispatchEvent(pasteEvent({ html: MAC_MAIL_HTML, text: '為解決排班系統' }));
+    expect(ed().getText()).toContain('排班系統');
   });
 
   it('只有 text/plain 的 markdown（無 text/html）→ 仍自動轉為格式化內容（既有功能不得被破壞）', () => {
@@ -1178,17 +1178,17 @@ describe('RichTextEditorComponent paste dispatch', () => {
 
   it('Excel（只有一張表格）→ 接手清洗，doc 含 table 且不含 mso-', () => {
     create();
-    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '客戶\t項目\t酬金' }))).toBeTrue();
+    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '編號\t項目\t金額' }))).toBeTrue();
     const json = JSON.stringify(ed().getJSON());
     expect(json).toContain('"table"');
     expect(json).not.toContain('mso-');
-    expect(ed().getText()).toContain('記帳');
+    expect(ed().getText()).toContain('文具');
   });
 
   it('Excel 但 schema 無 table node（hiddenTools 含 table）→ 回 false 交還 PM，不得插入無處落地的 table', () => {
     create(['underline', 'color', 'table']);
     expect(comp.getEditor()!.schema.nodes['table']).toBeUndefined();
-    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '客戶\t項目\t酬金' }))).toBeFalse();
+    expect(callOnPaste(pasteEvent({ html: EXCEL_MAC_HTML, text: '編號\t項目\t金額' }))).toBeFalse();
   });
 
   it('判為 Excel 但抽不到表格 → 回 false（不得「沒插入卻 return true」）', () => {
@@ -1240,8 +1240,8 @@ describe('normalizeOfficeHtml', () => {
   it('真實 Excel fixture：白字標題列的 color:white 被移除（不得隱形），一般 cell 文字保留', () => {
     const out = normalizeOfficeHtml(EXCEL_MAC_HTML);
     expect(out).not.toContain('white');
-    expect(out).toContain('客戶');
-    expect(out).toContain('記帳');
+    expect(out).toContain('編號');
+    expect(out).toContain('文具');
     expect(out).toContain('12000');
   });
 

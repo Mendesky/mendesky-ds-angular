@@ -55,7 +55,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing\/xxs, 4px);
-    /* 年份範圍可能很長（如核准設立日期 40..今年）→ 限高可捲動，開啟時自動捲到當前年 */
+    /* 年份範圍可能很長（如出生日期 40..今年）→ 限高可捲動，開啟時自動捲到當前年 */
     max-height: 232px;
     overflow-y: auto;
   }

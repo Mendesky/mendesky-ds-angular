@@ -37,7 +37,7 @@ export const checkChipDoc: ComponentDoc = {
     {
       label: '多選群組（ReactiveForm）',
       code: `<app-check-chip
-  text="台北所"
+  text="台北"
   theme="default"
   size="s"
   formControlName="taipei"
@@ -46,9 +46,9 @@ export const checkChipDoc: ComponentDoc = {
     {
       label: 'NgModel 雙向綁定',
       code: `<app-check-chip
-  text="已成交"
+  text="已完成"
   theme="transparent-grey"
-  [(ngModel)]="filterDealt"
+  [(ngModel)]="filterDone"
 ></app-check-chip>`,
     },
   ],
@@ -59,7 +59,7 @@ export const checkChipDoc: ComponentDoc = {
     },
     {
       type: 'info',
-      content: '長文字折行是預設行為（white-space: normal + overflow-wrap: anywhere + max-width: 100%），短標籤在放得下時渲染不變。2026-08-04 起：原本的 white-space: nowrap 會讓 min-content ＝ 整串文字寬 → chip 作為 flex item 完全不可收縮 → 自由輸入的長選項（CEM P1 / HDM P4-2 前所欄位）必定撐破卡片。',
+      content: '長文字折行是預設行為（white-space: normal + overflow-wrap: anywhere + max-width: 100%），短標籤在放得下時渲染不變。2026-08-04 起：原本的 white-space: nowrap 會讓 min-content ＝ 整串文字寬 → chip 作為 flex item 完全不可收縮 → 自由輸入的長選項（搭配 inline-add 的多選欄位）必定撐破卡片。',
     },
     {
       type: 'info',

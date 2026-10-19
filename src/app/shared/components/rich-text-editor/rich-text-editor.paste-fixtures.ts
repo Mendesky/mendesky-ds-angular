@@ -138,7 +138,7 @@ p.MsoNormal, li.MsoNormal, div.MsoNormal
  * - 另有 `color:windowtext`（CSS 系統色關鍵字）＝「預設文字色」
  * - 裸 `<col>`（HTML tree builder 會自動補 `<colgroup>`）→ TipTap 會回填 colwidth
  *
- * 內容對應使用者截圖：客戶／項目／酬金 三欄、111 記帳 12000 等三列。
+ * 內容：編號／項目／金額 三欄、111 文具 12000 等三列（文字換成中性範例，標記與樣式維持實機擷取原樣）。
  */
 export const EXCEL_MAC_HTML = `<html xmlns:v="urn:schemas-microsoft-com:vml"
 xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -175,18 +175,18 @@ xmlns="http://www.w3.org/TR/REC-html40">
  <col width=120 style='width:90pt'>
  <col width=120 style='width:90pt'>
  <tr height=40 style='height:30.0pt'>
-  <td height=40 class=head0 width=120 style='height:30.0pt;width:90pt'>\u5ba2\u6236</td>
+  <td height=40 class=head0 width=120 style='height:30.0pt;width:90pt'>\u7de8\u865f</td>
   <td class=head0 width=120 style='width:90pt'>\u9805\u76ee</td>
-  <td class=head0 width=120 style='width:90pt'>\u916c\u91d1</td>
+  <td class=head0 width=120 style='width:90pt'>\u91d1\u984d</td>
  </tr>
  <tr height=30 style='height:22.0pt'>
   <td height=30 class=cell0 style='height:22.0pt'>111</td>
-  <td class=font5>\u8a18\u5e33</td>
+  <td class=font5>\u6587\u5177</td>
   <td class=cell0>12000</td>
  </tr>
  <tr height=30 style='height:22.0pt'>
   <td height=30 class=cell0 style='height:22.0pt'>222</td>
-  <td class=font5>\u7a05\u7c3d</td>
+  <td class=font5>\u5370\u5237</td>
   <td class=cell0>20000</td>
  </tr>
 <!--EndFragment-->
@@ -207,7 +207,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
  * → 現行 `isRichHtml` 為 false，只因 `isMarkdownLike(text/plain)` 也是 false 才逃過
  * markdown 劫持。此 fixture 是「放寬 isRichHtml」的實證來源。
  */
-export const MAC_MAIL_HTML = `<head><meta charset="UTF-8"></head><p style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-family: MingLiU; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; white-space: normal;">\u70ba\u89e3\u6c7a<span style="color: rgb(238, 0, 0) !important;">\u5947\u52dd\u7cfb\u7d71</span>\u3001<span style="color: rgb(238, 0, 0) !important;">JWMIS</span> \u53ca<span style="color: rgb(238, 0, 0) !important;">\u8ca1\u6703 TACS</span> \u7cfb\u7d71\u9593\u7f55\u898b\u5b57\u7121\u6cd5\u986f\u793a\u4e4b\u554f\u984c\uff0c\u8cc7\u8a0a\u90e8\u5df2\u5b8c\u6210\u5efa\u7f6e\u3002</p><p style="color: rgb(0, 0, 0); font-family: MingLiU; font-size: 16px;">\u76ee\u524d\u5df2\u5efa\u7acb 166 \u500b\u7f55\u898b\u5b57(\u5982\u9644\u4ef6)</p>`;
+export const MAC_MAIL_HTML = `<head><meta charset="UTF-8"></head><p style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-family: MingLiU; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; white-space: normal;">\u70ba\u89e3\u6c7a<span style="color: rgb(238, 0, 0) !important;">\u6392\u73ed\u7cfb\u7d71</span>\u3001<span style="color: rgb(238, 0, 0) !important;">ERP</span> \u53ca<span style="color: rgb(238, 0, 0) !important;">\u4eba\u8cc7 HRS</span> \u7cfb\u7d71\u9593\u7f55\u898b\u5b57\u7121\u6cd5\u986f\u793a\u4e4b\u554f\u984c\uff0c\u8cc7\u8a0a\u90e8\u5df2\u5b8c\u6210\u5efa\u7f6e\u3002</p><p style="color: rgb(0, 0, 0); font-family: MingLiU; font-size: 16px;">\u76ee\u524d\u5df2\u5efa\u7acb 166 \u500b\u7f55\u898b\u5b57(\u5982\u9644\u4ef6)</p>`;
 
 /**
  * Google Docs：用 `<b style="font-weight:normal">` 包住整段內容。

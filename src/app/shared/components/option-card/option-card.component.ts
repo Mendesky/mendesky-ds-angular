@@ -6,7 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 /**
  * 可選擇的「插圖卡片」（radio 卡）。展示型元件——資料由外部傳入，自身不持有業務狀態。
  *
- * 四態（視覺 SSOT：Figma node 15881-1697526 LedgerSelector）：
+ * 四態（視覺 SSOT：Figma node 15881-1697526）：
  * - rest：無卡片底、插圖全彩
  * - hover：浮起白底＋陰影；有說明時插圖淡出、說明淡入（150ms crossfade，純 CSS）
  * - selected（activity）：填色＋角落 check

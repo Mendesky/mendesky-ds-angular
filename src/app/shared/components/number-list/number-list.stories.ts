@@ -1,6 +1,4 @@
-// 範例資料取自 dashboard-app 主線：src/app/features/quoting-cases/models/client-document-catalog.ts（客戶文件小分類名稱，作 label）、
-// src/app/features/quoting-cases/components/client-documents-modal/client-documents-modal.component.spec.ts（檔名 fixture，作 text）、
-// src/app/features/quoting-cases/components/handover-document-modal/pages/hdm-page4-maintenance/cards/p4-1-interview-basic-card/（「訪談人」）
+// 範例資料：文件清單（label＝文件分類、text＝檔名）與人員清單（text＝姓名）
 import type { Meta, StoryObj } from '@storybook/angular';
 import { action } from '@storybook/addon-actions';
 import { NumberListComponent, NumberListAction } from '../../../../index';
@@ -55,8 +53,8 @@ const meta: Meta<NumberListComponent> = {
   args: {
     size: 'S',
     background: 'white',
-    label: '日記帳',
-    text: '日記帳_上.pdf',
+    label: '會議紀錄',
+    text: '會議紀錄_上.pdf',
     number1: '123456',
     number2: '',
     actions: ['view', 'download'],
@@ -70,8 +68,8 @@ type Story = StoryObj<NumberListComponent>;
 export const Default: Story = {
   name: '預設',
   args: {
-    label: '日記帳',
-    text: '日記帳_上.pdf',
+    label: '會議紀錄',
+    text: '會議紀錄_上.pdf',
     number1: '123456',
     actions: ['view', 'download'],
   },
@@ -81,7 +79,7 @@ export const SizeM: Story = {
   name: '大尺寸 (M)',
   args: {
     size: 'M',
-    label: '案件編號',
+    label: '申請編號',
     text: '王小華',
     number1: '2024-0001',
     number2: '78,500',
@@ -98,8 +96,8 @@ export const GreyBackground: Story = {
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">grey10</p>
           <app-number-list
             background="grey10"
-            label="資產負債表"
-            text="資產負債表.pdf"
+            label="活動企劃"
+            text="活動企劃.pdf"
             number1="NL-2024-789"
             [actions]="['view']"
           ></app-number-list>
@@ -108,8 +106,8 @@ export const GreyBackground: Story = {
           <p style="font-size:12px;color:#686868;margin-bottom:4px;">grey20</p>
           <app-number-list
             background="grey20"
-            label="日記帳"
-            text="日記帳_下.pdf"
+            label="會議紀錄"
+            text="會議紀錄_下.pdf"
             number1="NL-2024-790"
             [actions]="['view']"
           ></app-number-list>
@@ -123,9 +121,9 @@ export const GreyBackground: Story = {
 export const AllActions: Story = {
   name: '所有操作按鈕',
   args: {
-    label: '報價案件',
+    label: '申請單',
     text: '林俊宏',
-    number1: 'QT-2024-112',
+    number1: 'AP-2024-112',
     number2: '125,000',
     actions: ['subview', 'view', 'download', 'delete'],
   },
@@ -134,7 +132,7 @@ export const AllActions: Story = {
 export const WithAvatar: Story = {
   name: '含 Avatar',
   args: {
-    label: '訪談人',
+    label: '聯絡人',
     text: '陳怡君',
     number1: '0045',
     actions: ['view'],
@@ -151,8 +149,8 @@ export const Interactive: Story = {
           點擊操作按鈕可查看觸發的 actionClick 事件（見 Actions 面板）：
         </p>
         <app-number-list
-          label="401 營業稅申報書"
-          text="401.pdf"
+          label="年度活動報告"
+          text="annual-report.pdf"
           number1="TW-2024-99887"
           number2="245,000"
           [actions]="['subview','view','download','delete']"

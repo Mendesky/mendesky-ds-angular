@@ -34,7 +34,7 @@
 /// 必須關掉 pointer-events，否則正在淡出的 backdrop 會攔截關閉後第一個 click
 /// （「關閉彈窗後第一次點卡片 menu 被吞」）。退場中的 overlay 已在關閉、不應再吃互動。
 /// 統一在此處理，涵蓋所有 @include backdrop-exit 的 overlay（modal-shell / dialog /
-/// CEM / pre-deal-review / process-modal / security-privacy / wizard 等）。
+/// process-modal / wizard 等）。
 @mixin backdrop-exit($duration: 300ms) {
   animation: overlayFadeOut $duration var(--ease-exit) both;
   pointer-events: none;
@@ -50,7 +50,7 @@
 /// 讓內部 flex 分配（header/footer 定高、body flex:1 吃剩餘空間）生效；
 /// flex:1 + height:100% 讓 wrapper 實際撐滿 .modal-card 的可用高度（否則
 /// flex-grow 預設 0，內容不到 max-height 時撐不滿也沒差，但 min-height:0 才有意義
-/// 施展空間）。組合對齊既有可用範例 p2-config-wizard `.wizard__shell`。
+/// 施展空間）。
 /// 用法：wrapper <div> 加這個 class。
 @mixin modal-flex-root {
   display: flex;
@@ -66,11 +66,9 @@
 /// flex:1 讓 body 佔滿 header/footer 之外的剩餘空間；min-height:0 覆寫 flex item
 /// 預設 min-height:auto——沒有這行，body 會依內容撐開、overflow-y:auto 永遠不觸發，
 /// 內容改由外層 .modal-card 的 overflow:hidden 直接裁切（footer 甚至整個消失），
-/// 而非 body 自己內部捲動。三處已修：p3-contact-modal / client-edit-modal
-/// （兩者的 <app-modal-shell> 投影內容多包一層 wrapper div，還需搭配上方
-/// modal-flex-root 才真的生效）/ serial-number-modal（wrapper 本身已是具名 class
-/// 的 flex column，單獨補這個 mixin 即可）（2026-07-20，聯絡窗口 modal 內容溢出
-/// 無法操作回報）。
+/// 而非 body 自己內部捲動。<app-modal-shell> 的投影內容若多包一層 wrapper div，
+/// 還需搭配上方 modal-flex-root 才真的生效；wrapper 本身已是具名 class 的
+/// flex column 時，單獨補這個 mixin 即可。
 @mixin modal-scroll-body {
   flex: 1;
   min-height: 0;

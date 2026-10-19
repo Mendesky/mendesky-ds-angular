@@ -7,7 +7,7 @@ export const dsCollapseDoc: ComponentDoc = {
   selector: '.ds-collapse',
   when: '內容區塊需要收合／展開動畫時用（例如可展開的卡片段落）。統一用這組 class，不要自己寫 height 動畫。',
   description: `CSS Grid \`0fr → 1fr\` 收合/展開工具 class。Component tier 300ms，進出場共用 ease-out curve。
-所有需要「內容區塊收合/展開」動畫的元件，統一使用此方案。`,
+所有需要「內容區塊收合/展開」動畫的元件，統一用這組做法。`,
   props: [
     {
       name: 'container',
@@ -49,7 +49,7 @@ export const dsCollapseDoc: ComponentDoc = {
     },
     {
       type: 'info',
-      content: '目前套用元件：p3-contact-card、p2-item-card、p2-combo-group、stepper-nav-subitems',
+      content: 'DS 內目前套用：stepper 導覽的子項收合（stepper-nav-subitems）。使用端的可收合卡片也用同一組 class。',
     },
   ],
 };

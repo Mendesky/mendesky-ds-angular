@@ -108,7 +108,7 @@ export class KanbanMinimapComponent implements OnDestroy {
 
   // ngFor 用，必須 memoize：之前每次 CD 都 Array.from 返新陣列 → ngFor 偵測為 dirty
   // → ngForOf ngOnChanges → mark for check → 下一輪 CD → 再 Array.from → 死循環
-  // 造成案件 modal 開啟時整個 tab freeze（弘宇創新 case 觸發）。
+  // 造成含看板的 modal 開啟時整個 tab freeze。
   // cardCount 取值小（0–6），Map cache 永久持有最多 7 個 entries。
   private readonly _cardRangeCache = new Map<number, number[]>();
   cardRange(count: number): number[] {

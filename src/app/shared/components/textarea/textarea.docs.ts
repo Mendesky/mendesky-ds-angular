@@ -42,7 +42,7 @@ export const textareaDoc: ComponentDoc = {
       name: 'autoResize',
       type: 'boolean',
       default: 'false',
-      desc: '高度隨內容自動撐開（禁用手動 resize handle）。適用於系統組合的長文字，如 P4-3 服務範圍內容',
+      desc: '高度隨內容自動撐開（禁用手動 resize handle）。適用於系統組合的長文字，如由多段範本拼成的說明內容',
     },
     {
       name: 'initialValue',

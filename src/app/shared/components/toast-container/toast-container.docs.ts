@@ -6,7 +6,7 @@ export const toastContainerDoc: ComponentDoc = {
   selector: 'app-toast-container',
   group: '浮層元件',
   summary: '無 @Input / @Output · 資料來自 ToastService.toasts() · 整個 app 只掛一次（app root）· 內部固定以 stackMode 渲染 app-process-toast · z-index 2100',
-  when: 'app root 掛一次就好。任何要顯示 toast 的地方呼叫 ToastService.show() / update()，不要自建本地 toast stack——否則會出現兩套堆疊互相遮蓋。唯一例外是 app-global-api-error-host（自有 9999 層）。',
+  when: 'app root 掛一次就好。任何要顯示 toast 的地方呼叫 ToastService.show() / update()，不要自建本地 toast stack——否則會出現兩套堆疊互相遮蓋。唯一例外是使用端自己的全域 API 錯誤浮層（若有，自有 9999 層）。',
   props: [],
   usage: [
     {

@@ -60,22 +60,22 @@ export const selectDoc: ComponentDoc = {
   usage: [
     {
       label: '搭配 app-field 使用',
-      code: `<app-field label="所別" [required]="true">
+      code: `<app-field label="部門" [required]="true">
   <app-select
-    [options]="officeOptions"
-    placeholder="請選擇所別"
-    [errorMessage]="form.officeError"
-    formControlName="office"
+    [options]="departmentOptions"
+    placeholder="請選擇部門"
+    [errorMessage]="form.departmentError"
+    formControlName="department"
   ></app-select>
 </app-field>`,
     },
     {
       label: 'options 格式',
       code: `// component.ts
-officeOptions: SelectOption[] = [
-  { value: 'taipei',   label: '台北所' },
-  { value: 'taichung', label: '台中所' },
-  { value: 'kaohsiung',label: '高雄所', disabled: true },
+departmentOptions: SelectOption[] = [
+  { value: 'design',      label: '設計部' },
+  { value: 'engineering', label: '工程部' },
+  { value: 'admin',       label: '行政部', disabled: true },
 ];`,
     },
   ],
