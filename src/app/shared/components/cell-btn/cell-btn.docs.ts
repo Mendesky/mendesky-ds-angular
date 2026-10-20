@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const cellBtnDoc: ComponentDoc = {
+export const cellBtnDoc: ComponentApi = {
   id: 'cell-btn',
-  name: 'Cell Button',
   selector: 'app-cell-btn',
-  group: '互動元件',
   summary: '[text] [selected] [disabled] [empty] · (cellClick)',
-  when: '日期/年月選擇器內部的格子按鈕。高密度網格選取場景（年份格、月份格、日期格）。',
   props: [
     {
       name: 'text',
@@ -53,10 +50,4 @@ export const cellBtnDoc: ComponentDoc = {
       code: '<app-cell-btn [empty]="true" text=""></app-cell-btn>',
     },
   ],
-  notes: [
-    'display: contents — 外殼透明，父層 grid 直接作用在內部 button 上，不破壞 grid 佈局',
-    'hover 效果為元件內建（:hover 偽類），不需額外 Input',
-    'selected + hover 時 hover 不覆蓋 selected 態',
-  ],
-  customTables: [],
 };

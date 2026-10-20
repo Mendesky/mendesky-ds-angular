@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const textareaDoc: ComponentDoc = {
+export const textareaDoc: ComponentApi = {
   id: 'textarea',
-  name: 'Textarea',
   selector: 'app-textarea',
-  group: '表單元件',
   summary: 'size: M|L · placeholder errorMessage errorPosition: top|bottom · [disabled] [autoResize] · (valueChange) (blur)',
-  when: '備注、描述等多行輸入。禁止原生 <textarea>。',
   props: [
     {
       name: 'size',
@@ -76,6 +73,4 @@ export const textareaDoc: ComponentDoc = {
 </app-field>`,
     },
   ],
-  notes: [],
-  customTables: [],
 };

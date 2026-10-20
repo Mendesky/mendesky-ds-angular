@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const toggleDoc: ComponentDoc = {
+export const toggleDoc: ComponentApi = {
   id: 'toggle',
-  name: 'Toggle',
   selector: 'app-toggle',
-  group: '互動元件',
   summary: '[checked] [disabled] · (checkedChange)',
-  when: '即時生效的開/關設定。',
   props: [
     {
       name: 'checked',
@@ -41,6 +38,4 @@ export const toggleDoc: ComponentDoc = {
       code: '<app-toggle [checked]="isEnabled" [disabled]="true"></app-toggle>',
     },
   ],
-  notes: [],
-  customTables: [],
 };

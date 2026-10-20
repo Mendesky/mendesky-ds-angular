@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const listTagDoc: ComponentDoc = {
+export const listTagDoc: ComponentApi = {
   id: 'list-tag',
-  name: 'List Tag',
   selector: 'app-list-tag',
-  group: '展示元件',
   summary: 'itemNumber [showBadge] [showBadgeB] [showBadgeC] text',
-  when: '清單項目附帶徽章標記。',
   props: [
     {
       name: 'itemNumber',
@@ -40,11 +37,4 @@ export const listTagDoc: ComponentDoc = {
     },
   ],
   usage: [],
-  notes: [
-    {
-      type: 'info',
-      content: '用於 app-list 行中的標籤插槽，搭配 app-label 使用。',
-    },
-  ],
-  customTables: [],
 };

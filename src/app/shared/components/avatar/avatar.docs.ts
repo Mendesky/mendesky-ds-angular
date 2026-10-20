@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const avatarDoc: ComponentDoc = {
+export const avatarDoc: ComponentApi = {
   id: 'avatar',
-  name: 'Avatar',
   selector: 'app-avatar',
-  group: '展示元件',
   summary: 'propClass: Text|Thumb|Icon · [size]: 28|36|44|56|64|96|128|240 · src text iconName [clickable] ariaLabel',
-  when: '用戶頭像、個人資料。可點擊（例如右上角打開個人面板）時設 [clickable]="true" 並給 ariaLabel，點擊綁在外層 (click)。',
   props: [
     {
       name: 'propClass',
@@ -60,8 +57,4 @@ export const avatarDoc: ComponentDoc = {
 <app-avatar propClass="Icon"  [size]="36" iconName="User"></app-avatar>`,
     },
   ],
-  notes: [
-    '可點擊頭像不要再外包 div 或自己加 role="button"／tabindex：設 [clickable]="true" 就是原生按鈕。',
-  ],
-  customTables: [],
 };

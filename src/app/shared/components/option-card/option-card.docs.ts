@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const optionCardDoc: ComponentDoc = {
+export const optionCardDoc: ComponentApi = {
   id: 'option-card',
-  name: 'Option Card',
   selector: 'app-option-card',
-  group: '表單元件',
   summary: '[value] [label] [description] [illustration]: SVG string · [selected] [disabled] — 四態（rest 全彩插圖 / hover 浮起+插圖↔說明 crossfade 150ms / selected 填色+check / disabled 灰階）',
-  when: '單張可選插圖卡。一般不單獨使用，由 app-option-card-group 組成互斥群組（radiogroup）。hover 揭露純 CSS、無 JS；prefers-reduced-motion 下停用動效。',
   props: [
     {
       name: 'value',
@@ -61,15 +58,4 @@ export const optionCardDoc: ComponentDoc = {
 </app-option-card-group>`,
     },
   ],
-  notes: [
-    {
-      type: 'info',
-      content: 'hover 揭露為純 CSS（插圖 opacity→0、說明 opacity→1，150ms crossfade）；無 JS、無 description 時不切換。',
-    },
-    {
-      type: 'info',
-      content: 'rest 態插圖目前為全彩；selected 填色採 --button/action-lighter（淡藍）。',
-    },
-  ],
-  customTables: [],
 };
