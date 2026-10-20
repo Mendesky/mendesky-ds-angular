@@ -7,7 +7,7 @@ import { IconComponent } from '../icon/icon.component';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
 import { ModalStackService } from '../../../core/services/modal-stack.service';
 import * as pdfjsLib from 'pdfjs-dist';
-import { loadPdfDocument } from '../../utils/pdf-render.util';
+import { loadPdfDocument } from '@mendesky/ds';
 
 // Promise.try polyfill for pdfjs-dist v5 (TC39 Stage 2, not yet in all browsers)
 if (!(Promise as unknown as Record<string, unknown>)['try']) {

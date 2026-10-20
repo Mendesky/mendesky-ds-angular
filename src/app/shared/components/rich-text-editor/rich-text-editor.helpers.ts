@@ -1,4 +1,4 @@
-import { ProseMirrorJSON } from '../../models/prosemirror.model';
+import { ProseMirrorJSON } from '@mendesky/ds';
 
 /**
  * 編輯器文字色盤（SSOT）。`hex=null` 為「預設（清除顏色）」。

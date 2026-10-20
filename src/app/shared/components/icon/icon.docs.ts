@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const iconDoc: ComponentDoc = {
+export const iconDoc: ComponentApi = {
   id: 'icon',
-  name: 'Icon',
   selector: 'app-icon',
-  group: '展示元件',
   summary: "name（見 icon.registry.ts）· size: 12|16|24|32|36|48 · 顏色透過父層 color CSS 或 style='color:...'",
-  when: '所有圖示顯示。禁止用 inline style width/height 控制大小，用 size input。',
   props: [
     {
       name: 'name',
@@ -35,11 +32,4 @@ export const iconDoc: ComponentDoc = {
 </div>`,
     },
   ],
-  notes: [
-    {
-      type: 'warn',
-      content: '禁止安裝任何第三方 icon library（Font Awesome、Material Icons 等），一律使用 app-icon + icon.registry.ts。',
-    },
-  ],
-  customTables: [],
 };

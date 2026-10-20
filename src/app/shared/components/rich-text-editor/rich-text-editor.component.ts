@@ -25,7 +25,7 @@ import { Color } from '@tiptap/extension-color';
 import MarkdownIt from 'markdown-it';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
 import { IconComponent } from '../icon/icon.component';
-import { ProseMirrorJSON } from '../../models/prosemirror.model';
+import { ProseMirrorJSON } from '@mendesky/ds';
 import {
   TEXT_COLORS,
   docEqualsIgnoringAttrs,

@@ -8,9 +8,9 @@ import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive'
 import { TemplateVarPanelComponent } from '../template-var-panel/template-var-panel.component';
 import { ActionMenuComponent } from '../action-menu/action-menu.component';
 import { ButtonComponent } from '../button/button.component';
-import { TemplateVarDef, TemplateVarContext } from '../../models/template-var.model';
-import { detectInlineTrigger } from '../../utils/inline-trigger';
-import { splitTemplateVarRe, fullTemplateVarRe, endTemplateVarRe, globalTemplateVarRe } from '../../utils/template-var-key';
+import { TemplateVarDef, TemplateVarContext } from '@mendesky/ds';
+import { detectInlineTrigger } from '@mendesky/ds';
+import { splitTemplateVarRe, fullTemplateVarRe, endTemplateVarRe, globalTemplateVarRe } from '@mendesky/ds';
 
 /** 自訂拖曳型別：只用來讓瀏覽器承認這是合法拖曳，不設 text/plain（避免把 `%Key%` 字面
  *  字串灑進外部 drop target，例如讀 text/plain 決定重排的宿主清單）。 */
