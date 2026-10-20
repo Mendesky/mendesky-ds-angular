@@ -86,6 +86,6 @@
     "zone.js": "~0.14.3"
   },
   "dependencies": {
-    "@mendesky/ds": "github:Mendesky/mendesky-ds#v0.1.0-beta.1"
+    "@mendesky/ds": "github:Mendesky/mendesky-ds#v0.1.0"
   }
 }
