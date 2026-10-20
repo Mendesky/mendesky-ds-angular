@@ -2,6 +2,8 @@
 
 Mendesky Design System component library for Angular (source-consumed package).
 
+設計系統分成本體與各框架套件：本套件是 Angular 版，依賴本體 [`@mendesky/ds`](https://github.com/Mendesky/mendesky-ds)（色彩、字型、圖示、跟框架無關的工具程式、元件規格），安裝本套件時會自動帶入。設計系統的文件網站：https://mendesky.github.io/mendesky-ds/
+
 ## 快速開始
 
 此套件以 source-consumed 模式提供，消費端應用需遵循以下設定：
@@ -91,39 +93,37 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 }
 ```
 
-## 文件網站與元件說明
+## 元件說明與範例網站
 
-- 線上文件：https://mendesky.github.io/mendesky-ds-angular/ （會轉到最新正式版）。每個正式版各自保留一整套文件，
-  右上角可切換版本；`main` 是開發中的最新內容。網址結構：`/<版本>/` 是指南，`/<版本>/components/` 是元件頁。
-- 本機看指南：`npm run site:dev`；本機看元件頁：`npm run storybook`（http://localhost:6006）
-- 本機建完整網站：`DOCS_REPO_BASE=/ npm run site:build -- main`，輸出在 `site/.vitepress/dist`
+- 設計系統的文件網站在本體 repo：https://mendesky.github.io/mendesky-ds/
+- 本 repo 發布 Angular 版的範例網站（Storybook）：`https://mendesky.github.io/mendesky-ds-angular/<版本>/components/`，
+  `main/components/` 是開發中的最新內容。本機看：`npm run storybook`（http://localhost:6006）。
+- 拆成本體＋框架套件之前（v0.2.0 以前）的完整文件保留在 `https://mendesky.github.io/mendesky-ds-angular/<版本>/`。
 
-**本 repo 是 DS 知識的唯一正本**：元件說明、色彩 token、字型、動效、互動原則都在這裡，文件網站與
-mendesky-web 的 AI 協作索引（`.claude/ds-*-index.md`）都從這裡產生，不要在別處另外維護一份。
+元件說明分成兩份，以同一個 `id` 對應；文件網站、Storybook 說明頁、mendesky-web 的 AI 協作索引把兩份合併呈現：
 
-| 內容 | 正本位置 |
+| 內容 | 放在哪裡 |
 |---|---|
-| 元件說明（用途、屬性、範例程式碼、注意事項） | 元件旁邊的 `<名稱>.docs.ts`（格式見 `src/docs/component-doc.ts`） |
-| 範例頁 | 元件旁邊的 `<名稱>.stories.ts` |
-| 色彩與 token、字型、動效 | `src/docs/foundations/`（樣式本身在 `src/styles/core.scss`） |
-| 互動原則 | `src/docs/patterns.ts` |
-| 指南文章 | `site/guide/*.md`（表格與原則內容在建置時從上面的正本讀出，文章只寫說明） |
-| 圖示 | `src/app/shared/components/icon/icon.registry.ts`（文件網站直接讀它） |
+| 元件規格（何時用、注意事項、選用表格） | 本體 `@mendesky/ds` 的 `src/docs/components/<id>.ts` |
+| Angular 用法（selector、屬性、事件、範例程式碼） | 本 repo 元件旁邊的 `<名稱>.docs.ts`（格式見 `src/docs/component-doc.ts`） |
+| 範例頁 | 本 repo 元件旁邊的 `<名稱>.stories.ts` |
+| 色彩與 token、字型、動效、互動原則、圖示、跟框架無關的工具程式 | 本體 `@mendesky/ds` |
 
 ### 新增或修改元件時要補什麼
 
-1. 元件旁邊的說明檔 `<名稱>.docs.ts`：用途與禁止事項（`when`）、每個 `@Input`／`@Output`（含 signal 的 `input()`／`output()`／`model()`）、程式碼範例、注意事項。
-2. 元件旁邊的範例頁 `<名稱>.stories.ts`：`title` 寫成 `'<分組>/<名稱>'` 字面值；第一支 story 是說明頁上方的主範例。
-3. 改了 `core.scss` 的 token 或字型 class，同步改 `src/docs/foundations/`。
-4. 本機跑一次：
+1. 本體 repo：元件規格 `src/docs/components/<id>.ts`（何時用、注意事項）。
+2. 本 repo：元件旁邊的 `<名稱>.docs.ts`：每個 `@Input`／`@Output`（含 signal 的 `input()`／`output()`／`model()`）、程式碼範例。只放 Angular 用法，規格欄位放這裡會被檢查擋下。
+3. 本 repo：元件旁邊的範例頁 `<名稱>.stories.ts`：`title` 寫成 `'<分組>/<名稱>'` 字面值；第一支 story 是說明頁上方的主範例。
+4. 改了本體之後，本 repo 的 `package.json` 把 `@mendesky/ds` 改指新版本（用 `npm i "github:Mendesky/mendesky-ds#<tag>"` 指名安裝）。
+5. 本機跑一次：
 
 ```bash
 npm run typecheck      # 型別檢查
-npm run check:docs     # 說明與程式碼是否一致（屬性、token、字型、互動原則）
+npm run check:docs     # Angular 說明與程式碼一致、跟本體元件規格對得上
+npm run test:scripts   # 檢查腳本自身的測試
 npx ng test --watch=false --browsers=ChromeHeadless   # 單元測試
-DOCS_REPO_BASE=/ npm run site:build -- main          # 建完整文件網站（指南＋元件頁）
-node scripts/smoke-storybook.mjs site/.vitepress/dist/components   # 元件頁逐頁冒煙測試
-node scripts/smoke-guides.mjs site/.vitepress/dist /main/         # 指南逐頁冒煙測試
+bash scripts/build-storybook-site.sh storybook-static # 建範例網站
+node scripts/smoke-storybook.mjs storybook-static     # 範例網站逐頁冒煙測試
 ```
 
 CI 會在每個 PR 跑同樣的檢查，任何一項失敗都不能合併。只在母元件內部使用的子元件（例如 `select-panel`）
@@ -195,14 +195,13 @@ cp node_modules/pdfjs-dist/build/pdf.worker.min.js src/assets/
 Copyright (c) 2026 嘉威聯合會計師事務所. All rights reserved.
 
 本 repo 公開僅供檢視，未授權任何使用、複製、修改或散布，完整條款見 [LICENSE](./LICENSE)。
-取自第三方的圖示（Heroicons、Lucide）依其原授權使用，見 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md)。
+圖示在本體套件 `@mendesky/ds`；取自第三方的圖示（Heroicons、Lucide）的授權見本體 repo 的 [THIRD-PARTY-NOTICES.md](https://github.com/Mendesky/mendesky-ds/blob/main/THIRD-PARTY-NOTICES.md)。
 
 ## Spec 政策：測試只放這個 repo
 
 元件的 `*.spec.ts` 只放在這個 repo，使用端專案（mendesky-web）不保留複製品。
 本 repo 的 CI 在每次 push 與每個發到 `main` 的 PR 跑型別檢查、說明檢查、單元測試（Karma）、
-文件網站建置與冒煙測試，任何一項失敗都不能合併。各項內容見
-[貢獻指南「CI 會擋什麼」](./site/guide/contributing.md)。
+範例網站建置與冒煙測試，任何一項失敗都不能合併。跟框架無關的工具程式的測試在本體 repo。
 
 - 單元測試是元件行為的閘門。改了元件行為，在同一個 PR 改對應的 spec，
   不得留下「程式碼是新的、spec 斷言舊行為」的打架狀態。

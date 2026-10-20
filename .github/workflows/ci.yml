@@ -2,9 +2,9 @@ name: CI
 
 # PR 與每次 push 都跑。公開 repo 一律用 GitHub 提供的主機（自架主機會讓外部 fork 的 PR 執行任意程式碼）。
 #   typecheck   型別檢查（含範例頁與說明檔）
-#   check-docs  說明檢查：元件屬性、token、字型、互動原則與程式碼一致；含腳本自身的測試
+#   check-docs  說明檢查：元件的 Angular 說明與程式碼一致、跟本體的元件規格對得上；含腳本自身的測試
 #   unit-test   DS 元件單元測試（Karma）
-#   smoke       建置文件網站（指南＋元件頁），逐頁打開確認畫得出來、沒有錯誤
+#   smoke       建置範例網站（Storybook），逐頁打開確認畫得出來、沒有錯誤
 on:
   push:
   pull_request:
@@ -62,7 +62,7 @@ jobs:
       - run: npx ng test --watch=false --browsers=ChromeHeadlessCI
 
   smoke:
-    name: 文件網站建置與冒煙測試
+    name: 範例網站建置與冒煙測試
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -73,7 +73,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: node --test scripts/smoke-storybook.browser.mjs scripts/smoke-guides.browser.mjs
-      - run: DOCS_REPO_BASE=/ bash scripts/build-site.sh main
-      - run: node scripts/smoke-storybook.mjs site/.vitepress/dist/components
-      - run: node scripts/smoke-guides.mjs site/.vitepress/dist /main/
+      - run: node --test scripts/smoke-storybook.browser.mjs
+      - run: bash scripts/build-storybook-site.sh storybook-static
+      - run: node scripts/smoke-storybook.mjs storybook-static
