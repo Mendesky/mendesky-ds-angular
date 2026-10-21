@@ -3,16 +3,22 @@
 //   名稱與 selector → 用途與禁止事項 → 真範例（可調整）→ 屬性表 → 程式碼範例 → 說明與注意事項 → 其他變體
 import * as React from 'react';
 import { Controls, Markdown, Primary, Source, Stories, Title, useOf } from '@storybook/blocks';
-import type { ComponentDoc, DocNote, DocProp, DocTable } from '../src/docs/component-doc';
+import { COMPONENT_SPECS, type DocNote, type DocTable } from '@mendesky/ds';
+import type { ComponentApi, ComponentDoc, DocProp } from '../src/docs/component-doc';
 
 const h = React.createElement;
 
-// 自動收集 src 底下全部說明檔，以 selector 對應元件；新增元件不用改這裡
+// 自動收集 src 底下全部 Angular 用法說明，以 selector 對應元件；新增元件不用改這裡。
+// 元件規格（何時用、注意事項、選用表格）在本體 @mendesky/ds，以 id 合併成完整說明。
+const SPECS_BY_ID = new Map(COMPONENT_SPECS.map((spec) => [spec.id, spec]));
 const docsContext = import.meta.webpackContext('../src', { recursive: true, regExp: /\.docs\.ts$/ });
 const DOCS_BY_SELECTOR = new Map<string, ComponentDoc>();
 for (const key of docsContext.keys()) {
-  const mod = docsContext(key) as Record<string, ComponentDoc>;
-  for (const doc of Object.values(mod)) DOCS_BY_SELECTOR.set(doc.selector, doc);
+  const mod = docsContext(key) as Record<string, ComponentApi>;
+  for (const api of Object.values(mod)) {
+    const spec = SPECS_BY_ID.get(api.id);
+    if (spec) DOCS_BY_SELECTOR.set(api.selector, { ...spec, ...api });
+  }
 }
 
 /** Angular 編譯後的元件／directive 定義上帶有 selector */
@@ -25,8 +31,12 @@ function selectorOf(component: unknown): string | null {
 }
 
 export function findDoc(parameters: Record<string, unknown> | undefined, component: unknown): ComponentDoc | undefined {
-  const explicit = parameters?.['dsDoc'] as ComponentDoc | undefined;
-  if (explicit) return explicit;
+  // 指定的說明檔只有 Angular 用法，一樣用 id 合併本體規格
+  const explicit = parameters?.['dsDoc'] as ComponentApi | undefined;
+  if (explicit) {
+    const spec = SPECS_BY_ID.get(explicit.id);
+    return spec ? { ...spec, ...explicit } : undefined;
+  }
   const selector = selectorOf(component);
   return selector ? DOCS_BY_SELECTOR.get(selector) : undefined;
 }

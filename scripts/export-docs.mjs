@@ -1,13 +1,17 @@
-// 匯出 DS 的全部說明（正本）成 JSON：元件說明（src/**/*.docs.ts）、基礎（token、字型、動效）、互動原則。
+// 匯出元件說明成 JSON。說明分兩份，以 id 對應：
+//   - Angular 用法（本 repo 各元件旁邊的 *.docs.ts）：selector、屬性、事件、範例程式碼
+//   - 元件規格、基礎（token、字型、動效）、互動原則、圖示：在本體套件 @mendesky/ds
 //
-// 用途：mendesky-web（dashboard-app）的索引產生器呼叫它；也用來對帳說明內容。
-// 用法：node scripts/export-docs.mjs [repo 根目錄，預設為本 repo]
-// 輸出：stdout 一個 JSON 物件 { components: [{ file, doc }], tokens, typography, motion, patterns }。
+// 兩個出口：
+//   exportFrameworkDocs(root)  只讀本 repo 的 Angular 用法（不需要裝本體）。本體的文件網站建置時用它。
+//   exportDocs(root)           合併本體＋Angular 用法，格式 { components: [{ file, doc }], tokens, typography, motion, patterns, icons }。
+//                              mendesky-web（dashboard-app）的 AI 協作索引產生器用它。回傳 Promise。
+// 用法：node scripts/export-docs.mjs [repo 根目錄，預設為本 repo]（輸出合併後的 JSON）
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import vm from 'node:vm';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
@@ -47,21 +51,42 @@ export function loadDocFile(file) {
   return JSON.parse(JSON.stringify(values[0]));
 }
 
-export function exportDocs(root) {
-  const components = listDocFiles(root).map((full) => ({ file: path.relative(root, full), doc: loadDocFile(full) }));
-  const docs = path.join(root, 'src', 'docs');
+/** 本 repo 的 Angular 用法說明（每個元件一筆，只有用法欄位）。本體的文件網站建置時呼叫。 */
+export function exportFrameworkDocs(root) {
+  return listDocFiles(root).map((file) => loadDocFile(file));
+}
+
+/** 本體套件裝在哪裡（root 底下 node_modules 依 Node 規則解析）。 */
+export function coreRoot(root) {
+  const req = createRequire(path.join(root, 'package.json'));
+  return path.dirname(req.resolve('@mendesky/ds/package.json'));
+}
+
+export async function exportDocs(root) {
+  const core = coreRoot(root);
+  const { exportCoreDocs } = await import(pathToFileURL(path.join(core, 'scripts', 'export-docs.mjs')).href);
+  const coreDocs = exportCoreDocs(core);
+  const specs = new Map(coreDocs.specs.map(({ spec }) => [spec.id, spec]));
+  const components = listDocFiles(root).map((full) => {
+    const file = path.relative(root, full);
+    const api = loadDocFile(full);
+    const spec = specs.get(api.id);
+    if (!spec) throw new Error(`${file}：本體沒有 id 為「${api.id}」的元件規格`);
+    return { file, doc: { ...spec, ...api } };
+  });
   return {
     components,
-    tokens: loadDocFile(path.join(docs, 'foundations', 'tokens.ts')),
-    typography: loadDocFile(path.join(docs, 'foundations', 'typography.ts')),
-    motion: loadDocFile(path.join(docs, 'foundations', 'motion.ts')),
-    patterns: loadDocFile(path.join(docs, 'patterns.ts')),
+    tokens: coreDocs.tokens,
+    typography: coreDocs.typography,
+    motion: coreDocs.motion,
+    patterns: coreDocs.patterns,
+    icons: coreDocs.icons,
   };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = path.resolve(process.argv[2] ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..'));
-  const result = exportDocs(root);
+  const result = await exportDocs(root);
   if (result.components.length === 0) {
     console.error(`在 ${root}/src 找不到任何 *.docs.ts`);
     process.exit(1);

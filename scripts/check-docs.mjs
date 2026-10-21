@@ -1,17 +1,20 @@
-// 說明檢查：確認元件說明（*.docs.ts）跟程式碼一致。
+// 說明檢查（Angular）：確認元件的 Angular 用法說明（*.docs.ts）跟程式碼一致，並跟本體的元件規格對得上。
 //
-// 檢查三件事：
+// 檢查：
 //   1. 每個公開元件（*.component.ts，內部子元件除外）旁邊都有說明檔
 //   2. 說明檔列的屬性名稱，跟元件宣告的 @Input／@Output／input()／model()／output() 完全一致
 //   3. 說明檔能正確載入（語法錯誤直接算失敗，不略過）
+//   4. 說明檔只放 Angular 用法；何時用、注意事項等規格欄位屬於本體 @mendesky/ds
+//   5. 每份說明都有對應的本體規格，每份本體規格也都有 Angular 說明
 // 一個元件都沒掃到也算失敗，避免「沒東西可查所以全過」。
+// token、字型、互動原則的一致性由本體 repo 檢查。
 //
 // 用法：node scripts/check-docs.mjs [repo 根目錄]
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadDocFile } from './export-docs.mjs';
+import { loadDocFile, coreRoot } from './export-docs.mjs';
 
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
@@ -108,84 +111,25 @@ function docPropNames(doc) {
   return new Set(doc.props.map((p) => p.name.replace(/^\(|\)$/g, '')));
 }
 
-/**
- * core.scss 裡宣告的 CSS 變數 → 第一次宣告的值（名稱保留原始寫法，例如 `--text\/body`）。
- * 前面必須是行首、空白、{ 或 ;，排除 `.btn--disabled:hover` 這類 BEM 修飾 class 後接偽類。
- * 同一個變數在 media query 等處被覆寫時，以第一次（通常是 :root）為準。
- */
-function scssCustomProperties(scss) {
-  const map = new Map();
-  for (const m of scss.matchAll(/(?:^|[\s{;])(--[A-Za-z0-9_\\/.-]+)\s*:\s*([^;]*);/gm)) {
-    if (!map.has(m[1])) map.set(m[1], m[2].trim());
-  }
-  return map;
+/** 只屬於本體元件規格的欄位：出現在 Angular 說明檔就是放錯地方 */
+export const SPEC_ONLY_KEYS = ['name', 'group', 'when', 'description', 'notes', 'customTables'];
+
+/** 本體元件規格的 id（讀 @mendesky/ds 的 src/docs/components 檔名，不執行檔案）。 */
+export function coreSpecIds(root) {
+  const dir = path.join(coreRoot(root), 'src', 'docs', 'components');
+  return new Set(readdirSync(dir).filter((n) => n.endsWith('.ts') && n !== 'index.ts').map((n) => n.replace(/\.ts$/, '')));
 }
 
-const normalizeValue = (v) => v.replace(/\s+/g, ' ').trim().toLowerCase();
-
-/**
- * 基礎（token、字型）與互動原則的一致性。repo 沒有 src/docs/foundations/ 時略過（只檢查元件）。
- * 每類落差合併成一則錯誤訊息，列出全部名稱。
- */
-export function checkFoundations(root, componentIds) {
-  const docs = path.join(root, 'src', 'docs');
-  const tokensFile = path.join(docs, 'foundations', 'tokens.ts');
-  if (!existsSync(tokensFile)) return [];
-  const errors = [];
-  const load = (file) => {
-    try {
-      return loadDocFile(file);
-    } catch (e) {
-      errors.push(`${path.relative(root, file)}：無法載入（${e.message}）`);
-      return null;
-    }
-  };
-  const scss = readFileSync(path.join(root, 'src', 'styles', 'core.scss'), 'utf8');
-  const defined = scssCustomProperties(scss);
-
-  const tokens = load(tokensFile);
-  if (tokens) {
-    const documented = new Set(tokens.flatMap((g) => g.tokens.map((t) => t.name)));
-    const stale = [...documented].filter((n) => !defined.has(n)).sort();
-    const undocumented = [...defined.keys()].filter((n) => !documented.has(n)).sort();
-    const drifted = tokens
-      .flatMap((g) => g.tokens)
-      .filter((t) => defined.has(t.name) && normalizeValue(t.value) !== normalizeValue(defined.get(t.name)))
-      .map((t) => `${t.name}（說明寫 ${t.value}，core.scss 是 ${defined.get(t.name)}）`);
-    if (stale.length) errors.push(`token：說明有、core.scss 已不存在（${stale.length} 個）：${stale.join(', ')}`);
-    if (undocumented.length) errors.push(`token：core.scss 有、說明沒寫（${undocumented.length} 個）：${undocumented.join(', ')}`);
-    if (drifted.length) errors.push(`token：說明的值跟 core.scss 不同（${drifted.length} 個）：${[...new Set(drifted)].join('；')}`);
-  }
-
-  const typography = load(path.join(docs, 'foundations', 'typography.ts'));
-  if (typography) {
-    const classes = typography.flatMap((f) => f.classes.map((c) => c.name));
-    const stale = classes.filter((name) => !new RegExp(`${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`).test(scss)).sort();
-    if (stale.length) errors.push(`字型：說明有、core.scss 已不存在的 class：${stale.join(', ')}`);
-  }
-
-  const patterns = load(path.join(docs, 'patterns.ts'));
-  if (patterns) {
-    const keys = new Set(Object.keys(patterns));
-    const dangling = [];
-    for (const [key, p] of Object.entries(patterns)) {
-      for (const c of p.relatedComponents ?? []) if (!componentIds.has(c.replace(/^#/, ''))) dangling.push(`${key} → 元件 ${c}`);
-      for (const r of p.relatedPatterns ?? []) {
-        const target = r.split(/[（(\s]/)[0];
-        if (!keys.has(target)) dangling.push(`${key} → 原則 ${r}`);
-      }
-    }
-    for (const d of dangling) errors.push(`互動原則：指向不存在的對象：${d}`);
-  }
-  return errors;
-}
-
-export function checkDocs(root, { internal = INTERNAL_COMPONENTS } = {}) {
+export function checkDocs(root, { internal = INTERNAL_COMPONENTS, specIds } = {}) {
   const errors = [];
   const files = walk(path.join(root, 'src'));
   const sources = files.filter((f) => /\.(component|directive)\.ts$/.test(f));
   const docFiles = new Set(files.filter((f) => f.endsWith('.docs.ts')));
   const rel = (f) => path.relative(root, f);
+  const specOnly = (doc, file) => {
+    const keys = SPEC_ONLY_KEYS.filter((k) => k in doc);
+    if (keys.length) errors.push(`${rel(file)}：說明檔只放 Angular 用法，這些欄位屬於本體元件規格：${keys.join(', ')}`);
+  };
   const docIds = new Set();
   let checked = 0;
 
@@ -214,6 +158,7 @@ export function checkDocs(root, { internal = INTERNAL_COMPONENTS } = {}) {
     }
     checked++;
     docIds.add(doc.id);
+    specOnly(doc, docFile);
     const documented = docPropNames(doc);
     const missing = [...api.names].filter((n) => !documented.has(n)).sort();
     const extra = [...documented].filter((n) => !api.names.has(n)).sort();
@@ -233,13 +178,19 @@ export function checkDocs(root, { internal = INTERNAL_COMPONENTS } = {}) {
     if (doc.selector.startsWith('.')) {
       checked++; // CSS class 沒有程式碼可比對屬性，載入成功即算通過
       docIds.add(doc.id);
+      specOnly(doc, docFile);
     } else {
       errors.push(`${rel(docFile)}：找不到對應的 .component.ts 或 .directive.ts`);
     }
   }
 
   if (sources.length === 0) errors.push(`掃描到 0 個元件，請確認路徑：${path.join(root, 'src')}`);
-  errors.push(...checkFoundations(root, docIds));
+
+  const specs = specIds ?? coreSpecIds(root);
+  const noSpec = [...docIds].filter((id) => !specs.has(id)).sort();
+  const noDoc = [...specs].filter((id) => !docIds.has(id)).sort();
+  if (noSpec.length) errors.push(`本體沒有對應元件規格的說明：${noSpec.join(', ')}`);
+  if (noDoc.length) errors.push(`本體有元件規格、但 Angular 沒有說明：${noDoc.join(', ')}`);
   return { checked, errors };
 }
 
@@ -251,5 +202,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     for (const e of errors) console.error(`  - ${e}`);
     process.exit(1);
   }
-  console.log(`說明檢查通過：${checked} 個元件的說明與程式碼一致；token、字型、互動原則也一致`);
+  console.log(`說明檢查通過：${checked} 個元件的 Angular 說明與程式碼一致，也都對得上本體的元件規格`);
 }

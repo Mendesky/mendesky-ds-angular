@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const kanbanMinimapDoc: ComponentDoc = {
+export const kanbanMinimapDoc: ComponentApi = {
   id: 'kanban-minimap',
-  name: 'Kanban Minimap',
   selector: 'app-kanban-minimap',
-  group: '展示元件',
   summary: 'columns: MinimapColumn[] · boardContainer: HTMLElement',
-  when: 'Kanban 欄位縮略導覽。',
   props: [
     {
       name: 'boardContainer',
@@ -43,6 +40,4 @@ minimapColumns = computed(() =>
 );`,
     },
   ],
-  notes: [],
-  customTables: [],
 };

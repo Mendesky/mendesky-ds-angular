@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ProseMirrorJSON } from '../../models/prosemirror.model';
+import { ProseMirrorJSON } from '@mendesky/ds';
 import { RichTextEditorComponent, type RichTextEditorTool } from './rich-text-editor.component';
 import { tableHighlightKey } from './table-toolbar/rte-table-highlight.plugin';
 import {

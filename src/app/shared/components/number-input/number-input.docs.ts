@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const numberInputDoc: ComponentDoc = {
+export const numberInputDoc: ComponentApi = {
   id: 'number-input',
-  name: 'Number Input',
   selector: 'app-number-input',
-  group: '表單元件',
   summary: 'size: S|M|L · placeholder decimalPlaces min max step initialValue suffix errorMessage errorPosition: top|bottom · [disabled] [allowEmpty] · (valueChange: number|null) · (valueCommit: number|null)',
-  when: '金額、數量等數字欄位。有加減鍵與格式化。',
   props: [
     {
       name: 'size',
@@ -121,6 +118,4 @@ export const numberInputDoc: ComponentDoc = {
 ></app-number-input>`,
     },
   ],
-  notes: [],
-  customTables: [],
 };

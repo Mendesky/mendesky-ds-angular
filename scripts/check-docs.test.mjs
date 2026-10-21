@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { checkDocs } from './check-docs.mjs';
 
 const fixtures = path.join(path.dirname(fileURLToPath(import.meta.url)), '__fixtures__', 'check-docs');
-const run = (name, options = {}) => checkDocs(path.join(fixtures, name), { internal: [], ...options });
+// 本體規格的 id 由參數傳入（fixture 沒有安裝本體套件）；預設只有 demo
+const run = (name, options = {}) => checkDocs(path.join(fixtures, name), { internal: [], specIds: new Set(['demo']), ...options });
 
 test('說明屬性與程式碼一致 → 通過', () => {
   const result = run('ok');
@@ -28,25 +29,25 @@ test('說明有、程式碼沒有 → 失敗', () => {
 });
 
 test('公開元件沒有說明檔 → 失敗', () => {
-  const { errors } = run('missing-docs');
+  const { errors } = run('missing-docs', { specIds: new Set() });
   assert.equal(errors.length, 1);
   assert.match(errors[0], /demo\.component\.ts/);
 });
 
 test('內部子元件沒有說明檔 → 通過', () => {
-  const { errors } = run('internal-no-docs', { internal: ['demo-panel'] });
+  const { errors } = run('internal-no-docs', { internal: ['demo-panel'], specIds: new Set() });
   assert.deepEqual(errors, []);
 });
 
 test('一個元件都沒掃到 → 失敗（防空集合假綠）', () => {
-  const { errors, checked } = run('empty');
+  const { errors, checked } = run('empty', { specIds: new Set() });
   assert.equal(checked, 0);
   assert.equal(errors.length, 1);
   assert.match(errors[0], /0 個/);
 });
 
 test('說明檔語法錯誤 → 失敗，不得略過', () => {
-  const { errors } = run('syntax-error');
+  const { errors } = run('syntax-error', { specIds: new Set() });
   assert.equal(errors.length, 1);
   assert.match(errors[0], /demo\.docs\.ts/);
 });
@@ -57,41 +58,16 @@ test('Angular 各種屬性與事件寫法都認得', () => {
   assert.equal(result.checked, 1);
 });
 
-// ── 基礎與互動原則（有 src/docs/ 的 repo 才檢查）─────────────────────────────
+// ── 與本體元件規格的分工 ───────────────────────────────────
 
-test('token、字型、互動原則都一致 → 通過', () => {
-  const result = run('fnd-ok');
-  assert.deepEqual(result.errors, []);
-});
-
-test('說明裡有、core.scss 沒有的 token → 失敗', () => {
-  const { errors } = run('fnd-token-stale');
+test('說明檔放了規格欄位（when、notes）→ 失敗，應該放在本體', () => {
+  const { errors } = run('spec-fields-in-docs');
   assert.equal(errors.length, 1);
-  assert.match(errors[0], /--text\\\/gone/);
+  assert.match(errors[0], /when, notes/);
 });
 
-test('core.scss 有、說明沒有的 token → 失敗', () => {
-  const { errors } = run('fnd-token-undocumented');
-  assert.equal(errors.length, 1);
-  assert.match(errors[0], /--ease-enter/);
-});
-
-test('說明裡有、core.scss 沒有的字型 class → 失敗', () => {
-  const { errors } = run('fnd-type-stale');
-  assert.equal(errors.length, 1);
-  assert.match(errors[0], /\.noto-99-gone/);
-});
-
-test('互動原則的相關元件或相關原則不存在 → 失敗', () => {
-  const { errors } = run('fnd-pattern-dangling');
-  assert.equal(errors.length, 2);
-  assert.match(errors.join('\n'), /#no-such-component/);
-  assert.match(errors.join('\n'), /other\.missing/);
-});
-
-test('說明裡的 token 值跟 core.scss 不同 → 失敗', () => {
-  const { errors } = run('fnd-token-value-drift');
-  assert.equal(errors.length, 1);
-  assert.match(errors[0], /--text\\\/body/);
-  assert.match(errors[0], /#000000/);
+test('說明的 id 在本體沒有規格 → 失敗', () => {
+  const { errors } = run('ok', { specIds: new Set(['other']) });
+  assert.match(errors.join('\n'), /本體沒有對應元件規格的說明：demo/);
+  assert.match(errors.join('\n'), /本體有元件規格、但 Angular 沒有說明：other/);
 });

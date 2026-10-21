@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const stepperDoc: ComponentDoc = {
+export const stepperDoc: ComponentApi = {
   id: 'stepper',
-  name: 'Stepper',
   selector: 'app-stepper',
-  group: '互動元件',
   summary: "variant: 'horizontal'|'nav' · horizontal: steps: string[] currentStep: number (stepClick) · nav: navSections activePage expandedPageIds lockedPageIds sectionStatuses (navPageClick) (navSubItemClick)",
-  when: 'horizontal：多步驟 Wizard 進度指示。nav：Modal 左側多層導覽面板。',
   props: [
     {
       name: 'variant',
@@ -128,6 +125,4 @@ interface NavPage    { id: string; num: string; label: string; subItems?: NavSub
 interface NavSection { label?: string; pages: NavPage[]; }`,
     },
   ],
-  notes: [],
-  customTables: [],
 };

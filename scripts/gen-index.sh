@@ -18,4 +18,7 @@ cd "$(dirname "$0")/.."
   # 說明檔的型別（ComponentDoc 等）：讓使用端也能用同一格式寫自己的元件說明。只匯出型別檔，不匯出說明資料。
   find src/docs -maxdepth 1 -name '*-doc.ts' \
     | sort | sed -E "s|^src/(.*)\.ts$|export type * from './\1';|"
+  # 本體 @mendesky/ds（圖示資料、跟框架無關的工具程式與資料格式、元件規格）：
+  # 原本在本套件內，拆到本體後照樣從這裡轉出，使用端 import '@mendesky/ds-angular' 的寫法不用改。
+  echo "export * from '@mendesky/ds';"
 } > src/index.ts

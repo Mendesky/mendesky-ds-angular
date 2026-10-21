@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const carouselDotDoc: ComponentDoc = {
+export const carouselDotDoc: ComponentApi = {
   id: 'carousel-dot',
-  name: 'Carousel Dot',
   selector: 'app-carousel-dot',
-  group: '互動元件',
   summary: 'variant: Dot|Line|Text · [active] text · (dotClick)',
-  when: '圖片輪播指示、kanban 分頁點。多步驟 wizard 請改用 app-stepper。',
   props: [
     {
       name: 'variant',
@@ -51,6 +48,4 @@ export const carouselDotDoc: ComponentDoc = {
 ></app-carousel-dot>`,
     },
   ],
-  notes: [],
-  customTables: [],
 };

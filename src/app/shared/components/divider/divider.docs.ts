@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const dividerDoc: ComponentDoc = {
+export const dividerDoc: ComponentApi = {
   id: 'divider',
-  name: 'Divider',
   selector: 'app-divider',
-  group: '展示元件',
   summary: 'display: Row|Column · propClass: White|Grey20|Grey30|Grey40 · [showLabel] labelText',
-  when: '區塊分隔。',
   props: [
     {
       name: 'display',
@@ -41,6 +38,4 @@ export const dividerDoc: ComponentDoc = {
 ></app-divider>`,
     },
   ],
-  notes: [],
-  customTables: [],
 };

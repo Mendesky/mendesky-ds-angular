@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { CheckboxComponent, CheckboxSize } from './checkbox.component';
 import { IconComponent } from '../icon/icon.component';
-import { ICON_REGISTRY } from '../icon/icon.registry';
+import { ICON_REGISTRY } from '@mendesky/ds';
 
 /**
  * app-checkbox 契約（2026-10-14 定案）：

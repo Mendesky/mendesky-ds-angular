@@ -1,6 +1,6 @@
 import { Component, HostBinding, Input, OnChanges, isDevMode, ChangeDetectionStrategy } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { ICON_REGISTRY } from './icon.registry';
+import { ICON_REGISTRY } from '@mendesky/ds';
 
 /**
  * AppIconComponent — 通用 SVG 圖示元件

@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
 import { TooltipsComponent } from '../tooltips/tooltips.component';
 import { SelectComponent, SelectOption } from '../select/select.component';
-import { TemplateVarDef, TemplateVarContext } from '../../models/template-var.model';
+import { TemplateVarDef, TemplateVarContext } from '@mendesky/ds';
 import { TEMPLATE_VAR_GROUPS, TEMPLATE_VAR_CONTEXT_TEXT } from './template-var-panel.tokens';
 
 type CloseReason = 'outside' | 'chipClick' | 'esc' | 'anchorGone' | 'destroy' | 'toggle';

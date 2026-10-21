@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const autocompleteDoc: ComponentDoc = {
+export const autocompleteDoc: ComponentApi = {
   id: 'autocomplete',
-  name: 'Autocomplete',
   selector: 'app-autocomplete',
-  group: '表單元件',
   summary: 'size: S|M|L · placeholder options: AutocompleteOption[] value errorMessage errorPosition: top|bottom · [disabled] [singleSelect] [clearable] · (selectionChange)',
-  when: '搜尋後動態篩選選項的輸入框。',
   props: [
     {
       name: 'size',
@@ -83,6 +80,4 @@ export const autocompleteDoc: ComponentDoc = {
 </app-field>`,
     },
   ],
-  notes: [],
-  customTables: [],
 };

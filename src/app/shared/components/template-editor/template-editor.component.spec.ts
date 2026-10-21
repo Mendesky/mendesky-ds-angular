@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA, SimpleChange } from '@angular/core';
 import { TemplateEditorComponent } from './template-editor.component';
-import { TemplateVarDef } from '../../models/template-var.model';
+import { TemplateVarDef } from '@mendesky/ds';
 
 describe('TemplateEditorComponent — select chip', () => {
   let component: TemplateEditorComponent;

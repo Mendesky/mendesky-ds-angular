@@ -1,1 +1,0 @@
-export const DS_MOTION = { tiers: [], easing: { enter: { name: 'enter', value: 'x', token: '--ease-enter', desc: '' }, exit: { name: 'exit', value: 'x', token: '--ease-enter', desc: '' } }, rule: '' };

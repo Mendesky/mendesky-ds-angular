@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const inputDoc: ComponentDoc = {
+export const inputDoc: ComponentApi = {
   id: 'input',
-  name: 'Input',
   selector: 'app-input',
-  group: '表單元件',
   summary: 'size: S|M|L · placeholder type inputMode sanitize initialValue errorMessage errorPosition: top|bottom · [disabled] [readonly] · (valueChange) (blur)',
-  when: '單行文字輸入。禁止原生 <input>。type=\'password\' 時自動顯示 eye toggle。電話、編號等純數字欄位用 inputMode="numeric" sanitize="digits"。',
   props: [
     {
       name: 'size',
@@ -110,8 +107,4 @@ export const inputDoc: ComponentDoc = {
       code: '<app-input size="M" [initialValue]="shareUrl" [readonly]="true"></app-input>',
     },
   ],
-  notes: [
-    'Suffix icon（eye toggle、clear 等）統一使用 size="16"，不可用其他尺寸。',
-  ],
-  customTables: [],
 };

@@ -1,14 +1,14 @@
 name: Docs release
 
-# 推正式版 tag（vX.Y.Z，不含 -beta）時，建該版的完整文件網站，發布到 gh-pages 的 /<版本>/，
-# 並加進 versions.json（版本選單與根目錄轉址都讀它）。main 的文件由 docs.yml 負責。
+# 推正式版 tag（vX.Y.Z，不含 -beta）時，建該版的 Angular 範例網站，發布到 gh-pages 的 /<版本>/components/。
+# 本體的文件網站（mendesky-ds）在 site/frameworks.json 指定要嵌入哪一版的範例。
 on:
   push:
     tags: ['v[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
     inputs:
       tag:
-        description: 要重新發布文件的正式版 tag，例如 v0.1.12
+        description: 要重新發布範例網站的正式版 tag，例如 v0.3.0
         required: true
 
 permissions:
@@ -38,8 +38,8 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      - run: bash scripts/build-site.sh "$TAG"
-      - name: 推到 gh-pages（只換這個版本的資料夾，並加進 versions.json）
+      - run: bash scripts/build-storybook-site.sh storybook-static
+      - name: 推到 gh-pages（只換這個版本的 components 資料夾）
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/publish-pages.sh site/.vitepress/dist "$TAG" "$TAG"
+        run: scripts/publish-pages.sh storybook-static "$TAG/components"

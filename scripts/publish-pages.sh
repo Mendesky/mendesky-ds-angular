@@ -1,7 +1,8 @@
 #!/bin/bash
-# 把一個版本的完整文件網站（指南＋元件頁）發布到 gh-pages 分支的 <版本資料夾>/，其他版本原樣保留。
-# 同時更新網站根目錄的轉址頁；正式版另外加進 versions.json（依版號新到舊）。
-# 用法：scripts/publish-pages.sh <建好的網站目錄> <版本資料夾：main 或 v1.2.3> [要加入 versions.json 的版本]
+# 把建好的網站發布到 gh-pages 分支的 <目標資料夾>/，其他資料夾原樣保留，並更新根目錄的轉址頁。
+# 拆成本體＋框架套件後（v0.3.0 起），這裡只發布 Angular 版的範例網站到 <版本>/components/；
+# 設計系統的文件網站改由本體 repo（mendesky-ds）發布，根目錄轉到那裡。v0.2.0 以前的完整文件保留不動。
+# 用法：scripts/publish-pages.sh <建好的網站目錄> <目標資料夾：main/components 或 v1.2.3/components> [要加入 versions.json 的版本（舊網站的版本選單用，新版本不再加）]
 # 在 GitHub Actions 裡執行（用工作流程的 token 推送）。
 set -euo pipefail
 BUILD_DIR="$(cd "$1" && pwd)"
@@ -29,7 +30,7 @@ git -C "$WORK" config user.email "41898282+github-actions[bot]@users.noreply.git
 rm -rf "${WORK:?}/$TARGET"
 mkdir -p "$WORK/$TARGET"
 cp -R "$BUILD_DIR/." "$WORK/$TARGET/"
-cp "$ROOT/site/root/index.html" "$WORK/index.html"
+cp "$ROOT/scripts/pages-root.html" "$WORK/index.html"
 touch "$WORK/.nojekyll"
 [ -f "$WORK/versions.json" ] || echo "[]" > "$WORK/versions.json"
 

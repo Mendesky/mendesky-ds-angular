@@ -1,12 +1,9 @@
-import type { ComponentDoc } from '../../../../docs/component-doc';
+import type { ComponentApi } from '../../../../docs/component-doc';
 
-export const listDoc: ComponentDoc = {
+export const listDoc: ComponentApi = {
   id: 'list',
-  name: 'List',
   selector: 'app-list',
-  group: '展示元件',
   summary: 'level: 1|2|3|4 · title value itemNumber · [showItemNumber] [showTitle] [showValue] [hasChildren] status: Default|Hover',
-  when: '階層式資料展示。',
   props: [
     {
       name: 'level',
@@ -55,6 +52,4 @@ export const listDoc: ComponentDoc = {
     },
   ],
   usage: [],
-  notes: [],
-  customTables: [],
 };

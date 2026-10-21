@@ -1,6 +1,6 @@
 import { AfterViewInit, Directive, ElementRef, HostListener, Renderer2, inject } from '@angular/core';
 import { ToastService } from '../services/toast.service';
-import { copyText as writeClipboard } from '../utils/clipboard.util';
+import { copyText as writeClipboard } from '@mendesky/ds';
 
 /**
  * 點擊複製到剪貼簿。
