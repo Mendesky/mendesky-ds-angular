@@ -4,6 +4,7 @@
   [attr.aria-label]="ariaLabel || null"
   (keydown)="onKeydown($event)"
 >
+  <!-- track option.value：避免重複 key（NG0955） -->
   @for (option of options; track option.value) {
     <app-option-card
       [value]="option.value"

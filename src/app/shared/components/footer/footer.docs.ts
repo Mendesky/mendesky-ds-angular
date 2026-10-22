@@ -22,4 +22,10 @@ export const footerDoc: ComponentApi = {
 }`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: '父層在自己的 SCSS 對 app-footer 設定 --footer-* CSS 自訂屬性即可覆寫 RWD 樣式，不需 ::ng-deep。',
+    },
+  ],
 };

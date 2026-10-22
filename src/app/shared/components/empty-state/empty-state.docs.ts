@@ -34,4 +34,10 @@ export const emptyStateDoc: ComponentApi = {
 </app-empty-state>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: '自訂內容走預設的 ng-content slot（不需 select）：直接寫在 <app-empty-state> 標籤內，就會投影到 message 文字下方。',
+    },
+  ],
 };

@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const iconDoc: ComponentApi = {
   id: 'icon',
   selector: 'app-icon',
-  summary: "name（見 icon.registry.ts）· size: 12|16|24|32|36|48 · 顏色透過父層 color CSS 或 style='color:...'",
+  summary: "name（見 @mendesky/ds 的 ICON_REGISTRY）· size: 12|16|24|32|36|48 · 顏色透過父層 color CSS 或 style='color:...'",
   props: [
     {
       name: 'name',

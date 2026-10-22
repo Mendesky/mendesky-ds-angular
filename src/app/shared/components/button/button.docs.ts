@@ -133,4 +133,10 @@ export const buttonDoc: ComponentApi = {
 ></app-button>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'app-button 用 Angular 預設的樣式封裝（Emulated），內部的 .btn 等 class 帶有元件專屬的屬性選擇器；使用端要覆寫按鈕內部樣式，寫在使用端元件自己的樣式裡碰不到這些 class；要寫在全域樣式表並讓權重高於元件內的規則，或在元件樣式裡用 ::ng-deep。',
+    },
+  ],
 };

@@ -55,4 +55,9 @@ export const tooltipDirectiveDoc: ComponentApi = {
 </span>`,
     },
   ],
+  usageNotes: [
+    'app-icon-btn 已內建 appTooltip：透過它的 tooltip 與 tooltipPos 兩個 input 設定；disabled 狀態下 tooltip 仍正常顯示，因為 appTooltip 綁在 app-icon-btn 的 wrapper div 上。',
+    '本體說的 tooltip「換行選項」在 Angular 是 appTooltipWrap：長字串（檔名、使用者自填標題）在 host 加上 [appTooltipWrap]="true"（2026-10-13 加回，選用、預設 false）。',
+    { type: 'warn', content: 'Angular 的單元測試在 Karma 裡跑，視窗比 $bp-desktop 窄；量 tooltip 尺寸的測試要先解除平板以下的自動隱藏（:host { display:none !important }），否則量到的一律是 0。' },
+  ],
 };

@@ -1,6 +1,6 @@
 // 元件說明頁版型：由各元件的 *.docs.ts 畫出。
 // 順序（工程師先確認能不能用、怎麼用）：
-//   名稱與 selector → 用途與禁止事項 → 真範例（可調整）→ 屬性表 → 程式碼範例 → 說明與注意事項 → 其他變體
+//   名稱與 selector → 用途與禁止事項 → 真範例（可調整）→ 屬性表 → 程式碼範例 → Angular 注意事項 → 說明與注意事項 → 其他變體
 import * as React from 'react';
 import { Controls, Markdown, Primary, Source, Stories, Title, useOf } from '@storybook/blocks';
 import { COMPONENT_SPECS, type DocNote, type DocTable } from '@mendesky/ds';
@@ -120,6 +120,10 @@ export function DsDocsPage() {
     ...doc.usage.map((u, i) =>
       h(React.Fragment, { key: `usage-${i}` }, u.label ? h('h3', null, u.label) : null, h(Source, { code: u.code, language: 'html', dark: true })),
     ),
+
+    // 只有 Angular 才需要知道的注意事項（*.docs.ts 的 usageNotes）；跨框架的注意事項在下一段
+    doc.usageNotes?.length ? h('h2', { 'data-testid': 'ds-doc-usage-notes' }, 'Angular 注意事項') : null,
+    ...(doc.usageNotes ?? []).map((n, i) => h(NoteBlock, { key: `usage-note-${i}`, note: n })),
 
     doc.description || doc.notes.length || doc.customTables?.length
       ? h('h2', { 'data-testid': 'ds-doc-notes' }, '說明與注意事項')

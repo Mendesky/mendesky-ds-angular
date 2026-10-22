@@ -63,7 +63,7 @@ export class ProcessToastComponent implements OnInit, OnChanges, OnDestroy {
     return this.size === 'S' ? '24' : '36';
   }
 
-  /** 與 `ToastService.resolveDuration()` 對齊：error 5000、有 action 5000、其餘 3000。
+  /** 與 toast.service.ts 的 `resolveDuration()` 對齊：error 5000、有 action 5000、其餘 3000。
    *  只在「裸用 app-process-toast」（不經 app-toast-container）時生效——容器會硬帶
    *  `[duration]="999999999"` 並用 `[requestHide]` 驅動消失，時長由 ToastService 決定。 */
   private get effectiveDuration(): number {

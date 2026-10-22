@@ -10,7 +10,7 @@ import { Placement, PortalOverlayRef, PortalPositioningService } from '../../ser
 /**
  * [appTooltip] — 通用 Tooltip Directive
  *
- * Portal 模式：tooltip 直接 append 至 document.body，使用 position: fixed 定位，
+ * Portal 模式：以 createComponent 動態建立 TooltipPortalComponent，直接 append 至 document.body，使用 position: fixed 定位，
  * 完全不受父容器 overflow:hidden 影響。定位邏輯由 PortalPositioningService 統一管理。
  *
  * 用法：
