@@ -26,3 +26,22 @@ test('一頁都沒有 → 失敗', async () => {
   assert.equal(result.failures.length, 1);
   assert.match(result.failures[0], /0 頁/);
 });
+
+test('說明頁有沒換掉的 #元件id → 失敗並指出是哪個；程式碼、色碼、網址裡的 # 不算', async () => {
+  const result = await smokeStorybook(path.join(fixtures, 'refs'), { refIds: ['button', 'select'] });
+  assert.equal(result.failures.length, 1);
+  assert.match(result.failures[0], /demo--docs/);
+  assert.match(result.failures[0], /#button/);
+  assert.doesNotMatch(result.failures[0], /#select|#fff/);
+});
+
+test('說明頁的 #元件id 都換掉了 → 通過', async () => {
+  const result = await smokeStorybook(path.join(fixtures, 'ok'), { refIds: ['button'] });
+  assert.deepEqual(result.failures, []);
+});
+
+test('要檢查 #元件id 卻拿不到任何元件 id → 失敗，不能當成沒有殘留', async () => {
+  const result = await smokeStorybook(path.join(fixtures, 'ok'), { refIds: [] });
+  assert.equal(result.failures.length, 1);
+  assert.match(result.failures[0], /元件 id/);
+});

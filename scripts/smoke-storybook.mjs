@@ -1,4 +1,5 @@
 // 冒煙測試：逐一打開文件網站（Storybook 靜態建置）的每一頁，確認有畫出內容、沒有頁面錯誤。
+// 說明頁另外檢查：本體文字的 #元件id 都換成了 Angular selector（程式碼區塊裡的 #name 是範本變數，不算）。
 //
 // 用法：npm run build-storybook && node scripts/smoke-storybook.mjs [storybook-static 目錄]
 // 自己起一個只綁 127.0.0.1、port 由系統分配的靜態伺服器，跑完就關。
@@ -7,6 +8,8 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
+import { findRefs } from '@mendesky/ds/scripts/component-refs.mjs';
+import { exportDocs } from './export-docs.mjs';
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -38,12 +41,29 @@ function serve(dir) {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-/** 逐頁檢查；回傳 { visited, failures } */
-export async function smokeStorybook(dir, { timeout = 15000 } = {}) {
+/** 說明頁裡、程式碼區塊以外的每一段文字 */
+function docsTexts() {
+  const root = document.querySelector('#storybook-docs');
+  if (!root) return [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => (node.parentElement?.closest('pre, code') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  });
+  const texts = [];
+  while (walker.nextNode()) texts.push(walker.currentNode.textContent);
+  return texts;
+}
+
+/**
+ * 逐頁檢查；回傳 { visited, failures }。
+ * refIds：Angular 有的元件 id；有給就檢查說明頁沒有留下這些 #元件id。給空陣列算失敗（拿不到 id 不等於沒有殘留）。
+ */
+export async function smokeStorybook(dir, { timeout = 15000, refIds } = {}) {
   const root = path.resolve(dir);
   const index = JSON.parse(readFileSync(path.join(root, 'index.json'), 'utf8'));
   const entries = Object.values(index.entries);
   if (entries.length === 0) return { visited: 0, failures: [`index.json 裡有 0 頁，文件網站沒有內容`] };
+  if (refIds && refIds.length === 0) return { visited: 0, failures: ['沒有拿到任何元件 id，無法檢查說明頁的 #元件id'] };
+  const known = new Set(refIds ?? []);
 
   const server = await serve(root);
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -62,13 +82,23 @@ export async function smokeStorybook(dir, { timeout = 15000 } = {}) {
       page.on('console', onConsole);
       const docs = entry.type === 'docs';
       const target = docs ? '#storybook-docs .sbdocs' : '#storybook-root > *';
+      let rendered = false;
       try {
         await page.goto(`${base}/iframe.html?id=${encodeURIComponent(entry.id)}&viewMode=${docs ? 'docs' : 'story'}`);
         await page.waitForSelector(target, { state: 'attached', timeout });
         // 給元件一點時間跑完初始化（延遲丟出的錯誤也要抓到）
         await page.waitForTimeout(150);
+        rendered = true;
       } catch (e) {
         errors.push(`沒有畫出內容（等不到 ${target}）`);
+      }
+      if (rendered && docs && known.size) {
+        try {
+          const left = (await page.evaluate(docsTexts)).flatMap((t) => findRefs(t)).filter((id) => known.has(id));
+          if (left.length) errors.push(`說明頁有沒換掉的元件代號：${[...new Set(left)].map((id) => '#' + id).join('、')}`);
+        } catch (e) {
+          errors.push(`檢查元件代號時出錯：${e.message}`);
+        }
       }
       page.off('pageerror', onError);
       page.off('console', onConsole);
@@ -83,8 +113,10 @@ export async function smokeStorybook(dir, { timeout = 15000 } = {}) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const dir = process.argv[2] ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'storybook-static');
-  const { visited, failures } = await smokeStorybook(dir);
+  const repo = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const dir = process.argv[2] ?? path.join(repo, 'storybook-static');
+  const refIds = (await exportDocs(repo)).components.map((c) => c.doc.id);
+  const { visited, failures } = await smokeStorybook(dir, { refIds });
   if (failures.length) {
     console.error(`冒煙測試失敗（${failures.length} / ${visited} 頁）：`);
     for (const f of failures) console.error(`  - ${f}`);
