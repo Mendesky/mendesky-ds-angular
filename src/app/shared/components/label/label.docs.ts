@@ -8,7 +8,7 @@ export const labelDoc: ComponentApi = {
     {
       name: 'color',
       type: 'LabelColor',
-      default: "'SoftBlue'",
+      default: "'LightWhite'",
       desc: 'White | Transparent | GreyOutline | LightWhite | SoftBlue | Red | Salmon | Green | Grey25 | Blue | SeaGreen | Grey70 | Grey16 | Error | GreenAll | Golden | Purple (#8b5c91 實心白字) | GreenOutline (白底 #5a8c2c 框與字、字重 600) | KanbanDraft (#d3d3d3) | KanbanOpened (#bac6fd) | KanbanDealClosed (#8293da) | KanbanArchiving (#5866a0) | KanbanArchived (#333d66)',
     },
     {
@@ -20,7 +20,7 @@ export const labelDoc: ComponentApi = {
     {
       name: 'text',
       type: 'string',
-      default: "''",
+      default: "'Label'",
       desc: '顯示文字',
     },
     {

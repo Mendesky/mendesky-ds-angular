@@ -119,7 +119,7 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 
 ```bash
 npm run typecheck      # 型別檢查
-npm run check:docs     # Angular 說明與程式碼一致、跟本體元件規格對得上
+npm run check:docs     # Angular 說明與程式碼一致（屬性、預設值、範例綁的屬性）、跟本體元件規格對得上
 npm run test:scripts   # 檢查腳本自身的測試
 npx ng test --watch=false --browsers=ChromeHeadless   # 單元測試
 bash scripts/build-storybook-site.sh storybook-static # 建範例網站

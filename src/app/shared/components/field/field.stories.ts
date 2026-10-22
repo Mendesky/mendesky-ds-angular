@@ -17,7 +17,7 @@ const meta: Meta<FieldComponent> = {
     },
     required: {
       control: 'boolean',
-      description: '顯示「必填」badge（優先於 optional）',
+      description: '顯示「必填」badge；選填欄位不標示',
       table: { defaultValue: { summary: 'false' } },
     },
     emphasis: {
@@ -64,7 +64,7 @@ export const Optional: Story = {
   render: () => ({
     template: `
       <div style="width:320px;padding:24px;">
-        <app-field label="備註" [optional]="true">
+        <app-field label="備註">
           <input style="${INPUT_STYLE}" placeholder="選填備註內容" />
         </app-field>
       </div>
@@ -101,7 +101,7 @@ export const WithInput: Story = {
         <app-field label="開始日期" [required]="true">
           <input style="${INPUT_STYLE}" type="date" />
         </app-field>
-        <app-field label="電子郵件" [optional]="true">
+        <app-field label="電子郵件">
           <input style="${INPUT_STYLE}" type="email" placeholder="example@mail.com" />
         </app-field>
         <app-field label="備註">
