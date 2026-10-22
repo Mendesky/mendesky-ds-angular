@@ -119,6 +119,7 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 
 ```bash
 npm run typecheck      # 型別檢查
+npm run check:templates # 元件 template 檢查：用跟使用端相同的 Angular 嚴格設定編譯元件
 npm run check:docs     # Angular 說明與程式碼一致、跟本體元件規格對得上
 npm run test:scripts   # 檢查腳本自身的測試
 npx ng test --watch=false --browsers=ChromeHeadless   # 單元測試
@@ -128,6 +129,11 @@ node scripts/smoke-storybook.mjs storybook-static     # 範例網站逐頁冒煙
 
 CI 會在每個 PR 跑同樣的檢查，任何一項失敗都不能合併。只在母元件內部使用的子元件（例如 `select-panel`）
 不需要說明檔，清單在 `scripts/check-docs.mjs` 的 `INTERNAL_COMPONENTS`。
+
+元件 template 檢查失敗時，訊息會指出 template 的檔名與行號，例如
+`button.component.html:24:10 - error TS2339: Property 'xxx' does not exist on type 'ButtonComponent'`。
+使用端（mendesky-web、platform-console）用同一套嚴格設定編譯 DS，這裡沒擋下的錯，換版時會在使用端壞掉。
+設定在 `tsconfig.templates.json`；嚴格選項被關掉、或有元件沒被納入檢查時，檢查會直接失敗。
 
 ## PDF 功能依賴
 
@@ -200,7 +206,7 @@ Copyright (c) 2026 嘉威聯合會計師事務所. All rights reserved.
 ## Spec 政策：測試只放這個 repo
 
 元件的 `*.spec.ts` 只放在這個 repo，使用端專案（mendesky-web）不保留複製品。
-本 repo 的 CI 在每次 push 與每個發到 `main` 的 PR 跑型別檢查、說明檢查、單元測試（Karma）、
+本 repo 的 CI 在每次 push 與每個發到 `main` 的 PR 跑型別檢查、元件 template 檢查、說明檢查、單元測試（Karma）、
 範例網站建置與冒煙測試，任何一項失敗都不能合併。跟框架無關的工具程式的測試在本體 repo。
 
 - 單元測試是元件行為的閘門。改了元件行為，在同一個 PR 改對應的 spec，

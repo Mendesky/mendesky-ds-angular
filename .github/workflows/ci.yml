@@ -1,7 +1,7 @@
 name: CI
 
 # PR 與每次 push 都跑。公開 repo 一律用 GitHub 提供的主機（自架主機會讓外部 fork 的 PR 執行任意程式碼）。
-#   typecheck   型別檢查（含範例頁與說明檔）
+#   typecheck   型別檢查（含範例頁與說明檔）；元件 template 檢查（用跟使用端相同的 Angular 嚴格設定編譯元件）
 #   check-docs  說明檢查：元件的 Angular 說明與程式碼一致、跟本體的元件規格對得上；含腳本自身的測試
 #   unit-test   DS 元件單元測試（Karma）
 #   smoke       建置範例網站（Storybook），逐頁打開確認畫得出來、沒有錯誤
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   typecheck:
-    name: tsc --noEmit
+    name: 型別檢查（含元件 template）
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -30,6 +30,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run check:templates
 
   check-docs:
     name: 說明檢查
