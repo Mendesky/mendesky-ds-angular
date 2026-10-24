@@ -74,4 +74,14 @@ export const numberListDoc: ComponentApi = {
 ></app-number-list>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'label 與 text 掛的是 [appTooltip] ＋ [appTooltipOnlyWhenTruncated]（只在真的被截斷時顯示、才給 tabindex=0）＋ [appTooltipWrap]（tooltip 文字最寬 520px 換行）；其他截斷文字元件也能照這組寫法直接用。消費端不要再自己對 .nl-text 掛 tooltip。',
+    },
+    {
+      type: 'warn',
+      content: '寫 app-number-list 的版面測試時：Karma 在 iframe 裡跑、預設約 800px（已落在 <1024），量截斷的測試要先把 window.frameElement 設寬（DS spec 的 setViewportWidth() 做法，見 number-list.component.spec.ts）。',
+    },
+  ],
 };

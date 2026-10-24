@@ -77,4 +77,10 @@ export const yearMonthPickerDoc: ComponentApi = {
 </app-year-month-picker>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'app-year-month-picker 實作 ControlValueAccessor，值為純字串，透過 ngModel 綁定。',
+    },
+  ],
 };

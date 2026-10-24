@@ -56,4 +56,10 @@ export const fieldDoc: ComponentApi = {
 </app-field>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'app-field 用 <ng-content> 投影欄位：把 app-input、app-textarea、app-autocomplete 等直接寫在 <app-field> 標籤內即可。',
+    },
+  ],
 };

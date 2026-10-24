@@ -128,4 +128,10 @@ export const modalShellDoc: ComponentApi = {
 }`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'warning',
+      content: 'app-modal-shell 會把 host element 搬到 document.body，所以父層的 ::ng-deep 打不到 .modal-card 內部樣式；如需修改卡片行為請用 @Input（例：overflowVisible）。',
+    },
+  ],
 };

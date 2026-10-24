@@ -64,4 +64,10 @@ export const fileListDoc: ComponentApi = {
 </app-file-list>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'FileItem interface 從 file-list.component.ts export，外層元件直接 import 使用。',
+    },
+  ],
 };

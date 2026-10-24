@@ -20,4 +20,7 @@ export const ctrlBarDoc: ComponentApi = {
 </app-ctrl-bar>`,
     },
   ],
+  usageNotes: [
+    '左右兩區用內容投影放入：在元素加上 slot="left" 或 slot="right" 屬性（元件內是 <ng-content select="[slot=left]"> 與 <ng-content select="[slot=right]">），例如 <ng-container slot="left">。',
+  ],
 };

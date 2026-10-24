@@ -76,4 +76,7 @@ departmentOptions: SelectOption[] = [
 ];`,
     },
   ],
+  usageNotes: [
+    'app-select 實作 CVA（ControlValueAccessor），可直接接 formControlName 或 [(ngModel)]。',
+  ],
 };

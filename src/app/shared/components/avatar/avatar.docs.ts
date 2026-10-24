@@ -57,4 +57,7 @@ export const avatarDoc: ComponentApi = {
 <app-avatar propClass="Icon"  [size]="36" iconName="User"></app-avatar>`,
     },
   ],
+  usageNotes: [
+    '可點擊頭像寫 [clickable]="true" 並給 ariaLabel，點擊綁在 <app-avatar> 外層的 (click)，例如 <app-avatar [clickable]="true" ariaLabel="個人面板" (click)="open()">。',
+  ],
 };
