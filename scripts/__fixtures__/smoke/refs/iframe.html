@@ -1,0 +1,16 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<div id="storybook-root"></div><div id="storybook-docs"></div>
+<script>
+  // 模擬說明頁：一段沒換掉的 #button；程式碼裡的 #select（範本變數）、色碼 #fff、網址裡的 # 都不算
+  setTimeout(() => {
+    const el = document.createElement('div');
+    el.className = 'sbdocs';
+    el.innerHTML =
+      '<p>選項一律用 #button。底色 #fff，見 https://example.com/a#select。</p>' +
+      '<pre><code>&lt;app-select #select&gt;</code></pre><p>行內 <code>#select</code> 也不算</p>';
+    document.getElementById('storybook-docs').appendChild(el);
+  }, 50);
+</script>
+</body></html>
