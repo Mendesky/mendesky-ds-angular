@@ -11,7 +11,7 @@ const meta: Meta<NumberInputComponent> = {
       control: 'select',
       options: ['S', 'M', 'L'],
       description: '輸入框尺寸',
-      table: { defaultValue: { summary: 'L' } },
+      table: { defaultValue: { summary: 'M' } },
     },
     placeholder: {
       control: 'text',

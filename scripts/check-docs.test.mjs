@@ -71,3 +71,45 @@ test('說明的 id 在本體沒有規格 → 失敗', () => {
   assert.match(errors.join('\n'), /本體沒有對應元件規格的說明：demo/);
   assert.match(errors.join('\n'), /本體有元件規格、但 Angular 沒有說明：other/);
 });
+
+// ── 預設值與範例綁定 ───────────────────────────────────────
+
+test('說明寫的預設值跟程式的初值不同 → 失敗，列出屬性與兩邊的值', () => {
+  const { errors } = run('wrong-default');
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /app-demo/);
+  assert.match(errors[0], /size：說明 'L'、程式 'M'/);
+  assert.match(errors[0], /on：說明 true、程式 false/);
+  // 一致的（含 signal input）與不是字面值的說明不列
+  assert.doesNotMatch(errors[0], /label|count|tone/);
+});
+
+test('範例網站屬性表標的預設值跟程式不同 → 失敗；引號寫法不同不算', () => {
+  const { errors } = run('wrong-default');
+  const story = errors.find((e) => e.includes('demo.stories.ts'));
+  assert.ok(story, errors.join('\n'));
+  assert.match(story, /屬性表標的預設值跟程式不同：size：屬性表 L、程式 'M'/);
+  // on（false）、label（'' 與 ''）、count（3）都一致
+  assert.doesNotMatch(story, /on：|label：|count：/);
+});
+
+test('範例綁了元件沒有的屬性 → 失敗；元件屬性、指令屬性、class／ngClass 綁定不算', () => {
+  const { errors } = run('unknown-binding');
+  assert.equal(errors.length, 2);
+  const all = errors.join('\n');
+  assert.match(all, /demo\.stories\.ts：<app-demo> 綁了元件沒有的屬性 \[bogus\]/);
+  assert.match(all, /demo\.docs\.ts（用法「寫錯的屬性」）：<app-demo> 綁了元件沒有的屬性 \[ghost\]/);
+  assert.doesNotMatch(all, /\[(text|appDemoTip|ngClass|class)\]/);
+});
+
+test('預設值一筆都沒比對到（檢查本身失效）→ 失敗，不得當成通過', () => {
+  const { errors } = run('defaults-unreadable');
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /預設值一筆都沒比對到/);
+});
+
+test('範例裡的 <app-xxx> 一個都認不出來（檢查本身失效）→ 失敗，不得當成通過', () => {
+  const { errors } = run('bindings-unreadable');
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /一個都認不出來/);
+});

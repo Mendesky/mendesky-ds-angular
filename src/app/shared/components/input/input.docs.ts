@@ -8,7 +8,7 @@ export const inputDoc: ComponentApi = {
     {
       name: 'size',
       type: 'InputSize',
-      default: "'L'",
+      default: "'M'",
       desc: "'S' | 'M' | 'L'",
     },
     {
