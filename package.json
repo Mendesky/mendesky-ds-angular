@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "check:templates": "node scripts/check-templates.mjs",
     "storybook": "ng run ds:storybook",
     "build-storybook": "ng run ds:build-storybook",
     "test": "ng test",
