@@ -1,6 +1,7 @@
 name: CI
 
 # PR 與每次 push 都跑。公開 repo 一律用 GitHub 提供的主機（自架主機會讓外部 fork 的 PR 執行任意程式碼）。
+# 主機版本固定 ubuntu-24.04：2026-10 起 ubuntu-latest 換成 26.04，Playwright 1.59 在上面裝不起 Chromium。升級 Playwright 並確認支援後再改回。
 #   typecheck   型別檢查（含範例頁與說明檔）；元件 template 檢查（用跟使用端相同的 Angular 嚴格設定編譯元件）
 #   check-docs  說明檢查：元件的 Angular 說明與程式碼一致、跟本體的元件規格對得上；含腳本自身的測試
 #   unit-test   DS 元件單元測試（Karma）
@@ -20,7 +21,7 @@ concurrency:
 jobs:
   typecheck:
     name: 型別檢查（含元件 template）
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
 
   check-docs:
     name: 說明檢查
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +49,7 @@ jobs:
 
   unit-test:
     name: 單元測試
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +65,7 @@ jobs:
 
   smoke:
     name: 範例網站建置與冒煙測試
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
