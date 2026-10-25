@@ -44,4 +44,10 @@ export const drawerShellDoc: ComponentApi = {
 </app-drawer-shell>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: '各 Drawer 元件只需在 <app-drawer-shell> 標籤內放自己的內容（ng-content 投影），不需要自己寫 isClosing、setTimeout 或 @HostListener 監聽 ESC——這些 app-drawer-shell 內部已處理。',
+    },
+  ],
 };

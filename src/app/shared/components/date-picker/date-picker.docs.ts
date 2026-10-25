@@ -114,4 +114,14 @@ export const datePickerDoc: ComponentApi = {
 </app-date-picker>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'app-date-picker 實作 ControlValueAccessor，支援 ngModel。',
+    },
+    {
+      type: 'info',
+      content: 'Tab／Shift+Tab 關閉 panel 時會把表單控制項標記為 touched，讓 Angular form validation 正確觸發。',
+    },
+  ],
 };

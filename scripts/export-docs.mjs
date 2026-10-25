@@ -1,13 +1,16 @@
 // 匯出元件說明成 JSON。說明分兩份，以 id 對應：
-//   - Angular 用法（本 repo 各元件旁邊的 *.docs.ts）：selector、屬性、事件、範例程式碼
+//   - Angular 用法（本 repo 各元件旁邊的 *.docs.ts）：selector、屬性、事件、範例程式碼、Angular 專屬注意事項
 //   - 元件規格、基礎（token、字型、動效）、互動原則、圖示：在本體套件 @mendesky/ds
+// 互動原則的 Angular 做法在本 repo 的 src/docs/pattern-notes.ts，以原則的 key 對應。
 //
-// 兩個出口：
-//   exportFrameworkDocs(root)  只讀本 repo 的 Angular 用法（不需要裝本體）。本體的文件網站建置時用它。
-//   exportDocs(root)           合併本體＋Angular 用法，格式 { components: [{ file, doc }], tokens, typography, motion, patterns, icons }。
-//                              mendesky-web（dashboard-app）的 AI 協作索引產生器用它。回傳 Promise。
+// 出口：
+//   exportFrameworkDocs(root)          只讀本 repo 的 Angular 用法（不需要裝本體）。本體的文件網站建置時用它。
+//   exportFrameworkPatternNotes(root)  只讀本 repo 的互動原則 Angular 做法（沒有檔案時回傳 {}）。本體的文件網站建置時用它。
+//   exportDocs(root)                   合併本體＋Angular 用法，格式
+//                                      { components: [{ file, doc }], tokens, typography, motion, patterns, patternNotes, icons }。
+//                                      mendesky-web（dashboard-app）的 AI 協作索引產生器用它。回傳 Promise。
 // 用法：node scripts/export-docs.mjs [repo 根目錄，預設為本 repo]（輸出合併後的 JSON）
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -56,6 +59,17 @@ export function exportFrameworkDocs(root) {
   return listDocFiles(root).map((file) => loadDocFile(file));
 }
 
+/** 互動原則的 Angular 做法檔案位置。 */
+export function patternNotesFile(root) {
+  return path.join(root, 'src', 'docs', 'pattern-notes.ts');
+}
+
+/** 本 repo 的互動原則 Angular 做法（{ 原則 key: [注意事項] }）；沒有檔案時回傳 {}。本體的文件網站建置時呼叫。 */
+export function exportFrameworkPatternNotes(root) {
+  const file = patternNotesFile(root);
+  return existsSync(file) ? loadDocFile(file) : {};
+}
+
 /** 本體套件裝在哪裡（root 底下 node_modules 依 Node 規則解析）。 */
 export function coreRoot(root) {
   const req = createRequire(path.join(root, 'package.json'));
@@ -80,6 +94,7 @@ export async function exportDocs(root) {
     typography: coreDocs.typography,
     motion: coreDocs.motion,
     patterns: coreDocs.patterns,
+    patternNotes: exportFrameworkPatternNotes(root),
     icons: coreDocs.icons,
   };
 }

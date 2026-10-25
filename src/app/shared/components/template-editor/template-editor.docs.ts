@@ -127,4 +127,7 @@ export const templateEditorDoc: ComponentApi = {
 })) -->`,
     },
   ],
+  usageNotes: [
+    '變數面板的分組標題與順序用 TEMPLATE_VAR_GROUPS 提供，兩層選擇器的文字用 TEMPLATE_VAR_CONTEXT_TEXT 提供，兩者皆在 app config 以 provider 設定一次。',
+  ],
 };

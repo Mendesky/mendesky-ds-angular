@@ -91,4 +91,11 @@ export const richTextEditorDoc: ComponentApi = {
 </app-rich-text-editor>`,
     },
   ],
+  usageNotes: [
+    '自訂內容用 ng-content 投影，共三個位置：<ng-content select="[extraToolbar]">（toolbar 左側末尾）、<ng-content select="[toolbarRight]">（toolbar 右側）、不帶 select 的預設 ng-content（body 底部，如 template-var-panel）。在要投影的元素加上 extraToolbar 或 toolbarRight 屬性即可，例如 <ng-container extraToolbar>。',
+    'wrapper 用 @ViewChild(RichTextEditorComponent) 取得 app-rich-text-editor 的實例，再呼叫 getEditor() 取得 Tiptap Editor instance，或用 runSuppressed(fn) 執行不觸發 valueChange 的操作。',
+    '色票常數 TEXT_COLORS 與貼上顏色吸附的 snapPasteColor 都在 rich-text-editor.helpers.ts；component 只把 TEXT_COLORS 轉出給 template。',
+    '純圖片貼上只在使用端綁了 (imagePasted) 時才接手：元件以 imagePasted.observed 判斷。',
+    '放在 eager 載入的元件裡（例如常駐 header 的 dialog）時，template 以 @defer 包裹 app-rich-text-editor，讓 TipTap 留在 lazy chunk。',
+  ],
 };

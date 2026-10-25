@@ -49,4 +49,10 @@ export const checkChipDoc: ComponentApi = {
 ></app-check-chip>`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'app-check-chip 實作 ControlValueAccessor（writeValue／registerOnChange／registerOnTouched／setDisabledState），可用 ngModel 或 formControlName 綁定。',
+    },
+  ],
 };
