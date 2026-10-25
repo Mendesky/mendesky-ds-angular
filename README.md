@@ -104,15 +104,20 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 
 | 內容 | 放在哪裡 |
 |---|---|
-| 元件規格（何時用、注意事項、選用表格） | 本體 `@mendesky/ds` 的 `src/docs/components/<id>.ts` |
-| Angular 用法（selector、屬性、事件、範例程式碼） | 本 repo 元件旁邊的 `<名稱>.docs.ts`（格式見 `src/docs/component-doc.ts`） |
+| 元件規格（何時用、注意事項、選用表格；只寫跨框架的內容，指其他元件寫 `#元件id`） | 本體 `@mendesky/ds` 的 `src/docs/components/<id>.ts` |
+| Angular 用法（selector、屬性、事件、範例程式碼、只有 Angular 才需要知道的注意事項 `usageNotes`） | 本 repo 元件旁邊的 `<名稱>.docs.ts`（格式見 `src/docs/component-doc.ts`） |
+| 互動原則的 Angular 做法（以原則的 key 對應） | 本 repo 的 `src/docs/pattern-notes.ts` |
 | 範例頁 | 本 repo 元件旁邊的 `<名稱>.stories.ts` |
 | 色彩與 token、字型、動效、互動原則、圖示、跟框架無關的工具程式 | 本體 `@mendesky/ds` |
+
+本體文字裡的 `#元件id`（例：「改用 #button」）在本 repo 顯示成 Angular selector：Storybook 說明頁顯示 `app-button`，
+匯出給 AI 協作索引的說明（`scripts/export-docs.mjs`）也換成 `app-button`。換法用本體附的 `@mendesky/ds/scripts/component-refs.mjs`，
+本 repo 不另寫規則；冒煙測試會擋下說明頁上沒換掉的 `#元件id`。
 
 ### 新增或修改元件時要補什麼
 
 1. 本體 repo：元件規格 `src/docs/components/<id>.ts`（何時用、注意事項）。
-2. 本 repo：元件旁邊的 `<名稱>.docs.ts`：每個 `@Input`／`@Output`（含 signal 的 `input()`／`output()`／`model()`）、程式碼範例。只放 Angular 用法，規格欄位放這裡會被檢查擋下。
+2. 本 repo：元件旁邊的 `<名稱>.docs.ts`：每個 `@Input`／`@Output`（含 signal 的 `input()`／`output()`／`model()`）、程式碼範例；用到 Angular 寫法的注意事項（表單綁定、注入服務、內容投影）寫在 `usageNotes`。只放 Angular 用法，規格欄位放這裡會被檢查擋下。
 3. 本 repo：元件旁邊的範例頁 `<名稱>.stories.ts`：`title` 寫成 `'<分組>/<名稱>'` 字面值；第一支 story 是說明頁上方的主範例。
 4. 改了本體之後，本 repo 的 `package.json` 把 `@mendesky/ds` 改指新版本（用 `npm i "github:Mendesky/mendesky-ds#<tag>"` 指名安裝）。
 5. 本機跑一次：
@@ -120,7 +125,7 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 ```bash
 npm run typecheck      # 型別檢查
 npm run check:templates # 元件 template 檢查：用跟使用端相同的 Angular 嚴格設定編譯元件
-npm run check:docs     # Angular 說明與程式碼一致、跟本體元件規格對得上
+npm run check:docs     # Angular 說明與程式碼一致（屬性、預設值、範例綁的屬性）、跟本體元件規格對得上
 npm run test:scripts   # 檢查腳本自身的測試
 npx ng test --watch=false --browsers=ChromeHeadless   # 單元測試
 bash scripts/build-storybook-site.sh storybook-static # 建範例網站

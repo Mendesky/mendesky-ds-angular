@@ -5,6 +5,9 @@ import { ProseMirrorJSON } from '@mendesky/ds';
  *
  * 住在 helpers 而非 component，是為了讓 `snapPasteColor` 能從同一份定義推導可用色相，
  * 避免色盤在兩處漂移。component 以 `readonly TEXT_COLORS = TEXT_COLORS` 轉出給 template。
+ *
+ * 改色時同步兩件事：(a) 本常數（component 與 `snapPasteColor` 都由它推導，改一處即生效）
+ * (b) rich-text-editor.component.spec.ts 的色票斷言。
  */
 export const TEXT_COLORS: ReadonlyArray<{ label: string; hex: string | null }> = [
   { label: '預設', hex: null },

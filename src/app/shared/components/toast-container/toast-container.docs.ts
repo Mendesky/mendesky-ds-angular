@@ -20,4 +20,8 @@ private readonly toast = inject(ToastService);
 this.toast.show({ type: 'success', message: '已儲存' });`,
     },
   ],
+  usageNotes: [
+    '本體說的「toast 服務」在 Angular 是 ToastService：以 inject(ToastService) 取得後呼叫 show() / update()。',
+    'app-toast-container 沒有任何 @Input / @Output；資料來自 ToastService 的 toasts()。',
+  ],
 };

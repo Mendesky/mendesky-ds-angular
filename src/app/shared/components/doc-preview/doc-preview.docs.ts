@@ -45,4 +45,10 @@ export const docPreviewDoc: ComponentApi = {
 }`,
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: 'app-doc-preview 內部注入 ModalStackService 登記自己，所以它算在 modal 堆疊裡：ESC 只關最上層、開啟時外層 modal 不會同時被關。',
+    },
+  ],
 };

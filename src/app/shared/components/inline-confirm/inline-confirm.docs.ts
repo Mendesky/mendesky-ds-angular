@@ -106,4 +106,12 @@ export const inlineConfirmDoc: ComponentApi = {
 <app-button text="確認送出"></app-button>`,
     },
   ],
+  usageNotes: [
+    '外部主按鈕的 disabled 由消費者自己綁，例如 [disabled]="!confirmed()"，confirmed 是父層用 [(confirmed)] 雙向綁定的 signal。',
+    'bullets 用 <ng-content select="[inlineConfirmDetails]"> 投影：在要放進去的元素加上 inlineConfirmDetails 屬性（例如 <ul inlineConfirmDetails>），內容支援超連結 / <strong> / <app-label> 等 rich markup。',
+    {
+      type: 'warn',
+      content: '父層職責：離開頁面再回來必須對綁在 [(confirmed)] 的 signal 呼叫 set(false) 清空 stale state；元件不自動重置。',
+    },
+  ],
 };

@@ -106,4 +106,7 @@ restoreAttachment = () => {
 };`,
     },
   ],
+  usageNotes: [
+    '本體說的「toast 服務」在 Angular 是 ToastService：以 inject(ToastService) 取得；loading 型別呼叫 show({ persist: true }) 後，再用 update(id, patch) 原地轉場。',
+  ],
 };

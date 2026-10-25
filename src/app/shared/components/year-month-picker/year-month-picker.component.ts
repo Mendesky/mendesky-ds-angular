@@ -92,6 +92,7 @@ export class YearMonthPickerComponent implements ControlValueAccessor, OnDestroy
     this.onTouched();
   }
 
+  /** 浮動面板是內部子元件 YearMonthPanelComponent，portal 到 document.body；點擊面板外或選取後關閉 */
   private openPanel(): void {
     const rect = this.el.nativeElement.getBoundingClientRect();
     const ref = createComponent(YearMonthPanelComponent, {

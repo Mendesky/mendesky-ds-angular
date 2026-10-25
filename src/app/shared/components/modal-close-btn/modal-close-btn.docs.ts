@@ -34,4 +34,10 @@ export const modalCloseBtnDoc: ComponentApi = {
       code: '<app-modal-close-btn [disabled]="saving()" (closeClick)="requestClose()"></app-modal-close-btn>',
     },
   ],
+  usageNotes: [
+    {
+      type: 'info',
+      content: '搭配 app-modal-shell 時寫 [canDismiss]="!isDirty()"（backdrop 受 dirty gate），X 鈕綁 (closeClick)。',
+    },
+  ],
 };

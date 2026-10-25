@@ -20,7 +20,7 @@ export const selectDoc: ComponentApi = {
     {
       name: 'size',
       type: "'S' | 'M' | 'L'",
-      default: "'L'",
+      default: "'M'",
       desc: 'L=40px、M=36px、S=32px（觸發框高度）',
     },
     {
@@ -75,5 +75,8 @@ departmentOptions: SelectOption[] = [
   { value: 'admin',       label: '行政部', disabled: true },
 ];`,
     },
+  ],
+  usageNotes: [
+    'app-select 實作 CVA（ControlValueAccessor），可直接接 formControlName 或 [(ngModel)]。',
   ],
 };
