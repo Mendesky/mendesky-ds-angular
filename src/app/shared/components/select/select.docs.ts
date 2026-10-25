@@ -20,7 +20,7 @@ export const selectDoc: ComponentApi = {
     {
       name: 'size',
       type: "'S' | 'M' | 'L'",
-      default: "'L'",
+      default: "'M'",
       desc: 'L=40px、M=36px、S=32px（觸發框高度）',
     },
     {

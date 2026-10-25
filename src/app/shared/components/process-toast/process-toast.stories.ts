@@ -27,7 +27,7 @@ const meta: Meta<ProcessToastComponent> = {
       description: 'Toast 尺寸：M（預設 333×56px）/ S（260×40px 輕量版）',
       control: { type: 'select' },
       options: ['M', 'S'] satisfies ToastSize[],
-      table: { defaultValue: { summary: 'M' } },
+      table: { defaultValue: { summary: 'S' } },
     },
     action: {
       description: '選填的 undo 按鈕：{ label, onClick }。按下 onClick 通常呼叫還原 API；自動消失代表使用者未反悔',
