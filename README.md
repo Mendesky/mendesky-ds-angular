@@ -110,6 +110,10 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 | 範例頁 | 本 repo 元件旁邊的 `<名稱>.stories.ts` |
 | 色彩與 token、字型、動效、互動原則、圖示、跟框架無關的工具程式 | 本體 `@mendesky/ds` |
 
+本體文字裡的 `#元件id`（例：「改用 #button」）在本 repo 顯示成 Angular selector：Storybook 說明頁顯示 `app-button`，
+匯出給 AI 協作索引的說明（`scripts/export-docs.mjs`）也換成 `app-button`。換法用本體附的 `@mendesky/ds/scripts/component-refs.mjs`，
+本 repo 不另寫規則；冒煙測試會擋下說明頁上沒換掉的 `#元件id`。
+
 ### 新增或修改元件時要補什麼
 
 1. 本體 repo：元件規格 `src/docs/components/<id>.ts`（何時用、注意事項）。
