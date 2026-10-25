@@ -99,7 +99,7 @@ export function renderCoreRefs(value, nameOf, renderRefs) {
 }
 
 /**
- * 本體的 #元件id 解析（本體 v0.3.0-beta.2 起隨套件發布）。
+ * 本體的 #元件id 解析（本體 v0.3.0 起隨套件發布）。
  * 讀不到就失敗：本體文字可能已經有 #元件id，沒換就交出去，使用端（AI 協作索引）會讀到 #button 而不是 app-button。
  */
 export async function loadCoreRefs(core) {
