@@ -15,4 +15,31 @@
   .ds-doc-note--warn { background: #fff6e5; }
   .ds-doc-note__label { flex: none; font-weight: 600; font-size: 12px; color: #535353; padding-top: 2px; }
   .ds-doc-empty { color: #939393; }
+  /* 規格第 2 版欄位：部位、狀態、可以／不要這樣做、無障礙（版面與 Vue 版相同）。
+     前面加 .ds-doc 提高優先順序：Storybook 說明頁對 ol、ul、dl、dt、p、a 有自己的間距、字級與斜體，選擇器一樣重時會蓋掉這裡。
+     說明文字經 Markdown 會包成段落：可以／不要這樣做的段落改成行內，「看範例」才接得在文字後面 */
+  .ds-doc .ds-doc-anatomy { margin: 8px 0 24px; padding-left: 1.4em; }
+  .ds-doc .ds-doc-anatomy li + li { margin-top: 4px; }
+  .ds-doc .ds-doc-anatomy p { margin: 0; }
+  .ds-doc-state-name { white-space: nowrap; }
+  .ds-doc .ds-doc-dodont { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; margin: 12px 0 24px; }
+  .ds-doc .ds-doc-dodont__col { min-width: 0; padding-top: 8px; border-top: 4px solid; }
+  .ds-doc .ds-doc-dodont__col--do { border-top-color: #74ae3e; }
+  .ds-doc .ds-doc-dodont__col--dont { border-top-color: #cc5252; }
+  .ds-doc .ds-doc-dodont__title { margin: 0 0 4px; font-weight: 600; }
+  .ds-doc .ds-doc-dodont ul { margin: 0; padding-left: 1.2em; }
+  .ds-doc .ds-doc-dodont li + li { margin-top: 8px; }
+  .ds-doc .ds-doc-dodont li > p { display: inline; margin: 0; }
+  .ds-doc .ds-doc-story-link { margin-left: 6px; font-size: 12px; white-space: nowrap; }
+  .ds-doc .ds-doc-a11y { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; margin: 8px 0 16px; padding: 0; }
+  /* 多一層 .ds-doc-a11y：Storybook 的「dl 裡第一個 dt 不留內距」比 .ds-doc .ds-doc-a11y__label 重，每組第一個小標籤會少 2px */
+  .ds-doc .ds-doc-a11y .ds-doc-a11y__label { margin: 0; padding-top: 2px; font-style: normal; font-weight: 600; font-size: 12px; color: #535353; }
+  .ds-doc .ds-doc-a11y dd { margin: 0; padding: 0; }
+  .ds-doc .ds-doc-a11y ul { margin: 0; padding-left: 1.2em; }
+  .ds-doc .ds-doc-a11y li + li { margin-top: 4px; }
+  .ds-doc .ds-doc-a11y p { margin: 0; }
+  @media (max-width: 480px) {
+    .ds-doc .ds-doc-a11y { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .ds-doc .ds-doc-a11y dd { margin-bottom: 8px; }
+  }
 </style>

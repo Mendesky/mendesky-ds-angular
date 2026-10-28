@@ -5,7 +5,8 @@ name: CI
 #   typecheck   型別檢查（含範例頁與說明檔）；元件 template 檢查（用跟使用端相同的 Angular 嚴格設定編譯元件）
 #   check-docs  說明檢查：元件的 Angular 說明與程式碼一致、跟本體的元件規格對得上；含腳本自身的測試
 #   unit-test   DS 元件單元測試（Karma）
-#   smoke       建置範例網站（Storybook），逐頁打開確認畫得出來、沒有錯誤
+#   smoke       建置範例網站（Storybook），逐頁打開確認畫得出來、沒有錯誤；
+#               說明頁另查 #元件id 換名與規格第 2 版欄位的標題、順序、項數、每項文字、無障礙分類、範例連結
 on:
   push:
   pull_request:

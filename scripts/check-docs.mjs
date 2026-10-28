@@ -4,7 +4,7 @@
 //   1. 每個公開元件（*.component.ts，內部子元件除外）旁邊都有說明檔
 //   2. 說明檔列的屬性名稱，跟元件宣告的 @Input／@Output／input()／model()／output() 完全一致
 //   3. 說明檔能正確載入（語法錯誤直接算失敗，不略過）
-//   4. 說明檔只放 Angular 用法；何時用、注意事項等規格欄位屬於本體 @mendesky/ds
+//   4. 說明檔只放 Angular 用法；何時用、注意事項、部位、狀態、無障礙、可以／不要這樣做等規格欄位屬於本體 @mendesky/ds
 //   5. 每份說明都有對應的本體規格，每份本體規格也都有 Angular 說明
 //   6. 說明檔與範例網站屬性表（argTypes 的 table.defaultValue）寫的預設值，跟程式的初值一致
 //      （兩邊都是字串、數字、true／false／null 這類字面值時才比對）
@@ -385,8 +385,8 @@ function checkPatternNotes(root, patternKeys, errors) {
   }
 }
 
-/** 只屬於本體元件規格的欄位：出現在 Angular 說明檔就是放錯地方 */
-export const SPEC_ONLY_KEYS = ['name', 'group', 'when', 'description', 'notes', 'customTables'];
+/** 只屬於本體元件規格的欄位（含第 2 版的部位、狀態、無障礙、可以／不要這樣做）：出現在 Angular 說明檔就是放錯地方 */
+export const SPEC_ONLY_KEYS = ['name', 'group', 'when', 'description', 'notes', 'customTables', 'anatomy', 'states', 'a11y', 'dos', 'donts'];
 
 /** 本體元件規格的 id（讀 @mendesky/ds 的 src/docs/components 檔名，不執行檔案）。 */
 export function coreSpecIds(root) {

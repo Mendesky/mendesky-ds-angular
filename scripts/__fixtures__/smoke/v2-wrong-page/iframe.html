@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<div id="storybook-root"></div><div id="storybook-docs"></div>
+<script>
+  // 模擬項數都對、但內容畫錯的說明頁（data-ds-id="demo"）：
+  //   部位第 2 項沒有文字；狀態沒有標題；可以／不要這樣做的標題文字不對；
+  //   「看範例」的 data-story-id 對，網址卻連到別的範例；無障礙畫在範例前面；兩條無障礙都畫在「鍵盤」底下（規格是鍵盤、ARIA 各 1 條）
+  const params = new URLSearchParams(location.search);
+  const docs = params.get('viewMode') === 'docs';
+  setTimeout(() => {
+    const el = document.createElement('div');
+    el.className = 'sbdocs';
+    if (!docs) {
+      el.textContent = '畫出 ' + params.get('id');
+      document.getElementById('storybook-root').appendChild(el);
+      return;
+    }
+    el.innerHTML =
+      '<div class="ds-doc" data-ds-id="demo">' +
+      '<h2 data-testid="ds-doc-anatomy">部位</h2><ol>' +
+      '<li data-testid="ds-doc-anatomy-item"><strong>外框</strong>：可以點的範圍</li>' +
+      '<li data-testid="ds-doc-anatomy-item"> </li></ol>' +
+      '<table><tbody>' +
+      '<tr data-testid="ds-doc-state-item"><td>停用</td><td>灰底灰字</td></tr></tbody></table>' +
+      '<h2 data-testid="ds-doc-dodont">可以、不要</h2>' +
+      '<ul><li data-testid="ds-doc-do-item">需要撐滿寬度時用 fullWidth <a href="./?path=/story/nope--nope" data-story-id="demo--full-width">看範例</a></li></ul>' +
+      '<ul><li data-testid="ds-doc-dont-item">不要在裡面放另一個可以點的東西</li></ul>' +
+      '<h2 data-testid="ds-doc-a11y">無障礙</h2>' +
+      '<h3>網頁和 APP 都要做到</h3><dl class="ds-doc-a11y"><dt class="ds-doc-a11y__label">鍵盤</dt>' +
+      '<dd><ul><li data-testid="ds-doc-a11y-item">Tab 移到元件</li><li data-testid="ds-doc-a11y-item">用原生 button 元素</li></ul></dd></dl>' +
+      '<h2 data-testid="ds-doc-example">範例</h2>' +
+      '</div>';
+    document.getElementById('storybook-docs').appendChild(el);
+  }, 50);
+</script>
+</body></html>

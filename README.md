@@ -104,7 +104,7 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 
 | 內容 | 放在哪裡 |
 |---|---|
-| 元件規格（何時用、注意事項、選用表格；只寫跨框架的內容，指其他元件寫 `#元件id`） | 本體 `@mendesky/ds` 的 `src/docs/components/<id>.ts` |
+| 元件規格（何時用、注意事項、選用表格，以及選填的第 2 版欄位：部位、狀態、無障礙、可以／不要這樣做；只寫跨框架的內容，指其他元件寫 `#元件id`） | 本體 `@mendesky/ds` 的 `src/docs/components/<id>.ts` |
 | Angular 用法（selector、屬性、事件、範例程式碼、只有 Angular 才需要知道的注意事項 `usageNotes`） | 本 repo 元件旁邊的 `<名稱>.docs.ts`（格式見 `src/docs/component-doc.ts`） |
 | 互動原則的 Angular 做法（以原則的 key 對應） | 本 repo 的 `src/docs/pattern-notes.ts` |
 | 範例頁 | 本 repo 元件旁邊的 `<名稱>.stories.ts` |
@@ -114,11 +114,21 @@ symlink，不需要手動維護。可參考 `mendesky-platform-console` 的
 匯出給 AI 協作索引的說明（`scripts/export-docs.mjs`）也換成 `app-button`。換法用本體附的 `@mendesky/ds/scripts/component-refs.mjs`，
 本 repo 不另寫規則；冒煙測試會擋下說明頁上沒換掉的 `#元件id`。
 
+Storybook 說明頁的區塊順序：名稱與 selector → 何時用 → 部位 → 狀態 → 可以這樣做、不要這樣做 → 範例 → 屬性 → 程式碼範例 →
+Angular 注意事項 → 無障礙 → 說明與注意事項 → 其他變體。部位、狀態、可以／不要這樣做、無障礙來自本體規格的第 2 版欄位，
+沒寫的元件不出現這些區塊。冒煙測試逐頁對照說明頁標的元件（最外層的 `data-ds-id`）的規格檢查：有內容的區塊要有標題、
+沒內容的不能有；各區標題的先後順序照上面；每一區畫出的項數跟規格一樣、每一項都有文字；無障礙每個分類畫在對的組；
+「看範例」要掛在規格寫了範例代號的那一項，連到的範例（story id `<元件id>--<代號>`）要在範例網站裡、網址也要連到同一個範例；
+有第 2 版欄位的元件都要找得到說明頁。
+
 ### 新增或修改元件時要補什麼
 
-1. 本體 repo：元件規格 `src/docs/components/<id>.ts`（何時用、注意事項）。
+1. 本體 repo：元件規格 `src/docs/components/<id>.ts`（何時用、注意事項；選填的部位、狀態、無障礙、可以／不要這樣做）。
+   可以／不要這樣做寫了範例代號（`story`）時，本 repo 的範例頁要有對應的 story，不然冒煙測試會失敗。
 2. 本 repo：元件旁邊的 `<名稱>.docs.ts`：每個 `@Input`／`@Output`（含 signal 的 `input()`／`output()`／`model()`）、程式碼範例；用到 Angular 寫法的注意事項（表單綁定、注入服務、內容投影）寫在 `usageNotes`。只放 Angular 用法，規格欄位放這裡會被檢查擋下。
 3. 本 repo：元件旁邊的範例頁 `<名稱>.stories.ts`：`title` 寫成 `'<分組>/<名稱>'` 字面值；第一支 story 是說明頁上方的主範例。
+   meta 的 `id` 寫成元件 id（例：`id: 'button'`）；story 匯出名稱轉成 kebab-case 就是規格 dos／donts 的範例代號
+   （`FullWidth` → `full-width`，story id 是 `button--full-width`）。漏寫 `id` 時 story id 會從 `title` 產生，對不上規格的範例代號，冒煙測試會失敗。
 4. 改了本體之後，本 repo 的 `package.json` 把 `@mendesky/ds` 改指新版本（用 `npm i "github:Mendesky/mendesky-ds#<tag>"` 指名安裝）。
 5. 本機跑一次：
 
@@ -130,6 +140,7 @@ npm run test:scripts   # 檢查腳本自身的測試
 npx ng test --watch=false --browsers=ChromeHeadless   # 單元測試
 bash scripts/build-storybook-site.sh storybook-static # 建範例網站
 node scripts/smoke-storybook.mjs storybook-static     # 範例網站逐頁冒煙測試
+node --test scripts/smoke-storybook.browser.mjs        # 冒煙測試腳本自身的測試（需要瀏覽器）
 ```
 
 CI 會在每個 PR 跑同樣的檢查，任何一項失敗都不能合併。只在母元件內部使用的子元件（例如 `select-panel`）
