@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, ChangeDetectionStrategy, AfterViewInit, ElementRef, ViewChild, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { LabelComponent, LabelColor, LabelSize } from '../label/label.component';
@@ -7,6 +7,8 @@ import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive'
 export type ButtonVariant = 'filled' | 'tonal' | 'outlined' | 'ghost' | 'elevated';
 export type ButtonColor = 'primary' | 'success' | 'danger' | 'neutral';
 export type ButtonSize = 'XXS' | 'XS' | 'S' | 'M' | 'L';
+/** aria-current 的值：'true' 用在清單裡的目前項目，其餘依 WAI-ARIA 定義 */
+export type ButtonAriaCurrent = 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false';
 
 /** Button 內嵌 label 的設定 */
 export interface BtnLabelConfig {
@@ -23,7 +25,7 @@ export interface BtnLabelConfig {
   styleUrls: ['./button.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ButtonComponent implements OnChanges {
+export class ButtonComponent implements OnChanges, AfterViewInit {
   @Input() variant: ButtonVariant = 'filled';
   @Input() color: ButtonColor = 'primary';
   @Input() size: ButtonSize = 'M';
@@ -55,9 +57,18 @@ export class ButtonComponent implements OnChanges {
   /** disabled 狀態點擊時顯示在按鈕正上方的 tooltip。單條傳 string，多條傳 string[]。*/
   @Input() disabledMessage: string | string[] = [];
 
+  /** 報讀軟體念的名稱，落在內層 button 的 aria-label。只有圖示、沒有文字時必填 */
+  @Input() ariaLabel = '';
+  /** 按下／未按下狀態（aria-pressed）；null＝不是切換鈕，不輸出 */
+  @Input() ariaPressed: boolean | null = null;
+  /** 清單或導覽中的「目前這一項」（aria-current）；null＝不輸出 */
+  @Input() ariaCurrent: ButtonAriaCurrent | null = null;
+
   @Output() btnClick = new EventEmitter<void>();
   /** clickableWhenDisabled=true 且 disabled=true 時，點擊觸發。*/
   @Output() disabledClick = new EventEmitter<void>();
+
+  @ViewChild('btn', { static: true }) private btnRef!: ElementRef<HTMLButtonElement>;
 
   private _disabledClickedOnce = signal(false);
 
@@ -102,6 +113,13 @@ export class ButtonComponent implements OnChanges {
     if (d && d.previousValue === true && d.currentValue === false) {
       this._disabledClickedOnce.set(false);
     }
+  }
+
+  ngAfterViewInit(): void {
+    // 只看第一次渲染：內層 button 沒有任何文字（只有圖示）又沒給 ariaLabel，報讀軟體念不出名稱
+    if (!isDevMode() || this.ariaLabel || this.loading) return;
+    if (this.btnRef.nativeElement.textContent?.trim()) return;
+    console.warn('[app-button] 按鈕沒有文字也沒有 ariaLabel，報讀軟體念不出名稱。只有圖示時改用 app-icon-btn，或設定 ariaLabel。');
   }
 
   get disabledTooltipInput(): string | string[] {

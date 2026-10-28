@@ -1,8 +1,12 @@
 <button
+  #btn
   class="btn"
   [ngClass]="[sizeClass, variantClass, fullWidth ? 'btn--full' : '', loading ? 'btn--loading' : '', description ? 'btn--has-desc' : '']"
   [disabled]="(disabled && !clickableWhenDisabled) || loading"
   [attr.aria-disabled]="clickableWhenDisabled && disabled ? 'true' : null"
+  [attr.aria-label]="ariaLabel || null"
+  [attr.aria-pressed]="ariaPressed"
+  [attr.aria-current]="ariaCurrent"
   [appErrorTooltip]="disabledTooltipInput"
   [errorPosition]="'top'"
   type="button"

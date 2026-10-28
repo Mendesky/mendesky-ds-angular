@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const buttonDoc: ComponentApi = {
   id: 'button',
   selector: 'app-button',
-  summary: 'variant: filled|tonal|outlined|ghost|elevated · color: primary|success|danger|neutral · size: XXS|XS|S|M|L · leftIcon/rightIcon · [disabled] [fullWidth] [loading] · [clickableWhenDisabled] [disabledMessage] · (btnClick) (disabledClick)',
+  summary: 'variant: filled|tonal|outlined|ghost|elevated · color: primary|success|danger|neutral · size: XXS|XS|S|M|L · leftIcon/rightIcon · [disabled] [fullWidth] [loading] · [clickableWhenDisabled] [disabledMessage] · ariaLabel [ariaPressed] [ariaCurrent] · (btnClick) (disabledClick)',
   props: [
     {
       name: 'variant',
@@ -88,6 +88,24 @@ export const buttonDoc: ComponentApi = {
       desc: 'clickableWhenDisabled=true 且 disabled=true 時，點擊按鈕上方顯示的 tooltip 訊息。單條傳 string，多條傳 string[]（以 bullet list 呈現）。',
     },
     {
+      name: 'ariaLabel',
+      type: 'string',
+      default: "''",
+      desc: '報讀軟體念的名稱，套在內層 button 的 aria-label。只有圖示、沒有文字時必填；沒填時開發模式會在 console 警告。',
+    },
+    {
+      name: 'ariaPressed',
+      type: 'boolean | null',
+      default: 'null',
+      desc: '切換鈕的按下／未按下狀態，套在內層 button 的 aria-pressed。null 表示不是切換鈕，不輸出。',
+    },
+    {
+      name: 'ariaCurrent',
+      type: 'ButtonAriaCurrent | null',
+      default: 'null',
+      desc: "清單或導覽中的「目前這一項」，套在內層 button 的 aria-current。值為 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false'；null 不輸出。",
+    },
+    {
       name: '(btnClick)',
       type: 'EventEmitter',
       desc: '正常點擊事件輸出',
@@ -132,8 +150,31 @@ export const buttonDoc: ComponentApi = {
   (btnClick)="onConfirm()"
 ></app-button>`,
     },
+    {
+      label: '只有圖示時給名稱',
+      code: `<app-button
+  variant="outlined"
+  color="neutral"
+  size="XS"
+  leftIcon="LeftArrow"
+  ariaLabel="上一頁"
+  (btnClick)="goToPrevPage()"
+></app-button>`,
+    },
+    {
+      label: '清單中標示目前這一項',
+      code: `<app-button
+  [text]="item.label"
+  [ariaCurrent]="item.id === currentId ? 'true' : null"
+  (btnClick)="select(item.id)"
+></app-button>`,
+    },
   ],
   usageNotes: [
+    {
+      type: 'warn',
+      content: 'ariaLabel 要寫成元件的設定（ariaLabel="…" 或 [ariaLabel]="…"）。直接寫 aria-label 或 [attr.aria-label] 會留在外層 app-button 上，到不了內層 button，報讀軟體讀不到。',
+    },
     {
       type: 'info',
       content: 'app-button 用 Angular 預設的樣式封裝（Emulated），內部的 .btn 等 class 帶有元件專屬的屬性選擇器；使用端要覆寫按鈕內部樣式，寫在使用端元件自己的樣式裡碰不到這些 class；要寫在全域樣式表並讓權重高於元件內的規則，或在元件樣式裡用 ::ng-deep。',

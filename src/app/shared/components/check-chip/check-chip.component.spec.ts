@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { CheckChipComponent } from './check-chip.component';
 import { expectWrappedInto, isSingleLine, unwrappedTextWidth } from '../../testing/text-layout.helpers';
@@ -136,5 +136,62 @@ describe('CheckChipComponent — 長文字折行不撐破容器（regression）'
     render(704);
     const icon = root.querySelector<HTMLElement>('app-check-chip.long .chip__icon')!;
     expect(icon.getBoundingClientRect().width).withContext('icon 應維持 16px 不被 flex 壓縮').toBeGreaterThanOrEqual(15);
+  });
+});
+
+/**
+ * 報讀契約（2026-10-28）：內層 button 依選取狀態輸出 aria-pressed（"true"／"false"），
+ * 跟同家族的 radio-chip 一致；ariaLabel 落在內層 button，沒設就不輸出。
+ * 點擊與表單寫入是兩條不同的路徑，各驗一次。
+ */
+@Component({
+  standalone: true,
+  imports: [CheckChipComponent, FormsModule],
+  template: `
+    <app-check-chip class="click" text="網頁設計"></app-check-chip>
+    <app-check-chip class="model" text="已完成" [ngModel]="model"></app-check-chip>
+    <app-check-chip class="named" text="其他" ariaLabel="其他服務"></app-check-chip>
+  `,
+})
+class A11yHostComponent {
+  model = false;
+}
+
+describe('CheckChipComponent — 已選狀態與名稱', () => {
+  let fixture: ComponentFixture<A11yHostComponent>;
+
+  const chip = (sel: string) => fixture.nativeElement.querySelector(`app-check-chip.${sel} button`) as HTMLButtonElement;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [A11yHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(A11yHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('點擊：aria-pressed 由 "false" 變 "true"，再點回 "false"', () => {
+    expect(chip('click').getAttribute('aria-pressed')).toBe('false');
+    chip('click').click();
+    fixture.detectChanges();
+    expect(chip('click').getAttribute('aria-pressed')).toBe('true');
+    chip('click').click();
+    fixture.detectChanges();
+    expect(chip('click').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('表單寫入 true：aria-pressed 變 "true"，選中樣式也跟著出現', async () => {
+    expect(chip('model').getAttribute('aria-pressed')).toBe('false');
+    fixture.componentInstance.model = true;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(chip('model').getAttribute('aria-pressed')).toBe('true');
+    expect(chip('model').classList).toContain('chip--selected');
+  });
+
+  it('有設 ariaLabel 時落在內層 button；沒設時沒有', () => {
+    expect(chip('named').getAttribute('aria-label')).toBe('其他服務');
+    expect(chip('click').hasAttribute('aria-label')).toBeFalse();
   });
 });
