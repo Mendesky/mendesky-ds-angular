@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { InputComponent } from '../../../../index';
+import { FieldComponent, InputComponent } from '../../../../index';
 
 const meta: Meta<InputComponent> = {
   title: '表單元件/Input',
@@ -37,6 +37,7 @@ const meta: Meta<InputComponent> = {
       table: { defaultValue: { summary: 'false' } },
     },
     valueChange: { action: 'valueChange' },
+    passwordVisibilityChange: { action: 'passwordVisibilityChange' },
   },
 };
 
@@ -119,5 +120,39 @@ export const AllStates: Story = {
       </div>
     `,
     moduleMetadata: { imports: [InputComponent] },
+  }),
+};
+
+// ── 放在欄位裡：欄位標題就是報讀名稱 ─────────────────────
+export const InField: Story = {
+  render: () => ({
+    template: `
+      <div style="display:flex;flex-direction:column;gap:16px;width:300px;padding:16px;">
+        <app-field label="聯絡人姓氏" [required]="true">
+          <app-input size="L" placeholder="請輸入姓氏"></app-input>
+        </app-field>
+        <app-input size="L" ariaLabel="分享連結" initialValue="https://example.com/s/abc123" [readonly]="true"></app-input>
+      </div>
+    `,
+    moduleMetadata: { imports: [FieldComponent, InputComponent] },
+  }),
+};
+
+// ── 密碼：眼睛按鈕可用 Tab 移到，切換時發出 passwordVisibilityChange ──
+export const Password: Story = {
+  render: (args) => ({
+    props: args,
+    template: `
+      <div style="display:flex;flex-direction:column;gap:16px;width:300px;padding:16px;">
+        <app-field label="帳號">
+          <app-input size="L" autocomplete="username" placeholder="請輸入帳號"></app-input>
+        </app-field>
+        <app-field label="密碼">
+          <app-input size="L" type="password" autocomplete="current-password" placeholder="請輸入密碼"
+                     (passwordVisibilityChange)="passwordVisibilityChange($event)"></app-input>
+        </app-field>
+      </div>
+    `,
+    moduleMetadata: { imports: [FieldComponent, InputComponent] },
   }),
 };

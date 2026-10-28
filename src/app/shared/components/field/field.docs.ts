@@ -9,7 +9,7 @@ export const fieldDoc: ComponentApi = {
       name: 'label',
       type: 'string',
       default: "''",
-      desc: '標題文字（中粗 500，v0.1.9 起）；只放欄位名稱，不含單位或說明；空字串時不顯示標題列',
+      desc: '標題文字（中粗 500，v0.1.9 起）；只放欄位名稱，不含單位或說明；空字串時不顯示標題列。直接寫在裡面的 app-input 會自動用它當報讀名稱；包在別的元件裡的不會',
     },
     {
       name: 'hint',
@@ -21,7 +21,7 @@ export const fieldDoc: ComponentApi = {
       name: 'required',
       type: 'boolean',
       default: 'false',
-      desc: '顯示「必填」badge（SoftBlue，XXS）',
+      desc: '顯示「必填」badge（SoftBlue，XXS）；直接寫在裡面的 app-input 同時帶 aria-required="true"',
     },
     {
       name: 'emphasis',

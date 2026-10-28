@@ -7,6 +7,12 @@
 
     <input
       class="input-field"
+      [attr.id]="idText || null"
+      [attr.name]="name || null"
+      [attr.autocomplete]="autocomplete || null"
+      [attr.aria-label]="labelText || null"
+      [attr.aria-labelledby]="labelledBy"
+      [attr.aria-required]="ariaRequired"
       [type]="effectiveType"
       [attr.inputmode]="inputMode"
       [placeholder]="placeholder"
@@ -23,8 +29,8 @@
         *ngIf="type === 'password'"
         class="input-eye"
         type="button"
-        tabindex="-1"
-        aria-label="切換密碼顯示"
+        aria-label="顯示密碼"
+        [attr.aria-pressed]="showPassword ? 'true' : 'false'"
         (click)="togglePassword()"
       >
         <app-icon [name]="showPassword ? 'eye-off' : 'eye'" size="16"></app-icon>
