@@ -1,9 +1,12 @@
 // 元件說明頁版型：由各元件的 *.docs.ts 畫出。
 // 順序（工程師先確認能不能用、怎麼用）：
-//   名稱與 selector → 用途與禁止事項 → 真範例（可調整）→ 屬性表 → 程式碼範例 → Angular 注意事項 → 說明與注意事項 → 其他變體
+//   名稱與 selector → 用途與禁止事項 → 部位 → 狀態 → 可以這樣做、不要這樣做 → 真範例（可調整）→ 屬性表 → 程式碼範例
+//   → Angular 注意事項 → 無障礙 → 說明與注意事項 → 其他變體
+// 部位、狀態、可以／不要這樣做、無障礙是本體規格的第 2 版欄位（選填）：沒寫就整區不畫，寫了每一項都要畫出來。
+// 冒煙測試（scripts/smoke-storybook.mjs）用最外層的 data-ds-id 認出是哪個元件，用每一項的 data-testid 數項數、跟規格比對。
 import * as React from 'react';
 import { Controls, Markdown, Primary, Source, Stories, Title, useOf } from '@storybook/blocks';
-import { COMPONENT_SPECS, type DocNote, type DocTable } from '@mendesky/ds';
+import { COMPONENT_SPECS, type DocNote, type DocTable, type SpecA11y, type SpecExample, type SpecPart, type SpecState } from '@mendesky/ds';
 import { renderRefs } from '@mendesky/ds/scripts/component-refs.mjs';
 import type { ComponentApi, ComponentDoc, DocProp } from '../src/docs/component-doc';
 
@@ -120,6 +123,139 @@ function CustomTable({ table }: { table: DocTable }) {
   );
 }
 
+// ── 規格第 2 版欄位：都來自本體，名稱、說明、每一條文字都要換 #元件id ──
+
+function Anatomy({ parts }: { parts: SpecPart[] }) {
+  return h(
+    React.Fragment,
+    null,
+    h('h2', { 'data-testid': 'ds-doc-anatomy' }, '部位'),
+    h(
+      'ol',
+      { className: 'ds-doc-anatomy' },
+      ...parts.map((p, i) =>
+        h('li', { key: i, 'data-testid': 'ds-doc-anatomy-item' }, md(`**${coreText(p.name)}**：${coreText(p.description)}`)),
+      ),
+    ),
+  );
+}
+
+function States({ states }: { states: SpecState[] }) {
+  return h(
+    React.Fragment,
+    null,
+    h('h2', { 'data-testid': 'ds-doc-states' }, '狀態'),
+    h(
+      'table',
+      { className: 'ds-doc-table' },
+      h('thead', null, h('tr', null, ...['狀態', '長怎樣、什麼時候出現'].map((t) => h('th', { key: t }, t)))),
+      h(
+        'tbody',
+        null,
+        ...states.map((s, i) =>
+          h(
+            'tr',
+            { key: i, 'data-testid': 'ds-doc-state-item' },
+            h('td', { className: 'ds-doc-state-name' }, md(coreText(s.name))),
+            h('td', null, md(coreText(s.description))),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/** 連到範例網站裡的一個範例。說明頁在 iframe 裡，要換掉整個範例網站（_top）；data-story-id 讓冒煙測試確認這個範例存在 */
+function StoryLink({ storyId }: { storyId: string }) {
+  return h(
+    'a',
+    { className: 'ds-doc-story-link', href: `./?path=/story/${encodeURIComponent(storyId)}`, target: '_top', 'data-story-id': storyId },
+    '看範例',
+  );
+}
+
+/** 可以／不要這樣做；有範例代號（story）時在該項後面連到範例，完整 story id 是「<元件id>--<代號>」。沒有項目的那一欄不畫 */
+function DoDont({ id, dos, donts }: { id: string; dos: SpecExample[]; donts: SpecExample[] }) {
+  const columns = [
+    { kind: 'do', title: '✅ 可以這樣做', testid: 'ds-doc-do-item', items: dos },
+    { kind: 'dont', title: '❌ 不要這樣做', testid: 'ds-doc-dont-item', items: donts },
+  ].filter((c) => c.items.length);
+  return h(
+    React.Fragment,
+    null,
+    h('h2', { 'data-testid': 'ds-doc-dodont' }, '可以這樣做、不要這樣做'),
+    h(
+      'div',
+      { className: 'ds-doc-dodont' },
+      ...columns.map((c) =>
+        h(
+          'div',
+          { key: c.kind, className: `ds-doc-dodont__col ds-doc-dodont__col--${c.kind}` },
+          h('p', { className: 'ds-doc-dodont__title' }, c.title),
+          h(
+            'ul',
+            null,
+            ...c.items.map((e, i) =>
+              h('li', { key: i, 'data-testid': c.testid }, md(coreText(e.text)), e.story ? h(StoryLink, { storyId: `${id}--${e.story}` }) : null),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+// 無障礙分兩組：網頁和 APP 都要做到的行為、網頁才有的 ARIA 與 HTML 語意
+const A11Y_GROUPS: { title: string; keys: (keyof SpecA11y)[] }[] = [
+  { title: '網頁和 APP 都要做到', keys: ['keyboard', 'focus', 'screenReader', 'motion', 'touch'] },
+  { title: '網頁專屬', keys: ['aria'] },
+];
+const A11Y_LABEL: Record<keyof SpecA11y, string> = {
+  keyboard: '鍵盤',
+  focus: '焦點',
+  screenReader: '報讀軟體',
+  motion: '動態',
+  touch: '觸控',
+  aria: 'ARIA 與 HTML 語意',
+};
+
+type A11yGroup = { title: string; entries: { key: keyof SpecA11y; items: string[] }[] };
+
+/** 只留有內容的分類與組；整個沒有內容時回傳空陣列 */
+function a11yGroups(a11y: SpecA11y = {}): A11yGroup[] {
+  return A11Y_GROUPS.map((g) => ({
+    title: g.title,
+    entries: g.keys.filter((k) => a11y[k]?.length).map((k) => ({ key: k, items: a11y[k] ?? [] })),
+  })).filter((g) => g.entries.length);
+}
+
+function A11y({ groups }: { groups: A11yGroup[] }) {
+  return h(
+    React.Fragment,
+    null,
+    h('h2', { 'data-testid': 'ds-doc-a11y' }, '無障礙'),
+    ...groups.map((g) =>
+      h(
+        React.Fragment,
+        { key: g.title },
+        h('h3', null, g.title),
+        h(
+          'dl',
+          { className: 'ds-doc-a11y' },
+          ...g.entries.map((e) =>
+            h(
+              React.Fragment,
+              { key: e.key },
+              h('dt', { className: 'ds-doc-a11y__label' }, A11Y_LABEL[e.key]),
+              h('dd', null, h('ul', null, ...e.items.map((item, i) => h('li', { key: i, 'data-testid': 'ds-doc-a11y-item' }, md(coreText(item)))))),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 export function DsDocsPage() {
   const resolved = useOf('meta');
   const prepared = resolved.type === 'meta' ? resolved.preparedMeta : undefined;
@@ -129,12 +265,17 @@ export function DsDocsPage() {
     return h(React.Fragment, null, h(Title), h(Primary), h(Controls), h(Stories));
   }
 
+  const a11y = a11yGroups(doc.a11y);
   return h(
     'div',
-    { className: 'ds-doc' },
+    { className: 'ds-doc', 'data-ds-id': doc.id },
     h(Title, null, doc.name),
     h('p', { className: 'ds-doc-selector' }, h('code', null, doc.selector)),
     doc.when ? h('div', { className: 'ds-doc-when', 'data-testid': 'ds-doc-when' }, md(coreText(doc.when))) : null,
+
+    doc.anatomy?.length ? h(Anatomy, { parts: doc.anatomy }) : null,
+    doc.states?.length ? h(States, { states: doc.states }) : null,
+    doc.dos?.length || doc.donts?.length ? h(DoDont, { id: doc.id, dos: doc.dos ?? [], donts: doc.donts ?? [] }) : null,
 
     h('h2', { 'data-testid': 'ds-doc-example' }, '範例'),
     h(Primary),
@@ -148,9 +289,11 @@ export function DsDocsPage() {
       h(React.Fragment, { key: `usage-${i}` }, u.label ? h('h3', null, u.label) : null, h(Source, { code: u.code, language: 'html', dark: true })),
     ),
 
-    // 只有 Angular 才需要知道的注意事項（*.docs.ts 的 usageNotes）；跨框架的注意事項在下一段
+    // 只有 Angular 才需要知道的注意事項（*.docs.ts 的 usageNotes）；跨框架的注意事項在「說明與注意事項」
     doc.usageNotes?.length ? h('h2', { 'data-testid': 'ds-doc-usage-notes' }, 'Angular 注意事項') : null,
     ...(doc.usageNotes ?? []).map((n, i) => h(NoteBlock, { key: `usage-note-${i}`, note: n })),
+
+    a11y.length ? h(A11y, { groups: a11y }) : null,
 
     doc.description || doc.notes.length || doc.customTables?.length
       ? h('h2', { 'data-testid': 'ds-doc-notes' }, '說明與注意事項')

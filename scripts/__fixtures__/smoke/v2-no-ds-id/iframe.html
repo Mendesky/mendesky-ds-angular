@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<div id="storybook-root"></div><div id="storybook-docs"></div>
+<script>
+  // 模擬說明頁畫出了第 2 版欄位，但最外層沒有 data-ds-id：冒煙測試認不出這是哪個元件的說明頁
+  const params = new URLSearchParams(location.search);
+  const docs = params.get('viewMode') === 'docs';
+  setTimeout(() => {
+    const el = document.createElement('div');
+    el.className = 'sbdocs';
+    if (!docs) {
+      el.textContent = '畫出 ' + params.get('id');
+      document.getElementById('storybook-root').appendChild(el);
+      return;
+    }
+    el.innerHTML =
+      '<div class="ds-doc">' +
+      '<h2 data-testid="ds-doc-anatomy">部位</h2><ol>' +
+      '<li data-testid="ds-doc-anatomy-item"><strong>外框</strong>：可以點的範圍</li>' +
+      '<li data-testid="ds-doc-anatomy-item"><strong>文字</strong>：說明這個操作</li></ol>' +
+      '<h2 data-testid="ds-doc-states">狀態</h2><table><tbody>' +
+      '<tr data-testid="ds-doc-state-item"><td>停用</td><td>灰底灰字</td></tr></tbody></table>' +
+      '<h2 data-testid="ds-doc-dodont">可以這樣做、不要這樣做</h2>' +
+      '<ul><li data-testid="ds-doc-do-item">需要撐滿寬度時用 fullWidth <a href="./?path=/story/demo--full-width" data-story-id="demo--full-width">看範例</a></li></ul>' +
+      '<ul><li data-testid="ds-doc-dont-item">不要在裡面放另一個可以點的東西</li></ul>' +
+      '<h2 data-testid="ds-doc-a11y">無障礙</h2><ul>' +
+      '<li data-testid="ds-doc-a11y-item">Tab 移到元件</li>' +
+      '<li data-testid="ds-doc-a11y-item">用原生 button 元素</li></ul>' +
+      '</div>';
+    document.getElementById('storybook-docs').appendChild(el);
+  }, 50);
+</script>
+</body></html>

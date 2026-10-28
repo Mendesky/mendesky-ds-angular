@@ -36,6 +36,24 @@ test('#元件id 換成 selector；色碼、網址、id 與相關元件欄位不�
   });
 });
 
+test('部位與狀態的名稱是顯示在頁面上的文字，也換 #元件id；元件本身的 name 等識別字照舊不換', () => {
+  const nameOf = angularNames([{ id: 'button', selector: 'app-button' }]);
+  const input = {
+    id: 'demo',
+    name: '#button 示範',
+    anatomy: [{ name: '#button 的圖示', description: '跟 #button 一樣' }],
+    states: [{ name: '像 #button 停用', description: '灰底' }],
+    relatedComponents: ['#button'],
+  };
+  assert.deepEqual(renderCoreRefs(input, nameOf, renderRefs), {
+    id: 'demo',
+    name: '#button 示範',
+    anatomy: [{ name: 'app-button 的圖示', description: '跟 app-button 一樣' }],
+    states: [{ name: '像 app-button 停用', description: '灰底' }],
+    relatedComponents: ['#button'],
+  });
+});
+
 test('合併後的說明：元件規格、互動原則、token 說明裡沒有留下 Angular 有的 #元件id', async () => {
   const docs = await exportDocs(root);
   const known = new Set(docs.components.map((c) => c.doc.id));
@@ -43,16 +61,23 @@ test('合併後的說明：元件規格、互動原則、token 說明裡沒有�
   assert.match(action.when, /app-button/);
   assert.doesNotMatch(action.when, /#button/);
 
+  // 部位與狀態的 name 是顯示文字，照樣掃（同 export-docs.mjs 的 DISPLAYED_NAME_AT）
   const skip = new Set(['id', 'name', 'url', 'references', 'relatedComponents', 'relatedPatterns']);
+  const displayedNameAt = /\.(?:anatomy|states)\[\d+\]$/;
   const leftovers = [];
   let scanned = 0;
+  let displayedNames = 0; // 靠例外掃到的部位、狀態名稱
   const walk = (value, at) => {
     if (typeof value === 'string') {
       scanned++;
       for (const id of findRefs(value)) if (known.has(id)) leftovers.push(`${at}：#${id}`);
     } else if (Array.isArray(value)) value.forEach((v, i) => walk(v, `${at}[${i}]`));
     else if (value && typeof value === 'object') {
-      for (const [k, v] of Object.entries(value)) if (!skip.has(k)) walk(v, `${at}.${k}`);
+      for (const [k, v] of Object.entries(value)) {
+        const displayedName = k === 'name' && displayedNameAt.test(at);
+        if (displayedName) displayedNames++;
+        if (!skip.has(k) || displayedName) walk(v, `${at}.${k}`);
+      }
     }
   };
   docs.components.forEach((c) => walk(c.doc, c.doc.id));
@@ -62,6 +87,10 @@ test('合併後的說明：元件規格、互動原則、token 說明裡沒有�
   walk(docs.motion, 'motion');
   // 掃描本身要有讀到東西，避免「什麼都沒讀到所以沒有殘留」
   assert.ok(scanned > 1000, `只掃到 ${scanned} 段文字，匯出可能壞了`);
+  // 部位、狀態的名稱要真的掃到（例外的位置寫錯就一個都掃不到），而且每一個都掃到
+  const names = docs.components.reduce((n, c) => n + (c.doc.anatomy?.length ?? 0) + (c.doc.states?.length ?? 0), 0);
+  assert.ok(names > 0, '規格裡沒有任何部位、狀態，這段檢查沒有執行');
+  assert.equal(displayedNames, names, `部位、狀態的名稱共 ${names} 個，只掃到 ${displayedNames} 個`);
   assert.deepEqual(leftovers, []);
 });
 

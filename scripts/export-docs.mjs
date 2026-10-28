@@ -80,19 +80,28 @@ export function coreRoot(root) {
 /** 不是說明文字的欄位：識別字、網址、外部參考，以及以 #元件id 當代號的相關元件／相關原則。同本體 check-docs 的 NEUTRAL_SKIP_KEYS。 */
 const REF_SKIP_KEYS = new Set(['id', 'name', 'url', 'references', 'relatedComponents', 'relatedPatterns']);
 
+/** 例外：部位與狀態（anatomy[i]、states[i]）的 name 是顯示在頁面上的文字，不是識別字，照樣換。同本體 check-docs 的 DISPLAYED_NAME_AT。 */
+const DISPLAYED_NAME_AT = /(?:^|\.)(?:anatomy|states)\[\d+\]$/;
+
 /** 元件 id → Angular selector（例：button → app-button、tooltip-directive → [appTooltip]）；Angular 沒有的元件回傳 undefined。 */
 export function angularNames(apis) {
   const byId = new Map(apis.map((api) => [api.id, api.selector]));
   return (id) => byId.get(id);
 }
 
-/** 把本體說明裡每段文字的 #元件id 換成 nameOf(id)；REF_SKIP_KEYS 的欄位不換。renderRefs 來自本體的 component-refs.mjs。 */
-export function renderCoreRefs(value, nameOf, renderRefs) {
+/**
+ * 把本體說明裡每段文字的 #元件id 換成 nameOf(id)；REF_SKIP_KEYS 的欄位不換（部位與狀態的 name 例外）。
+ * renderRefs 來自本體的 component-refs.mjs。at 是目前的位置（例如 anatomy[0]），遞迴時用來判斷例外，呼叫端不用給。
+ */
+export function renderCoreRefs(value, nameOf, renderRefs, at = '') {
   if (typeof value === 'string') return renderRefs(value, nameOf);
-  if (Array.isArray(value)) return value.map((v) => renderCoreRefs(v, nameOf, renderRefs));
+  if (Array.isArray(value)) return value.map((v, i) => renderCoreRefs(v, nameOf, renderRefs, `${at}[${i}]`));
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [k, REF_SKIP_KEYS.has(k) ? v : renderCoreRefs(v, nameOf, renderRefs)]),
+      Object.entries(value).map(([k, v]) => {
+        const skip = REF_SKIP_KEYS.has(k) && !(k === 'name' && DISPLAYED_NAME_AT.test(at));
+        return [k, skip ? v : renderCoreRefs(v, nameOf, renderRefs, at ? `${at}.${k}` : k)];
+      }),
     );
   }
   return value;

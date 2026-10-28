@@ -68,6 +68,13 @@ test('說明檔放了規格欄位（when、notes）→ 失敗，應該放在本�
   assert.match(errors[0], /when, notes/);
 });
 
+test('說明檔放了第 2 版規格欄位（部位、狀態、無障礙、可以／不要這樣做）→ 失敗並逐一指出欄位名，應該放在本體', () => {
+  // fixture 五個欄位都放：SPEC_ONLY_KEYS 漏了哪一個，訊息就少那一個
+  const { errors } = run('spec-v2-fields-in-docs');
+  assert.equal(errors.length, 1, errors.join('\n'));
+  assert.match(errors[0], /demo\.docs\.ts：說明檔只放 Angular 用法，這些欄位屬於本體元件規格：anatomy, states, a11y, dos, donts$/);
+});
+
 test('說明的 id 在本體沒有規格 → 失敗', () => {
   const { errors } = run('ok', { specIds: new Set(['other']) });
   assert.match(errors.join('\n'), /本體沒有對應元件規格的說明：demo/);
