@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const modalShellDoc: ComponentApi = {
   id: 'modal-shell',
   selector: 'app-modal-shell',
-  summary: '[isOpen] width maxHeight variant: default|search|floating-right · overflowVisible · darkBackdrop · canDismiss · ariaLabelledBy · (backdropClick) · (escapePress) · <ng-content>',
+  summary: '[isOpen] width maxHeight variant: default|search|floating-right · overflowVisible · darkBackdrop · canDismiss · ariaLabel · ariaLabelledBy · (backdropClick) · (escapePress) · <ng-content>（標題加 appModalTitle）',
   props: [
     {
       name: 'isOpen',
@@ -75,7 +75,13 @@ export const modalShellDoc: ComponentApi = {
       name: 'ariaLabelledBy',
       type: 'string',
       default: "''",
-      desc: 'aria-labelledby 指向的元素 id（通常是 modal 標題），供螢幕報讀器朗讀',
+      desc: '卡片 aria-labelledby 要指的元素 id。平常不用設，標題加 appModalTitle 就會自動接上；標題放在外殼外面、或名稱要由好幾個元素組成時才用。有設時蓋過 appModalTitle',
+    },
+    {
+      name: 'ariaLabel',
+      type: 'string',
+      default: "''",
+      desc: '對話框的報讀名稱，落在卡片的 aria-label。畫面上沒有標題時才用，例如搜尋視窗。有設時卡片就不輸出 aria-labelledby',
     },
     {
       name: '(afterLeave)',
@@ -93,9 +99,21 @@ export const modalShellDoc: ComponentApi = {
   maxHeight="88vh"
   (backdropClick)="showModal = false"
 >
-  <!-- 任意內容透過 ng-content 投影 -->
-  <div class="my-dialog-header">標題</div>
+  <!-- 任意內容透過 ng-content 投影；標題加 appModalTitle，報讀軟體開窗時會念出來 -->
+  <h2 class="my-dialog-header" appModalTitle>新增聯絡窗口</h2>
   <div class="my-dialog-body">內容</div>
+</app-modal-shell>`,
+    },
+    {
+      label: '沒有標題時（例如搜尋視窗）',
+      code: `<app-modal-shell
+  [isOpen]="showSearch"
+  variant="search"
+  ariaLabel="搜尋"
+  (backdropClick)="showSearch = false"
+  (escapePress)="showSearch = false"
+>
+  <input class="search-input" placeholder="搜尋客戶、案件" />
 </app-modal-shell>`,
     },
     {
@@ -114,7 +132,7 @@ export const modalShellDoc: ComponentApi = {
       <app-stepper variant="horizontal" [steps]="stepLabels()" [currentStep]="currentStepIndex()" (stepClick)="onStepClick($event)"></app-stepper>
     </div>
   }
-  <div class="wizard__header">...</div>
+  <div class="wizard__header"><h2 appModalTitle>{{ currentStepTitle() }}</h2></div>
   <div class="wizard__body">...</div>
   <div class="wizard__footer">...</div>
 </app-modal-shell>
@@ -132,6 +150,30 @@ export const modalShellDoc: ComponentApi = {
     {
       type: 'warning',
       content: 'app-modal-shell 會把 host element 搬到 document.body，所以父層的 ::ng-deep 打不到 .modal-card 內部樣式；如需修改卡片行為請用 @Input（例：overflowVisible）。',
+    },
+    {
+      type: 'info',
+      content: '每個對話框都要有名稱，報讀軟體開窗時才知道要念什麼。有標題就在標題加 appModalTitle，沒有標題再設 ariaLabel。兩個都沒有的話，開發模式會在進場動畫結束時（約 450ms）於 console 警告一次。標題要等資料回來才出現的話，載入期間就會被警告，所以載入中也先把標題文字放出來。',
+    },
+    {
+      type: 'warning',
+      content: 'appModalTitle 是獨立的指令，要加進元件的 imports 才會生效。只寫在 template、忘了 import 時 Angular 不會報錯，標題就這樣安靜地沒接上；開發模式的警告會提醒你。',
+    },
+    {
+      type: 'warning',
+      content: 'ariaLabel 要寫成元件的設定（ariaLabel="…" 或 [ariaLabel]="…"）。直接寫 aria-label 會留在外層 app-modal-shell 上，到不了 role="dialog" 的卡片，報讀軟體讀不到。',
+    },
+    {
+      type: 'info',
+      content: 'appModalTitle 接的是「寫這個標題的那份 template」裡最近的 app-modal-shell，不是畫面上包住它的那一個。直接寫在外殼裡、或寫在放進去的子元件自己的 template 裡都沒問題。有兩種寫法會接不上：標題寫在外殼外面的 ng-template，再用 ngTemplateOutlet 放進來；或是包了一層元件，用 ng-content 把內容轉進它自己的 app-modal-shell（外面若還有別的對話框，標題反而會接到外面那個）。這兩種情況改用 ariaLabelledBy 指向標題的 id。',
+    },
+    {
+      type: 'warning',
+      content: '標題要自訂 id 時寫 id="…" 或 [id]="…"。用 [attr.id] 寫的 id appModalTitle 收不到，會被自動產生的 id 蓋掉。',
+    },
+    {
+      type: 'info',
+      content: '一個對話框同一時間只能有一個 appModalTitle。用 @if 切換標題沒關係，沒顯示的分支根本不會建立；但投影進子元件、只是被收起來沒畫出來的標題仍然算數。同時有兩個的話，用的是最早建立的那一個（不一定是畫面上排在前面的），開窗時開發模式會警告。',
     },
   ],
 };

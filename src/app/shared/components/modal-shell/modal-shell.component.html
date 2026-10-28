@@ -21,7 +21,8 @@
     [style.max-height]="maxHeight"
     role="dialog"
     aria-modal="true"
-    [attr.aria-labelledby]="ariaLabelledBy || null"
+    [attr.aria-label]="labelText || null"
+    [attr.aria-labelledby]="labelText ? null : (ariaLabelledBy || labelledBy() || null)"
     cdkTrapFocus
     [cdkTrapFocusAutoCapture]="trapAutoCapture()"
   >

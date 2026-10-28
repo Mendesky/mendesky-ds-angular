@@ -34,6 +34,7 @@ export * from './app/shared/components/list-tag/list-tag.component';
 export * from './app/shared/components/list/list.component';
 export * from './app/shared/components/modal-close-btn/modal-close-btn.component';
 export * from './app/shared/components/modal-shell/modal-shell.component';
+export * from './app/shared/components/modal-shell/modal-title.directive';
 export * from './app/shared/components/number-input/number-input.component';
 export * from './app/shared/components/number-list/number-list.component';
 export * from './app/shared/components/option-card-group/option-card-group.component';

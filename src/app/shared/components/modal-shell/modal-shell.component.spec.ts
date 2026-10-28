@@ -1,6 +1,7 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SimpleChange } from '@angular/core';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
+import { Component, SimpleChange } from '@angular/core';
 import { ModalShellComponent } from './modal-shell.component';
+import { ModalTitleDirective } from './modal-title.directive';
 
 /**
  * 回歸：modal-shell 退場（leaving）期間，backdrop / card 不得攔截 pointer。
@@ -106,4 +107,216 @@ describe('ModalShellComponent — canDismiss backdrop gate', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(emitted).toBe(1);
   });
+});
+
+/**
+ * 報讀名稱（2026-10-28）：
+ * - 名稱來源依序是 ariaLabel、ariaLabelledBy、appModalTitle 標題；卡片上只會有 aria-label 或 aria-labelledby 其中一個。
+ * - 直接寫在 <app-modal-shell> 上的 aria-label 留在外層，不會到卡片。
+ */
+@Component({
+  standalone: true,
+  imports: [ModalShellComponent, ModalTitleDirective],
+  template: `
+    <app-modal-shell [isOpen]="open" [ariaLabel]="ariaLabel" [ariaLabelledBy]="ariaLabelledBy">
+      @if (titleA) {
+        <h2 appModalTitle>標題 A</h2>
+      }
+      @if (titleB) {
+        <h2 appModalTitle>標題 B</h2>
+      }
+      <span id="external-title">外部標題</span>
+      <p>內容</p>
+    </app-modal-shell>
+  `,
+})
+class NameHostComponent {
+  open = false;
+  ariaLabel = '';
+  ariaLabelledBy = '';
+  titleA = false;
+  titleB = false;
+}
+
+@Component({
+  standalone: true,
+  imports: [ModalShellComponent],
+  template: `<app-modal-shell [isOpen]="true" aria-label="外層名稱"><p>內容</p></app-modal-shell>`,
+})
+class HostAttrComponent {}
+
+const dialogCard = (): HTMLElement => document.querySelector('.modal-card[role="dialog"]') as HTMLElement;
+
+describe('ModalShellComponent — 報讀名稱', () => {
+  let fixture: ComponentFixture<NameHostComponent>;
+
+  function render(patch: Partial<NameHostComponent>): void {
+    fixture = TestBed.createComponent(NameHostComponent);
+    Object.assign(fixture.componentInstance, { open: true, ...patch });
+    fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [NameHostComponent, HostAttrComponent] }).compileComponents();
+  });
+
+  afterEach(() => fixture?.destroy());
+
+  it('ariaLabel：卡片有 aria-label，沒有 aria-labelledby', () => {
+    render({ ariaLabel: '搜尋' });
+    expect(dialogCard().getAttribute('aria-label')).toBe('搜尋');
+    expect(dialogCard().hasAttribute('aria-labelledby')).toBeFalse();
+  });
+
+  it('ariaLabel 加上標題標記：仍然只輸出 aria-label', () => {
+    render({ ariaLabel: '搜尋', titleA: true });
+    expect(dialogCard().getAttribute('aria-label')).toBe('搜尋');
+    expect(dialogCard().hasAttribute('aria-labelledby')).toBeFalse();
+  });
+
+  it('ariaLabelledBy 加上標題標記：卡片指向 ariaLabelledBy', () => {
+    render({ ariaLabelledBy: 'external-title', titleA: true });
+    expect(dialogCard().getAttribute('aria-labelledby')).toBe('external-title');
+    expect(dialogCard().hasAttribute('aria-label')).toBeFalse();
+  });
+
+  it('ariaLabel 只有空白：當成沒設，卡片指向標題', () => {
+    render({ ariaLabel: '   ', titleA: true });
+    expect(dialogCard().hasAttribute('aria-label')).toBeFalse();
+    expect(document.getElementById(dialogCard().getAttribute('aria-labelledby')!)?.textContent).toBe('標題 A');
+  });
+
+  it('都沒設：卡片沒有 aria-label，也沒有 aria-labelledby', () => {
+    render({});
+    expect(dialogCard().hasAttribute('aria-label')).toBeFalse();
+    expect(dialogCard().hasAttribute('aria-labelledby')).toBeFalse();
+  });
+
+  it('直接寫 aria-label 會留在外層 app-modal-shell，不會到卡片（說明檔 usageNotes 的依據）', () => {
+    const f = TestBed.createComponent(HostAttrComponent);
+    f.detectChanges();
+    const host = document.querySelector('app-modal-shell[aria-label]') as HTMLElement;
+    expect(host.getAttribute('aria-label')).toBe('外層名稱');
+    expect(host.querySelector('.modal-card')!.hasAttribute('aria-label')).toBeFalse();
+    f.destroy();
+  });
+});
+
+/**
+ * 開發模式警告（2026-10-28）：進場動畫結束（450ms）那一刻檢查一次。
+ * - 名稱是空的 → console.warn 一次（前綴 [app-modal-shell]）。
+ * - 沒設 ariaLabel／ariaLabelledBy、卻標了兩個以上的標題 → 警告。
+ * - 450ms 前就關掉或銷毀 → 不檢查。之後標題切換也不再檢查。
+ */
+describe('ModalShellComponent — 沒有名稱的警告（開發模式）', () => {
+  let fixture: ComponentFixture<NameHostComponent>;
+  let warn: jasmine.Spy;
+
+  const shellWarns = () => warn.calls.allArgs().filter((args) => String(args[0]).startsWith('[app-modal-shell]'));
+
+  function openWith(patch: Partial<NameHostComponent>): void {
+    fixture = TestBed.createComponent(NameHostComponent);
+    Object.assign(fixture.componentInstance, { open: true, ...patch });
+    fixture.detectChanges();
+  }
+
+  function finish(): void {
+    fixture.destroy();
+    flush();
+  }
+
+  beforeEach(async () => {
+    warn = spyOn(console, 'warn');
+    await TestBed.configureTestingModule({ imports: [NameHostComponent] }).compileComponents();
+  });
+
+  it('沒有任何名稱：進場動畫結束前不警告，結束時警告一次', fakeAsync(() => {
+    openWith({});
+    tick(449);
+    expect(shellWarns().length).toBe(0);
+    tick(1);
+    expect(shellWarns().length).toBe(1);
+    tick(2000);
+    expect(shellWarns().length).toBe(1);
+    finish();
+  }));
+
+  it('有標題標記：不警告', fakeAsync(() => {
+    openWith({ titleA: true });
+    tick(450);
+    expect(shellWarns().length).toBe(0);
+    finish();
+  }));
+
+  it('有 ariaLabel：不警告', fakeAsync(() => {
+    openWith({ ariaLabel: '搜尋' });
+    tick(450);
+    expect(shellWarns().length).toBe(0);
+    finish();
+  }));
+
+  it('ariaLabelledBy 指到有文字的元素：不警告', fakeAsync(() => {
+    openWith({ ariaLabelledBy: 'external-title' });
+    tick(450);
+    expect(shellWarns().length).toBe(0);
+    finish();
+  }));
+
+  it('ariaLabelledBy 指到不存在的 id：警告', fakeAsync(() => {
+    openWith({ ariaLabelledBy: 'no-such-id' });
+    tick(450);
+    expect(shellWarns().length).toBe(1);
+    finish();
+  }));
+
+  it('0.2 秒時就關掉：不警告', fakeAsync(() => {
+    openWith({});
+    tick(200);
+    fixture.componentInstance.open = false;
+    fixture.detectChanges();
+    tick(1000);
+    expect(shellWarns().length).toBe(0);
+    finish();
+  }));
+
+  it('0.2 秒時就銷毀：不警告', fakeAsync(() => {
+    openWith({});
+    tick(200);
+    fixture.destroy();
+    tick(1000);
+    expect(shellWarns().length).toBe(0);
+    flush();
+  }));
+
+  it('標了兩個標題：警告', fakeAsync(() => {
+    openWith({ titleA: true, titleB: true });
+    tick(450);
+    expect(shellWarns().length).toBe(1);
+    finish();
+  }));
+
+  it('ariaLabel 傳進 undefined（沒開嚴格檢查的 template）：照常警告，不會丟錯', fakeAsync(() => {
+    openWith({ ariaLabel: undefined as unknown as string });
+    tick(450);
+    expect(shellWarns().length).toBe(1);
+    finish();
+  }));
+
+  it('ariaLabel 只有空白、也沒有標題：警告', fakeAsync(() => {
+    openWith({ ariaLabel: '   ' });
+    tick(450);
+    expect(shellWarns().length).toBe(1);
+    finish();
+  }));
+
+  it('兩個 @if 標題互相切換：不警告', fakeAsync(() => {
+    openWith({ titleA: true });
+    tick(450);
+    fixture.componentInstance.titleA = false;
+    fixture.componentInstance.titleB = true;
+    fixture.detectChanges();
+    tick(2000);
+    expect(shellWarns().length).toBe(0);
+    finish();
+  }));
 });
