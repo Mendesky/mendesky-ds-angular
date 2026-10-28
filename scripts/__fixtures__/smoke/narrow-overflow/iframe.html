@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<div id="storybook-root"></div><div id="storybook-docs"></div>
+<script>
+  // 同 v2-ok 的說明頁，但範例的外框寫死寬度：「可以這樣做」嵌入的 demo--full-width 在窄視窗會超出。
+  // 模擬有第 2 版欄位的說明頁（data-ds-id="demo"），結構同 .storybook/ds-docs-page.ts：
+  // 部位 2 項、狀態 1 項、可以 1 項（連到範例 demo--full-width）、不要 1 項、範例、無障礙 2 項（鍵盤、ARIA 各 1 項，分在兩組）
+  const params = new URLSearchParams(location.search);
+  const docs = params.get('viewMode') === 'docs';
+  setTimeout(() => {
+    const el = document.createElement('div');
+    el.className = 'sbdocs';
+    if (!docs) {
+      // 「可以這樣做」嵌入的 demo--full-width 外框寫死 320px；demo--wide 更寬，但沒有被嵌入
+      const width = { 'demo--full-width': 320, 'demo--wide': 600 }[params.get('id')];
+      el.innerHTML = '<div style="width:' + width + 'px"><div style="width:100%;height:36px;background:#3a9ccd"></div></div>';
+      document.getElementById('storybook-root').appendChild(el);
+      return;
+    }
+    el.innerHTML =
+      '<div class="ds-doc" data-ds-id="demo">' +
+      '<h2 data-testid="ds-doc-anatomy">部位</h2><ol>' +
+      '<li data-testid="ds-doc-anatomy-item"><strong>外框</strong>：可以點的範圍</li>' +
+      '<li data-testid="ds-doc-anatomy-item"><strong>文字</strong>：說明這個操作</li></ol>' +
+      '<h2 data-testid="ds-doc-states">狀態</h2><table><tbody>' +
+      '<tr data-testid="ds-doc-state-item"><td>停用</td><td>灰底灰字</td></tr></tbody></table>' +
+      '<h2 data-testid="ds-doc-dodont">可以這樣做、不要這樣做</h2>' +
+      '<ul><li data-testid="ds-doc-do-item">需要撐滿寬度時用 fullWidth <a href="./?path=/story/demo--full-width" data-story-id="demo--full-width">看範例</a></li></ul>' +
+      '<ul><li data-testid="ds-doc-dont-item">不要在裡面放另一個可以點的東西，例如 <code>app-button</code></li></ul>' +
+      '<h2 data-testid="ds-doc-example">範例</h2>' +
+      '<h2 data-testid="ds-doc-a11y">無障礙</h2>' +
+      '<h3>網頁和 APP 都要做到</h3><dl class="ds-doc-a11y"><dt class="ds-doc-a11y__label">鍵盤</dt>' +
+      '<dd><ul><li data-testid="ds-doc-a11y-item">Tab 移到元件</li></ul></dd></dl>' +
+      '<h3>網頁專屬</h3><dl class="ds-doc-a11y"><dt class="ds-doc-a11y__label">ARIA 與 HTML 語意</dt>' +
+      '<dd><ul><li data-testid="ds-doc-a11y-item">用原生 button 元素</li></ul></dd></dl>' +
+      '</div>';
+    document.getElementById('storybook-docs').appendChild(el);
+  }, 50);
+</script>
+</body></html>

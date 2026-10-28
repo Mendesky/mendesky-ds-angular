@@ -129,6 +129,8 @@ Angular 注意事項 → 無障礙 → 說明與注意事項 → 其他變體。
 3. 本 repo：元件旁邊的範例頁 `<名稱>.stories.ts`：`title` 寫成 `'<分組>/<名稱>'` 字面值；第一支 story 是說明頁上方的主範例。
    meta 的 `id` 寫成元件 id（例：`id: 'button'`）；story 匯出名稱轉成 kebab-case 就是規格 dos／donts 的範例代號
    （`FullWidth` → `full-width`，story id 是 `button--full-width`）。漏寫 `id` 時 story id 會從 `title` 產生，對不上規格的範例代號，冒煙測試會失敗。
+   dos／donts 引用的 story 會嵌進本體文件網站半欄寬的框裡，最窄約 240px：外框別寫死寬度（用 `max-width`），
+   冒煙測試會用 240px 寬打開這些 story，出現橫向捲軸就失敗。
 4. 改了本體之後，本 repo 的 `package.json` 把 `@mendesky/ds` 改指新版本（用 `npm i "github:Mendesky/mendesky-ds#<tag>"` 指名安裝）。
 5. 本機跑一次：
 

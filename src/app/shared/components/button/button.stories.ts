@@ -207,7 +207,8 @@ export const FullWidth: Story = {
   decorators: [
     (storyFn) => ({
       ...storyFn(),
-      template: `<div style="width:320px;">${(storyFn() as any).template}</div>`,
+      // 外框不寫死寬度：本體文件網站把這個範例嵌在半欄寬的框裡，比 320px 窄
+      template: `<div style="max-width:320px;">${(storyFn() as any).template}</div>`,
     }),
   ],
 };
