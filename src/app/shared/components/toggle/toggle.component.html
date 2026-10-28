@@ -4,6 +4,7 @@
   [class.toggle-btn--disabled]="disabled"
   [attr.aria-checked]="checked"
   [attr.aria-disabled]="disabled || null"
+  [attr.aria-label]="ariaLabel || null"
   role="switch"
   type="button"
   (click)="toggle()"

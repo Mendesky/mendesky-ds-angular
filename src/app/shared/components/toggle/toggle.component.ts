@@ -16,6 +16,9 @@ export class ToggleComponent {
   /** 禁用狀態 */
   @Input() disabled = false;
 
+  /** 報讀軟體念的名稱，落在內層 switch 的 aria-label。畫面上的文字會隨開關改變時，給固定名稱 */
+  @Input() ariaLabel = '';
+
   /** 狀態變更事件 */
   @Output() checkedChange = new EventEmitter<boolean>();
 

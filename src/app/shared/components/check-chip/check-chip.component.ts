@@ -38,6 +38,8 @@ export class CheckChipComponent implements ControlValueAccessor {
    */
   @Input() set disabled(d: boolean) { this.isDisabled = d; }
   get disabled(): boolean { return this.isDisabled; }
+  /** 報讀軟體念的名稱，落在內層 button 的 aria-label；沒設時念 text */
+  @Input() ariaLabel = '';
 
   /* ── CVA 狀態 ── */
   selected   = false;

@@ -3,6 +3,8 @@
   class="chip"
   [ngClass]="hostClasses"
   [disabled]="isDisabled"
+  [attr.aria-pressed]="selected"
+  [attr.aria-label]="ariaLabel || null"
   (click)="toggle()">
   <app-icon class="chip__icon" [name]="iconName" size="16"></app-icon>
   <span class="chip__text">{{ text }}</span>
