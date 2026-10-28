@@ -6,11 +6,12 @@ import {
   InputComponent,
   ModalCloseBtnComponent,
   ModalShellComponent,
+  ModalTitleDirective,
 } from '../../../../index';
 
 // 範例內容：
-// - 封存項目：width 520px、maxHeight 85vh、frostedGlass；標題「封存項目」、說明文字、取消 / 確認封存按鈕
-// - 搜尋：variant="search"、placeholder「請輸入名稱或編號進行查詢」
+// - 封存項目：width 520px、maxHeight 85vh、frostedGlass；標題「封存項目」（加 appModalTitle 當對話框名稱）、說明文字、取消 / 確認封存按鈕
+// - 搜尋：variant="search"、placeholder「請輸入名稱或編號進行查詢」；沒有標題，用 ariaLabel「搜尋」當對話框名稱
 // - 版本更新：darkBackdrop、frostedGlass、標題「版本更新」
 //
 // modal-shell 開啟時會把自己搬到 document.body，並以 position:fixed 蓋滿畫面。
@@ -19,7 +20,7 @@ import {
 const ARCHIVE_CONTENT = (close: string) => `
   <div style="display:flex;flex-direction:column;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:24px 24px 0;">
-      <div id="archive-modal-title" style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;color:var(--text\\/title, #3e3e3e);">
+      <div appModalTitle style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;color:var(--text\\/title, #3e3e3e);">
         <app-icon name="Archive" size="24"></app-icon>
         <span>封存項目</span>
       </div>
@@ -35,7 +36,7 @@ const ARCHIVE_CONTENT = (close: string) => `
   </div>
 `;
 
-const IMPORTS = [ModalShellComponent, ModalCloseBtnComponent, ButtonComponent, IconComponent];
+const IMPORTS = [ModalShellComponent, ModalTitleDirective, ModalCloseBtnComponent, ButtonComponent, IconComponent];
 
 // X 鈕與 footer 按鈕在範例中只記錄事件（關閉與否由 Controls 的 isOpen 決定）
 const onClose = action('closeClick');
@@ -97,7 +98,12 @@ const meta: Meta<ModalShellComponent> = {
     },
     ariaLabelledBy: {
       control: 'text',
-      description: 'aria-labelledby 指向的元素 id（通常是 modal 標題）',
+      description: '卡片 aria-labelledby 要指的元素 id；平常不用設，標題加 appModalTitle 就會自動接上',
+      table: { defaultValue: { summary: "''" } },
+    },
+    ariaLabel: {
+      control: 'text',
+      description: '對話框的報讀名稱（aria-label）；畫面上沒有標題時才用。有設時卡片不輸出 aria-labelledby',
       table: { defaultValue: { summary: "''" } },
     },
     backdropClick: { action: 'backdropClick' },
@@ -122,7 +128,8 @@ export const Default: Story = {
     canDismiss: true,
     overflowVisible: false,
     animateContentHeight: false,
-    ariaLabelledBy: 'archive-modal-title',
+    ariaLabelledBy: '',
+    ariaLabel: '',
   },
   render: (args) => ({
     props: { ...args, onClose },
@@ -138,6 +145,7 @@ export const Default: Story = {
         [overflowVisible]="overflowVisible"
         [animateContentHeight]="animateContentHeight"
         [ariaLabelledBy]="ariaLabelledBy"
+        [ariaLabel]="ariaLabel"
         (backdropClick)="backdropClick()"
         (escapePress)="escapePress()"
         (afterLeave)="afterLeave()">
@@ -156,6 +164,7 @@ export const Search: Story = {
     variant: 'search',
     width: 'min(880px, calc(100vw - 64px))',
     maxHeight: '64vh',
+    ariaLabel: '搜尋',
   },
   render: (args) => ({
     props: args,
@@ -165,6 +174,7 @@ export const Search: Story = {
         [variant]="variant"
         [width]="width"
         [maxHeight]="maxHeight"
+        [ariaLabel]="ariaLabel"
         (backdropClick)="backdropClick()"
         (escapePress)="escapePress()">
         <div style="display:flex;align-items:center;gap:12px;padding:16px 24px;">
@@ -253,7 +263,6 @@ export const Interactive: Story = {
         width="520px"
         maxHeight="85vh"
         [frostedGlass]="true"
-        ariaLabelledBy="archive-modal-title"
         (backdropClick)="open = false"
         (escapePress)="open = false">
         ${ARCHIVE_CONTENT('open = false')}

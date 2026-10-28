@@ -11,10 +11,18 @@ import {
   Renderer2,
   HostListener,
   inject,
+  computed,
+  isDevMode,
+  Signal,
  ChangeDetectionStrategy, } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import { ModalStackService } from '../../../core/services/modal-stack.service';
 import { CommonModule } from '@angular/common';
+
+/** appModalTitle 向外殼登記時交出的標題 */
+export interface ModalTitleRef {
+  readonly titleId: Signal<string>;
+}
 
 @Component({
   selector: 'app-modal-shell',
@@ -37,8 +45,17 @@ export class ModalShellComponent implements OnChanges, OnDestroy {
   /** 卡片樣式變體：default（垂直置中）| search（上方對齊 14vh）| floating-right（右下角浮層，dock 上方）*/
   @Input() variant: 'default' | 'search' | 'floating-right' = 'default';
 
-  /** 對應 aria-labelledby 的元素 ID */
+  /**
+   * 對應 aria-labelledby 的元素 ID。
+   * 一般不用設：在標題加 appModalTitle 就會自動指向它。標題在外殼外面、要指多個元素時才用。
+   */
   @Input() ariaLabelledBy = '';
+
+  /**
+   * 對話框的報讀名稱（aria-label）。沒有可見標題時才用，例如搜尋視窗。
+   * 有設時卡片只輸出 aria-label，不輸出 aria-labelledby。
+   */
+  @Input() ariaLabel = '';
 
   /** 讓卡片 overflow: visible，用於 stepper 浮在卡片上方的 wizard 模式 */
   @Input() overflowVisible = false;
@@ -88,6 +105,19 @@ export class ModalShellComponent implements OnChanges, OnDestroy {
   private static counter = 0;
   private readonly modalId = `modal-shell-${++ModalShellComponent.counter}`;
 
+  /**
+   * appModalTitle 登記的標題。用 signal 存：標題可能在外殼檢查完之後才登記
+   * （投影進來的子元件、@if），一般陣列會觸發 ExpressionChangedAfterChecked。
+   */
+  private readonly titles = signal<readonly ModalTitleRef[]>([]);
+  /** 卡片 aria-labelledby 自動指向的標題 id；沒有標題時是空字串 */
+  protected readonly labelledBy = computed(() => this.titles()[0]?.titleId() ?? '');
+
+  /** ariaLabel 去掉前後空白；只有空白、或沒開嚴格檢查的 template 傳進 undefined，都當成沒設 */
+  protected get labelText(): string {
+    return (this.ariaLabel ?? '').trim();
+  }
+
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
   private trapTimer: ReturnType<typeof setTimeout> | null = null;
   // ── 內容高度過渡（animateContentHeight）──
@@ -131,6 +161,8 @@ export class ModalShellComponent implements OnChanges, OnDestroy {
         this.trapTimer = null;
         // 進場動畫結束後才啟用高度過渡觀察（避開開場的 scale/opacity 動畫）
         if (this.animateContentHeight) this.enableHeightObserver();
+        // 內容此時已渲染完，檢查一次報讀名稱；只在開發模式
+        if (isDevMode()) this.warnIfUnnamed();
       }, 450);
     } else {
       // 立即從 stack 移除，讓下層 modal 可以立刻接管 Escape
@@ -158,6 +190,35 @@ export class ModalShellComponent implements OnChanges, OnDestroy {
     if (host.parentNode === document.body) {
       document.body.removeChild(host);
     }
+  }
+
+  registerTitle(title: ModalTitleRef): void {
+    this.titles.update(list => [...list, title]);
+  }
+
+  unregisterTitle(title: ModalTitleRef): void {
+    this.titles.update(list => list.filter(t => t !== title));
+  }
+
+  // ── 報讀名稱檢查（開發模式）──────────────────────────────────────────
+  private warnIfUnnamed(): void {
+    if (!this.labelText && !this.ariaLabelledBy && this.titles().length > 1) {
+      console.warn('[app-modal-shell] 這個對話框同時有不只一個 appModalTitle，只會用最早建立的那一個當名稱。請只留一個，或改設 ariaLabel。');
+      return;
+    }
+    if (this.accessibleName()) return;
+    console.warn('[app-modal-shell] 這個對話框開啟 0.45 秒後還沒有報讀名稱。請在標題加上 appModalTitle；沒有標題時設定 ariaLabel。標題要等資料載入才出現的話，載入中也先顯示標題文字。');
+  }
+
+  /** 依卡片目前的 aria-label／aria-labelledby 算出報讀軟體會念的名稱 */
+  private accessibleName(): string {
+    if (this.labelText) return this.labelText;
+    return (this.ariaLabelledBy || this.labelledBy())
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(id => document.getElementById(id)?.textContent?.trim() ?? '')
+      .join(' ')
+      .trim();
   }
 
   // ── 內容高度過渡（animateContentHeight）──────────────────────────────
