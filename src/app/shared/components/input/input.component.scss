@@ -1,3 +1,5 @@
+@use '../../../../styles/mixins' as mx;
+
 /* ── Wrapper ── */
 .input-wrap {
   display: flex;
@@ -76,6 +78,9 @@
   padding: 1px 6px;
   cursor: pointer;
   color: var(--text\/body-light, #939393);
+  outline: none;
+  // 內框：輸入框裡面的項目一律把焦點框畫在內側（同 button-group）
+  @include mx.focus-ring(-2px);
 
   &:hover {
     background: var(--color\/white\/20, #f1f3f5);

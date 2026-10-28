@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FieldComponent } from './field.component';
+import { InputComponent } from '../input/input.component';
 
 /**
  * `.field-header` 的排版不變式：空間不足時**換行**，不得壓縮標籤文字。
@@ -134,5 +135,47 @@ describe('FieldComponent — 標題與說明的字重', () => {
     const fields = (fixture.nativeElement as HTMLElement).querySelectorAll('app-field');
     const label = fields[1].querySelector('.field-label') as HTMLElement;
     expect(getComputedStyle(label).fontWeight).toBe('700');
+  });
+});
+
+/**
+ * 標題連到裡面的輸入框（2026-10-28）：標題成為輸入框的報讀名稱。
+ * 名稱的優先順序、改字、必填的測試在 input.component.spec.ts。
+ */
+@Component({
+  standalone: true,
+  imports: [FieldComponent, InputComponent],
+  template: `
+    <app-field label="姓氏"><app-input placeholder="王"></app-input></app-field>
+    <app-field label="名字"><app-input placeholder="小明"></app-input></app-field>
+    <app-field><app-input placeholder="搜尋"></app-input></app-field>
+  `,
+})
+class LinkHostComponent {}
+
+describe('FieldComponent — 標題連到裡面的輸入框', () => {
+  let fixture: ComponentFixture<LinkHostComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [LinkHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(LinkHostComponent);
+    fixture.detectChanges();
+  });
+
+  it('每個欄位的標題各有不重複的 id，裡面的輸入框指向自己那個欄位的標題', () => {
+    const fields = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('app-field')).slice(0, 2);
+    const ids = fields.map(f => f.querySelector('.field-label')!.id);
+    expect(ids[0]).toBeTruthy();
+    expect(ids[1]).toBeTruthy();
+    expect(ids[0]).not.toBe(ids[1]);
+    fields.forEach((f, i) => {
+      expect(f.querySelector('input.input-field')!.getAttribute('aria-labelledby')).toBe(ids[i]);
+    });
+  });
+
+  it('沒有標題的欄位 → 裡面的輸入框沒有 aria-labelledby', () => {
+    const third = (fixture.nativeElement as HTMLElement).querySelectorAll('app-field')[2];
+    expect(third.querySelector('.field-label')).toBeNull();
+    expect(third.querySelector('input.input-field')!.hasAttribute('aria-labelledby')).toBeFalse();
   });
 });
