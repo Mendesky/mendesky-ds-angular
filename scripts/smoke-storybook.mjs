@@ -6,6 +6,8 @@
 //     每一區畫出的項數跟規格一樣、每一項都有文字；無障礙每個分類畫在對的組、條目數對；
 //     「看範例」逐項對規格：規格有範例的那一項才有連結，連到範例網站裡有的範例，網址也連到同一個範例。
 //   - 有第 2 版欄位的元件都要找得到說明頁，不然等於沒檢查。
+// 「可以／不要這樣做」連到的範例，本體文件網站會嵌在半欄寬的框裡（最窄約 240px）：
+// 這些範例再用 240px 寬的視窗打開一次，出現橫向捲軸就算失敗（範例外框寫死寬度，在本體網站會被切掉）。
 //
 // 用法：npm run build-storybook && node scripts/smoke-storybook.mjs [storybook-static 目錄]
 // 自己起一個只綁 127.0.0.1、port 由系統分配的靜態伺服器，跑完就關。
@@ -126,6 +128,9 @@ function docsPageFacts(testids) {
   };
 }
 
+/** 規格「可以／不要這樣做」其中一項的範例，在範例網站的 story id；這一項沒有範例時回傳 null */
+const exampleStoryId = (spec, e) => (e.story ? `${spec.id}--${e.story}` : null);
+
 /** 說明頁跟規格的第 2 版欄位對不上的地方。storyIds：範例網站裡有的範例 id */
 function v2Problems(spec, facts, storyIds) {
   const out = [];
@@ -158,7 +163,7 @@ function v2Problems(spec, facts, storyIds) {
     const items = facts.items[testid];
     // 少畫的項目上面已經報了項數，這裡只對有畫出來的
     (spec[key] ?? []).slice(0, items.length).forEach((e, i) => {
-      const expected = e.story ? `${spec.id}--${e.story}` : null;
+      const expected = exampleStoryId(spec, e);
       const got = items[i].links.map((l) => l.id);
       if (expected && !(got.length === 1 && got[0] === expected)) {
         out.push(`「${label}」第 ${i + 1} 項應連到範例 ${expected}，頁面${got.length ? `連到 ${got.join('、')}` : '沒有範例連結'}`);
@@ -181,8 +186,22 @@ function v2Problems(spec, facts, storyIds) {
   return out;
 }
 
+const VIEWPORT = { width: 1280, height: 720 };
+/** 本體文件網站「可以／不要這樣做」裡嵌入範例的最窄寬度 */
+const EMBED_WIDTH = 240;
+
+/** 範例在目前視窗寬度下有沒有橫向捲軸 */
+async function horizontalOverflow(page) {
+  // 等兩個畫面更新，讓改過的視窗寬度排版完
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  return page.evaluate(() => {
+    const { scrollWidth, clientWidth } = document.documentElement;
+    return scrollWidth > clientWidth ? scrollWidth : 0;
+  });
+}
+
 /**
- * 逐頁檢查；回傳 { visited, failures }。
+ * 逐頁檢查；回傳 { visited, failures, narrowChecked }（narrowChecked：用窄視窗量過幾個範例）。
  * refIds：Angular 有的元件 id；有給就檢查說明頁沒有留下這些 #元件id。給空陣列算失敗（拿不到 id 不等於沒有殘留）。
  * specs：元件規格（exportDocs 的 components[].doc）；有給就逐頁對照說明頁 data-ds-id 的規格檢查第 2 版欄位
  *        （沒有第 2 版欄位的元件也查：不能畫出第 2 版的標題與項目）。
@@ -202,6 +221,12 @@ export async function smokeStorybook(dir, { timeout = 15000, refIds, specs } = {
   const known = new Set(refIds ?? []);
   const specById = new Map((specs ?? []).map((s) => [s.id, s]));
   const storyIds = new Set(entries.filter((e) => e.type === 'story').map((e) => e.id));
+  // 本體文件網站在「可以／不要這樣做」裡嵌入的範例。代號跟說明頁「看範例」用同一個換算：
+  // 換算寫錯時，說明頁的範例連結檢查會先失敗，不會變成一個都沒量卻通過
+  const embedded = new Set(
+    (specs ?? []).flatMap((s) => [...(s.dos ?? []), ...(s.donts ?? [])].map((e) => exampleStoryId(s, e)).filter(Boolean)),
+  );
+  const narrowChecked = new Set(); // 真的用窄視窗量過的範例
   const testids = V2_SECTIONS.map(([, testid]) => testid);
   const seen = new Set(); // 找得到說明頁的元件 id（data-ds-id）
 
@@ -211,7 +236,7 @@ export async function smokeStorybook(dir, { timeout = 15000, refIds, specs } = {
   const failures = [];
   let visited = 0;
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({ viewport: VIEWPORT });
     for (const entry of entries) {
       const errors = [];
       const onError = (e) => errors.push(e.message);
@@ -231,6 +256,22 @@ export async function smokeStorybook(dir, { timeout = 15000, refIds, specs } = {
         rendered = true;
       } catch (e) {
         errors.push(`沒有畫出內容（等不到 ${target}）`);
+      }
+      if (rendered && !docs && embedded.has(entry.id)) {
+        try {
+          await page.setViewportSize({ width: EMBED_WIDTH, height: VIEWPORT.height });
+          const width = await horizontalOverflow(page);
+          narrowChecked.add(entry.id);
+          if (width) {
+            errors.push(
+              `「可以／不要這樣做」會嵌入這個範例，在 ${EMBED_WIDTH}px 寬的視窗出現橫向捲軸（內容寬 ${width}px）：範例外框不要寫死寬度，改用 max-width`,
+            );
+          }
+        } catch (e) {
+          errors.push(`檢查窄視窗時出錯：${e.message}`);
+        } finally {
+          await page.setViewportSize(VIEWPORT);
+        }
       }
       if (rendered && docs && known.size) {
         try {
@@ -265,7 +306,7 @@ export async function smokeStorybook(dir, { timeout = 15000, refIds, specs } = {
   for (const spec of v2Specs) {
     if (!seen.has(spec.id)) failures.push(`${spec.id}：規格有第 2 版欄位，但範例網站找不到 data-ds-id="${spec.id}" 的說明頁，第 2 版欄位沒有檢查到`);
   }
-  return { visited, failures };
+  return { visited, failures, narrowChecked: narrowChecked.size };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -273,11 +314,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const dir = process.argv[2] ?? path.join(repo, 'storybook-static');
   const specs = (await exportDocs(repo)).components.map((c) => c.doc);
   const refIds = specs.map((s) => s.id);
-  const { visited, failures } = await smokeStorybook(dir, { refIds, specs });
+  const { visited, failures, narrowChecked } = await smokeStorybook(dir, { refIds, specs });
   if (failures.length) {
     console.error(`冒煙測試失敗（${failures.length} 項，共 ${visited} 頁）：`);
     for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
   }
-  console.log(`冒煙測試通過：${visited} 頁都畫出內容、沒有錯誤；${specs.filter(hasV2).length} 個元件的第 2 版欄位都跟規格一致`);
+  console.log(`冒煙測試通過：${visited} 頁都畫出內容、沒有錯誤；${specs.filter(hasV2).length} 個元件的第 2 版欄位都跟規格一致；${narrowChecked} 個嵌入的範例在 ${EMBED_WIDTH}px 寬沒有橫向捲軸`);
 }
