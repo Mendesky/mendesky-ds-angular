@@ -1,9 +1,12 @@
 import {
   Component, Input, Output, EventEmitter,
-  HostListener, ElementRef, AfterViewInit, OnDestroy,
-  inject,
+  HostListener, ElementRef, AfterViewInit, OnChanges, OnDestroy,
+  NgZone, inject, forwardRef,
  ChangeDetectionStrategy, } from '@angular/core';
-import { Placement, PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
+import { CloseReason, Placement, PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
+import {
+  MENU_CONTEXT, MenuContext, expandedMenuTrigger, findMenuTrigger, initialMenuItem, isInteractiveTarget, menuItemsIn,
+} from './menu-context';
 
 @Component({
   selector: 'app-action-menu',
@@ -12,10 +15,13 @@ import { Placement, PortalOverlayRef, PortalPositioningService } from '../../ser
   templateUrl: './action-menu.component.html',
   styleUrls: ['./action-menu.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // 放在裡面的 app-menu-item 透過 MENU_CONTEXT 登記；有登記就是選單模式
+  providers: [{ provide: MENU_CONTEXT, useExisting: forwardRef(() => ActionMenuComponent) }],
 })
-export class ActionMenuComponent implements AfterViewInit, OnDestroy {
+export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy, MenuContext {
   private readonly el = inject(ElementRef<HTMLElement>);
   private readonly positioning = inject(PortalPositioningService);
+  private readonly zone = inject(NgZone);
 
   /** 點擊選單內部的子元素時是否自動 emit closeMenu。預設 true（適合 More 操作選單）；複雜篩選面板設 false。 */
   @Input() autoCloseOnAction = true;
@@ -49,8 +55,15 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
    * 打開時是否把焦點移到第一個選項。預設 true（More 選單等：開了就用鍵盤選）。
    * 錨點是輸入框、使用者打開選單後還要繼續打字時設 false（如搜尋框下的「最近開啟」），
    * 否則游標會被搶進選單，接下來打的字進不了輸入框。設 false 時鍵盤進入選單由呼叫端負責。
+   * 選單模式下，焦點先停在已選中的那一項，沒有選中項才停第一項。
    */
   @Input() autoFocusFirst = true;
+
+  /**
+   * 選單的名稱，選單模式（放了 app-menu-item）才輸出成外框的 aria-label。
+   * 用畫面上看得到的字，例如「排序」「每頁顯示筆數」。
+   */
+  @Input() ariaLabel = '';
 
   /** 應關閉選單時發射（點擊外部 或 autoCloseOnAction=true 時點擊內部）。 */
   @Output() closeMenu = new EventEmitter<void>();
@@ -62,9 +75,64 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
   private _focusObserver: MutationObserver | null = null;
   private _focusTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** 已登記的 app-menu-item；有任何一個就是選單模式 */
+  private readonly _menuItems = new Set<object>();
+  /** 這次打開期間進過選單模式。選單項目可能比外框先銷毀，關閉時不能只看當下有沒有項目 */
+  private _wasMenu = false;
+  /** 外框搬到 body 之前所在的外層元素：記不到觸發鈕時，到這裡找標了 aria-haspopup 的按鈕 */
+  private _originParent: HTMLElement | null = null;
+  /**
+   * 選單開著時認出來的觸發鈕（外層裡 aria-expanded="true" 的那顆）。關閉的過程中觸發鈕的
+   * aria-expanded 可能先變回 false，外層裡又有好幾顆時就認不出來，所以趁開著時先記下
+   */
+  private _openTrigger: HTMLElement | null = null;
+  /** role／tabindex 是不是選單模式加上的；只移除自己加的 */
+  private _menuAttrsApplied = false;
+  /** aria-label 是不是由 ariaLabel 加上的；沒設 ariaLabel 時不動使用端直接寫在外框上的 aria-label */
+  private _ariaLabelApplied = false;
+  /** 選單模式下是不是因為點了選單外面而關閉（關閉後要再確認一次焦點） */
+  private _closedByOutsideClick = false;
+  /**
+   * 選單開著時最近一次按下（滑鼠或手指）的元素。在 window 的 capture 階段記，
+   * 比定位服務在 document 上判斷「點到外面」早一步，關閉時才知道使用者按的是什麼
+   */
+  private _lastPointerTarget: Element | null = null;
+  /** 選單模式下最後拿到焦點的選單項目和它的位置：那一項在選單開著時被拿掉，才知道焦點要補到哪 */
+  private _focusedItem: HTMLElement | null = null;
+  private _focusedIndex = -1;
+  private _destroyed = false;
+
+  private readonly _onWindowPointerDown = (event: PointerEvent): void => {
+    this._lastPointerTarget = event.target instanceof Element ? event.target : null;
+  };
+
+  /** MenuContext：app-menu-item 建立時登記 */
+  register(item: object): void {
+    this._menuItems.add(item);
+    this._wasMenu = true;
+    this._syncMenuAttrs();
+  }
+
+  /** MenuContext：app-menu-item 銷毀時取消登記 */
+  unregister(item: object): void {
+    this._menuItems.delete(item);
+    this._syncMenuAttrs();
+    // 焦點所在的項目被拿掉時，焦點會掉回 body，方向鍵和 Esc 都收不到；等這一輪畫面更新完再補回選單裡
+    if (this._focusedItem) queueMicrotask(() => this._refocusAfterItemRemoved());
+  }
+
+  ngOnChanges(): void {
+    this._syncMenuAttrs();
+  }
+
   ngAfterViewInit(): void {
     this._triggerEl = document.activeElement as HTMLElement | null;
     const host = this.el.nativeElement as HTMLElement;
+    this._originParent = host.parentElement;
+    this.zone.runOutsideAngular(() => window.addEventListener('pointerdown', this._onWindowPointerDown, true));
+    // 原生觸發鈕的 aria-expanded 這時已經是 true；app-button 裡的按鈕比選單晚一步更新，下一幀再認一次
+    this._rememberOpenTrigger();
+    requestAnimationFrame(() => this._rememberOpenTrigger());
 
     if (this.fixedMode && this._hasLegacyCoords()) {
       // position:fixed 在 transform / backdrop-filter 祖先（如 modal-card--glass）內會被
@@ -88,33 +156,67 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
         scrollContainerStrategy: 'document',
         closeOnClickOutside: true,
         closeOnEscape: false,
-        onClose: (reason) => {
-          if (reason !== 'manual') this.closeMenu.emit();
-        },
+        onClose: (reason) => this._onOverlayClose(reason),
       },
     );
     if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
   }
 
   ngOnDestroy(): void {
+    this._destroyed = true;
+    window.removeEventListener('pointerdown', this._onWindowPointerDown, true);
     this._teardownFocusWatch();
     this._overlayRef?.detach();
     const host = this.el.nativeElement as HTMLElement;
+    // 點外面關掉、而且按到的是別的按鈕、連結、輸入框：使用者換去操作那個東西了，焦點交給瀏覽器處理
+    // （Chrome 會給它焦點，Safari 點按鈕不給、留在 body），不拉回這個選單的觸發鈕
+    const pressedOtherControl = this._closedByOutsideClick && isInteractiveTarget(this._lastPointerTarget);
+    // 選單模式：選完、點外面或其他原因關掉時，焦點還在選單裡（或隨選單移除掉回 body）就還給觸發鈕；
+    // 焦點已經被別的元素拿走（例如選項打開了對話框）就不搶
+    const restoreFocus = this._wasMenu && !pressedOtherControl && this._focusLostWith(host);
     if (host.parentNode === document.body) {
       document.body.removeChild(host);
     }
+    if (restoreFocus) this._menuTrigger()?.focus();
+    // 點外面空白處關掉的：瀏覽器接著處理同一次滑鼠按下，會把焦點移回 body。
+    // 等這次點擊處理完再看一次，焦點掉在 body 才還給觸發鈕
+    if (this._wasMenu && this._closedByOutsideClick && !pressedOtherControl) {
+      const trigger = this._menuTrigger();
+      setTimeout(() => {
+        const active = document.activeElement;
+        if (trigger?.isConnected && (!active || active === document.body || active === document.documentElement)) trigger.focus();
+      });
+    }
   }
 
-  @HostListener('click')
-  onHostClick(): void {
+  @HostListener('click', ['$event'])
+  onHostClick(event?: MouseEvent): void {
+    if (this._isMenu) {
+      this._onMenuClick(event);
+      return;
+    }
     if (this.autoCloseOnAction) {
       this.closeMenu.emit();
     }
   }
 
+  /** 選單模式：記下焦點停在第幾個選單項目（那一項之後被拿掉時用） */
+  @HostListener('focusin', ['$event'])
+  onFocusIn(event: FocusEvent): void {
+    if (!this._isMenu) return;
+    const items = menuItemsIn(this.el.nativeElement as HTMLElement);
+    const idx = items.indexOf(event.target as HTMLElement);
+    this._focusedItem = idx >= 0 ? items[idx] : null;
+    this._focusedIndex = idx;
+  }
+
   /** 鍵盤導覽：Arrow Up/Down 移動焦點，Enter/Space 觸發 item，Escape 關閉 */
   @HostListener('keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {
+    if (this._isMenu) {
+      this._onMenuKeydown(event);
+      return;
+    }
     switch (event.key) {
       case 'ArrowDown':
       case 'ArrowUp': {
@@ -153,6 +255,142 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  /** 定位服務關閉浮層時（點選單外面等）：照舊發 closeMenu；選單模式另外記下是不是點外面關的 */
+  private _onOverlayClose(reason: CloseReason): void {
+    if (reason === 'manual') return;
+    if (reason === 'click-outside' && this._isMenu) this._closedByOutsideClick = true;
+    this.closeMenu.emit();
+  }
+
+  private get _isMenu(): boolean {
+    return this._menuItems.size > 0;
+  }
+
+  /** 選單模式才加 role="menu"、tabindex="-1"（點分隔線時接住焦點，但不進 Tab 順序）與 aria-label */
+  private _syncMenuAttrs(): void {
+    const host = this.el.nativeElement as HTMLElement;
+    if (this._isMenu) {
+      host.setAttribute('role', 'menu');
+      host.setAttribute('tabindex', '-1');
+      this._menuAttrsApplied = true;
+    } else if (this._menuAttrsApplied) {
+      host.removeAttribute('role');
+      host.removeAttribute('tabindex');
+      this._menuAttrsApplied = false;
+    }
+    if (this._isMenu && this.ariaLabel) {
+      host.setAttribute('aria-label', this.ariaLabel);
+      this._ariaLabelApplied = true;
+    } else if (this._ariaLabelApplied) {
+      host.removeAttribute('aria-label');
+      this._ariaLabelApplied = false;
+    }
+  }
+
+  /**
+   * 選單模式的鍵盤（WAI-ARIA APG Menu）：上下方向鍵只在選單項目間循環（停用的也停得到）、
+   * Home／End 跳頭尾、Enter／空白鍵執行目前這一項、Esc 與 Tab 關閉並把焦點交回觸發鈕。
+   */
+  private _onMenuKeydown(event: KeyboardEvent): void {
+    const items = menuItemsIn(this.el.nativeElement as HTMLElement);
+    const active = document.activeElement as HTMLElement | null;
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp': {
+        event.preventDefault();
+        if (!items.length) return;
+        const idx = active ? items.indexOf(active) : -1;
+        if (event.key === 'ArrowDown') {
+          items[(idx + 1) % items.length].focus();
+        } else {
+          items[idx <= 0 ? items.length - 1 : idx - 1].focus();
+        }
+        break;
+      }
+      case 'Home':
+      case 'End':
+        event.preventDefault();
+        (event.key === 'Home' ? items[0] : items[items.length - 1])?.focus();
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        // 同一般模式：不冒泡到 document 層快速鍵；主動 click 讓程式化 focus 後的 Enter 也會執行
+        event.stopPropagation();
+        active?.click();
+        break;
+      case 'Escape':
+        event.stopPropagation();
+        this._menuTrigger()?.focus();
+        this.closeMenu.emit();
+        break;
+      case 'Tab':
+        // 不 preventDefault：焦點先交回觸發鈕，瀏覽器接著把它移到觸發鈕的下一個（Shift+Tab 是上一個）元素
+        this._menuTrigger()?.focus();
+        this.closeMenu.emit();
+        break;
+    }
+  }
+
+  /**
+   * 選單模式的點擊：只有點到可用的選單項目才關（autoCloseOnAction 為 true 時）。
+   * 點到分隔線、空白處不關，焦點留在選單外框；點到停用的項目也不關，焦點停在那一項。方向鍵照樣能用。
+   */
+  private _onMenuClick(event?: MouseEvent): void {
+    const host = this.el.nativeElement as HTMLElement;
+    const target = event?.target instanceof Node ? event.target : null;
+    const item = target ? menuItemsIn(host).find((el) => el.contains(target)) : undefined;
+    if (!item) {
+      host.focus();
+      return;
+    }
+    if (item.getAttribute('aria-disabled') === 'true') {
+      item.focus();
+      return;
+    }
+    if (this.autoCloseOnAction) this.closeMenu.emit();
+  }
+
+  /** 焦點還在選單裡、或已經掉回 body（選單從畫面移除時，裡面的焦點會掉回 body） */
+  private _focusLostWith(host: HTMLElement): boolean {
+    const active = document.activeElement;
+    return !active || active === document.body || active === document.documentElement || host.contains(active);
+  }
+
+  /** 選單開著時認一次觸發鈕；認得出來才記，認不出來保留之前記的 */
+  private _rememberOpenTrigger(): void {
+    if (this._destroyed) return;
+    const found = expandedMenuTrigger(this.anchorEl ?? this._originParent);
+    if (found) this._openTrigger = found;
+  }
+
+  /**
+   * 選單模式要把焦點還給的觸發鈕。打開前有焦點的元素，要在選單原本的外層裡（或就是錨點本身）才算數：
+   * Safari 上從別的選單直接點過來時，打開前的焦點可能還停在上一個選單的觸發鈕。
+   * 不算數或記不到時（Safari 用滑鼠點按鈕不給焦點，打開前焦點在 body），改用開著時認出的觸發鈕，
+   * 再不行就到外層元素裡找標了 aria-haspopup 的按鈕。
+   */
+  private _menuTrigger(): HTMLElement | null {
+    const host = this.el.nativeElement as HTMLElement;
+    const scope = this.anchorEl ?? this._originParent;
+    const t = this._triggerEl;
+    const usable = !!t && t !== document.body && t !== document.documentElement && t.isConnected && !host.contains(t);
+    if (usable && (!scope || scope.contains(t))) return t;
+    const opened = this._openTrigger?.isConnected ? this._openTrigger : null;
+    return opened ?? findMenuTrigger(scope) ?? (usable ? t : null);
+  }
+
+  /** 焦點所在的選單項目被拿掉、焦點掉回 body 時：補到同一個位置現在的那一項，一項都沒有就停在選單外框 */
+  private _refocusAfterItemRemoved(): void {
+    const host = this.el.nativeElement as HTMLElement;
+    const lost = this._focusedItem;
+    if (this._destroyed || !lost || host.contains(lost) || !this._isMenu) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) return;
+    const items = menuItemsIn(host);
+    (items[Math.min(this._focusedIndex, items.length - 1)] ?? host).focus();
+  }
+
   private _getFocusableItems(): HTMLElement[] {
     const host = this.el.nativeElement as HTMLElement;
     return Array.from(
@@ -160,9 +398,11 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  /** 種初始焦點到第一個可聚焦項；成功回 true、無可聚焦項回 false。 */
+  /** 種初始焦點：一般模式到第一個可聚焦項；選單模式到已選中的那項，沒有就第一項。成功回 true、無可聚焦項回 false。 */
   private _focusFirst(): boolean {
-    const first = this._getFocusableItems()[0];
+    const first = this._isMenu
+      ? initialMenuItem(menuItemsIn(this.el.nativeElement as HTMLElement))
+      : this._getFocusableItems()[0];
     if (!first) return false;
     first.focus();
     return true;
@@ -227,9 +467,7 @@ export class ActionMenuComponent implements AfterViewInit, OnDestroy {
       closeOnClickOutside: true,
       closeOnEscape: false,
       ancestorAnchorEl: this.ancestorAnchorEl ?? undefined,
-      onClose: (reason) => {
-        if (reason !== 'manual') this.closeMenu.emit();
-      },
+      onClose: (reason) => this._onOverlayClose(reason),
     });
     if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
   }

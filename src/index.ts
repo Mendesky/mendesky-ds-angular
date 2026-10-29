@@ -1,6 +1,7 @@
 // AUTO-GENERATED — regenerate with scripts/gen-index.sh
 export * from './app/core/services/modal-stack.service';
 export * from './app/shared/components/action-menu/action-menu.component';
+export * from './app/shared/components/action-menu/menu-context';
 export * from './app/shared/components/autocomplete/autocomplete-panel.component';
 export * from './app/shared/components/autocomplete/autocomplete.component';
 export * from './app/shared/components/avatar/avatar.component';
@@ -32,6 +33,7 @@ export * from './app/shared/components/keyboard-help/keyboard-help.component';
 export * from './app/shared/components/label/label.component';
 export * from './app/shared/components/list-tag/list-tag.component';
 export * from './app/shared/components/list/list.component';
+export * from './app/shared/components/menu-item/menu-item.component';
 export * from './app/shared/components/modal-close-btn/modal-close-btn.component';
 export * from './app/shared/components/modal-shell/modal-shell.component';
 export * from './app/shared/components/modal-shell/modal-title.directive';

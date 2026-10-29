@@ -1,0 +1,146 @@
+@use '../../../../styles/mixins' as mx;
+
+// 放在選單外：寬度跟著文字，一排放不下時跟文字一樣換到下一行
+:host {
+  display: inline-flex;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+// 放在 app-action-menu 裡：佔滿一整列
+:host(.menu-item--in-menu) {
+  display: block;
+}
+
+.mi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radious\/sm, 4px);
+  background: transparent;
+  color: var(--text\/body, #686868);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  outline: none;
+  @include mx.focus-ring;
+}
+
+:host(.menu-item--in-menu) .mi {
+  display: flex;
+  width: 100%;
+}
+
+.mi__icon {
+  flex-shrink: 0;
+}
+
+.mi__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mi__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── 說明文字：標題粗、深色，說明淺灰（跟 app-button 的雙行樣式一樣） ──
+.mi--has-desc {
+  align-items: flex-start;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  white-space: normal;
+
+  .mi__icon { margin-top: 2px; }
+  .mi__label { font-weight: 600; color: var(--text\/title, #1c1c2e); }
+  .mi__desc { color: var(--text\/body-light, #939393); }
+}
+
+// ── 未選中：跟 ghost neutral 按鈕一樣，滑過實心灰底、按下深灰底 ──
+.mi:not(.mi--disabled):hover {
+  background: var(--button\/neutral, #939393);
+  color: var(--color\/white\/20, #f1f3f5);
+}
+.mi:not(.mi--disabled):active {
+  background: var(--button\/neutral-darker-hover, #686868);
+  color: var(--color\/white\/20, #f1f3f5);
+}
+
+// ── 危險：跟 ghost danger 按鈕一樣 ──
+.mi--danger:not(.mi--disabled) {
+  color: var(--button\/error, #cc5252);
+}
+.mi--danger:not(.mi--disabled):hover {
+  background: var(--button\/warning, #ff7373);
+  color: var(--color\/white\/20, #f1f3f5);
+}
+.mi--danger:not(.mi--disabled):active {
+  background: var(--button\/error, #cc5252);
+  color: var(--color\/white\/20, #f1f3f5);
+}
+
+// ── 選中：深藍實心底配淺色字，滑過深一階、按下再深一階；不加打勾 ──
+.mi--selected:not(.mi--disabled) {
+  background: var(--color\/calmblue\/80, #1a6489);
+  color: var(--color\/white\/20, #f1f3f5);
+}
+.mi--selected:not(.mi--disabled):hover {
+  background: var(--color\/calmblue\/90, #0f4a67);
+}
+.mi--selected:not(.mi--disabled):active {
+  background: var(--color\/calmblue\/100, #073045);
+}
+
+// ── 底色變深（滑過、按下、選中）時，標題、說明跟著變淺色；
+//    投影進來用 --text/body-light 的淺灰字（app-label LightWhite）也一起變淺色，使用端不用自己寫 ──
+.mi:not(.mi--disabled):hover,
+.mi:not(.mi--disabled):active,
+.mi--selected:not(.mi--disabled) {
+  --text\/body-light: var(--color\/white\/20, #f1f3f5);
+
+  .mi__label,
+  .mi__desc { color: inherit; }
+}
+
+// ── 停用：停用灰字、沒有底色，滑過與按下都不變 ──
+.mi--disabled {
+  color: var(--text\/disabled, #939393);
+  cursor: not-allowed;
+
+  .mi__label,
+  .mi__desc { color: inherit; }
+}
+
+// ── 強制色彩模式（Windows 高對比）：瀏覽器會把自訂的底色、字色換成系統色，深藍底和停用灰字都會消失 ──
+//    選中改用系統的選取色（Highlight 底配 HighlightText 字），一樣是實心底、不加打勾，滑過、按下也不變；
+//    投影進來的 LightWhite 標籤跟著用 HighlightText。forced-color-adjust: none 是為了擋掉 Chrome 在字後面墊的
+//    Canvas 底色，不擋的話 HighlightText 的白字疊在白色墊底上會整個看不到；顏色本身都是系統色，照樣跟著使用者的主題。
+//    停用沒有用原生 disabled，要自己換成系統的停用字色 GrayText
+@media (forced-colors: active) {
+  .mi--selected:not(.mi--disabled),
+  .mi--selected:not(.mi--disabled):hover,
+  .mi--selected:not(.mi--disabled):active {
+    --text\/body-light: HighlightText;
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .mi--disabled {
+    color: GrayText;
+  }
+}

@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const buttonDoc: ComponentApi = {
   id: 'button',
   selector: 'app-button',
-  summary: 'variant: filled|tonal|outlined|ghost|elevated · color: primary|success|danger|neutral · size: XXS|XS|S|M|L · leftIcon/rightIcon · [disabled] [fullWidth] [loading] · [clickableWhenDisabled] [disabledMessage] · ariaLabel [ariaPressed] [ariaCurrent] · (btnClick) (disabledClick)',
+  summary: 'variant: filled|tonal|outlined|ghost|elevated · color: primary|success|danger|neutral · size: XXS|XS|S|M|L · leftIcon/rightIcon · [disabled] [fullWidth] [loading] · [clickableWhenDisabled] [disabledMessage] · ariaLabel [ariaPressed] [ariaCurrent] · ariaHaspopup [ariaExpanded] · (btnClick) (disabledClick)',
   props: [
     {
       name: 'variant',
@@ -67,13 +67,13 @@ export const buttonDoc: ComponentApi = {
       name: 'description',
       type: 'string',
       default: "''",
-      desc: '雙行模式：名稱下方的說明文字。有值時 height:auto、文字靠左，適合 action-menu 列表項目',
+      desc: '雙行模式：名稱下方的說明文字。有值時 height:auto、文字靠左。選單裡的選項改用 app-menu-item 的 description',
     },
     {
       name: 'shortcut',
       type: 'string',
       default: "''",
-      desc: '鍵盤快速鍵提示（e.g. "⌘N"），顯示在按鈕右側。主要用於 action-menu 選項，參考 Fluent UI secondaryContent 模式。只顯示提示，不綁定快速鍵行為。',
+      desc: '鍵盤快速鍵提示（e.g. "⌘N"），顯示在按鈕右側，參考 Fluent UI secondaryContent 模式。只顯示提示，不綁定快速鍵行為。選單裡的選項要用 app-menu-item，它沒有這個設定。',
     },
     {
       name: 'clickableWhenDisabled',
@@ -104,6 +104,18 @@ export const buttonDoc: ComponentApi = {
       type: 'ButtonAriaCurrent | null',
       default: 'null',
       desc: "清單或導覽中的「目前這一項」，套在內層 button 的 aria-current。值為 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false'；null 不輸出。",
+    },
+    {
+      name: 'ariaHaspopup',
+      type: "ButtonAriaHaspopup | null",
+      default: 'null',
+      desc: "這顆按鈕會打開選單，套在內層 button 的 aria-haspopup。目前只接受 'menu'，用在打開放了 app-menu-item 的 app-action-menu 的按鈕；null 不輸出。Safari 關閉選單後也是靠它找回觸發鈕、把焦點還給它。",
+    },
+    {
+      name: 'ariaExpanded',
+      type: 'boolean | null',
+      default: 'null',
+      desc: '選單現在開著沒，套在內層 button 的 aria-expanded。綁選單的開關狀態，true／false 照實輸出；null 不輸出。',
     },
     {
       name: '(btnClick)',
@@ -168,6 +180,28 @@ export const buttonDoc: ComponentApi = {
   [ariaCurrent]="item.id === currentId ? 'true' : null"
   (btnClick)="select(item.id)"
 ></app-button>`,
+    },
+    {
+      label: '打開選單的按鈕（例：每頁筆數）',
+      code: `<div class="page-size-wrap">
+  <app-button
+    variant="outlined"
+    color="neutral"
+    size="XS"
+    [text]="'' + pageSize()"
+    [ariaLabel]="'每頁顯示筆數 ' + pageSize()"
+    ariaHaspopup="menu"
+    [ariaExpanded]="pageSizeMenuOpen()"
+    (btnClick)="pageSizeMenuOpen.set(!pageSizeMenuOpen())"
+  ></app-button>
+  @if (pageSizeMenuOpen()) {
+    <app-action-menu ariaLabel="每頁顯示筆數" (closeMenu)="pageSizeMenuOpen.set(false)">
+      @for (n of pageSizeOptions; track n) {
+        <app-menu-item [label]="'' + n" [selected]="pageSize() === n" (itemClick)="pageSize.set(n)"></app-menu-item>
+      }
+    </app-action-menu>
+  }
+</div>`,
     },
   ],
   usageNotes: [

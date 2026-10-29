@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { ActionMenuComponent, ButtonComponent, CheckChipComponent } from '../../../../index';
+import { ActionMenuComponent, ButtonComponent, CheckChipComponent, MenuItemComponent } from '../../../../index';
 
 const meta: Meta<ActionMenuComponent> = {
   title: '展示元件/Action Menu',
@@ -22,7 +22,7 @@ const meta: Meta<ActionMenuComponent> = {
         component: `
 頁面操作選單的浮層外殼（Shell Component）。提供 Glass Morphism 視覺樣式、進場動畫與 z-index 層級。
 
-**適用**：ctrl-bar 按鈕點擊後的篩選選單、卡片「更多」操作選單。
+**適用**：卡片「更多」操作選單、排序這類從幾個值裡選一個的選單（選項放 \`app-menu-item\`），以及 ctrl-bar 按鈕點擊後的篩選面板（放 \`app-check-chip\`、\`app-button\`）。
 
 **不適用**：表單類 popover（請用 \`app-select\`、\`app-autocomplete\` 等）。
 
@@ -30,14 +30,15 @@ const meta: Meta<ActionMenuComponent> = {
 
 ### 內容元件規範
 
-| 使用情境 | 元件 | variant / theme |
+| 使用情境 | 元件 | 寫法 |
 |---|---|---|
-| 一般操作（清除、還原預設） | \`app-button\` | \`variant="elevated"\` |
-| 搭配 check-chip 的確認動作（套用） | \`app-button\` | \`variant="filled" color="primary"\` |
-| 危險操作（刪除、封存、撤回已送出的申請） | \`app-button\` | \`variant="ghost" color="danger"\` |
+| 選單的選項（執行一個動作，或從幾個值裡選一個） | \`app-menu-item\` | 一般動作不設 selected；單選項選中的設 true，其他設 false |
+| 危險操作（刪除、封存、撤回已送出的申請） | \`app-menu-item\` | \`tone="danger" icon="Trash-Del"\` |
+| 篩選面板的一般操作（清除篩選） | \`app-button\` | \`variant="elevated" size="S"\` |
+| 搭配 check-chip 的確認動作（套用） | \`app-button\` | \`variant="filled" color="primary" size="S"\` |
 | 多選篩選項目 | \`app-check-chip\` | \`theme="transparent-grey"\` |
 
-> \`app-button\` 尺寸統一用 **\`size="S"\`**（28px）
+> 放了 \`app-menu-item\` 才是選單：外框是 role="menu"，名稱用 \`ariaLabel\`，裡面不要再放 \`app-button\`。
         `,
       },
     },
@@ -47,31 +48,32 @@ const meta: Meta<ActionMenuComponent> = {
 export default meta;
 type Story = StoryObj<ActionMenuComponent>;
 
-// ── 排序選單（純選項列表，無 footer） ─────────────────
+// ── 排序選單：一組單選，「還原預設」放在分隔線下的最後一列 ──────
 export const SortOptions: Story = {
   name: '排序選單',
   render: () => ({
     template: `
-      <app-action-menu>
-        <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#3a9ccd;font-weight:500;cursor:pointer;">
-          <span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">✓</span>
-          由新到舊
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#686868;cursor:pointer;">
-          <span style="width:16px;height:16px;"></span>
-          由舊到新
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#686868;cursor:pointer;">
-          <span style="width:16px;height:16px;"></span>
-          持續性費用 高→低
-        </div>
+      <app-action-menu ariaLabel="排序">
+        @for (o of options; track o.value) {
+          <app-menu-item [label]="o.label" [selected]="sort === o.value" (itemClick)="sort = o.value"></app-menu-item>
+        }
+        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-menu-item label="還原預設" (itemClick)="sort = 'newest'"></app-menu-item>
       </app-action-menu>
     `,
-    moduleMetadata: { imports: [ActionMenuComponent] },
+    props: {
+      sort: 'newest',
+      options: [
+        { value: 'newest', label: '由新到舊' },
+        { value: 'oldest', label: '由舊到新' },
+        { value: 'name-asc', label: '名稱 A→Z' },
+      ],
+    },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
   }),
 };
 
-// ── check-chip 篩選 + elevated 清除 + filled primary 套用 ──
+// ── check-chip 篩選 + elevated 清除 + filled primary 套用（沒放 app-menu-item，不是選單） ──
 export const CheckChipWithFooter: Story = {
   name: 'Check-chip 篩選（含 footer）',
   render: () => ({
@@ -93,49 +95,36 @@ export const CheckChipWithFooter: Story = {
   }),
 };
 
-// ── 危險操作（ghost danger） ─────────────────────────
+// ── 危險操作（app-menu-item tone="danger"） ─────────────────
 export const DangerActions: Story = {
   name: '危險操作（刪除 / 封存 / 撤回）',
   render: () => ({
     template: `
-      <app-action-menu>
-        <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#686868;cursor:pointer;">
-          <span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">✏️</span>
-          編輯項目
-        </div>
-        <div style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
-        <div style="padding:3px 0;display:flex;flex-direction:column;gap:2px;">
-          <app-button variant="ghost" color="danger" size="S" text="封存項目" leftIcon="Archive" [fullWidth]="true"></app-button>
-          <app-button variant="ghost" color="danger" size="S" text="刪除項目" leftIcon="Trash-Del" [fullWidth]="true"></app-button>
-        </div>
+      <app-action-menu ariaLabel="更多操作">
+        <app-menu-item label="編輯項目" icon="Edit"></app-menu-item>
+        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-menu-item label="封存項目" icon="Archive" tone="danger"></app-menu-item>
+        <app-menu-item label="刪除項目" icon="Trash-Del" tone="danger"></app-menu-item>
       </app-action-menu>
     `,
-    moduleMetadata: { imports: [ActionMenuComponent, ButtonComponent] },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
   }),
 };
 
-// ── 日期快速選項（elevated 清除） ─────────────────────
+// ── 日期快速選項：一組單選，「清除篩選」放在分隔線下的最後一列 ─────
 export const DateShortcuts: Story = {
-  name: '日期快速選項（elevated 清除）',
+  name: '日期快速選項',
   render: () => ({
     template: `
-      <app-action-menu style="min-width:260px">
-        <div style="font-size:11px;font-weight:600;color:#939393;letter-spacing:0.05em;padding:4px 8px 2px;">快速選擇</div>
-        <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#3a9ccd;font-weight:500;cursor:pointer;">
-          <span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">✓</span>最近 7 天
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#686868;cursor:pointer;">
-          <span style="width:16px;height:16px;"></span>最近 14 天
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:5px;font-size:14px;color:#686868;cursor:pointer;">
-          <span style="width:16px;height:16px;"></span>最近 30 天
-        </div>
-        <div style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
-        <div style="display:flex;align-items:center;justify-content:flex-end;padding:6px 0 0;border-top:1px solid rgba(0,0,0,0.06);margin-top:4px;">
-          <app-button variant="elevated" size="S" text="清除篩選"></app-button>
-        </div>
+      <app-action-menu ariaLabel="快速選擇" style="min-width:260px">
+        @for (d of ranges; track d) {
+          <app-menu-item [label]="'最近 ' + d + ' 天'" [selected]="days === d" (itemClick)="days = d"></app-menu-item>
+        }
+        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-menu-item label="清除篩選" (itemClick)="days = null"></app-menu-item>
       </app-action-menu>
     `,
-    moduleMetadata: { imports: [ActionMenuComponent, ButtonComponent] },
+    props: { days: 7, ranges: [7, 14, 30] },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
   }),
 };
