@@ -30,6 +30,8 @@ import { MenuItemComponent } from './menu-item.component';
         <app-menu-item data-testid="delete" label="刪除項目" tone="danger" icon="Trash-Del"></app-menu-item>
         <app-menu-item data-testid="archive" label="封存項目" icon="Archive" [disabled]="true" (itemClick)="disabledClicks = disabledClicks + 1"></app-menu-item>
         <app-menu-item data-testid="copy" label="複製項目" description="建立一份內容相同的新項目" (itemClick)="enabledClicks = enabledClicks + 1"></app-menu-item>
+        <app-menu-item data-testid="purge" label="永久刪除" description="刪除後無法復原" tone="danger" icon="Trash-Del"></app-menu-item>
+        <app-menu-item data-testid="purge-off" label="清空回收桶" description="回收桶已經是空的" tone="danger" icon="Trash-Del" [disabled]="true"></app-menu-item>
       </app-action-menu>
     </div>
   `,
@@ -122,6 +124,29 @@ describe('MenuItemComponent', () => {
 
     it('tone="danger" 的文字是 DS ghost 危險按鈕的紅 rgb(204, 82, 82)', () => {
       expect(getComputedStyle(btn('delete')).color).toBe('rgb(204, 82, 82)');
+    });
+
+    it('tone="danger" 加了說明：標題和圖示都是紅字 rgb(204, 82, 82)、標題照樣粗體，說明維持淺灰 rgb(147, 147, 147)', () => {
+      const b = btn('purge');
+      const label = b.querySelector('.mi__label') as HTMLElement;
+      const desc = b.querySelector('.mi__desc') as HTMLElement;
+      const icon = b.querySelector('app-icon') as HTMLElement;
+      expect(getComputedStyle(label).color).toBe('rgb(204, 82, 82)');
+      expect(getComputedStyle(label).fontWeight).toBe('600');
+      expect(getComputedStyle(icon).color).toBe('rgb(204, 82, 82)');
+      expect(getComputedStyle(desc).color).toBe('rgb(147, 147, 147)');
+    });
+
+    it('tone="danger" 加了說明又停用：標題和說明都是停用灰字 rgb(147, 147, 147)', () => {
+      const b = btn('purge-off');
+      expect(getComputedStyle(b.querySelector('.mi__label') as HTMLElement).color).toBe('rgb(147, 147, 147)');
+      expect(getComputedStyle(b.querySelector('.mi__desc') as HTMLElement).color).toBe('rgb(147, 147, 147)');
+    });
+
+    it('一般項目加了說明：標題是深色 rgb(28, 28, 46)、說明淺灰 rgb(147, 147, 147)（危險項目的修正不影響它）', () => {
+      const b = btn('copy');
+      expect(getComputedStyle(b.querySelector('.mi__label') as HTMLElement).color).toBe('rgb(28, 28, 46)');
+      expect(getComputedStyle(b.querySelector('.mi__desc') as HTMLElement).color).toBe('rgb(147, 147, 147)');
     });
 
     it('選中：深藍底 rgb(26, 100, 137)、淺色字 rgb(241, 243, 245)；裡面 LightWhite 標籤的字也變成 rgb(241, 243, 245)', () => {

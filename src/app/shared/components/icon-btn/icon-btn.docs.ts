@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const iconBtnDoc: ComponentApi = {
   id: 'icon-btn',
   selector: 'app-icon-btn',
-  summary: 'size: 16-|16|24|32|36|48 · propClass: Normal|Warning|CardBtn|CardBtnPdSmall|Modal|SectionBtn|Drag|Block|Block-Transparent|Icon+Text · label · [active] [toggle] [disabled] tooltip tooltipPos · (btnClick)',
+  summary: 'size: 16-|16|24|32|36|48 · propClass: Normal|Warning|CardBtn|CardBtnPdSmall|Modal|SectionBtn|Drag|Block|Block-Transparent|Icon+Text · label · [active] [toggle] [disabled] tooltip tooltipPos · ariaLabel · ariaHaspopup [ariaExpanded] · (btnClick)',
   props: [
     {
       name: 'size',
@@ -43,6 +43,18 @@ export const iconBtnDoc: ComponentApi = {
       desc: '無障礙標籤，建議每顆按鈕都設定',
     },
     {
+      name: 'ariaHaspopup',
+      type: "IconBtnAriaHaspopup | null",
+      default: 'null',
+      desc: "這顆按鈕會打開選單，套在內層 button 的 aria-haspopup。目前只接受 'menu'，用在打開放了 app-menu-item 的 app-action-menu 的按鈕，例如 More；null 不輸出。Safari 關閉選單後也是靠它找回觸發鈕、把焦點還給它。",
+    },
+    {
+      name: 'ariaExpanded',
+      type: 'boolean | null',
+      default: 'null',
+      desc: '選單現在開著沒，套在內層 button 的 aria-expanded。綁選單的開關狀態，true／false 照實輸出；null 不輸出。',
+    },
+    {
       name: 'tooltip',
       type: 'string',
       default: "''",
@@ -76,6 +88,17 @@ export const iconBtnDoc: ComponentApi = {
   ariaLabel="編輯"
   (btnClick)="onEdit()">
   <app-icon name="Edit" size="16"></app-icon>
+</app-icon-btn>`,
+    },
+    {
+      label: '打開選單的 More 按鈕：設 ariaHaspopup，ariaExpanded 綁選單開關',
+      code: `<app-icon-btn
+  size="16"
+  ariaLabel="更多操作"
+  ariaHaspopup="menu"
+  [ariaExpanded]="moreOpen()"
+  (btnClick)="moreOpen.set(!moreOpen())">
+  <app-icon name="More" size="16"></app-icon>
 </app-icon-btn>`,
     },
     {

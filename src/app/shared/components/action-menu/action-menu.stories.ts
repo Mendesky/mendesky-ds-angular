@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { ActionMenuComponent, ButtonComponent, CheckChipComponent, MenuItemComponent } from '../../../../index';
+import { ActionMenuComponent, ButtonComponent, CheckChipComponent, DividerComponent, MenuItemComponent } from '../../../../index';
 
 const meta: Meta<ActionMenuComponent> = {
   title: '展示元件/Action Menu',
@@ -57,7 +57,7 @@ export const SortOptions: Story = {
         @for (o of options; track o.value) {
           <app-menu-item [label]="o.label" [selected]="sort === o.value" (itemClick)="sort = o.value"></app-menu-item>
         }
-        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-divider role="separator"></app-divider>
         <app-menu-item label="還原預設" (itemClick)="sort = 'newest'"></app-menu-item>
       </app-action-menu>
     `,
@@ -69,7 +69,7 @@ export const SortOptions: Story = {
         { value: 'name-asc', label: '名稱 A→Z' },
       ],
     },
-    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, DividerComponent] },
   }),
 };
 
@@ -102,12 +102,12 @@ export const DangerActions: Story = {
     template: `
       <app-action-menu ariaLabel="更多操作">
         <app-menu-item label="編輯項目" icon="Edit"></app-menu-item>
-        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-divider role="separator"></app-divider>
         <app-menu-item label="封存項目" icon="Archive" tone="danger"></app-menu-item>
         <app-menu-item label="刪除項目" icon="Trash-Del" tone="danger"></app-menu-item>
       </app-action-menu>
     `,
-    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, DividerComponent] },
   }),
 };
 
@@ -120,11 +120,11 @@ export const DateShortcuts: Story = {
         @for (d of ranges; track d) {
           <app-menu-item [label]="'最近 ' + d + ' 天'" [selected]="days === d" (itemClick)="days = d"></app-menu-item>
         }
-        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-divider role="separator"></app-divider>
         <app-menu-item label="清除篩選" (itemClick)="days = null"></app-menu-item>
       </app-action-menu>
     `,
     props: { days: 7, ranges: [7, 14, 30] },
-    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, DividerComponent] },
   }),
 };

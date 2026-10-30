@@ -18,17 +18,34 @@ export const MENU_CONTEXT = new InjectionToken<MenuContext>('MENU_CONTEXT');
 /** 選單模式下方向鍵走得到的項目：app-menu-item 內層的按鈕，停用的也算 */
 const MENU_ITEM_SELECTOR = '[role="menuitem"], [role="menuitemradio"]';
 
-/** 標了「會打開選單」的按鈕（aria-haspopup="false" 不算） */
-const MENU_TRIGGER_SELECTOR = '[aria-haspopup]:not([aria-haspopup="false"])';
+/** 會打開選單的按鈕：aria-haspopup 是 menu 或 true（true 就是 menu）。打開對話框、清單的按鈕不算 */
+const MENU_TRIGGER_VALUES = ['menu', 'true'];
+const MENU_TRIGGER_SELECTOR = MENU_TRIGGER_VALUES.map((v) => `[aria-haspopup="${v}"]`).join(', ');
+/** 上面那些按鈕裡，標著 aria-expanded="true" 的。逗號串起來的選擇器，條件要每一段各自加 */
+const EXPANDED_MENU_TRIGGER_SELECTOR = MENU_TRIGGER_VALUES
+  .map((v) => `[aria-haspopup="${v}"][aria-expanded="true"]`)
+  .join(', ');
+
+/** 本身就是控制項的角色。roving tabindex 的選項、格子這類 tabindex="-1" 的控制項靠它認 */
+const WIDGET_ROLES = [
+  'button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'option',
+  'menuitem', 'menuitemcheckbox', 'menuitemradio', 'gridcell', 'treeitem',
+  'slider', 'spinbutton', 'combobox', 'textbox', 'searchbox',
+];
 
 /**
  * 按下去之後由瀏覽器自己決定焦點的元素：Chrome 會把焦點給它，Safari 點按鈕不給、焦點清回 body。
  * 兩種情況都是使用者換去操作別的東西了，選單關掉後不該把焦點拉回自己的觸發鈕。
+ * tabindex="-1" 本身不算：對話框卡片這類外框點得到焦點，但點它的空白處跟點空白處一樣
  */
 const INTERACTIVE_SELECTOR = [
   'a[href]', 'area[href]', 'button', 'input', 'select', 'textarea', 'summary', 'label', 'iframe',
-  '[tabindex]', '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])', '[contenteditable]:not([contenteditable="false"])',
+  ...WIDGET_ROLES.map((r) => `[role="${r}"]`),
 ].join(', ');
+
+/** 輸入框、下拉、多行輸入框、可編輯區：自己要用方向鍵、空白鍵、Enter，點了也要拿到焦點 */
+const FORM_FIELD_SELECTOR = 'input, select, textarea, [contenteditable]:not([contenteditable="false"])';
 
 /** 選單外框裡的選單項目，依畫面順序 */
 export function menuItemsIn(host: HTMLElement): HTMLElement[] {
@@ -41,26 +58,34 @@ export function initialMenuItem(items: HTMLElement[]): HTMLElement | null {
 }
 
 /**
- * 選單開著時就認得出來的觸發鈕：外層本身標了 aria-haspopup 就是外層；
+ * 選單開著時就認得出來的觸發鈕：外層本身就是會打開選單的按鈕，就是外層；
  * 外層裡有好幾顆時，用標著 aria-expanded="true" 的那顆。認不出來回 null。
  * 要在選單開著時呼叫：關閉的過程中，觸發鈕的 aria-expanded 可能已經先變回 false。
  */
 export function expandedMenuTrigger(scope: HTMLElement | null): HTMLElement | null {
   if (!scope || !scope.isConnected) return null;
   if (scope.matches(MENU_TRIGGER_SELECTOR)) return scope;
-  return scope.querySelector<HTMLElement>(`${MENU_TRIGGER_SELECTOR}[aria-expanded="true"]`);
+  return scope.querySelector<HTMLElement>(EXPANDED_MENU_TRIGGER_SELECTOR);
 }
 
 /**
- * 記不到觸發鈕時（Safari 用滑鼠點按鈕，按鈕不會取得焦點），到選單原本所在的外層元素找
- * 標了 aria-haspopup 的按鈕：先照 expandedMenuTrigger 認，認不出來就用外層裡的第一顆。
+ * 記不到觸發鈕時（Safari 用滑鼠點按鈕，按鈕不會取得焦點），到選單原本所在的外層元素找會打開選單的按鈕：
+ * 先照 expandedMenuTrigger 認；認不出來時，外層裡只有一顆就用它，有好幾顆就不猜、回 null。
  */
 export function findMenuTrigger(scope: HTMLElement | null): HTMLElement | null {
   if (!scope || !scope.isConnected) return null;
-  return expandedMenuTrigger(scope) ?? scope.querySelector<HTMLElement>(MENU_TRIGGER_SELECTOR);
+  const expanded = expandedMenuTrigger(scope);
+  if (expanded) return expanded;
+  const candidates = scope.querySelectorAll<HTMLElement>(MENU_TRIGGER_SELECTOR);
+  return candidates.length === 1 ? candidates[0] : null;
 }
 
 /** 按到的是不是會由瀏覽器自己處理焦點的元素（見 INTERACTIVE_SELECTOR） */
 export function isInteractiveTarget(target: Element | null): boolean {
   return !!target?.closest(INTERACTIVE_SELECTOR);
+}
+
+/** 事件發生在表單欄位上（見 FORM_FIELD_SELECTOR） */
+export function isFormFieldTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && !!target.closest(FORM_FIELD_SELECTOR);
 }

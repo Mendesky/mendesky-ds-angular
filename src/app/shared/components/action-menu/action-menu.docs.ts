@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const actionMenuDoc: ComponentApi = {
   id: 'action-menu',
   selector: 'app-action-menu',
-  summary: '<ng-content> 放 app-menu-item 就是選單（ariaLabel 取名、選單的鍵盤與焦點規則）；篩選面板放 app-button、app-check-chip。點外面會發 (closeMenu)，由父層關閉',
+  summary: '<ng-content> 直接放 app-menu-item 就是選單（要寫在同一個範本；ariaLabel 取名、選單的鍵盤與焦點規則）；篩選面板放 app-button、app-check-chip。點外面會發 (closeMenu)，由父層關閉',
   props: [
     {
       name: 'autoCloseOnAction',
@@ -69,7 +69,7 @@ export const actionMenuDoc: ComponentApi = {
       name: 'autoFocusFirst',
       type: 'boolean',
       default: 'true',
-      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。DS v0.1.7 起。',
+      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。放了 app-menu-item、觸發鈕又是輸入框時，點外面關掉不會把焦點還給輸入框（游標不跳回去，一拿到焦點就打開的下拉也不會被重新打開），按 Esc 照樣還。DS v0.1.7 起。',
     },
     {
       name: 'ariaLabel',
@@ -95,9 +95,10 @@ export const actionMenuDoc: ComponentApi = {
     {
       label: 'More 操作選單：選項用 app-menu-item（autoCloseOnAction 預設 true）',
       code: `<div class="plan-header__more">
-  <app-button variant="ghost" color="neutral" size="S" leftIcon="More" ariaLabel="更多操作"
-    ariaHaspopup="menu" [ariaExpanded]="isPlanMenuOpen()"
-    (btnClick)="isPlanMenuOpen.set(!isPlanMenuOpen())"></app-button>
+  <app-icon-btn size="16" ariaLabel="更多操作" ariaHaspopup="menu" [ariaExpanded]="isPlanMenuOpen()"
+    (btnClick)="isPlanMenuOpen.set(!isPlanMenuOpen())">
+    <app-icon name="More" size="16"></app-icon>
+  </app-icon-btn>
 
   @if (isPlanMenuOpen()) {
     <app-action-menu ariaLabel="更多操作" (closeMenu)="isPlanMenuOpen.set(false)">
@@ -127,14 +128,18 @@ export const actionMenuDoc: ComponentApi = {
     '本體說明裡負責 anchor 追蹤與 z-index 遞增的「浮層定位服務」，在 Angular 是 PortalPositioningService；app-action-menu 內部用它做定位與 anchor 追蹤。',
     '父層不需要額外寫 @HostListener 處理 click-outside：PortalPositioningService 在 document 上以 capture-phase pointerdown 偵測外部點擊，點到外部時 app-action-menu emit (closeMenu)。',
     'z-index 的下限是 PortalPositioningService 裡的常數 Z_INDEX_FLOOR（9999），每開一個 portal +1。',
-    '「是不是選單」不用另外設定：app-menu-item 透過注入（MENU_CONTEXT）向外層的 app-action-menu 登記，內容裡有 app-menu-item 就進選單模式。',
+    '「是不是選單」不用另外設定：app-menu-item 透過注入（MENU_CONTEXT）向外層的 app-action-menu 登記，有一個登記就進選單模式。哪些 app-menu-item 登記得到，見下一條。',
+    {
+      type: 'warn',
+      content: '只有跟 app-action-menu 寫在同一個範本、包在它標籤裡面的 app-menu-item 才會登記（包在 @if、@for、*ngFor 裡也算）。下面三種不會登記，app-menu-item 會變回選單外的按鈕，外框也不會變成選單：寫在你自己元件的範本裡、再把那個元件放進 app-action-menu；用 ng-template 宣告在 app-action-menu 外面、再用 ngTemplateOutlet 插進去；用 ViewContainerRef.createComponent 或 NgComponentOutlet 動態建立。要做選單時，app-menu-item 直接寫在 app-action-menu 裡。',
+    },
     {
       type: 'warn',
       content: '選單的名稱寫成元件設定 ariaLabel。沒放 app-menu-item 時 ariaLabel 不會輸出，外框也沒有角色。',
     },
     {
       type: 'info',
-      content: '放了 app-menu-item 的選單關掉後，焦點要還給觸發鈕。Safari 用滑鼠點按鈕時不會把焦點給它，這時要靠 aria-haspopup 找回觸發鈕：觸發鈕是 app-button 就設 ariaHaspopup="menu"，原生 <button> 直接寫 aria-haspopup="menu"。找的範圍是 app-action-menu 原本的上一層元素；有傳 anchorEl 時改成 anchorEl 本身與它裡面。範圍裡有好幾顆時，用選單開著時標著 aria-expanded="true" 的那顆，所以觸發鈕也要跟著選單開關綁 aria-expanded（app-button 是 ariaExpanded）。打開前有焦點的元素不在這個範圍裡時（例如 Safari 上從另一個選單直接點過來，焦點還停在上一顆觸發鈕），一樣改用範圍裡的觸發鈕；範圍裡找不到才還給那個元素。',
+      content: '放了 app-menu-item 的選單關掉後，焦點要還給觸發鈕。Safari 用滑鼠點按鈕時不會把焦點給它，這時要靠 aria-haspopup 找回觸發鈕：觸發鈕是 app-button 或 app-icon-btn 就設 ariaHaspopup="menu"（屬性會落在它們裡面那顆 button 上），原生 <button> 直接寫 aria-haspopup="menu"。只認 aria-haspopup 是 menu 或 true 的按鈕，打開對話框（dialog）、清單（listbox）的按鈕不算。找的範圍是 app-action-menu 原本的上一層元素；有傳 anchorEl 時改成 anchorEl 本身與它裡面。範圍裡有好幾顆時，用選單開著時標著 aria-expanded="true" 的那顆，所以觸發鈕也要跟著選單開關綁 aria-expanded（app-button、app-icon-btn 是 ariaExpanded）；好幾顆都沒標的話認不出是哪顆，焦點就不還。打開前有焦點的元素不在這個範圍裡時（例如 Safari 上從另一個選單直接點過來，焦點還停在上一顆觸發鈕），一樣改用範圍裡的觸發鈕；範圍裡找不到才還給那個元素。',
     },
   ],
 };

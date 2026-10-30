@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { ActionMenuComponent, ICON_REGISTRY, LabelComponent, MenuItemComponent } from '../../../../index';
+import { ActionMenuComponent, DividerComponent, ICON_REGISTRY, LabelComponent, MenuItemComponent } from '../../../../index';
 
 const iconNames = ['', ...Object.keys(ICON_REGISTRY)];
 
@@ -124,11 +124,11 @@ export const Danger: Story = {
     template: inMenu(`
       <app-action-menu ariaLabel="更多操作">
         <app-menu-item label="編輯項目" icon="Edit"></app-menu-item>
-        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-divider role="separator"></app-divider>
         <app-menu-item label="刪除項目" icon="Trash-Del" tone="danger"></app-menu-item>
       </app-action-menu>
     `),
-    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, DividerComponent] },
   }),
 };
 
@@ -156,12 +156,12 @@ export const SingleSelect: Story = {
         @for (o of options; track o.value) {
           <app-menu-item [label]="o.label" [selected]="sort === o.value" (itemClick)="sort = o.value"></app-menu-item>
         }
-        <div role="separator" style="height:1px;background:rgba(0,0,0,0.08);margin:4px 0;"></div>
+        <app-divider role="separator"></app-divider>
         <app-menu-item label="還原預設" (itemClick)="sort = 'newest'"></app-menu-item>
       </app-action-menu>
     `, 280),
     props: { options: SORT_OPTIONS, sort: 'name-asc' },
-    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, DividerComponent] },
   }),
 };
 

@@ -14,7 +14,7 @@ export const menuItemDoc: ComponentApi = {
       name: 'description',
       type: 'string',
       default: "''",
-      desc: '顯示在文字下方的說明。有值時文字變成粗的深色標題，說明用淺灰色；內層按鈕用 aria-describedby 指向它，不算進名稱。空字串不顯示。',
+      desc: '顯示在文字下方的說明。有值時文字變成粗體標題（一般項目是深色，tone 是 danger 時維持紅字），說明用淺灰色；內層按鈕用 aria-describedby 指向它，不算進名稱。空字串不顯示。',
     },
     {
       name: 'icon',
@@ -61,7 +61,7 @@ export const menuItemDoc: ComponentApi = {
         <app-menu-item [label]="opt.label" [selected]="sort() === opt.value"
           (itemClick)="sort.set(opt.value)"></app-menu-item>
       }
-      <div class="menu-divider" role="separator"></div>
+      <app-divider role="separator"></app-divider>
       <app-menu-item label="還原預設" (itemClick)="sort.set('newest')"></app-menu-item>
     </app-action-menu>
   }
@@ -95,7 +95,7 @@ export const menuItemDoc: ComponentApi = {
     },
   ],
   usageNotes: [
-    'app-menu-item 透過注入（MENU_CONTEXT）找外層的 app-action-menu 登記：直接寫在 app-action-menu 的內容裡（包在 @if、@for 裡也可以），那個動作選單就變成選單模式；寫在 app-action-menu 外面就是選單外的單選按鈕。',
+    'app-menu-item 透過注入（MENU_CONTEXT）找外層的 app-action-menu 登記：直接寫在 app-action-menu 的內容裡（包在 @if、@for、*ngFor 裡也可以），那個動作選單就變成選單模式；寫在 app-action-menu 外面就是選單外的單選按鈕。只找同一個範本：寫在你自己元件範本裡的 app-menu-item，就算那個元件被放進 app-action-menu，也一樣是選單外的按鈕，不會把外面的浮層變成選單；用 ViewContainerRef.createComponent 或 NgComponentOutlet 動態建立的也一樣。',
     {
       type: 'warn',
       content: '要聽 (itemClick)，不要在 app-menu-item 上聽 (click)。停用的項目沒有用原生 disabled，裡面按鈕的 click 事件照樣會冒到外框，(click) 在停用時也會觸發。',

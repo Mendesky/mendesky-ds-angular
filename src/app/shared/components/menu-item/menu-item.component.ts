@@ -26,7 +26,9 @@ let nextId = 0;
   },
 })
 export class MenuItemComponent implements OnDestroy {
-  private readonly menu = inject(MENU_CONTEXT, { optional: true });
+  // host: true：只找同一個範本裡包住它的 app-action-menu。包在使用端自己的元件裡時不再往外找，
+  // 那個元件（例如一排選單外的排序選項）放進篩選面板，也不會把面板變成選單
+  private readonly menu = inject(MENU_CONTEXT, { optional: true, host: true });
 
   /** 放在 app-action-menu 裡（選單模式）時為 true */
   readonly inMenu = this.menu !== null;
@@ -35,7 +37,7 @@ export class MenuItemComponent implements OnDestroy {
 
   /** 這一項要做什麼，或代表哪一個值 */
   @Input({ required: true }) label!: string;
-  /** 文字下方的說明（選填）；有值時文字變成粗的深色標題 */
+  /** 文字下方的說明（選填）；有值時文字變成粗體標題（一般項目深色，危險項目維持紅字） */
   @Input() description = '';
   /** 文字左邊的 DS 圖示名稱（選填） */
   @Input() icon = '';

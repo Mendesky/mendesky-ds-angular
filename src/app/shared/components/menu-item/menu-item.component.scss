@@ -68,6 +68,9 @@
   .mi__icon { margin-top: 2px; }
   .mi__label { font-weight: 600; color: var(--text\/title, #1c1c2e); }
   .mi__desc { color: var(--text\/body-light, #939393); }
+
+  // 危險項目的標題不換深色，跟按鈕的字色走（紅字，圖示也是）；說明照樣淺灰
+  &.mi--danger .mi__label { color: inherit; }
 }
 
 // ── 未選中：跟 ghost neutral 按鈕一樣，滑過實心灰底、按下深灰底 ──
