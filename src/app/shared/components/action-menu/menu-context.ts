@@ -61,7 +61,8 @@ export function initialMenuItem(items: HTMLElement[]): HTMLElement | null {
  * 在選單原本所在的外層元素認觸發鈕（Safari 用滑鼠點按鈕，按鈕不會取得焦點，要靠這個認）：
  * 外層本身就是會打開選單的按鈕，就是外層；否則用外層裡標著 aria-expanded="true" 的選單按鈕。
  * 標著的有好幾顆時（例如同一個外層裡另一個選單也開著），取包含 hint（打開前有焦點的元素）的那顆，
- * 沒有一顆包含它就不認。認不出來回 null。
+ * 沒有一顆包含它就不認。只有一顆、但 hint 在外層裡別的地方（不是包著它的外框）時也不認：
+ * 標著的是別的選單的觸發鈕（例如上一層的清單面板一直開著），打開這個選單的是 hint。認不出來回 null。
  * 外層裡只有一顆選單按鈕、但沒標 aria-expanded="true" 時也不認：用鍵盤快捷鍵、右鍵打開的選單，那顆可能跟它無關。
  * 要在選單開著時呼叫：關閉的過程中，觸發鈕的 aria-expanded 可能已經先變回 false。
  */
@@ -69,8 +70,13 @@ export function expandedMenuTrigger(scope: HTMLElement | null, hint: Element | n
   if (!scope || !scope.isConnected) return null;
   if (scope.matches(MENU_TRIGGER_SELECTOR)) return scope;
   const found = Array.from(scope.querySelectorAll<HTMLElement>(EXPANDED_MENU_TRIGGER_SELECTOR));
-  if (found.length <= 1) return found[0] ?? null;
-  return found.find((el) => !!hint && el.contains(hint)) ?? null;
+  const owner = found.find((el) => !!hint && el.contains(hint));
+  if (owner) return owner;
+  if (found.length !== 1) return null;
+  // 包著它的外框不算別的地方：Safari 點按鈕時，焦點會停在外面點得到焦點的那層（例如 role="gridcell" 的格子、
+  // tabindex="-1" 的卡片），沒有這層就回到 body
+  const elsewhere = !!hint && scope.contains(hint) && !hint.contains(found[0]);
+  return elsewhere ? null : found[0];
 }
 
 /** 按到的是不是會由瀏覽器自己處理焦點的元素（見 INTERACTIVE_SELECTOR） */
