@@ -46,7 +46,7 @@ export const iconBtnDoc: ComponentApi = {
       name: 'ariaHaspopup',
       type: "IconBtnAriaHaspopup | null",
       default: 'null',
-      desc: "這顆按鈕會打開選單，套在內層 button 的 aria-haspopup。目前只接受 'menu'，用在打開放了 app-menu-item 的 app-action-menu 的按鈕，例如 More；null 不輸出。Safari 關閉選單後也是靠它找回觸發鈕、把焦點還給它。",
+      desc: "這顆按鈕會打開選單，套在內層 button 的 aria-haspopup。目前只接受 'menu'，用在打開放了 app-menu-item 的 app-action-menu 的按鈕，例如 More；null 不輸出。Safari 關閉選單後，要同時有它和 ariaExpanded 才認得出觸發鈕、把焦點還給它。",
     },
     {
       name: 'ariaExpanded',

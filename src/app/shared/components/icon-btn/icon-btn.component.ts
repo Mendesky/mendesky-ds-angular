@@ -59,7 +59,7 @@ export class IconBtnComponent {
   /** 無障礙標籤（建議每個 icon-btn 都設定） */
   @Input() ariaLabel = '';
 
-  /** 這顆按鈕會打開選單（aria-haspopup，落在內層 button）；null＝不輸出。Safari 關閉選單後也靠它找回觸發鈕 */
+  /** 這顆按鈕會打開選單（aria-haspopup，落在內層 button）；null＝不輸出。Safari 關閉選單後要同時有它和 ariaExpanded 才認得出觸發鈕 */
   @Input() ariaHaspopup: IconBtnAriaHaspopup | null = null;
 
   /** 選單現在開著沒（aria-expanded，落在內層 button）；null＝不輸出，true／false 照實輸出 */

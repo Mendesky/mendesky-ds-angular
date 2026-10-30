@@ -139,7 +139,7 @@ export const actionMenuDoc: ComponentApi = {
     },
     {
       type: 'info',
-      content: '放了 app-menu-item 的選單關掉後，焦點要還給觸發鈕。Safari 用滑鼠點按鈕時不會把焦點給它，這時要靠 aria-haspopup 找回觸發鈕：觸發鈕是 app-button 或 app-icon-btn 就設 ariaHaspopup="menu"（屬性會落在它們裡面那顆 button 上），原生 <button> 直接寫 aria-haspopup="menu"。只認 aria-haspopup 是 menu 或 true 的按鈕，打開對話框（dialog）、清單（listbox）的按鈕不算。找的範圍是 app-action-menu 原本的上一層元素；有傳 anchorEl 時改成 anchorEl 本身與它裡面。範圍裡有好幾顆時，用選單開著時標著 aria-expanded="true" 的那顆，所以觸發鈕也要跟著選單開關綁 aria-expanded（app-button、app-icon-btn 是 ariaExpanded）；好幾顆都沒標的話認不出是哪顆，焦點就不還。打開前有焦點的元素不在這個範圍裡時（例如 Safari 上從另一個選單直接點過來，焦點還停在上一顆觸發鈕），一樣改用範圍裡的觸發鈕；範圍裡找不到才還給那個元素。',
+      content: '放了 app-menu-item 的選單關掉後，焦點要還給觸發鈕。Safari 用滑鼠點按鈕時不會把焦點給它，這時要靠 aria-haspopup 和 aria-expanded 認出觸發鈕，兩個都要設：觸發鈕是 app-button 或 app-icon-btn 就設 ariaHaspopup="menu" 和 [ariaExpanded]（屬性會落在它們裡面那顆 button 上），原生 <button> 直接寫 aria-haspopup="menu" 和 [attr.aria-expanded]，aria-expanded 跟著選單開關變。認的範圍是 app-action-menu 原本的上一層元素；有傳 anchorEl 時改成 anchorEl 本身與它裡面，anchorEl 本身就是 aria-haspopup 為 menu 或 true 的按鈕時直接用它。範圍裡認的是 aria-haspopup 為 menu 或 true、選單開著時標著 aria-expanded="true" 的那顆；打開對話框（dialog）、清單（listbox）的按鈕不算。同時有好幾顆標著時（例如同一個外層裡另一個選單也開著），取打開前有焦點的那顆；打開前的焦點不在其中任何一顆上，就不從裡面挑。認出來的觸發鈕優先於打開前有焦點的元素：Safari 點按鈕時，焦點會落到外面那層點得到焦點的元素（例如 tabindex="-1" 的對話框卡片），打開前有焦點的可能是那一層。認不出來時，才還給打開前有焦點的元素；Safari 用滑鼠點、打開前沒有元素有焦點時，焦點就不還。沒有一顆標著 aria-expanded="true" 就不猜，範圍裡只有一顆選單按鈕也一樣，因為用 fixedMode 放在範本最外層、由鍵盤快捷鍵或右鍵打開的選單，那顆可能跟它無關。用 Chrome 滑鼠點、或用鍵盤打開時，打開前焦點就在觸發鈕上，漏設 aria-expanded 看不出來，要用 Safari 滑鼠點來驗。同一個外層裡放好幾個選單、用同一個狀態切換（打開 B 就關掉 A）時，按 B 的觸發鈕關掉 A 不會把焦點拉回 A 的觸發鈕，B 關掉後焦點回到 B 的觸發鈕。',
     },
   ],
 };

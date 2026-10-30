@@ -65,7 +65,7 @@ export class ButtonComponent implements OnChanges, AfterViewInit {
   @Input() ariaPressed: boolean | null = null;
   /** 清單或導覽中的「目前這一項」（aria-current）；null＝不輸出 */
   @Input() ariaCurrent: ButtonAriaCurrent | null = null;
-  /** 這顆按鈕會打開選單（aria-haspopup）；null＝不輸出。Safari 關閉選單後也靠它找回觸發鈕 */
+  /** 這顆按鈕會打開選單（aria-haspopup）；null＝不輸出。Safari 關閉選單後要同時有它和 ariaExpanded 才認得出觸發鈕 */
   @Input() ariaHaspopup: ButtonAriaHaspopup | null = null;
   /** 選單現在開著沒（aria-expanded）；null＝不輸出，true／false 照實輸出 */
   @Input() ariaExpanded: boolean | null = null;

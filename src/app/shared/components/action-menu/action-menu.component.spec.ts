@@ -862,6 +862,61 @@ describe('ActionMenuComponent — 選單模式：同一個外層裡有好幾顆�
     expect(document.activeElement).toBe(trigB());
     fixture.destroy();
   });
+
+  for (const closeWith of ['Escape', 'item-click'] as const) {
+    it(`Chrome：A 還開著時點 B，兩顆都標著 aria-expanded="true"：關掉 B（${closeWith}）後焦點回到 B 的觸發鈕`, async () => {
+      const fixture = TestBed.createComponent(SharedWrapperHostComponent);
+      fixture.detectChanges();
+      trigA().focus();
+      trigA().click();
+      fixture.detectChanges();
+      await nextFrame();
+      await tick();
+      // Chrome 按下 B 時就把焦點給它。B 在 A 的外層裡，A 不算點外面，照樣開著
+      trigB().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+      trigB().focus();
+      trigB().click();
+      fixture.detectChanges();
+      await nextFrame();
+      await tick();
+      expect(fixture.componentInstance.openA).toBeTrue();
+      expect(trigA().getAttribute('aria-expanded')).toBe('true');
+      expect(document.activeElement?.getAttribute('aria-checked')).toBe('true'); // 在 B 裡
+      if (closeWith === 'Escape') press('Escape');
+      else (document.querySelectorAll<HTMLElement>('app-action-menu[aria-label="排序"] app-menu-item button')[1]).click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.openB).toBeFalse();
+      expect(document.activeElement).toBe(trigB());
+      fixture.destroy();
+    });
+
+    it(`Safari：A 還開著時點 B，焦點清回 body：關掉 B（${closeWith}）後焦點不會跑到還開著的 A 的觸發鈕`, async () => {
+      const fixture = TestBed.createComponent(SharedWrapperHostComponent);
+      fixture.detectChanges();
+      (document.activeElement as HTMLElement | null)?.blur();
+      trigA().click();
+      fixture.detectChanges();
+      await nextFrame();
+      await tick();
+      trigB().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+      (document.activeElement as HTMLElement | null)?.blur(); // Safari 按按鈕不給它焦點
+      trigB().click();
+      fixture.detectChanges();
+      await nextFrame();
+      await tick();
+      expect(fixture.componentInstance.openA).toBeTrue();
+      expect(document.activeElement?.getAttribute('aria-checked')).toBe('true'); // 在 B 裡
+      if (closeWith === 'Escape') press('Escape');
+      else (document.querySelectorAll<HTMLElement>('app-action-menu[aria-label="排序"] app-menu-item button')[1]).click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.openB).toBeFalse();
+      // 兩顆都標著、打開前的焦點又不在其中一顆上：不從裡面挑，焦點不還
+      expect(document.activeElement).toBe(document.body);
+      fixture.destroy();
+    });
+  }
 });
 
 describe('ActionMenuComponent — 選單模式：開著時焦點所在的項目被拿掉', () => {
@@ -1197,18 +1252,21 @@ class DialogCardOutsideHostComponent {
   open = false;
 }
 
-/** 觸發鈕旁邊還有別的「會打開東西」的按鈕，而且都沒綁 aria-expanded */
+/**
+ * 觸發鈕旁邊還有別的「會打開東西」的按鈕。旁邊那顆是對話框按鈕時標著 aria-expanded="true"（對話框開著），
+ * 「更多」有沒有綁 aria-expanded 由 bindExpanded 決定
+ */
 @Component({
   standalone: true,
   imports: [ActionMenuComponent, MenuItemComponent],
   template: `
     <div class="toolbar">
       @if (otherIsDialog) {
-        <button type="button" data-testid="other" aria-haspopup="dialog">設定</button>
+        <button type="button" data-testid="other" aria-haspopup="dialog" aria-expanded="true">設定</button>
       } @else {
         <button type="button" data-testid="other" aria-haspopup="menu">篩選</button>
       }
-      <button type="button" data-testid="more" aria-haspopup="menu">更多</button>
+      <button type="button" data-testid="more" aria-haspopup="menu" [attr.aria-expanded]="bindExpanded ? open : null">更多</button>
       @if (open) {
         <app-action-menu ariaLabel="更多" (closeMenu)="open = false">
           <app-menu-item label="項目甲"></app-menu-item>
@@ -1220,6 +1278,7 @@ class DialogCardOutsideHostComponent {
 class UnboundTriggersHostComponent {
   open = false;
   otherIsDialog = true;
+  bindExpanded = false;
 }
 
 describe('ActionMenuComponent — 哪些 app-menu-item 算進選單', () => {
@@ -1423,12 +1482,13 @@ describe('ActionMenuComponent — 選單模式：點外面關閉的其他情況'
   });
 });
 
-describe('ActionMenuComponent — 選單模式：記不到觸發鈕、外層裡的按鈕又都沒綁 aria-expanded（Safari）', () => {
+describe('ActionMenuComponent — 選單模式：記不到觸發鈕時只認 aria-expanded="true"（Safari）', () => {
   const q = (sel: string) => document.querySelector(sel) as HTMLElement;
 
-  async function openFromBody(otherIsDialog: boolean): Promise<ComponentFixture<UnboundTriggersHostComponent>> {
+  async function openFromBody(otherIsDialog: boolean, bindExpanded = false): Promise<ComponentFixture<UnboundTriggersHostComponent>> {
     const f = TestBed.createComponent(UnboundTriggersHostComponent);
     f.componentInstance.otherIsDialog = otherIsDialog;
+    f.componentInstance.bindExpanded = bindExpanded;
     f.detectChanges();
     (document.activeElement as HTMLElement | null)?.blur(); // Safari：點了觸發鈕，焦點還在 body
     f.componentInstance.open = true;
@@ -1443,11 +1503,20 @@ describe('ActionMenuComponent — 選單模式：記不到觸發鈕、外層裡�
     document.querySelectorAll('app-action-menu').forEach(el => el.remove());
   });
 
-  it('旁邊那顆打開的是對話框（aria-haspopup="dialog"）：按 Esc 後焦點回到「更多」，不是那顆', async () => {
-    const f = await openFromBody(true);
+  it('旁邊那顆打開的是對話框（aria-haspopup="dialog"），也標著 aria-expanded="true"：不算，焦點回到綁了 aria-expanded 的「更多」', async () => {
+    const f = await openFromBody(true, true);
     press('Escape');
     f.detectChanges();
     expect(document.activeElement).toBe(q('[data-testid="more"]'));
+    f.destroy();
+  });
+
+  it('外層裡只有「更多」一顆會打開選單，但它沒綁 aria-expanded：認不出來，不拿唯一的那顆來猜，焦點不還', async () => {
+    const f = await openFromBody(true);
+    press('Escape');
+    f.detectChanges();
+    expect(document.activeElement).not.toBe(q('[data-testid="more"]'));
+    expect(document.activeElement).not.toBe(q('[data-testid="other"]'));
     f.destroy();
   });
 
@@ -1505,4 +1574,747 @@ describe('ActionMenuComponent — 選單模式：觸發鈕是 app-icon-btn（Saf
     expect(inner.getAttribute('aria-expanded')).toBe('false');
     f.destroy();
   });
+});
+
+/**
+ * 一般浮層（沒放 app-menu-item）的鍵盤與焦點。外層照 dashboard 單一客戶選單的寫法：
+ * 打開它的按鈕標 aria-haspopup="menu"、aria-expanded 跟著開關變，浮層用 fixedMode
+ */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, ButtonComponent],
+  template: `
+    <div class="backdrop">
+      <button type="button" data-testid="before">打開前的焦點</button>
+      <button type="button" data-testid="client-btn" aria-haspopup="menu" [attr.aria-expanded]="open">客戶甲</button>
+      @if (open) {
+        <app-action-menu [fixedMode]="true" [fixedTop]="40" [fixedLeft]="40" (closeMenu)="open = false; closeCount = closeCount + 1">
+          <app-button variant="ghost" size="S" text="客戶甲"></app-button>
+          <app-button variant="ghost" size="S" text="客戶乙"></app-button>
+          <app-button variant="ghost" size="S" text="客戶丙"></app-button>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class GeneralOverlayHostComponent {
+  open = false;
+  closeCount = 0;
+}
+
+describe('ActionMenuComponent — 一般浮層（沒放 app-menu-item）的鍵盤與焦點', () => {
+  let f: ComponentFixture<GeneralOverlayHostComponent>;
+  const q = (sel: string) => document.querySelector(sel) as HTMLElement;
+  const options = () => Array.from(document.querySelectorAll<HTMLElement>('app-action-menu app-button button'));
+
+  /** focusBefore：打開前焦點在哪；null＝Safari 用滑鼠點按鈕，焦點在 body */
+  async function openOverlay(focusBefore: string | null): Promise<void> {
+    f = TestBed.createComponent(GeneralOverlayHostComponent);
+    f.detectChanges();
+    if (focusBefore) q(focusBefore).focus();
+    else (document.activeElement as HTMLElement | null)?.blur();
+    f.componentInstance.open = true;
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(document.activeElement).toBe(options()[0]);
+  }
+
+  function release(key: string): KeyboardEvent {
+    const up = new KeyboardEvent('keyup', { key, bubbles: true, cancelable: true });
+    ((document.activeElement as HTMLElement | null) ?? document.body).dispatchEvent(up);
+    return up;
+  }
+
+  // 別的測試按了 Enter／空白鍵沒放開時，吃連發的監聽會留到這裡；先放開，每一條都從沒有監聽的狀態開始
+  beforeEach(() => {
+    release('Enter');
+    release(' ');
+  });
+
+  afterEach(() => {
+    release('Enter');
+    release(' ');
+    f?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  it('上下方向鍵在選項（app-button）之間移動，頭尾循環', async () => {
+    await openOverlay('[data-testid="before"]');
+    expect(press('ArrowDown').defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(options()[1]);
+    press('ArrowUp');
+    press('ArrowUp');
+    expect(document.activeElement).toBe(options()[2]);
+  });
+
+  it('Home、End 沒有作用：不攔、焦點不動', async () => {
+    await openOverlay('[data-testid="before"]');
+    expect(press('End').defaultPrevented).toBeFalse();
+    expect(document.activeElement).toBe(options()[0]);
+    expect(press('Home').defaultPrevented).toBeFalse();
+    expect(document.activeElement).toBe(options()[0]);
+  });
+
+  it('Tab 不關閉浮層、不攔', async () => {
+    await openOverlay('[data-testid="before"]');
+    expect(press('Tab').defaultPrevented).toBeFalse();
+    f.detectChanges();
+    expect(f.componentInstance.open).toBeTrue();
+    expect(f.componentInstance.closeCount).toBe(0);
+  });
+
+  it('Esc 關閉，焦點還給打開前有焦點的元素', async () => {
+    await openOverlay('[data-testid="before"]');
+    press('Escape');
+    f.detectChanges();
+    expect(f.componentInstance.open).toBeFalse();
+    expect(document.activeElement).toBe(q('[data-testid="before"]'));
+  });
+
+  it('點選項關閉：焦點不會被拉到外層裡標著 aria-haspopup="menu"、aria-expanded="true" 的按鈕', async () => {
+    await openOverlay(null);
+    expect(q('[data-testid="client-btn"]').getAttribute('aria-expanded')).toBe('true');
+    options()[1].click();
+    f.detectChanges();
+    expect(f.componentInstance.open).toBeFalse();
+    expect(document.activeElement).not.toBe(q('[data-testid="client-btn"]'));
+    await tick();
+    expect(document.activeElement).not.toBe(q('[data-testid="client-btn"]'));
+  });
+
+  for (const [key, name] of [['Enter', 'Enter'], [' ', '空白鍵']] as const) {
+    it(`${name}：連發的按鍵（按住快捷鍵打開浮層後落進浮層）不執行選項`, async () => {
+      await openOverlay(null); // dashboard 看板用快捷鍵打開卡片選單前會先移開焦點
+      expect(press(key, { repeat: true }).defaultPrevented).toBeTrue();
+      f.detectChanges();
+      expect(f.componentInstance.closeCount).toBe(0);
+      expect(f.componentInstance.open).toBeTrue();
+    });
+
+    it(`${name}：執行一項、浮層關掉後，到放開之前的連發都被吃掉，document 收不到`, async () => {
+      await openOverlay(null);
+      press(key);
+      f.detectChanges();
+      expect(f.componentInstance.closeCount).toBe(1);
+      expect(f.componentInstance.open).toBeFalse();
+      const seen: string[] = [];
+      const onKey = (e: KeyboardEvent) => seen.push(`${e.type}:${e.repeat ? 'repeat' : 'first'}`);
+      document.addEventListener('keydown', onKey);
+      try {
+        expect(press(key, { repeat: true }).defaultPrevented).toBeTrue();
+        expect(seen).toEqual([]);
+        expect(release(key).defaultPrevented).toBeTrue();
+        expect(press(key).defaultPrevented).toBeFalse();
+        expect(seen).toEqual(['keydown:first']);
+      } finally {
+        document.removeEventListener('keydown', onKey);
+      }
+    });
+  }
+});
+
+/** 同一個外層裡兩個選單和一個一般浮層，用同一個狀態切換：打開一個，另一個就關掉 */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent, ButtonComponent],
+  template: `
+    <div class="toolbar">
+      <button type="button" data-testid="sw-a" aria-haspopup="menu" [attr.aria-expanded]="which === 'A'" (click)="toggle('A')"><span class="lbl">篩選</span></button>
+      <button type="button" data-testid="sw-b" aria-haspopup="menu" [attr.aria-expanded]="which === 'B'" (click)="toggle('B')"><span class="lbl">排序</span></button>
+      <button type="button" data-testid="sw-panel" (click)="toggle('panel')">欄位</button>
+      @if (which === 'A') {
+        <app-action-menu ariaLabel="篩選" (closeMenu)="which = null">
+          <app-menu-item label="項目 A1"></app-menu-item>
+          <app-menu-item label="項目 A2"></app-menu-item>
+        </app-action-menu>
+      }
+      @if (which === 'B') {
+        <app-action-menu ariaLabel="排序" (closeMenu)="which = null">
+          <app-menu-item label="由新到舊" [selected]="true"></app-menu-item>
+          <app-menu-item label="由舊到新" [selected]="false"></app-menu-item>
+        </app-action-menu>
+      }
+      @if (which === 'panel') {
+        <app-action-menu [autoCloseOnAction]="false" (closeMenu)="which = null">
+          <app-button variant="elevated" size="S" text="清除"></app-button>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class SwitchingWrapperHostComponent {
+  which: 'A' | 'B' | 'panel' | null = null;
+
+  toggle(menu: 'A' | 'B' | 'panel'): void {
+    this.which = this.which === menu ? null : menu;
+  }
+}
+
+describe('ActionMenuComponent — 選單模式：同一個外層裡從一個選單直接點到另一顆按鈕（Safari）', () => {
+  let f: ComponentFixture<SwitchingWrapperHostComponent>;
+  const q = (sel: string) => document.querySelector(sel) as HTMLElement;
+  const trigA = () => q('[data-testid="sw-a"]');
+  const trigB = () => q('[data-testid="sw-b"]');
+  const blurActive = () => (document.activeElement as HTMLElement | null)?.blur();
+
+  /**
+   * Safari 的滑鼠點擊：點按鈕不給它焦點，焦點落到最近一層點得到焦點的祖先，沒有就清回 body。
+   * 先打開 A，再按同一個外層裡的另一顆按鈕：它在 A 的外層裡，定位服務不算點外面，A 是被使用端的狀態切換關掉的。
+   * 按的是按鈕裡的文字（滑鼠實際點到的是它），不是按鈕本身。
+   * focusableToolbar 為 true 時外層點得到焦點（例如 tabindex="-1" 的對話框卡片），焦點落在外層。
+   * 回傳 A 剛關掉、下一個浮層還沒把焦點移進去的那一刻，焦點在哪
+   */
+  async function openAThenPress(nextSelector: string, focusableToolbar = false): Promise<Element | null> {
+    f = TestBed.createComponent(SwitchingWrapperHostComponent);
+    f.detectChanges();
+    const toolbar = q('.toolbar');
+    if (focusableToolbar) toolbar.tabIndex = -1;
+    const parkFocus = () => (focusableToolbar ? toolbar.focus() : blurActive());
+    parkFocus();
+    trigA().click();
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(document.activeElement?.getAttribute('role')).toBe('menuitem'); // 在 A 裡
+    const next = q(nextSelector);
+    const target = (next.querySelector('.lbl') as HTMLElement | null) ?? next;
+    target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    f.detectChanges();
+    expect(f.componentInstance.which).toBe('A'); // 不算點外面
+    parkFocus();
+    target.click();
+    f.detectChanges();
+    const atSwitch = document.activeElement;
+    await nextFrame();
+    await tick();
+    return atSwitch;
+  }
+
+  afterEach(() => {
+    f?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  it('A 被切掉的那一刻，焦點不會被拉回 A 的觸發鈕', async () => {
+    const atSwitch = await openAThenPress('[data-testid="sw-b"]');
+    expect(atSwitch).not.toBe(trigA());
+    expect(f.componentInstance.which).toBe('B');
+    expect(document.activeElement?.getAttribute('aria-checked')).toBe('true'); // 在 B 裡
+  });
+
+  it('Safari 點按鈕時焦點落到點得到焦點的外層：關掉 B 後焦點回到 B 的觸發鈕，不是外層', async () => {
+    f = TestBed.createComponent(SwitchingWrapperHostComponent);
+    f.detectChanges();
+    const toolbar = q('.toolbar');
+    toolbar.tabIndex = -1;
+    toolbar.focus(); // WebKit 點按鈕時往上找第一個點得到焦點的祖先，焦點落在外層
+    trigB().click();
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(document.activeElement?.getAttribute('aria-checked')).toBe('true');
+    press('Escape');
+    f.detectChanges();
+    expect(document.activeElement).toBe(trigB());
+  });
+
+  for (const closeWith of ['Escape', 'item-click', 'Tab'] as const) {
+    it(`關掉 B（${closeWith}）後，焦點回到 B 的觸發鈕，不是 A 的`, async () => {
+      await openAThenPress('[data-testid="sw-b"]');
+      if (closeWith === 'Escape') press('Escape');
+      else if (closeWith === 'Tab') expect(press('Tab').defaultPrevented).toBeFalse();
+      else (document.querySelectorAll<HTMLElement>('app-action-menu app-menu-item button')[1]).click();
+      f.detectChanges();
+      expect(f.componentInstance.which).toBeNull();
+      expect(document.activeElement).toBe(trigB());
+    });
+  }
+
+  it('接著打開的是一般浮層：按 Esc 不會把焦點丟到 A 的觸發鈕', async () => {
+    await openAThenPress('[data-testid="sw-panel"]');
+    expect(f.componentInstance.which).toBe('panel');
+    press('Escape');
+    f.detectChanges();
+    expect(f.componentInstance.which).toBeNull();
+    expect(document.activeElement).not.toBe(trigA());
+  });
+
+  it('再按一次 A 自己的觸發鈕關掉 A：焦點回到 A 的觸發鈕（跟 Chrome 按下就給它焦點的結果一樣）', async () => {
+    const atClose = await openAThenPress('[data-testid="sw-a"]');
+    expect(f.componentInstance.which).toBeNull();
+    expect(atClose).toBe(trigA());
+  });
+
+  it('外層點得到焦點時，再按一次 A 自己的觸發鈕關掉 A：焦點回到 A 的觸發鈕，不停在外層', async () => {
+    const atClose = await openAThenPress('[data-testid="sw-a"]', true);
+    expect(f.componentInstance.which).toBeNull();
+    expect(atClose).toBe(trigA());
+  });
+
+  it('外層點得到焦點時，點 B 切過去：A 被切掉的那一刻，焦點不會被拉回 A 的觸發鈕', async () => {
+    const atSwitch = await openAThenPress('[data-testid="sw-b"]', true);
+    expect(atSwitch).not.toBe(trigA());
+    expect(f.componentInstance.which).toBe('B');
+  });
+});
+
+/**
+ * 由鍵盤快捷鍵或右鍵打開、用 fixedMode 定位的選單（dashboard 的卡片選單）：打開前焦點先被移開，記不到觸發鈕。
+ * 選單放在元件範本最外層，同一層剛好有一顆不相干、沒開著的選單按鈕
+ */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent],
+  template: `
+    <div class="page">
+      <button type="button" data-testid="toolbar-more" aria-haspopup="menu" aria-expanded="false">工具列的更多</button>
+      @if (open) {
+        <app-action-menu ariaLabel="卡片操作" [fixedMode]="true" [fixedTop]="200" [fixedLeft]="200" (closeMenu)="open = false">
+          <app-menu-item label="開啟"></app-menu-item>
+          <app-menu-item label="複製連結"></app-menu-item>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class KeyboardOpenedFixedHostComponent {
+  open = false;
+}
+
+describe('ActionMenuComponent — 選單模式：沒有觸發鈕的選單（鍵盤快捷鍵、右鍵打開）', () => {
+  afterEach(() => {
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  for (const closeWith of ['Escape', 'item-click', 'Tab'] as const) {
+    it(`關掉（${closeWith}）後，焦點不會跳到外層裡唯一一顆不相干的選單按鈕`, async () => {
+      const f = TestBed.createComponent(KeyboardOpenedFixedHostComponent);
+      f.detectChanges();
+      (document.activeElement as HTMLElement | null)?.blur(); // 快捷鍵打開前先 blur
+      f.componentInstance.open = true;
+      f.detectChanges();
+      await nextFrame();
+      await tick();
+      expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
+      if (closeWith === 'Escape') press('Escape');
+      else if (closeWith === 'Tab') press('Tab');
+      else (document.querySelectorAll<HTMLElement>('app-action-menu app-menu-item button')[0]).click();
+      f.detectChanges();
+      expect(f.componentInstance.open).toBeFalse();
+      expect(document.activeElement).not.toBe(document.querySelector('[data-testid="toolbar-more"]'));
+      f.destroy();
+    });
+  }
+});
+
+/** 選項自己的 itemClick 會改到自己：變停用、被 @for 重建（每次都是新物件）、換圖示 */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent],
+  template: `
+    <div class="wrap">
+      <button type="button" data-testid="trigger" aria-haspopup="menu" [attr.aria-expanded]="open">更多</button>
+      @if (open) {
+        <app-action-menu ariaLabel="更多操作" [autoCloseOnAction]="autoClose" (closeMenu)="open = false; closeCount = closeCount + 1">
+          <app-menu-item data-testid="pin" label="釘選" [disabled]="pinned" (itemClick)="pinned = true"></app-menu-item>
+          @for (o of options; track o) {
+            <app-menu-item [label]="o.label" (itemClick)="rebuild()"></app-menu-item>
+          }
+          <app-menu-item data-testid="dir" label="排序方向" [icon]="asc ? 'UpArrow' : 'DownArrow'" (itemClick)="asc = !asc"></app-menu-item>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class SelfChangingItemsHostComponent {
+  open = false;
+  autoClose = true;
+  closeCount = 0;
+  pinned = false;
+  asc = true;
+  options = [{ label: '選項甲' }, { label: '選項乙' }];
+
+  rebuild(): void {
+    this.options = this.options.map((o) => ({ ...o }));
+  }
+}
+
+describe('ActionMenuComponent — 選單模式：用滑鼠點的選項，自己的 itemClick 改到了自己', () => {
+  let f: ComponentFixture<SelfChangingItemsHostComponent>;
+  const menu = () => document.querySelector('app-action-menu') as HTMLElement | null;
+
+  /** 跟正式環境一樣自動更新畫面：選項按鈕的點擊監聽跑完、外框的點擊監聽還沒跑之前，畫面就先更新了 */
+  async function openMenu(autoClose = true): Promise<void> {
+    f = TestBed.createComponent(SelfChangingItemsHostComponent);
+    f.componentInstance.autoClose = autoClose;
+    f.autoDetectChanges(true);
+    (document.querySelector('[data-testid="trigger"]') as HTMLElement).focus();
+    f.componentInstance.open = true;
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
+  }
+
+  afterEach(() => {
+    f?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  /** 滑鼠點一下：先按下（選單在這時記下按的是哪裡），再點擊 */
+  function mouseClick(el: Element): void {
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  }
+  const trigger = () => document.querySelector('[data-testid="trigger"]') as HTMLElement;
+
+  it('點了之後這一項變成停用：選單照樣關閉，焦點回到觸發鈕', async () => {
+    await openMenu();
+    mouseClick(document.querySelector('[data-testid="pin"] button') as HTMLElement);
+    await tick();
+    expect(f.componentInstance.pinned).toBeTrue();
+    expect(f.componentInstance.closeCount).toBe(1);
+    expect(menu()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('點了之後選項清單被重建（這一項換成新的元素）：選單照樣關閉，焦點回到觸發鈕', async () => {
+    await openMenu();
+    const target = document.querySelectorAll<HTMLElement>('app-action-menu app-menu-item button')[1];
+    mouseClick(target);
+    await tick();
+    expect(target.isConnected).toBeFalse();
+    expect(f.componentInstance.closeCount).toBe(1);
+    expect(menu()).toBeNull();
+    // 按到的那一項關閉時已經不在畫面上，也還是選單裡面，不能當成按了選單外面的控制項
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('點到圖示、點了之後這一項換了圖示（按到的線條被換掉）：選單照樣關閉，焦點回到觸發鈕', async () => {
+    await openMenu();
+    const path = document.querySelector('[data-testid="dir"] app-icon svg path') as Element;
+    mouseClick(path);
+    await tick();
+    expect(path.isConnected).toBeFalse();
+    expect(f.componentInstance.asc).toBeFalse();
+    expect(f.componentInstance.closeCount).toBe(1);
+    expect(menu()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('autoCloseOnAction=false（手機排序）：點圖示換了圖示，選單不關，焦點也不會被拉到選單外框', async () => {
+    await openMenu(false);
+    const path = document.querySelector('[data-testid="dir"] app-icon svg path') as Element;
+    mouseClick(path);
+    await tick();
+    expect(f.componentInstance.asc).toBeFalse();
+    expect(f.componentInstance.closeCount).toBe(0);
+    expect(menu()).not.toBeNull();
+    expect(document.activeElement).not.toBe(menu());
+  });
+});
+
+describe('ActionMenuComponent — 選單模式：按住 Enter 或空白鍵不放', () => {
+  let fixture: ComponentFixture<MenuModeHostComponent>;
+  const trigger = () => document.querySelector('[data-testid="trigger"]') as HTMLElement;
+
+  async function openMenu(): Promise<void> {
+    fixture = TestBed.createComponent(MenuModeHostComponent);
+    fixture.detectChanges();
+    trigger().focus();
+    fixture.componentInstance.open = true;
+    fixture.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(document.activeElement?.getAttribute('aria-checked')).toBe('true'); // 停在「由舊到新」
+  }
+
+  function release(key: string): KeyboardEvent {
+    const up = new KeyboardEvent('keyup', { key, bubbles: true, cancelable: true });
+    ((document.activeElement as HTMLElement | null) ?? document.body).dispatchEvent(up);
+    return up;
+  }
+
+  // 別的測試按了 Enter／空白鍵沒放開時，吃連發的監聽會留到這裡；先放開，每一條都從沒有監聽的狀態開始
+  beforeEach(() => {
+    release('Enter');
+    release(' ');
+  });
+
+  afterEach(() => {
+    release('Enter');
+    release(' ');
+    fixture?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  for (const [key, name] of [['Enter', 'Enter'], [' ', '空白鍵']] as const) {
+    it(`${name}：連發的按鍵（按住觸發鈕打開選單後落進選單）不執行選項`, async () => {
+      await openMenu();
+      expect(press(key, { repeat: true }).defaultPrevented).toBeTrue();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.picks).toEqual([]);
+      expect(fixture.componentInstance.open).toBeTrue();
+    });
+
+    it(`${name}：執行一項、選單關掉後，到放開之前的連發都被吃掉，觸發鈕和 document 都收不到`, async () => {
+      await openMenu();
+      press(key);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.picks).toEqual(['由舊到新']);
+      expect(fixture.componentInstance.open).toBeFalse();
+      expect(document.activeElement).toBe(trigger());
+      const seen: string[] = [];
+      const onKey = (e: KeyboardEvent) => seen.push(`${e.type}:${e.repeat ? 'repeat' : 'first'}`);
+      trigger().addEventListener('keydown', onKey);
+      document.addEventListener('keydown', onKey);
+      try {
+        expect(press(key, { repeat: true }).defaultPrevented).toBeTrue();
+        expect(seen).toEqual([]);
+        // 空白鍵在按鈕上是放開時才按下去：放開這一下也不能按到觸發鈕
+        expect(release(key).defaultPrevented).toBeTrue();
+        // 放開後重新按：照常
+        expect(press(key).defaultPrevented).toBeFalse();
+        expect(seen).toEqual(['keydown:first', 'keydown:first']);
+      } finally {
+        trigger().removeEventListener('keydown', onKey);
+        document.removeEventListener('keydown', onKey);
+      }
+    });
+  }
+
+  it('焦點離開視窗、收不到放開：之後的連發不再被吃掉', async () => {
+    await openMenu();
+    press('Enter');
+    fixture.detectChanges();
+    window.dispatchEvent(new Event('blur'));
+    expect(press('Enter', { repeat: true }).defaultPrevented).toBeFalse();
+  });
+
+  it('收不到放開、又真的按了一次同一個鍵：這一下照常傳下去，之後的連發也不再被吃掉', async () => {
+    await openMenu();
+    press('Enter');
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(trigger());
+    expect(press('Enter').defaultPrevented).toBeFalse();
+    expect(press('Enter', { repeat: true }).defaultPrevented).toBeFalse();
+  });
+});
+
+describe('ActionMenuComponent — 選單模式：先按過外層裡別的控制項，之後用鍵盤選一項', () => {
+  let fixture: ComponentFixture<MenuModeHostComponent>;
+  const q = (sel: string) => document.querySelector(sel) as HTMLElement;
+
+  afterEach(() => {
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+    fixture?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  it('按下時不拿走焦點的控制項按過之後，用 Enter 選一項：焦點回到觸發鈕', async () => {
+    fixture = TestBed.createComponent(MenuModeHostComponent);
+    fixture.detectChanges();
+    q('[data-testid="trigger"]').focus();
+    fixture.componentInstance.open = true;
+    fixture.detectChanges();
+    await nextFrame();
+    await tick();
+    const item = document.activeElement;
+    expect(item?.getAttribute('aria-checked')).toBe('true');
+    // 例如編輯器工具列寫了 mousedown 取消預設的按鈕：按下去不拿走焦點；它在選單的外層裡，不算點外面，選單照樣開著
+    q('[data-testid="before"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.open).toBeTrue();
+    expect(document.activeElement).toBe(item);
+    press('Enter');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.picks).toEqual(['由舊到新']);
+    expect(fixture.componentInstance.open).toBeFalse();
+    expect(document.activeElement).toBe(q('[data-testid="trigger"]'));
+  });
+});
+
+/** 同一個外層裡兩顆 app-button 觸發鈕共用一個狀態，B 沒綁 aria-expanded（例如改寫到一半） */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent, ButtonComponent],
+  template: `
+    <div class="toolbar">
+      <app-button data-testid="hb-a" variant="outlined" color="neutral" size="XS" text="篩選"
+        ariaHaspopup="menu" [ariaExpanded]="which === 'A'" (btnClick)="toggle('A')"></app-button>
+      <app-button data-testid="hb-b" variant="outlined" color="neutral" size="XS" text="排序"
+        ariaHaspopup="menu" (btnClick)="toggle('B')"></app-button>
+      @if (which === 'A') {
+        <app-action-menu ariaLabel="篩選" (closeMenu)="which = null">
+          <app-menu-item label="項目 A1"></app-menu-item>
+        </app-action-menu>
+      }
+      @if (which === 'B') {
+        <app-action-menu ariaLabel="排序" (closeMenu)="which = null">
+          <app-menu-item label="由新到舊"></app-menu-item>
+          <app-menu-item label="由舊到新"></app-menu-item>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class HalfBoundSwitchHostComponent {
+  which: 'A' | 'B' | null = null;
+
+  toggle(menu: 'A' | 'B'): void {
+    this.which = this.which === menu ? null : menu;
+  }
+}
+
+describe('ActionMenuComponent — 選單模式：從開著的選單直接切到沒綁 aria-expanded 的觸發鈕（Chrome）', () => {
+  let f: ComponentFixture<HalfBoundSwitchHostComponent>;
+  const inner = (id: string) => document.querySelector(`[data-testid="${id}"] button`) as HTMLElement;
+
+  afterEach(() => {
+    f?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  it('A 開著時點 B：關掉 B 後焦點回到 B（打開前有焦點的元素），不是剛關掉的 A', async () => {
+    f = TestBed.createComponent(HalfBoundSwitchHostComponent);
+    f.detectChanges();
+    inner('hb-a').focus();
+    inner('hb-a').click();
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(f.componentInstance.which).toBe('A');
+    // Chrome 按下 B 時就把焦點給它
+    inner('hb-b').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    f.detectChanges();
+    inner('hb-b').focus();
+    inner('hb-b').click();
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(f.componentInstance.which).toBe('B');
+    expect(inner('hb-a').getAttribute('aria-expanded')).toBe('false');
+    press('Escape');
+    f.detectChanges();
+    expect(f.componentInstance.which).toBeNull();
+    expect(document.activeElement).toBe(inner('hb-b'));
+  });
+});
+
+/** 每列一顆觸發鈕、共用一份選單；資料重新載入時清單依物件重建，觸發鈕換成新的元素 */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent],
+  template: `
+    <div class="rows">
+      @for (r of rows; track r) {
+        <button type="button" [attr.data-testid]="'row-' + r.id" aria-haspopup="menu"
+          [attr.aria-expanded]="openId === r.id" (click)="openId = openId === r.id ? null : r.id">{{ r.name }}</button>
+      }
+      @if (openId !== null) {
+        <app-action-menu ariaLabel="列操作" [fixedMode]="fixed" [fixedTop]="fixed ? 100 : null" [fixedLeft]="fixed ? 100 : null"
+          (closeMenu)="openId = null">
+          <app-menu-item label="開啟"></app-menu-item>
+          <app-menu-item label="刪除"></app-menu-item>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class RebuiltRowTriggerHostComponent {
+  rows = [{ id: 1, name: 'A' }, { id: 2, name: 'B' }, { id: 3, name: 'C' }];
+  openId: number | null = null;
+  fixed = false;
+  reload(): void {
+    this.rows = this.rows.map(r => ({ ...r }));
+  }
+}
+
+/** 版面變窄時觸發鈕從 app-button 換成原生按鈕，選單是同一份 */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent, ButtonComponent],
+  template: `
+    <div class="wrap">
+      @if (compact) {
+        <button type="button" data-testid="narrow" aria-haspopup="menu" [attr.aria-expanded]="open" (click)="open = !open">更多</button>
+      } @else {
+        <app-button data-testid="wide" variant="outlined" color="neutral" size="XS" text="更多"
+          ariaHaspopup="menu" [ariaExpanded]="open" (btnClick)="open = !open"></app-button>
+      }
+      @if (open) {
+        <app-action-menu ariaLabel="更多" (closeMenu)="open = false">
+          <app-menu-item label="一"></app-menu-item>
+          <app-menu-item label="二"></app-menu-item>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class SwappedTriggerHostComponent {
+  open = false;
+  compact = false;
+}
+
+describe('ActionMenuComponent — 選單模式：選單開著時觸發鈕被重建', () => {
+  afterEach(() => {
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  for (const fixed of [false, true]) {
+    for (const browser of ['Chrome', 'Safari'] as const) {
+      for (const closeWith of ['Escape', 'Tab', 'item-click'] as const) {
+        it(`清單重新載入（fixedMode ${fixed}、${browser}、${closeWith} 關掉）：焦點回到重建後的那顆觸發鈕`, async () => {
+          const f = TestBed.createComponent(RebuiltRowTriggerHostComponent);
+          f.componentInstance.fixed = fixed;
+          f.detectChanges();
+          const row2 = () => document.querySelector('[data-testid="row-2"]') as HTMLElement;
+          // Chrome 點按鈕會給它焦點；Safari 不給，焦點留在 body
+          if (browser === 'Chrome') row2().focus();
+          else (document.activeElement as HTMLElement | null)?.blur();
+          row2().click();
+          f.detectChanges();
+          await nextFrame();
+          await tick();
+          expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
+          const before = row2();
+          f.componentInstance.reload();
+          f.detectChanges();
+          expect(row2()).not.toBe(before);
+          if (closeWith === 'Escape') press('Escape');
+          else if (closeWith === 'Tab') press('Tab');
+          else document.querySelectorAll<HTMLElement>('app-action-menu app-menu-item button')[0].click();
+          f.detectChanges();
+          expect(f.componentInstance.openId).toBeNull();
+          expect(document.activeElement).toBe(row2());
+          f.destroy();
+        });
+      }
+    }
+  }
+
+  for (const browser of ['Chrome', 'Safari'] as const) {
+    it(`版面變窄、觸發鈕從 app-button 換成原生按鈕（${browser}）：Esc 關掉後焦點回到換上來的那顆`, async () => {
+      const f = TestBed.createComponent(SwappedTriggerHostComponent);
+      f.detectChanges();
+      const wide = () => document.querySelector('[data-testid="wide"] button') as HTMLElement;
+      if (browser === 'Chrome') wide().focus();
+      else (document.activeElement as HTMLElement | null)?.blur();
+      wide().click();
+      f.detectChanges();
+      await nextFrame();
+      await tick();
+      expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
+      f.componentInstance.compact = true;
+      f.detectChanges();
+      const narrow = document.querySelector('[data-testid="narrow"]') as HTMLElement;
+      expect(narrow.getAttribute('aria-expanded')).toBe('true');
+      press('Escape');
+      f.detectChanges();
+      expect(f.componentInstance.open).toBeFalse();
+      expect(document.activeElement).toBe(narrow);
+      f.destroy();
+    });
+  }
 });
