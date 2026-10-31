@@ -75,8 +75,8 @@ export function expandedMenuTrigger(scope: HTMLElement | null, hint: Element | n
   const owner = found.find((el) => !!hint && el.contains(hint));
   if (owner) return owner;
   if (found.length !== 1) return null;
-  // 包著它的外框不算別的地方：Safari 點按鈕時，焦點會停在外面點得到焦點的那層（例如 role="gridcell" 的格子、
-  // tabindex="-1" 的卡片），沒有這層就回到 body
+  // 包著它的外框不算別的地方：Safari 點按鈕時，焦點會停在外面點得到焦點的那層（例如加了 tabindex="-1" 的
+  // role="gridcell" 格子、tabindex="-1" 的卡片），沒有這層就回到 body
   const elsewhere = !!hint && scope.contains(hint) && !hint.contains(found[0]);
   return elsewhere ? null : found[0];
 }
