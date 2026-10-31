@@ -8,6 +8,8 @@
     [disabled]="disabled"
     [attr.aria-label]="ariaLabel || null"
     [attr.aria-pressed]="toggle ? (active ? 'true' : 'false') : null"
+    [attr.aria-haspopup]="ariaHaspopup"
+    [attr.aria-expanded]="ariaExpanded"
     type="button"
     (click)="onClick()"
   >

@@ -38,6 +38,23 @@ class ProjectedHostComponent {}
 })
 class HostAttrComponent {}
 
+/** 打開選單的觸發鈕（例：每頁筆數）：ariaHaspopup／ariaExpanded 要落在內層 button.btn */
+@Component({
+  standalone: true,
+  imports: [ButtonComponent],
+  template: `
+    @if (withMenuAttrs) {
+      <app-button class="trigger" text="10" ariaHaspopup="menu" [ariaExpanded]="expanded"></app-button>
+    } @else {
+      <app-button class="trigger" text="10"></app-button>
+    }
+  `,
+})
+class MenuTriggerHostComponent {
+  withMenuAttrs = true;
+  expanded = true;
+}
+
 describe('ButtonComponent — 報讀名稱與狀態', () => {
   let fixture: ComponentFixture<HostComponent>;
   let warn: jasmine.Spy;
@@ -101,6 +118,30 @@ describe('ButtonComponent — 報讀名稱與狀態', () => {
     const host = f.nativeElement.querySelector('app-button') as HTMLElement;
     expect(host.getAttribute('aria-label')).toBe('外層名稱');
     expect(host.querySelector('button')!.hasAttribute('aria-label')).toBeFalse();
+  });
+
+  describe('ariaHaspopup／ariaExpanded（打開選單的按鈕）', () => {
+    const trigger = (f: ComponentFixture<MenuTriggerHostComponent>) =>
+      f.nativeElement.querySelector('.trigger button.btn') as HTMLButtonElement;
+
+    it('設 ariaHaspopup="menu"、ariaExpanded=true → 內層 button.btn 有 aria-haspopup="menu"、aria-expanded="true"；改成 false 時輸出 "false"', () => {
+      const f = TestBed.createComponent(MenuTriggerHostComponent);
+      f.detectChanges();
+      expect(trigger(f).getAttribute('aria-haspopup')).toBe('menu');
+      expect(trigger(f).getAttribute('aria-expanded')).toBe('true');
+      f.componentInstance.expanded = false;
+      f.detectChanges();
+      expect(trigger(f).getAttribute('aria-expanded')).toBe('false');
+      expect(f.nativeElement.querySelector('app-button').hasAttribute('aria-haspopup')).toBeFalse();
+    });
+
+    it('不設時兩個屬性都沒有', () => {
+      const f = TestBed.createComponent(MenuTriggerHostComponent);
+      f.componentInstance.withMenuAttrs = false;
+      f.detectChanges();
+      expect(trigger(f).hasAttribute('aria-haspopup')).toBeFalse();
+      expect(trigger(f).hasAttribute('aria-expanded')).toBeFalse();
+    });
   });
 
   describe('沒有名稱的警告（開發模式）', () => {

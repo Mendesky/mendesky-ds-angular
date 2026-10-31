@@ -24,6 +24,9 @@ export type IconBtnClass =
   | 'Modal' | 'SectionBtn' | 'Drag' | 'Block' | 'Block-Transparent'
   | 'Icon+Text';
 
+/** aria-haspopup 的值：這顆按鈕會打開哪一種浮層。目前只開放 'menu'（打開放了 app-menu-item 的 app-action-menu） */
+export type IconBtnAriaHaspopup = 'menu';
+
 @Component({
   selector: 'app-icon-btn',
   standalone: true,
@@ -55,6 +58,12 @@ export class IconBtnComponent {
 
   /** 無障礙標籤（建議每個 icon-btn 都設定） */
   @Input() ariaLabel = '';
+
+  /** 這顆按鈕會打開選單（aria-haspopup，落在內層 button）；null＝不輸出。Safari 關閉選單後要同時有它和 ariaExpanded 才認得出觸發鈕 */
+  @Input() ariaHaspopup: IconBtnAriaHaspopup | null = null;
+
+  /** 選單現在開著沒（aria-expanded，落在內層 button）；null＝不輸出，true／false 照實輸出 */
+  @Input() ariaExpanded: boolean | null = null;
 
   /** 文字標籤（僅 Icon+Text 模式顯示，呈現在圓形按鈕下方） */
   @Input() label = '';

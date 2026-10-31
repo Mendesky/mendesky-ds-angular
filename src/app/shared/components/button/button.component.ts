@@ -9,6 +9,8 @@ export type ButtonColor = 'primary' | 'success' | 'danger' | 'neutral';
 export type ButtonSize = 'XXS' | 'XS' | 'S' | 'M' | 'L';
 /** aria-current 的值：'true' 用在清單裡的目前項目，其餘依 WAI-ARIA 定義 */
 export type ButtonAriaCurrent = 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false';
+/** aria-haspopup 的值：這顆按鈕會打開哪一種浮層。目前只開放 'menu'（打開放了 app-menu-item 的 app-action-menu） */
+export type ButtonAriaHaspopup = 'menu';
 
 /** Button 內嵌 label 的設定 */
 export interface BtnLabelConfig {
@@ -63,6 +65,10 @@ export class ButtonComponent implements OnChanges, AfterViewInit {
   @Input() ariaPressed: boolean | null = null;
   /** 清單或導覽中的「目前這一項」（aria-current）；null＝不輸出 */
   @Input() ariaCurrent: ButtonAriaCurrent | null = null;
+  /** 這顆按鈕會打開選單（aria-haspopup）；null＝不輸出。Safari 關閉選單後要同時有它和 ariaExpanded 才認得出觸發鈕 */
+  @Input() ariaHaspopup: ButtonAriaHaspopup | null = null;
+  /** 選單現在開著沒（aria-expanded）；null＝不輸出，true／false 照實輸出 */
+  @Input() ariaExpanded: boolean | null = null;
 
   @Output() btnClick = new EventEmitter<void>();
   /** clickableWhenDisabled=true 且 disabled=true 時，點擊觸發。*/

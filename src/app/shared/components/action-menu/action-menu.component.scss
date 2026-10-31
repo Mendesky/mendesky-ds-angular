@@ -13,6 +13,11 @@
   animation: actionMenuIn 150ms var(--ease-enter);
 }
 
+// 選單模式（放了 app-menu-item）外框是 tabindex="-1"：點到分隔線或空白處時焦點留在外框上，不畫焦點框
+:host([role='menu']:focus) {
+  outline: none;
+}
+
 @keyframes actionMenuIn {
   from { opacity: 0; scale: 0.97; }
   to   { opacity: 1; scale: 1; }
