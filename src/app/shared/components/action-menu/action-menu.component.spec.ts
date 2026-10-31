@@ -2167,7 +2167,7 @@ class HalfBoundSwitchHostComponent {
   }
 }
 
-describe('ActionMenuComponent — 選單模式：從開著的選單直接切到沒綁 aria-expanded 的觸發鈕（Chrome）', () => {
+describe('ActionMenuComponent — 選單模式：從開著的選單直接切到沒綁 aria-expanded 的觸發鈕', () => {
   let f: ComponentFixture<HalfBoundSwitchHostComponent>;
   const inner = (id: string) => document.querySelector(`[data-testid="${id}"] button`) as HTMLElement;
 
@@ -2199,6 +2199,28 @@ describe('ActionMenuComponent — 選單模式：從開著的選單直接切到�
     f.detectChanges();
     expect(f.componentInstance.which).toBeNull();
     expect(document.activeElement).toBe(inner('hb-b'));
+  });
+
+  it('Safari：A 開著時點 B（焦點清回 body）：關掉 B 後焦點不會跑到 A 的觸發鈕', async () => {
+    f = TestBed.createComponent(HalfBoundSwitchHostComponent);
+    f.detectChanges();
+    (document.activeElement as HTMLElement | null)?.blur();
+    inner('hb-a').click();
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    inner('hb-b').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    f.detectChanges();
+    (document.activeElement as HTMLElement | null)?.blur(); // Safari 按按鈕不給它焦點
+    inner('hb-b').click();
+    f.detectChanges();
+    await nextFrame();
+    await tick();
+    expect(f.componentInstance.which).toBe('B');
+    press('Escape');
+    f.detectChanges();
+    expect(f.componentInstance.which).toBeNull();
+    expect(document.activeElement).toBe(document.body);
   });
 });
 
@@ -2320,21 +2342,27 @@ describe('ActionMenuComponent — 選單模式：選單開著時觸發鈕被重�
 });
 
 /**
- * 上一層的清單面板一直開著（打開它的按鈕標著 aria-expanded="true"），面板裡每列的「更多」打開第二層選單。
- * 「更多」是 role="button"、tabindex="0" 的 span，沒有 aria-haspopup：點它、按它都會取得焦點
+ * 上一層的浮層一直開著（打開它的按鈕標著 aria-expanded="true"），浮層裡每列的「更多」打開第二層選單。
+ * 「更多」預設是 role="button"、tabindex="0" 的 span，沒有 aria-haspopup：點它、按它都會取得焦點。
+ * nativeOpener 為 true 時改成照規格標了 aria-haspopup、aria-expanded 的原生按鈕
  */
 @Component({
   standalone: true,
   imports: [ActionMenuComponent, MenuItemComponent],
   template: `
     <div class="backdrop">
-      <button type="button" data-testid="picker" aria-haspopup="menu" [attr.aria-expanded]="panelOpen" (click)="panelOpen = !panelOpen">清單</button>
+      <button type="button" data-testid="picker" aria-haspopup="menu" [attr.aria-expanded]="panelOpen" (click)="panelOpen = !panelOpen">篩選</button>
       @if (panelOpen) {
         <div class="panel">
           @for (r of rows; track r) {
             <div class="row">
               {{ r.name }}
-              <span role="button" tabindex="0" [attr.data-testid]="'more-' + r.id" (click)="menuFor = r.id">更多</span>
+              @if (nativeOpener) {
+                <button type="button" aria-haspopup="menu" [attr.aria-expanded]="menuFor === r.id"
+                  [attr.data-testid]="'more-' + r.id" (click)="menuFor = r.id">更多</button>
+              } @else {
+                <span role="button" tabindex="0" [attr.data-testid]="'more-' + r.id" (click)="menuFor = r.id">更多</span>
+              }
             </div>
           }
         </div>
@@ -2349,6 +2377,7 @@ describe('ActionMenuComponent — 選單模式：選單開著時觸發鈕被重�
   `,
 })
 class OpenPanelRowMenuHostComponent {
+  nativeOpener = false;
   panelOpen = true;
   rows = [{ id: 1, name: 'A' }, { id: 2, name: 'B' }];
   menuFor: number | null = null;
@@ -2401,32 +2430,29 @@ describe('ActionMenuComponent — 選單模式：上一層的選單按鈕一直�
     expect(document.activeElement).toBe(document.body);
   });
 
-  it('Safari：A 開著時點沒綁 aria-expanded 的 B（焦點清回 body）：關掉 B 後焦點不會跑到 A 的觸發鈕', async () => {
-    const h = TestBed.createComponent(HalfBoundSwitchHostComponent);
-    h.detectChanges();
-    const inner = (id: string) => document.querySelector(`[data-testid="${id}"] button`) as HTMLElement;
-    (document.activeElement as HTMLElement | null)?.blur();
-    inner('hb-a').click();
-    h.detectChanges();
+  it('Safari 點浮層裡照規格標了 aria-expanded 的原生按鈕（焦點清回 body）：兩顆都標著、認不出是哪顆，焦點不還，不會跳到上一層標著的按鈕', async () => {
+    f = TestBed.createComponent(OpenPanelRowMenuHostComponent);
+    f.componentInstance.nativeOpener = true;
+    f.detectChanges();
+    (document.activeElement as HTMLElement | null)?.blur(); // Safari 點按鈕不給它焦點
+    more2().click();
+    f.detectChanges();
     await nextFrame();
     await tick();
-    inner('hb-b').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
-    h.detectChanges();
-    (document.activeElement as HTMLElement | null)?.blur(); // Safari 按按鈕不給它焦點
-    inner('hb-b').click();
-    h.detectChanges();
-    await nextFrame();
-    await tick();
-    expect(h.componentInstance.which).toBe('B');
+    expect(more2().getAttribute('aria-expanded')).toBe('true');
+    expect(picker().getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
     press('Escape');
-    h.detectChanges();
-    expect(h.componentInstance.which).toBeNull();
+    f.detectChanges();
+    expect(f.componentInstance.menuFor).toBeNull();
     expect(document.activeElement).toBe(document.body);
-    h.destroy();
   });
 });
 
-/** 觸發鈕放在可聚焦的格子裡（role="gridcell"、tabindex="-1"，格子本身也算控制項） */
+/**
+ * 觸發鈕放在可聚焦的格子裡（role="gridcell"、tabindex="-1"，格子本身也算控制項）。
+ * menuAtRow 為 true 時選單放在列這層，格子就成了選單上一層元素裡面的一層外框
+ */
 @Component({
   standalone: true,
   imports: [ActionMenuComponent, MenuItemComponent],
@@ -2435,37 +2461,46 @@ describe('ActionMenuComponent — 選單模式：上一層的選單按鈕一直�
       <div role="row">
         <div role="gridcell" tabindex="-1" data-testid="cell">
           <button type="button" data-testid="cell-trigger" aria-haspopup="menu" [attr.aria-expanded]="open" (click)="open = !open">更多</button>
-          @if (open) {
+          @if (open && !menuAtRow) {
             <app-action-menu ariaLabel="列操作" (closeMenu)="open = false">
               <app-menu-item label="項目一"></app-menu-item>
             </app-action-menu>
           }
         </div>
+        @if (open && menuAtRow) {
+          <app-action-menu ariaLabel="列操作" (closeMenu)="open = false">
+            <app-menu-item label="項目一"></app-menu-item>
+          </app-action-menu>
+        }
       </div>
     </div>
   `,
 })
 class TriggerInFocusableCellHostComponent {
+  menuAtRow = false;
   open = false;
 }
 
 describe('ActionMenuComponent — 選單模式：觸發鈕放在可聚焦的格子裡（Safari）', () => {
-  it('Safari 點按鈕時焦點停在外面的格子：Esc 關掉後焦點回到格子裡的觸發鈕，不是格子', async () => {
-    const f = TestBed.createComponent(TriggerInFocusableCellHostComponent);
-    f.detectChanges();
-    const cell = document.querySelector('[data-testid="cell"]') as HTMLElement;
-    const trigger = document.querySelector('[data-testid="cell-trigger"]') as HTMLElement;
-    cell.focus(); // Safari 點按鈕不給它焦點，焦點落到最近一層點得到焦點的祖先
-    trigger.click();
-    f.detectChanges();
-    await nextFrame();
-    await tick();
-    expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
-    press('Escape');
-    f.detectChanges();
-    expect(f.componentInstance.open).toBeFalse();
-    expect(document.activeElement).toBe(trigger);
-    f.destroy();
-    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
-  });
+  for (const menuAtRow of [false, true]) {
+    it(`Safari 點按鈕時焦點停在外面的格子（選單放在${menuAtRow ? '列' : '格子'}這層）：Esc 關掉後焦點回到格子裡的觸發鈕，不是格子`, async () => {
+      const f = TestBed.createComponent(TriggerInFocusableCellHostComponent);
+      f.componentInstance.menuAtRow = menuAtRow;
+      f.detectChanges();
+      const cell = document.querySelector('[data-testid="cell"]') as HTMLElement;
+      const trigger = document.querySelector('[data-testid="cell-trigger"]') as HTMLElement;
+      cell.focus(); // Safari 點按鈕不給它焦點，焦點落到最近一層點得到焦點的祖先
+      trigger.click();
+      f.detectChanges();
+      await nextFrame();
+      await tick();
+      expect(document.activeElement?.getAttribute('role')).toBe('menuitem');
+      press('Escape');
+      f.detectChanges();
+      expect(f.componentInstance.open).toBeFalse();
+      expect(document.activeElement).toBe(trigger);
+      f.destroy();
+      document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+    });
+  }
 });
