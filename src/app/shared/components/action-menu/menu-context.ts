@@ -27,7 +27,7 @@ const EXPANDED_MENU_TRIGGER_SELECTOR = MENU_TRIGGER_VALUES
   .join(', ');
 
 /** 本身就是控制項的角色。roving tabindex 的選項、格子這類 tabindex="-1" 的控制項靠它認 */
-const WIDGET_ROLES = [
+export const WIDGET_ROLES = [
   'button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'option',
   'menuitem', 'menuitemcheckbox', 'menuitemradio', 'gridcell', 'treeitem',
   'slider', 'spinbutton', 'combobox', 'textbox', 'searchbox',

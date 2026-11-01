@@ -54,6 +54,21 @@ class InMenuHostComponent {
   panelOpen = false;
 }
 
+/** 強制色彩模式的組合狀態：選中＋說明、選中＋危險、選中＋危險＋面板開著、面板開著＋說明 */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent],
+  template: `
+    <app-action-menu ariaLabel="組合" [autoFocusFirst]="false">
+      <app-menu-item data-testid="sel-desc" label="項目 A" description="說明文字" [selected]="true"></app-menu-item>
+      <app-menu-item data-testid="sel-danger" label="項目 B" tone="danger" [selected]="true"></app-menu-item>
+      <app-menu-item data-testid="sel-panel-danger" label="項目 C" tone="danger" [selected]="true" opensPanel="dialog" [panelOpen]="true"></app-menu-item>
+      <app-menu-item data-testid="panel-desc" label="項目 D" description="說明文字" opensPanel="dialog" [panelOpen]="true"></app-menu-item>
+    </app-action-menu>
+  `,
+})
+class ForcedComboHostComponent {}
+
 /** 寬度：兩個選單分開量，一個只放長說明，一個只放長標籤 */
 @Component({
   standalone: true,
@@ -128,6 +143,56 @@ function forcedColorRules(token: string): CSSStyleRule[] {
 }
 
 const prop = (rule: CSSStyleRule, name: string) => rule.style.getPropertyValue(name).trim().toLowerCase();
+
+/**
+ * 量強制色彩模式（Windows 高對比）下最後勝出的樣式。Karma 的瀏覽器開不了強制色彩、也做不出滑過，所以：
+ * 把含選單選項樣式的樣式表複製一份，@media (forced-colors: active) 裡的規則改成無條件生效，
+ * :hover、:active、:focus-visible 換成同權重的 class（fc-hover、fc-active、fc-focus），關掉漸變，插在原本那份後面，再停用原本那份。
+ * 權重與先後順序都沒變，量到的 computed style 就是強制色彩模式下勝出的那條規則給的值。
+ * 只看規則在不在（forcedColorRules）看不出這件事：media 外權重比較高的規則會蓋過 media 裡的。回傳還原函式
+ */
+function emulateForcedColorsCascade(): () => void {
+  const isForced = (r: CSSRule): r is CSSMediaRule =>
+    r instanceof CSSMediaRule && r.conditionText.includes('forced-colors: active');
+  const sheets = Array.from(document.styleSheets).filter((sheet) => {
+    try {
+      return Array.from(sheet.cssRules).some((r) => isForced(r) && r.cssText.includes('.mi--'));
+    } catch {
+      return false;
+    }
+  });
+  const clones = sheets.map((sheet) => {
+    const css = Array.from(sheet.cssRules)
+      .map((r) => (isForced(r) ? Array.from(r.cssRules).map((x) => x.cssText).join('\n') : r.cssText))
+      .join('\n')
+      .replace(/:hover/g, '.fc-hover')
+      .replace(/:active/g, '.fc-active')
+      .replace(/:focus-visible/g, '.fc-focus')
+      // 底色、字色有漸變：不關掉的話，換狀態當下量到的是漸變起點（上一個狀態）的顏色
+      + '\n.mi, .mi * { transition: none !important; }';
+    const el = document.createElement('style');
+    el.textContent = css;
+    const owner = sheet.ownerNode as Element;
+    owner.parentNode!.insertBefore(el, owner.nextSibling);
+    sheet.disabled = true;
+    return el;
+  });
+  expect(sheets.length).withContext('含選單選項強制色彩規則的樣式表').toBeGreaterThan(0);
+  return () => {
+    clones.forEach((el) => el.remove());
+    sheets.forEach((sheet) => (sheet.disabled = false));
+  };
+}
+
+/** 系統色（Highlight、GrayText 這類）在這個瀏覽器算出來的顏色 */
+function systemColor(name: string): string {
+  const probe = document.createElement('div');
+  probe.style.color = name;
+  document.body.appendChild(probe);
+  const value = getComputedStyle(probe).color;
+  probe.remove();
+  return value;
+}
 
 /** 灰 50（--color/grey/50，#aaaaaa）：停用的選項整項用這個灰 */
 const GREY_50 = 'rgb(170, 170, 170)';
@@ -353,6 +418,86 @@ describe('MenuItemComponent', () => {
       expect(sel.every((x) => x.includes(':not(.mi--disabled)'))).toBeTrue();
       expect(open.some((r) => prop(r, '--text/body-light') === 'highlighttext')).toBeTrue();
       expect(open.every((r) => prop(r, 'forced-color-adjust') === 'none')).toBeTrue();
+    });
+
+    it('強制色彩模式下最後勝出的樣式：選中、面板開著（含危險項目）不論平常、滑過、按下，都是選取色底配選取字色，LightWhite 標籤也是；停用的面板開著是停用字色', () => {
+      fixture.componentInstance.panelOpen = true;
+      fixture.detectChanges();
+      const restore = emulateForcedColorsCascade();
+      try {
+        const highlight = systemColor('Highlight');
+        const highlightText = systemColor('HighlightText');
+        const grayText = systemColor('GrayText');
+        expect(highlight).not.toBe(highlightText);
+        const tags: Record<string, string> = { newest: 'newest-tag', panel: 'panel-tag' };
+        for (const id of ['newest', 'panel', 'panel-danger', 'panel-off']) {
+          for (const state of ['', 'fc-hover', 'fc-active']) {
+            const b = btn(id);
+            b.classList.remove('fc-hover', 'fc-active');
+            if (state) b.classList.add(state);
+            const ctx = `${id} ${state || '平常'}`;
+            const style = getComputedStyle(b);
+            if (id === 'panel-off') {
+              expect(style.color).withContext(`${ctx} 字色`).toBe(grayText);
+              expect(style.backgroundColor).withContext(`${ctx} 底色`).not.toBe(highlight);
+              continue;
+            }
+            expect(style.backgroundColor).withContext(`${ctx} 底色`).toBe(highlight);
+            expect(style.color).withContext(`${ctx} 字色`).toBe(highlightText);
+            if (tags[id]) {
+              const tagText = host(id).querySelector(`[data-testid="${tags[id]}"] .label__text`) as HTMLElement;
+              expect(getComputedStyle(tagText).color).withContext(`${ctx} LightWhite 標籤`).toBe(highlightText);
+            }
+          }
+          btn(id).classList.remove('fc-hover', 'fc-active');
+        }
+      } finally {
+        restore();
+      }
+    });
+  });
+
+  describe('強制色彩模式的組合狀態', () => {
+    let fixture: ComponentFixture<ForcedComboHostComponent>;
+    const host = (id: string) => document.querySelector(`app-menu-item[data-testid="${id}"]`) as HTMLElement;
+    const btn = (id: string) => host(id).querySelector('button') as HTMLButtonElement;
+
+    beforeEach(() => {
+      fixture = TestBed.createComponent(ForcedComboHostComponent);
+      fixture.detectChanges();
+    });
+
+    afterEach(() => fixture.destroy());
+
+    it('選中或面板開著，再加上說明、危險：平常、滑過、按下、滑過又按下都是選取色底，標題、說明都是選取字色；鍵盤焦點框是系統字色', () => {
+      const restore = emulateForcedColorsCascade();
+      try {
+        const highlight = systemColor('Highlight');
+        const highlightText = systemColor('HighlightText');
+        const canvasText = systemColor('CanvasText');
+        for (const id of ['sel-desc', 'sel-danger', 'sel-panel-danger', 'panel-desc']) {
+          for (const state of [[], ['fc-hover'], ['fc-active'], ['fc-hover', 'fc-active'], ['fc-focus']]) {
+            const b = btn(id);
+            b.classList.remove('fc-hover', 'fc-active', 'fc-focus');
+            b.classList.add(...state);
+            const ctx = `${id} ${state.join('+') || '平常'}`;
+            const style = getComputedStyle(b);
+            expect(style.backgroundColor).withContext(`${ctx} 底色`).toBe(highlight);
+            expect(style.color).withContext(`${ctx} 字色`).toBe(highlightText);
+            for (const part of ['.mi__label', '.mi__desc']) {
+              const el = b.querySelector(part);
+              if (el) expect(getComputedStyle(el).color).withContext(`${ctx} ${part}`).toBe(highlightText);
+            }
+            if (state.includes('fc-focus')) {
+              // 底色、字色不讓瀏覽器換（forced-color-adjust: none），焦點框也就不會被換成系統色，要自己指定
+              expect(style.outlineColor).withContext(`${ctx} 焦點框`).toBe(canvasText);
+            }
+          }
+          btn(id).classList.remove('fc-hover', 'fc-active', 'fc-focus');
+        }
+      } finally {
+        restore();
+      }
     });
   });
 

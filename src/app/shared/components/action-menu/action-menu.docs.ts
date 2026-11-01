@@ -69,7 +69,7 @@ export const actionMenuDoc: ComponentApi = {
       name: 'autoFocusFirst',
       type: 'boolean',
       default: 'true',
-      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。放了 app-menu-item、觸發鈕又是輸入框時，點外面關掉不會把焦點還給輸入框（游標不跳回去，一拿到焦點就打開的下拉也不會被重新打開），按 Esc 照樣還。沒放 app-menu-item、裡面沒有按鈕時，焦點移到第一個輸入框、下拉或連結。內容還在載入（只有骨架、沒有可以操作的東西）時，等內容出來再移，不限時間；在這之前焦點被移到別處就不移。DS v0.1.7 起。',
+      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。放了 app-menu-item、觸發鈕又是輸入框時，點外面關掉不會把焦點還給輸入框（游標不跳回去，一拿到焦點就打開的下拉也不會被重新打開），按 Esc 照樣還。沒放 app-menu-item 時先到第一顆按鈕，沒有按鈕才到第一個欄位或連結（輸入框、下拉、連結、可編輯區，含 app-select、app-date-picker、app-upload-dropzone 這類用 tabindex 做成的欄位）；tabindex="-1" 的輔助鈕（例如 app-number-input 的增減鈕）、停用或看不到的元素不算。內容還在載入（只有骨架、沒有可以操作的東西）時，等內容出來再移，不限時間；在這之前焦點被移到別處就不移。DS v0.1.7 起。',
     },
     {
       name: 'ariaLabel',

@@ -5,7 +5,7 @@ import {
  ChangeDetectionStrategy, } from '@angular/core';
 import { CloseReason, Placement, PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
 import {
-  MENU_CONTEXT, MenuContext, expandedMenuTrigger, initialMenuItem, isFormFieldTarget, isInteractiveTarget,
+  MENU_CONTEXT, MenuContext, WIDGET_ROLES, expandedMenuTrigger, initialMenuItem, isFormFieldTarget, isInteractiveTarget,
   menuItemsIn,
 } from './menu-context';
 
@@ -268,7 +268,10 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       return;
     }
     // 同選單模式：用輸入法選字時的按鍵是給輸入法的（例如在面板的輸入框按 Esc 是取消選字），浮層不處理
-    if (event.isComposing || event.keyCode === 229) return;
+    if (yieldToIme(event)) return;
+    // 裡面的欄位自己處理過這個鍵（例如 #select、#date-picker 按方向鍵、Enter 打開清單，並取消預設動作）：交給它，
+    // 不然方向鍵會把焦點搶走、Enter 會再點一次把剛打開的清單關掉。Esc 照舊由浮層處理，欄位要留住 Esc 會自己擋下不往外傳
+    if (event.defaultPrevented && event.key !== 'Escape') return;
     switch (event.key) {
       case 'ArrowDown':
       case 'ArrowUp': {
@@ -357,7 +360,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
    */
   private _onMenuKeydown(event: KeyboardEvent): void {
     // 用輸入法選字時的按鍵（Esc 取消選字、Enter 確定）是給輸入法的，選單不處理
-    if (event.isComposing || event.keyCode === 229) return;
+    if (yieldToIme(event)) return;
     // 焦點在輸入框、下拉、可編輯區時（規格不允許放進選單，萬一放了）：跟一般模式一樣只有 Esc 關選單，
     // 其他鍵交給欄位自己，不然空白打不進去、方向鍵移不了游標、Tab 會把選單關掉
     if (event.key !== 'Escape' && isFormFieldTarget(event.target)) return;
@@ -525,26 +528,31 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     (items[Math.min(this._focusedIndex, items.length - 1)] ?? host).focus();
   }
 
+  /** 一般模式上下方向鍵走得到的按鈕：Tab 停不到的輔助鈕（tabindex="-1"，例如 #number-input 的增減鈕）、看不到的不算 */
   private _getFocusableItems(): HTMLElement[] {
     const host = this.el.nativeElement as HTMLElement;
     return Array.from(
-      host.querySelectorAll<HTMLElement>('button:not(:disabled), [role="menuitem"]:not([disabled])')
-    );
+      host.querySelectorAll<HTMLElement>('button:not(:disabled):not([tabindex="-1"]), [role="menuitem"]:not([disabled])')
+    ).filter((el) => el.getClientRects().length > 0);
   }
 
   /**
-   * 種初始焦點：一般模式到第一個可以按的按鈕，沒有按鈕才到第一個輸入框、下拉、連結這類欄位；
-   * 選單模式到已選中的那項，沒有就第一項。成功回 true、無可聚焦項回 false。
+   * 種初始焦點：一般模式到第一顆按鈕，沒有按鈕才到第一個欄位或連結（見 FIELD_SELECTOR）；
+   * Tab 停不到的不算（見 focusIfTabbable），真的拿到焦點才算成功。
+   * 選單模式到已選中的那項，沒有就第一項。成功回 true、沒有可以聚焦的回 false。
    * 選單裡的選項按右方向鍵、面板已經開著時也呼叫它（見 _onMenuKeydown），所以不是 private
    */
   _focusFirst(): boolean {
     const host = this.el.nativeElement as HTMLElement;
-    const first = this._isMenu
-      ? initialMenuItem(menuItemsIn(host))
-      : this._getFocusableItems()[0] ?? host.querySelector<HTMLElement>(FIELD_SELECTOR);
-    if (!first) return false;
-    first.focus();
-    return true;
+    if (this._isMenu) {
+      const first = initialMenuItem(menuItemsIn(host));
+      if (!first) return false;
+      first.focus();
+      return true;
+    }
+    const buttons = Array.from(host.querySelectorAll<HTMLElement>('button'));
+    const fields = Array.from(host.querySelectorAll<HTMLElement>(FIELD_SELECTOR));
+    return [...buttons, ...fields].some(focusIfTabbable);
   }
 
   /**
@@ -564,7 +572,13 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       const stillWaiting = !active || active === waitingOn || active === document.body || active === document.documentElement;
       if (!stillWaiting || this._focusFirst()) this._teardownFocusWatch();
     });
-    this._focusObserver.observe(host, { childList: true, subtree: true });
+    // 內容不一定是新增的元素，也可能是原本藏著（hidden、class、style）、停用或 tabindex="-1" 的元素變成可以用，這些也要再試
+    this._focusObserver.observe(host, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['hidden', 'class', 'style', 'disabled', 'tabindex', 'inert'],
+    });
   }
 
   private _teardownFocusWatch(): void {
@@ -616,8 +630,40 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   }
 }
 
-/** 一般模式沒有按鈕時，初始焦點改落在的欄位與連結 */
-const FIELD_SELECTOR = 'input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), a[href]';
+/**
+ * 一般模式沒有按鈕時，初始焦點改落在的欄位：原生的輸入框、下拉、多行輸入框、連結、可編輯區，
+ * 以及用 tabindex 加控制項角色做成的欄位（DS 的 #select、#date-picker 是 role="combobox" 的 div，
+ * #upload-dropzone 是 role="button" 的 div）。只有 tabindex、沒有控制項角色的（例如文字被截斷時才加 tabindex 的提示文字）不算
+ */
+const FIELD_SELECTOR = [
+  'input:not([type="hidden"])', 'select', 'textarea', 'a[href]',
+  '[contenteditable]:not([contenteditable="false"])',
+  ...WIDGET_ROLES.map((r) => `[role="${r}"][tabindex]`),
+].join(', ');
+
+/**
+ * Tab 停得到、可以用才把焦點放上去，回傳是不是真的拿到焦點。
+ * tabindex="-1" 的輔助鈕（例如 #number-input 的增減鈕）、停用的（原生 disabled 或 aria-disabled="true"）、
+ * 看不到的（例如 #upload-dropzone 裡 hidden 的檔案輸入框）都不算
+ */
+function focusIfTabbable(el: HTMLElement): boolean {
+  if (el.getAttribute('tabindex') === '-1' || el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true') return false;
+  if (el.closest('[inert]')) return false;
+  if (!el.getClientRects().length || getComputedStyle(el).visibility === 'hidden') return false;
+  el.focus();
+  return el.contains(document.activeElement);
+}
+
+/**
+ * 用輸入法選字時的按鍵（Esc 取消選字、Enter 確定）是給輸入法的，浮層不處理，回傳 true。
+ * Esc 照樣不往外傳：外層的對話框多半在 document 上聽 Esc 關閉，傳出去會把對話框關掉。
+ * 有的瀏覽器選字時 key 是 "Process"，所以也看 code
+ */
+function yieldToIme(event: KeyboardEvent): boolean {
+  if (!event.isComposing && event.keyCode !== 229) return false;
+  if (event.key === 'Escape' || event.code === 'Escape') event.stopPropagation();
+  return true;
+}
 
 /** 開著、用 ancestorAnchorEl 指回選單裡某一項的面板（fixedMode 的 app-action-menu） */
 const sidePanels = new Set<ActionMenuComponent>();

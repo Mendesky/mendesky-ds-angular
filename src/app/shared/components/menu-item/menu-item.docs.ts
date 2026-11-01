@@ -44,7 +44,7 @@ export const menuItemDoc: ComponentApi = {
       name: 'opensPanel',
       type: "MenuItemPanel | null",
       default: 'null',
-      desc: "點了會在旁邊打開面板時設 'dialog'（面板裡是按鈕、輸入框這類一般內容）。右邊加 RightArrow 箭頭，內層按鈕輸出 aria-haspopup 與 aria-expanded。在 app-action-menu 裡點了不關選單，焦點留在這一項；焦點在上面時按右方向鍵也會發 itemClick。面板已經開著時按右方向鍵不發，改成把焦點移進面板（面板要用 ancestorAnchorEl 指回這一項）。",
+      desc: "點了會在旁邊打開面板時設 'dialog'（面板裡是按鈕、輸入框這類一般內容）。右邊加 RightArrow 箭頭，內層按鈕輸出 aria-haspopup 與 aria-expanded。在 app-action-menu 裡點了不關選單，焦點留在這一項；焦點在上面時按右方向鍵也會發 itemClick。面板已經開著時按右方向鍵不發，改成把焦點移進面板（面板要用 fixedMode 打開、ancestorAnchorEl 指回這一項）。",
     },
     {
       name: 'panelOpen',

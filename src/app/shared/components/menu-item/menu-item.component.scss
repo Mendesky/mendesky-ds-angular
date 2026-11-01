@@ -151,14 +151,23 @@
 //    Canvas 底色，不擋的話 HighlightText 的白字疊在白色墊底上會整個看不到；顏色本身都是系統色，照樣跟著使用者的主題。
 //    面板開著的那一項也用選取色：灰底被換掉後跟其他項目分不出來，看不出面板是哪一項打開的；
 //    Windows 原生選單打開子選單時，那一項也是這個樣子。
+//    滑過、按下、危險項目都要各寫一條：上面那些規則權重比這裡只寫 .mi--panel-open 高，會蓋過選取色，
+//    而 forced-color-adjust: none 照樣生效，畫面就露出灰底、淺紅底配淺色字。
+//    同樣因為 forced-color-adjust: none，鍵盤焦點框也不會被換成系統色，要自己指定成 CanvasText（焦點框畫在外面的 Canvas 底上）
 //    停用沒有用原生 disabled，要自己換成系統的停用字色 GrayText；LightWhite 標籤也一起換，
 //    不換的話它的灰 50 會被瀏覽器換成 CanvasText，比停用的標題還醒目
 @media (forced-colors: active) {
   .mi--selected:not(.mi--disabled),
   .mi--selected:not(.mi--disabled):hover,
   .mi--selected:not(.mi--disabled):active,
-  .mi--panel-open:not(.mi--disabled) {
+  .mi--panel-open:not(.mi--disabled),
+  .mi--panel-open:not(.mi--disabled):hover,
+  .mi--panel-open:not(.mi--disabled):active,
+  .mi--danger.mi--panel-open:not(.mi--disabled),
+  .mi--danger.mi--panel-open:not(.mi--disabled):hover,
+  .mi--danger.mi--panel-open:not(.mi--disabled):active {
     --text\/body-light: HighlightText;
+    --focus-ring-color: CanvasText;
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;

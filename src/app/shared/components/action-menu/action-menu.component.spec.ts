@@ -5,6 +5,10 @@ import { ActionMenuComponent } from './action-menu.component';
 import { ButtonComponent } from '../button/button.component';
 import { MenuItemComponent } from '../menu-item/menu-item.component';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
+import { SelectComponent } from '../select/select.component';
+import { NumberInputComponent } from '../number-input/number-input.component';
+import { UploadDropzoneComponent } from '../upload-dropzone/upload-dropzone.component';
+import { DatePickerComponent } from '../date-picker/date-picker.component';
 
 /**
  * 重點：fixture 根元素本身就掛在 document.body，直接斷言根元素 parent 是恆真。
@@ -2657,11 +2661,11 @@ describe('ActionMenuComponent — 選單模式：會在旁邊打開面板的選�
 /**
  * 選項＋旁邊的面板，兩個都是真的 app-action-menu：選單裡放設了 opensPanel 的 app-menu-item，
  * 面板是另一個 fixedMode 的 app-action-menu，ancestorAnchorEl 指回那一項的元素（使用端的標準寫法）。
- * 面板內容可以先是載入中（沒有可以按的東西）、之後才出現按鈕；也可以只有輸入框。
+ * 面板內容可以先是載入中（沒有可以按的東西）、之後才出現；內容可以是按鈕、輸入框、DS 的欄位，或只有隱藏的檔案輸入框。
  */
 @Component({
   standalone: true,
-  imports: [ActionMenuComponent, MenuItemComponent],
+  imports: [ActionMenuComponent, MenuItemComponent, SelectComponent, NumberInputComponent, UploadDropzoneComponent, DatePickerComponent],
   template: `
     <div class="wrap">
       <button type="button" data-testid="trigger" aria-haspopup="menu" [attr.aria-expanded]="open">更多</button>
@@ -2678,10 +2682,33 @@ describe('ActionMenuComponent — 選單模式：會在旁邊打開面板的選�
           [ancestorAnchorEl]="panelItemRef?.nativeElement ?? null" (closeMenu)="panelOpen = false">
           @if (!panelReady) {
             <div class="skeleton">loading…</div>
-          } @else if (panelOnlyInput) {
-            <input data-testid="panel-input" aria-label="檔名">
           } @else {
-            <button type="button" data-testid="panel-btn" (click)="picks.push('panel-btn')">下載</button>
+            @switch (panelContent) {
+              @case ('input') { <input data-testid="panel-input" aria-label="檔名"> }
+              @case ('select') { <app-select data-testid="panel-select" [options]="selectOptions"></app-select> }
+              @case ('number') { <app-number-input data-testid="panel-number"></app-number-input> }
+              @case ('dropzone') { <app-upload-dropzone data-testid="panel-dropzone"></app-upload-dropzone> }
+              @case ('hiddenFile') { <input data-testid="panel-file" type="file" hidden> }
+              @case ('datePicker') { <app-date-picker data-testid="panel-date"></app-date-picker> }
+              @case ('selectThenButton') {
+                <app-select data-testid="panel-select" [options]="selectOptions"></app-select>
+                <button type="button" data-testid="panel-btn">套用</button>
+              }
+              @case ('numberThenButton') {
+                <app-number-input data-testid="panel-number"></app-number-input>
+                <button type="button" data-testid="panel-btn">套用</button>
+              }
+              @case ('ariaDisabledThenInput') {
+                <button type="button" data-testid="panel-off-btn" aria-disabled="true">停用的按鈕</button>
+                <input data-testid="panel-input" aria-label="檔名">
+              }
+              @case ('textThenInput') {
+                <span data-testid="panel-text" tabindex="0">說明文字</span>
+                <input data-testid="panel-input" aria-label="檔名">
+              }
+              @case ('hiddenButton') { <button type="button" data-testid="panel-btn" [hidden]="!panelButtonShown">下載</button> }
+              @default { <button type="button" data-testid="panel-btn" (click)="picks.push('panel-btn')">下載</button> }
+            }
           }
         </app-action-menu>
       }
@@ -2693,7 +2720,10 @@ class SidePanelHostComponent {
   open = false;
   panelOpen = false;
   panelReady = true;
-  panelOnlyInput = false;
+  panelContent: 'button' | 'input' | 'select' | 'number' | 'dropzone' | 'hiddenFile' | 'hiddenButton' | 'datePicker'
+    | 'selectThenButton' | 'numberThenButton' | 'ariaDisabledThenInput' | 'textThenInput' = 'button';
+  panelButtonShown = false;
+  selectOptions = [{ value: 'a', label: '選項 A' }, { value: 'b', label: '選項 B' }];
   panelAutoFocus = true;
   picks: string[] = [];
   closeCount = 0;
@@ -2841,18 +2871,141 @@ describe('ActionMenuComponent — 選項＋旁邊的面板（兩個真的 app-ac
     window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
   });
 
-  it('面板的輸入框用輸入法選字時按 Esc：是取消選字，面板不關', async () => {
-    await openMenu({ panelOnlyInput: true });
+  /** 數傳到 document 的 Esc（外層對話框多半在 document 上聽 Esc 關閉） */
+  function countEscapeAtDocument(): { count: () => number; stop: () => void } {
+    let n = 0;
+    const listener = (e: KeyboardEvent) => { if (e.key === 'Escape' || e.code === 'Escape') n++; };
+    document.addEventListener('keydown', listener);
+    return { count: () => n, stop: () => document.removeEventListener('keydown', listener) };
+  }
+
+  it('面板的輸入框用輸入法選字時按 Esc：是取消選字，面板不關，也不往外傳（外層對話框不會跟著關）', async () => {
+    await openMenu({ panelContent: 'input' });
     await openPanel();
-    press('Escape', { isComposing: true });
-    press('Escape', { keyCode: 229 } as KeyboardEventInit);
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
+    const atDocument = countEscapeAtDocument();
+    try {
+      press('Escape', { isComposing: true });
+      press('Escape', { keyCode: 229 } as KeyboardEventInit);
+      press('Process', { code: 'Escape', keyCode: 229 } as KeyboardEventInit);
+      fixture.detectChanges();
+      expect(host().panelOpen).toBeTrue();
+      expect(host().closeCount).toBe(0);
+      expect(atDocument.count()).toBe(0);
+    } finally {
+      atDocument.stop();
+    }
+  });
+
+  it('選單裡收到輸入法的 Esc：選單不關，也不往外傳', async () => {
+    await openMenu();
+    item().focus();
+    const atDocument = countEscapeAtDocument();
+    try {
+      press('Escape', { isComposing: true });
+      fixture.detectChanges();
+      expect(host().closeCount).toBe(0);
+      expect(outerMenu()).not.toBeNull();
+      expect(atDocument.count()).toBe(0);
+    } finally {
+      atDocument.stop();
+    }
+  });
+
+  it('面板裡只有 DS 的下拉（role="combobox" 的 div）：焦點移到下拉', async () => {
+    await openMenu({ panelContent: 'select' });
+    await openPanel();
+    const combobox = panel()!.querySelector('app-select [role="combobox"]');
+    expect(combobox).not.toBeNull();
+    expect(document.activeElement).toBe(combobox);
+  });
+
+  it('面板裡只有數字輸入框：焦點移到輸入框，不是 Tab 停不到的增減鈕', async () => {
+    await openMenu({ panelContent: 'number' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('app-number-input input'));
+  });
+
+  it('面板裡只有上傳區：焦點移到上傳區本身，不是裡面隱藏的檔案輸入框', async () => {
+    await openMenu({ panelContent: 'dropzone' });
+    await openPanel();
+    const zone = panel()!.querySelector('app-upload-dropzone [role="button"]');
+    expect(zone).not.toBeNull();
+    expect(document.activeElement).toBe(zone);
+  });
+
+  it('面板裡只有隱藏的檔案輸入框：不算移進去，右方向鍵沒有反應；之後出現按鈕時焦點照樣移進去', async () => {
+    await openMenu({ panelContent: 'hiddenFile' });
+    await openPanel();
+    expect(document.activeElement).toBe(item());
+    const right = press('ArrowRight');
+    expect(right.defaultPrevented).toBeFalse();
+    expect(document.activeElement).toBe(item());
+    host().panelContent = 'button';
     fixture.detectChanges();
+    await tick(30);
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
+  });
+
+  it('面板裡第一顆按鈕標了 aria-disabled="true"：不算，焦點移到後面的輸入框', async () => {
+    await openMenu({ panelContent: 'ariaDisabledThenInput' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
+  });
+
+  it('面板裡有 tabindex="0" 但不能操作的文字：不算欄位，焦點移到後面的輸入框', async () => {
+    await openMenu({ panelContent: 'textThenInput' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
+  });
+
+  it('面板裡只有 DS 的日期欄位：焦點移到欄位；按 Enter 打開日期選單後，選單維持打開（浮層不再點一次把它關掉）', async () => {
+    await openMenu({ panelContent: 'datePicker' });
+    await openPanel();
+    const field = panel()!.querySelector('app-date-picker [role="combobox"]') as HTMLElement;
+    expect(document.activeElement).toBe(field);
+    press('Enter');
+    fixture.detectChanges();
+    await tick();
+    expect(field.getAttribute('aria-expanded')).toBe('true');
     expect(host().panelOpen).toBeTrue();
-    expect(host().closeCount).toBe(0);
+  });
+
+  it('焦點在 DS 的下拉上按下方向鍵：下拉自己打開清單，焦點留在下拉，不會被浮層移到後面的按鈕', async () => {
+    await openMenu({ panelContent: 'selectThenButton' });
+    await openPanel();
+    const combobox = panel()!.querySelector('app-select [role="combobox"]') as HTMLElement;
+    combobox.focus();
+    press('ArrowDown');
+    fixture.detectChanges();
+    await tick();
+    expect(document.activeElement).toBe(combobox);
+    expect(combobox.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('面板有數字輸入框和按鈕：初始焦點在按鈕；上下方向鍵不會停到 Tab 停不到的增減鈕', async () => {
+    await openMenu({ panelContent: 'numberThenButton' });
+    await openPanel();
+    const apply = panel()!.querySelector('[data-testid="panel-btn"]');
+    expect(document.activeElement).toBe(apply);
+    press('ArrowUp');
+    expect(document.activeElement).toBe(apply);
+    press('ArrowDown');
+    expect(document.activeElement).toBe(apply);
+  });
+
+  it('面板裡的按鈕先藏著（hidden 屬性）、之後才顯示：顯示時焦點移進去（不是新增元素也要再試）', async () => {
+    await openMenu({ panelContent: 'hiddenButton' });
+    await openPanel();
+    expect(document.activeElement).toBe(item());
+    host().panelButtonShown = true;
+    fixture.detectChanges();
+    await tick(30);
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
   });
 
   it('面板裡只有輸入框：焦點移到輸入框', async () => {
-    await openMenu({ panelOnlyInput: true });
+    await openMenu({ panelContent: 'input' });
     await openPanel();
     expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
   });
