@@ -275,8 +275,8 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     switch (event.key) {
       case 'ArrowDown':
       case 'ArrowUp': {
-        const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
-        if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+        // 焦點在輸入框、下拉、多行輸入框、可編輯區裡：方向鍵是移動游標，不搶焦點
+        if (isFormFieldTarget(document.activeElement)) return;
         event.preventDefault();
         const items = this._getFocusableItems();
         if (!items.length) return;
@@ -290,9 +290,8 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       }
       case 'Enter':
       case ' ': {
-        // 跳過表單元素：input/textarea/select 有各自的原生 Enter/Space 行為
-        const activeTag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
-        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+        // 跳過表單欄位：輸入框、多行輸入框、下拉、可編輯區有各自的原生 Enter/Space 行為（例如打字、換行）
+        if (isFormFieldTarget(document.activeElement)) return;
         event.preventDefault();
         // 消費後不再冒泡：否則同一個 Enter 會續傳到 document 層快速鍵（如 kanban Enter 重開卡片選單），
         // 造成選單「關了又被重開、浮在剛開的 modal 上」（比照下方 Escape 分支）。
@@ -528,12 +527,12 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     (items[Math.min(this._focusedIndex, items.length - 1)] ?? host).focus();
   }
 
-  /** 一般模式上下方向鍵走得到的按鈕：Tab 停不到的輔助鈕（tabindex="-1"，例如 #number-input 的增減鈕）、看不到的不算 */
+  /** 一般模式上下方向鍵走得到的按鈕：Tab 停不到的輔助鈕（tabindex="-1"，例如 #number-input 的增減鈕）、看不到的不算（見 isShown） */
   private _getFocusableItems(): HTMLElement[] {
     const host = this.el.nativeElement as HTMLElement;
     return Array.from(
       host.querySelectorAll<HTMLElement>('button:not(:disabled):not([tabindex="-1"]), [role="menuitem"]:not([disabled])')
-    ).filter((el) => el.getClientRects().length > 0);
+    ).filter(isShown);
   }
 
   /**
@@ -641,15 +640,20 @@ const FIELD_SELECTOR = [
   ...WIDGET_ROLES.map((r) => `[role="${r}"][tabindex]`),
 ].join(', ');
 
+/** 看得到、也沒被 inert 擋住：方向鍵清單和初始焦點用同一套標準 */
+function isShown(el: HTMLElement): boolean {
+  return !el.closest('[inert]') && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+}
+
 /**
- * Tab 停得到、可以用才把焦點放上去，回傳是不是真的拿到焦點。
- * tabindex="-1" 的輔助鈕（例如 #number-input 的增減鈕）、停用的（原生 disabled 或 aria-disabled="true"）、
- * 看不到的（例如 #upload-dropzone 裡 hidden 的檔案輸入框）都不算
+ * Tab 停得到才把焦點放上去，回傳是不是真的拿到焦點。
+ * tabindex="-1" 的輔助鈕（例如 #number-input 的增減鈕）、原生 disabled 的、
+ * 看不到的（例如 #upload-dropzone 裡 hidden 的檔案輸入框）都不算。
+ * aria-disabled="true" 的算：#button 的「停用但可點」就是要讓人停得到、看得到原因，Tab 也停得到它
  */
 function focusIfTabbable(el: HTMLElement): boolean {
-  if (el.getAttribute('tabindex') === '-1' || el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true') return false;
-  if (el.closest('[inert]')) return false;
-  if (!el.getClientRects().length || getComputedStyle(el).visibility === 'hidden') return false;
+  if (el.getAttribute('tabindex') === '-1' || el.matches(':disabled')) return false;
+  if (!isShown(el)) return false;
   el.focus();
   return el.contains(document.activeElement);
 }

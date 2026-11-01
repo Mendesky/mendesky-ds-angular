@@ -2665,7 +2665,7 @@ describe('ActionMenuComponent — 選單模式：會在旁邊打開面板的選�
  */
 @Component({
   standalone: true,
-  imports: [ActionMenuComponent, MenuItemComponent, SelectComponent, NumberInputComponent, UploadDropzoneComponent, DatePickerComponent],
+  imports: [ActionMenuComponent, MenuItemComponent, ButtonComponent, SelectComponent, NumberInputComponent, UploadDropzoneComponent, DatePickerComponent],
   template: `
     <div class="wrap">
       <button type="button" data-testid="trigger" aria-haspopup="menu" [attr.aria-expanded]="open">更多</button>
@@ -2677,7 +2677,7 @@ describe('ActionMenuComponent — 選單模式：會在旁邊打開面板的選�
         </app-action-menu>
       }
       @if (open && panelOpen) {
-        <app-action-menu data-testid="side-panel" role="dialog" aria-label="匯出" [autoCloseOnAction]="false"
+        <app-action-menu data-testid="side-panel" role="dialog" aria-label="匯出" [autoCloseOnAction]="panelAutoClose"
           [autoFocusFirst]="panelAutoFocus" [fixedMode]="true" [fixedTop]="40" [fixedLeft]="240"
           [ancestorAnchorEl]="panelItemRef?.nativeElement ?? null" (closeMenu)="panelOpen = false">
           @if (!panelReady) {
@@ -2702,6 +2702,19 @@ describe('ActionMenuComponent — 選單模式：會在旁邊打開面板的選�
                 <button type="button" data-testid="panel-off-btn" aria-disabled="true">停用的按鈕</button>
                 <input data-testid="panel-input" aria-label="檔名">
               }
+              @case ('clickableDisabledOnly') {
+                <app-button data-testid="panel-ds-btn" text="下載" [disabled]="panelButtonOff" [clickableWhenDisabled]="true"></app-button>
+              }
+              @case ('editableThenButton') {
+                <div data-testid="panel-editable" contenteditable="true" role="textbox" aria-label="備註">備註</div>
+                <button type="button" data-testid="panel-btn" (click)="picks.push('panel-btn')">套用</button>
+              }
+              @case ('notShownButtons') {
+                <button type="button" data-testid="panel-first">第一顆</button>
+                <button type="button" data-testid="panel-invisible" style="visibility: hidden">看不到的按鈕</button>
+                <div inert><button type="button" data-testid="panel-inert">被擋住的按鈕</button></div>
+                <button type="button" data-testid="panel-last">最後一顆</button>
+              }
               @case ('textThenInput') {
                 <span data-testid="panel-text" tabindex="0">說明文字</span>
                 <input data-testid="panel-input" aria-label="檔名">
@@ -2721,8 +2734,11 @@ class SidePanelHostComponent {
   panelOpen = false;
   panelReady = true;
   panelContent: 'button' | 'input' | 'select' | 'number' | 'dropzone' | 'hiddenFile' | 'hiddenButton' | 'datePicker'
-    | 'selectThenButton' | 'numberThenButton' | 'ariaDisabledThenInput' | 'textThenInput' = 'button';
+    | 'selectThenButton' | 'numberThenButton' | 'ariaDisabledThenInput' | 'textThenInput'
+    | 'clickableDisabledOnly' | 'editableThenButton' | 'notShownButtons' = 'button';
   panelButtonShown = false;
+  panelButtonOff = true;
+  panelAutoClose = false;
   selectOptions = [{ value: 'a', label: '選項 A' }, { value: 'b', label: '選項 B' }];
   panelAutoFocus = true;
   picks: string[] = [];
@@ -2947,10 +2963,55 @@ describe('ActionMenuComponent — 選項＋旁邊的面板（兩個真的 app-ac
     expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
   });
 
-  it('面板裡第一顆按鈕標了 aria-disabled="true"：不算，焦點移到後面的輸入框', async () => {
+  it('面板裡第一顆按鈕標了 aria-disabled="true"（停用但可點）：Tab 停得到，焦點移到它，不跳過', async () => {
     await openMenu({ panelContent: 'ariaDisabledThenInput' });
     await openPanel();
-    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-off-btn"]'));
+  });
+
+  it('面板裡只有「停用但可點」的 app-button：焦點移到它；恢復可用後焦點還在它上面', async () => {
+    await openMenu({ panelContent: 'clickableDisabledOnly' });
+    await openPanel();
+    const btn = panel()!.querySelector('app-button[data-testid="panel-ds-btn"] button') as HTMLElement;
+    expect(btn.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(btn);
+    host().panelButtonOff = false;
+    fixture.detectChanges();
+    await tick(30);
+    expect(btn.hasAttribute('aria-disabled')).toBeFalse();
+    expect(document.activeElement).toBe(btn);
+  });
+
+  it('焦點在面板的可編輯區：空白鍵、Enter 照常輸入，不會被當成點擊，面板不關（autoCloseOnAction=true）；上下方向鍵不會把焦點搶到按鈕', async () => {
+    await openMenu({ panelContent: 'editableThenButton', panelAutoClose: true });
+    await openPanel();
+    const editable = panel()!.querySelector('[data-testid="panel-editable"]') as HTMLElement;
+    editable.focus();
+    expect(document.activeElement).toBe(editable);
+    for (const key of [' ', 'Enter', 'ArrowDown', 'ArrowUp']) {
+      const event = press(key);
+      fixture.detectChanges();
+      expect(event.defaultPrevented).withContext(key).toBeFalse();
+      expect(document.activeElement).withContext(key).toBe(editable);
+      expect(host().panelOpen).withContext(key).toBeTrue();
+    }
+    expect(host().picks).toEqual(['panel']);
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' }));
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+  });
+
+  it('上下方向鍵跳過看不到的按鈕（visibility: hidden）和被 inert 擋住的按鈕', async () => {
+    await openMenu({ panelContent: 'notShownButtons' });
+    await openPanel();
+    const first = panel()!.querySelector('[data-testid="panel-first"]');
+    const last = panel()!.querySelector('[data-testid="panel-last"]');
+    expect(document.activeElement).toBe(first);
+    press('ArrowDown');
+    expect(document.activeElement).toBe(last);
+    press('ArrowUp');
+    expect(document.activeElement).toBe(first);
+    press('ArrowUp');
+    expect(document.activeElement).toBe(last);
   });
 
   it('面板裡有 tabindex="0" 但不能操作的文字：不算欄位，焦點移到後面的輸入框', async () => {

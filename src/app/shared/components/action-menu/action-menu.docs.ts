@@ -27,7 +27,7 @@ export const actionMenuDoc: ComponentApi = {
       name: 'fixedMode',
       type: 'boolean',
       default: 'false',
-      description: '改走座標定位（attachAtPoint）而非 element-anchored。有傳 fixedTop / fixedLeft 等任一座標值時自動走此模式。此模式不追蹤捲動。',
+      description: '改走座標定位（attachAtPoint）而非 element-anchored。要設成 true，並傳 fixedTop、fixedBottom、fixedLeft、fixedRight 至少一個座標才走此模式；只設 true、沒傳座標時照舊貼著錨點。此模式不追蹤捲動。',
     },
     {
       name: 'fixedTop',
@@ -63,13 +63,13 @@ export const actionMenuDoc: ComponentApi = {
       name: 'ancestorAnchorEl',
       type: 'HTMLElement | null',
       default: 'null',
-      description: '巢狀 flyout 用（fixedMode）：帶入父選單裡打開這個 flyout 的元素（例如設了 opensPanel 的 app-menu-item 的元素）。點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單；按下那個元素本身也不算點外面，flyout 不會在按下時先關。要再按一次就關掉，那個元素的點擊要切換 flyout 開關（開著就關），不能每次都只打開：只打開的話，再按一次 flyout 不會關，還會重新打開一次。帶了這個值，那一項按右方向鍵時也找得到這個 flyout：flyout 已經開著、焦點還在那一項時，焦點移進 flyout。',
+      description: '巢狀 flyout 用（fixedMode 加固定座標；沒走座標定位時這個值不生效）：帶入父選單裡打開這個 flyout 的元素（例如設了 opensPanel 的 app-menu-item 的元素）。點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單；按下那個元素本身也不算點外面，flyout 不會在按下時先關。要再按一次就關掉，那個元素的點擊要切換 flyout 開關（開著就關），不能每次都只打開：只打開的話，再按一次 flyout 不會關，還會重新打開一次。帶了這個值，那一項按右方向鍵時也找得到這個 flyout：flyout 已經開著、焦點還在那一項時，焦點移進 flyout。',
     },
     {
       name: 'autoFocusFirst',
       type: 'boolean',
       default: 'true',
-      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。放了 app-menu-item、觸發鈕又是輸入框時，點外面關掉不會把焦點還給輸入框（游標不跳回去，一拿到焦點就打開的下拉也不會被重新打開），按 Esc 照樣還。沒放 app-menu-item 時先到第一顆按鈕，沒有按鈕才到第一個欄位或連結（輸入框、下拉、連結、可編輯區，含 app-select、app-date-picker、app-upload-dropzone 這類用 tabindex 做成的欄位）；tabindex="-1" 的輔助鈕（例如 app-number-input 的增減鈕）、停用或看不到的元素不算。內容還在載入（只有骨架、沒有可以操作的東西）時，等內容出來再移，不限時間；在這之前焦點被移到別處就不移。DS v0.1.7 起。',
+      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。放了 app-menu-item、觸發鈕又是輸入框時，點外面關掉不會把焦點還給輸入框（游標不跳回去，一拿到焦點就打開的下拉也不會被重新打開），按 Esc 照樣還。沒放 app-menu-item 時先到第一顆按鈕，沒有按鈕才到第一個欄位或連結（輸入框、下拉、連結、可編輯區，含 app-select、app-date-picker、app-upload-dropzone 這類用 tabindex 做成的欄位）；tabindex="-1" 的輔助鈕（例如 app-number-input 的增減鈕）、原生停用（disabled）或看不到的元素不算；app-button 的「停用但可點」（clickableWhenDisabled，只輸出 aria-disabled）Tab 停得到，算。內容還在載入（只有骨架、沒有可以操作的東西）時，等內容出來再移，不限時間；在這之前焦點被移到別處就不移。DS v0.1.7 起。',
     },
     {
       name: 'ariaLabel',
