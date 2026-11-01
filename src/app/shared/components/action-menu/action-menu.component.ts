@@ -48,7 +48,9 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   @Input() fixedWidth: number | null = null;
   /**
    * 邏輯祖先錨點（僅 fixedMode/point-anchored 用）：巢狀 flyout 的觸發元素（位於父選單 panel 內）。
-   * 帶入後，點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單。
+   * 帶入後，點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單；
+   * 按下這個元素本身也不算點外面（flyout 不會在按下時先關，再按一次關不關由使用端的切換決定）。
+   * 選單裡的那一項在 flyout 開著時按右方向鍵，也靠它找到這個 flyout、把焦點移進來。
    */
   @Input() ancestorAnchorEl: HTMLElement | null = null;
 
@@ -74,7 +76,6 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   private _triggerEl: HTMLElement | null = null;
   /** focus-when-ready：等非同步內容（skeleton→內容）出現才種初始焦點用。 */
   private _focusObserver: MutationObserver | null = null;
-  private _focusTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** 已登記的 app-menu-item；有任何一個就是選單模式 */
   private readonly _menuItems = new Set<object>();
@@ -190,6 +191,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 
   ngOnDestroy(): void {
     this._destroyed = true;
+    sidePanels.delete(this);
     const host = this.el.nativeElement as HTMLElement;
     window.removeEventListener('pointerdown', this._onWindowPointerDown, true);
     host.removeEventListener('click', this._onHostClickCapture, true);
@@ -265,6 +267,8 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       this._onMenuKeydown(event);
       return;
     }
+    // 同選單模式：用輸入法選字時的按鍵是給輸入法的（例如在面板的輸入框按 Esc 是取消選字），浮層不處理
+    if (event.isComposing || event.keyCode === 229) return;
     switch (event.key) {
       case 'ArrowDown':
       case 'ArrowUp': {
@@ -301,6 +305,10 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       }
       case 'Escape':
         event.stopPropagation();
+        // 按住不放的連發吃掉：選單旁邊的面板按 Esc，第一下關面板、焦點回到選單裡打開它的那一項，
+        // 接下來的連發會落進選單、把選單也關掉
+        if (event.repeat) break;
+        this.zone.runOutsideAngular(() => swallowRepeatsUntilKeyup(event.key));
         this._triggerEl?.focus();
         this.closeMenu.emit();
         break;
@@ -386,10 +394,17 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
         active?.click();
         break;
       case 'ArrowRight':
-        // 只處理會在旁邊打開面板的項目（APG 子選單的做法）。停用的、面板已經開著的不動：開著時再按一次會把面板關掉。
-        // 其他項目和左方向鍵都不處理，事件照常往外傳
+        // 只處理會在旁邊打開面板的項目（APG 子選單的做法）。停用的不動；其他項目和左方向鍵都不處理，事件照常往外傳
         if (!active || !items.includes(active) || !active.hasAttribute('aria-haspopup')) break;
-        if (active.getAttribute('aria-disabled') === 'true' || active.getAttribute('aria-expanded') === 'true') break;
+        if (active.getAttribute('aria-disabled') === 'true') break;
+        if (active.getAttribute('aria-expanded') === 'true') {
+          // 面板已經開著、焦點卻還在這一項（例如內容載入中、面板設了 autoFocusFirst=false）：把焦點移進面板。
+          // 不再按一次，那會把面板關掉。找不到面板（沒用 ancestorAnchorEl 指回這一項），或面板裡還沒有可以操作的東西就不動
+          if (!sidePanelOpenedBy(active)?._focusFirst()) break;
+          event.preventDefault();
+          event.stopPropagation();
+          break;
+        }
         event.preventDefault();
         event.stopPropagation();
         // 同 Enter：按住不放的連發不執行，執行之後、放開之前的連發都吃掉，不然面板會一開一關
@@ -517,11 +532,16 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     );
   }
 
-  /** 種初始焦點：一般模式到第一個可聚焦項；選單模式到已選中的那項，沒有就第一項。成功回 true、無可聚焦項回 false。 */
-  private _focusFirst(): boolean {
+  /**
+   * 種初始焦點：一般模式到第一個可以按的按鈕，沒有按鈕才到第一個輸入框、下拉、連結這類欄位；
+   * 選單模式到已選中的那項，沒有就第一項。成功回 true、無可聚焦項回 false。
+   * 選單裡的選項按右方向鍵、面板已經開著時也呼叫它（見 _onMenuKeydown），所以不是 private
+   */
+  _focusFirst(): boolean {
+    const host = this.el.nativeElement as HTMLElement;
     const first = this._isMenu
-      ? initialMenuItem(menuItemsIn(this.el.nativeElement as HTMLElement))
-      : this._getFocusableItems()[0];
+      ? initialMenuItem(menuItemsIn(host))
+      : this._getFocusableItems()[0] ?? host.querySelector<HTMLElement>(FIELD_SELECTOR);
     if (!first) return false;
     first.focus();
     return true;
@@ -530,23 +550,26 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /**
    * 種初始焦點，並容忍「非同步內容」：若當下沒有可聚焦項（如 flyout 正顯示 loading skeleton，
    * 內容尚未由 API 回填），掛 MutationObserver 等內容出現的那一刻立即補種焦點、隨即 disconnect。
-   * 同步內容（一般 More 選單）在首次即成功、不會掛 observer。安全上限避免洩漏。
+   * 同步內容（一般 More 選單）在首次即成功、不會掛 observer。
+   * 不設時間上限：內容晚多久出來都等（後端慢的時候，用鍵盤的人才進得了面板）。浮層關掉（ngOnDestroy）就停；
+   * 內容出來之前使用者已經把焦點移到別處（例如回選單換了一項）也停，不搶回來。
    * （對齊 DS pattern loading.api-hydration-skeleton：skeleton 無 tabindex、內容備妥才進焦點。）
    */
   private _focusFirstWhenReady(): void {
     if (this._focusFirst()) return;
     const host = this.el.nativeElement as HTMLElement;
+    const waitingOn = document.activeElement;
     this._focusObserver = new MutationObserver(() => {
-      if (this._focusFirst()) this._teardownFocusWatch();
+      const active = document.activeElement;
+      const stillWaiting = !active || active === waitingOn || active === document.body || active === document.documentElement;
+      if (!stillWaiting || this._focusFirst()) this._teardownFocusWatch();
     });
     this._focusObserver.observe(host, { childList: true, subtree: true });
-    this._focusTimer = setTimeout(() => this._teardownFocusWatch(), 1000);
   }
 
   private _teardownFocusWatch(): void {
     this._focusObserver?.disconnect();
     this._focusObserver = null;
-    if (this._focusTimer) { clearTimeout(this._focusTimer); this._focusTimer = null; }
   }
 
   private _hasLegacyCoords(): boolean {
@@ -579,6 +602,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     else if (this.fixedBottom !== null)                             placement = 'top-start';
     else if (this.fixedRight  !== null)                             placement = 'bottom-end';
 
+    if (this.ancestorAnchorEl) sidePanels.add(this);
     this._overlayRef = this.positioning.attachAtPoint(x, y, this.el, {
       placement,
       gap: 0,
@@ -590,6 +614,21 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     });
     if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
   }
+}
+
+/** 一般模式沒有按鈕時，初始焦點改落在的欄位與連結 */
+const FIELD_SELECTOR = 'input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), a[href]';
+
+/** 開著、用 ancestorAnchorEl 指回選單裡某一項的面板（fixedMode 的 app-action-menu） */
+const sidePanels = new Set<ActionMenuComponent>();
+
+/** 找打開這一項旁邊面板的那個浮層：面板的 ancestorAnchorEl 是這一項，或包著這一項（例如 app-menu-item 的元素） */
+function sidePanelOpenedBy(item: HTMLElement): ActionMenuComponent | null {
+  for (const panel of sidePanels) {
+    const anchor = panel.ancestorAnchorEl;
+    if (anchor && anchor.contains(item)) return panel;
+  }
+  return null;
 }
 
 /**

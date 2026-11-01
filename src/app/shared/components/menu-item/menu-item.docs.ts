@@ -44,7 +44,7 @@ export const menuItemDoc: ComponentApi = {
       name: 'opensPanel',
       type: "MenuItemPanel | null",
       default: 'null',
-      desc: "點了會在旁邊打開面板時設 'dialog'（面板裡是按鈕、輸入框這類一般內容）。右邊加 RightArrow 箭頭，內層按鈕輸出 aria-haspopup 與 aria-expanded。在 app-action-menu 裡點了不關選單，焦點留在這一項；焦點在上面時按右方向鍵也會發 itemClick（面板已經開著時不發）。",
+      desc: "點了會在旁邊打開面板時設 'dialog'（面板裡是按鈕、輸入框這類一般內容）。右邊加 RightArrow 箭頭，內層按鈕輸出 aria-haspopup 與 aria-expanded。在 app-action-menu 裡點了不關選單，焦點留在這一項；焦點在上面時按右方向鍵也會發 itemClick。面板已經開著時按右方向鍵不發，改成把焦點移進面板（面板要用 ancestorAnchorEl 指回這一項）。",
     },
     {
       name: 'panelOpen',
@@ -89,7 +89,7 @@ export const menuItemDoc: ComponentApi = {
 </app-action-menu>`,
     },
     {
-      label: '在旁邊打開面板：選項設 opensPanel、panelOpen；面板是另一個 app-action-menu，標成對話框，ancestorAnchorEl 傳那一項的元素',
+      label: '在旁邊打開面板：選項設 opensPanel、panelOpen，點擊切換面板開關；面板是另一個 app-action-menu，標成對話框，ancestorAnchorEl 傳那一項的元素',
       code: `<app-action-menu ariaLabel="更多操作" (closeMenu)="closeAll()">
   <app-menu-item #exportItem label="匯出" icon="Download" opensPanel="dialog"
     [panelOpen]="exportOpen()" (itemClick)="toggleExport()"></app-menu-item>
@@ -97,7 +97,9 @@ export const menuItemDoc: ComponentApi = {
 </app-action-menu>
 
 @if (exportOpen()) {
-  <!-- 面板裡按 Esc 只關面板，焦點回到「匯出」；按「匯出」以外的地方照常關面板 -->
+  <!-- 打開時焦點移進面板（app-action-menu 預設會移，內容載入中就等內容出來）；
+       面板裡按 Esc 只關面板，焦點回到「匯出」；按「匯出」以外的地方照常關面板。
+       名稱用原生 aria-label 屬性：面板裡沒放 app-menu-item，ariaLabel 不會輸出 -->
   <app-action-menu role="dialog" aria-label="匯出" [autoCloseOnAction]="false"
     [fixedMode]="true" [fixedTop]="exportTop()" [fixedLeft]="exportLeft()"
     [ancestorAnchorEl]="exportItemEl()?.nativeElement ?? null" (closeMenu)="exportOpen.set(false)">

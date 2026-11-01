@@ -65,6 +65,12 @@ class InMenuHostComponent {
           description="這一段說明比較長，用來確認說明超過一行最寬的字數時會自動換到下一行，選單不會被它撐得很寬"></app-menu-item>
       </app-action-menu>
     </div>
+    <div class="wrap-word">
+      <app-action-menu data-testid="word-menu" ariaLabel="說明是一長串英數字" [autoFocusFirst]="false">
+        <app-menu-item data-testid="long-word" label="項目 B" [disabled]="true"
+          description="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"></app-menu-item>
+      </app-action-menu>
+    </div>
     <div class="wrap-label">
       <app-action-menu data-testid="label-menu" ariaLabel="標籤很長" [autoFocusFirst]="false">
         <app-menu-item data-testid="long-label" label="這是一個名稱很長很長的項目，用來確認沒有說明時不受寬度限制"></app-menu-item>
@@ -337,6 +343,17 @@ describe('MenuItemComponent', () => {
       // 投影進來的 LightWhite 標籤走 --text/body-light；不跟著換的話，它會被瀏覽器換成 CanvasText，比停用的標題還醒目
       expect(disabled.some((r) => prop(r, '--text/body-light') === 'graytext')).toBeTrue();
     });
+
+    it('強制色彩模式：面板開著的那一項也用系統選取色當實心底，看得出面板是哪一項打開的；停用的不會', () => {
+      const open = forcedColorRules('mi--panel-open')
+        .filter((r) => prop(r, 'background-color') === 'highlight' && prop(r, 'color') === 'highlighttext');
+      expect(open.length).toBeGreaterThan(0);
+      const sel = open.map((r) => r.selectorText).join(',').split(',').filter((x) => x.includes('mi--panel-open'));
+      expect(sel.length).toBeGreaterThan(0);
+      expect(sel.every((x) => x.includes(':not(.mi--disabled)'))).toBeTrue();
+      expect(open.some((r) => prop(r, '--text/body-light') === 'highlighttext')).toBeTrue();
+      expect(open.every((r) => prop(r, 'forced-color-adjust') === 'none')).toBeTrue();
+    });
   });
 
   describe('寬度', () => {
@@ -360,6 +377,12 @@ describe('MenuItemComponent', () => {
       const menuWidth = menuOf('desc-menu').getBoundingClientRect().width;
       expect(menuWidth).toBeGreaterThan(260);
       expect(menuWidth).toBeLessThan(290);
+    });
+
+    it('說明是一長串不能斷行的英數字：照樣在 224px 內換行，不會超出說明框', () => {
+      const desc = menuOf('word-menu').querySelector('.mi__desc') as HTMLElement;
+      expect(desc.getBoundingClientRect().width).toBeLessThanOrEqual(224.5);
+      expect(desc.scrollWidth).toBeLessThanOrEqual(desc.clientWidth + 1);
     });
 
     it('沒有說明的長標籤不受 224px 限制：外框跟著標題寬，標題沒有被截斷', () => {

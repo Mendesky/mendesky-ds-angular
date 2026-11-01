@@ -63,19 +63,19 @@ export const actionMenuDoc: ComponentApi = {
       name: 'ancestorAnchorEl',
       type: 'HTMLElement | null',
       default: 'null',
-      description: '巢狀 flyout 用（fixedMode）：帶入父選單裡打開這個 flyout 的元素（例如設了 opensPanel 的 app-menu-item 的元素）。點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單；按下那個元素本身也不算點外面，flyout 不會在按下時先關、放開時又被打開，再按一次就能關掉。',
+      description: '巢狀 flyout 用（fixedMode）：帶入父選單裡打開這個 flyout 的元素（例如設了 opensPanel 的 app-menu-item 的元素）。點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單；按下那個元素本身也不算點外面，flyout 不會在按下時先關。要再按一次就關掉，那個元素的點擊要切換 flyout 開關（開著就關），不能每次都只打開：只打開的話，再按一次 flyout 不會關，還會重新打開一次。帶了這個值，那一項按右方向鍵時也找得到這個 flyout：flyout 已經開著、焦點還在那一項時，焦點移進 flyout。',
     },
     {
       name: 'autoFocusFirst',
       type: 'boolean',
       default: 'true',
-      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。放了 app-menu-item、觸發鈕又是輸入框時，點外面關掉不會把焦點還給輸入框（游標不跳回去，一拿到焦點就打開的下拉也不會被重新打開），按 Esc 照樣還。DS v0.1.7 起。',
+      description: '打開時是否把焦點移到第一個選項。預設 true（More 選單：開了就用鍵盤選）。錨點是輸入框、使用者還要繼續打字時設 false（如搜尋框下方的「最近開啟」），否則游標會被搶進選單、打的字進不了輸入框；設 false 時由呼叫端負責鍵盤進入選單（如 ↓ 鍵聚焦第一項）。放了 app-menu-item 時，焦點停在 selected 為 true 的那一項，沒有選中項才停第一項；設 false 一樣不移。放了 app-menu-item、觸發鈕又是輸入框時，點外面關掉不會把焦點還給輸入框（游標不跳回去，一拿到焦點就打開的下拉也不會被重新打開），按 Esc 照樣還。沒放 app-menu-item、裡面沒有按鈕時，焦點移到第一個輸入框、下拉或連結。內容還在載入（只有骨架、沒有可以操作的東西）時，等內容出來再移，不限時間；在這之前焦點被移到別處就不移。DS v0.1.7 起。',
     },
     {
       name: 'ariaLabel',
       type: 'string',
       default: "''",
-      description: '選單的名稱。放了 app-menu-item 時輸出成外框的 aria-label，報讀軟體打開選單會先念它；用畫面上看得到的字，例如「排序」「每頁顯示筆數」。沒放 app-menu-item 時不輸出。',
+      description: '選單的名稱。放了 app-menu-item 時輸出成外框的 aria-label，報讀軟體打開選單會先念它；用畫面上看得到的字，例如「排序」「每頁顯示筆數」。沒放 app-menu-item 時不輸出：拿 app-action-menu 當選項旁邊的面板時，外框直接寫 role="dialog" 和 aria-label 屬性取名，不要用 ariaLabel。',
     },
     {
       name: '(closeMenu)',
@@ -135,7 +135,7 @@ export const actionMenuDoc: ComponentApi = {
     },
     {
       type: 'warn',
-      content: '選單的名稱寫成元件設定 ariaLabel。沒放 app-menu-item 時 ariaLabel 不會輸出，外框也沒有角色。',
+      content: '選單的名稱寫成元件設定 ariaLabel。沒放 app-menu-item 時 ariaLabel 不會輸出，元件也不會幫外框加角色。這種浮層要名稱時（例如選項旁邊的面板），外框直接寫 role="dialog" 和 aria-label 屬性；元件不會拿掉使用端自己寫的這兩個屬性。',
     },
     {
       type: 'info',

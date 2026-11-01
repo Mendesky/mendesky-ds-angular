@@ -74,8 +74,9 @@
   .mi__icon,
   .mi__arrow { margin-top: 2px; }
   .mi__label { font-weight: 600; color: var(--text\/title, #1c1c2e); }
-  // 一行最寬 16 個字就換行：停用原因這類長說明不會把選單撐寬；標籤本身不限寬
-  .mi__desc { max-width: 16em; color: var(--text\/body-light, #939393); }
+  // 一行最寬 16 個字就換行：停用原因這類長說明不會把選單撐寬；標籤本身不限寬。
+  // 網址、編號這類一長串不能斷行的英數字也照樣斷，不會超出說明框蓋到右箭頭
+  .mi__desc { max-width: 16em; overflow-wrap: anywhere; color: var(--text\/body-light, #939393); }
 
   // 危險項目的標題不換深色，跟按鈕的字色走（紅字，圖示也是）；說明照樣淺灰
   &.mi--danger .mi__label { color: inherit; }
@@ -148,12 +149,15 @@
 //    選中改用系統的選取色（Highlight 底配 HighlightText 字），一樣是實心底、不加打勾，滑過、按下也不變；
 //    投影進來的 LightWhite 標籤跟著用 HighlightText。forced-color-adjust: none 是為了擋掉 Chrome 在字後面墊的
 //    Canvas 底色，不擋的話 HighlightText 的白字疊在白色墊底上會整個看不到；顏色本身都是系統色，照樣跟著使用者的主題。
+//    面板開著的那一項也用選取色：灰底被換掉後跟其他項目分不出來，看不出面板是哪一項打開的；
+//    Windows 原生選單打開子選單時，那一項也是這個樣子。
 //    停用沒有用原生 disabled，要自己換成系統的停用字色 GrayText；LightWhite 標籤也一起換，
 //    不換的話它的灰 50 會被瀏覽器換成 CanvasText，比停用的標題還醒目
 @media (forced-colors: active) {
   .mi--selected:not(.mi--disabled),
   .mi--selected:not(.mi--disabled):hover,
-  .mi--selected:not(.mi--disabled):active {
+  .mi--selected:not(.mi--disabled):active,
+  .mi--panel-open:not(.mi--disabled) {
     --text\/body-light: HighlightText;
     forced-color-adjust: none;
     background: Highlight;

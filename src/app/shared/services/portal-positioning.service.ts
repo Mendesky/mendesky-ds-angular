@@ -35,6 +35,8 @@ export interface AttachOptions {
    * 邏輯祖先錨點：point-anchored（attachAtPoint，無 trigger 元素）的浮層用此告訴 click-outside
    * 的 ancestor-protection「我邏輯上屬於哪個元素之下」。典型：巢狀 flyout（如下載 submenu）的觸發鈕
    * 位於父選單 panel 內 → 帶入該觸發鈕，點 flyout 內容時父選單不會被誤判成 click-outside 而關閉。
+   * 它也就是這個浮層的觸發鈕：按下它本身不算點外面，跟 element-anchored 的 trigger 一樣
+   * （浮層不會在按下時先關；再按一次要不要關，由觸發鈕的點擊處理切換）。
    */
   ancestorAnchorEl?: HTMLElement;
   /**
