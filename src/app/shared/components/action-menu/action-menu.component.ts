@@ -103,10 +103,10 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /** 最近一次按下的是不是選單裡面。要在按下時記：按到的選項可能接著被重建、離開畫面，關閉時已經查不出來 */
   private _pressedInMenu = false;
   /**
-   * 點擊剛傳進外框、還沒到選項自己的點擊監聽之前，按到的是哪個選單項目、它當時停用沒。
+   * 點擊剛傳進外框、還沒到選項自己的點擊監聽之前，按到的是哪個選單項目、它當時停用沒、會不會在旁邊打開面板。
    * 選項的 itemClick 跑完後畫面會先更新一次，外框收到這次點擊時，那一項可能已經停用、被重建或換掉了圖示
    */
-  private _clickSnapshot: { event: Event; item: HTMLElement | null; disabled: boolean } | null = null;
+  private _clickSnapshot: { event: Event; item: HTMLElement | null; disabled: boolean; opensPanel: boolean } | null = null;
   /** 選單模式下最後拿到焦點的選單項目和它的位置：那一項在選單開著時被拿掉，才知道焦點要補到哪 */
   private _focusedItem: HTMLElement | null = null;
   private _focusedIndex = -1;
@@ -121,7 +121,12 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 
   private readonly _onHostClickCapture = (event: MouseEvent): void => {
     const item = this._menuItemAt(event.target);
-    this._clickSnapshot = { event, item, disabled: item?.getAttribute('aria-disabled') === 'true' };
+    this._clickSnapshot = {
+      event,
+      item,
+      disabled: item?.getAttribute('aria-disabled') === 'true',
+      opensPanel: !!item?.hasAttribute('aria-haspopup'),
+    };
   };
 
   /** MenuContext：app-menu-item 建立時登記 */
@@ -340,6 +345,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /**
    * 選單模式的鍵盤（WAI-ARIA APG Menu）：上下方向鍵只在選單項目間循環（停用的也停得到）、
    * Home／End 跳頭尾、Enter／空白鍵執行目前這一項、Esc 與 Tab 關閉並把焦點交回觸發鈕。
+   * 會在旁邊打開面板的項目（app-menu-item 設了 opensPanel），右方向鍵跟 Enter 一樣打開面板。
    */
   private _onMenuKeydown(event: KeyboardEvent): void {
     // 用輸入法選字時的按鍵（Esc 取消選字、Enter 確定）是給輸入法的，選單不處理
@@ -379,6 +385,18 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
         this.zone.runOutsideAngular(() => swallowRepeatsUntilKeyup(event.key));
         active?.click();
         break;
+      case 'ArrowRight':
+        // 只處理會在旁邊打開面板的項目（APG 子選單的做法）。停用的、面板已經開著的不動：開著時再按一次會把面板關掉。
+        // 其他項目和左方向鍵都不處理，事件照常往外傳
+        if (!active || !items.includes(active) || !active.hasAttribute('aria-haspopup')) break;
+        if (active.getAttribute('aria-disabled') === 'true' || active.getAttribute('aria-expanded') === 'true') break;
+        event.preventDefault();
+        event.stopPropagation();
+        // 同 Enter：按住不放的連發不執行，執行之後、放開之前的連發都吃掉，不然面板會一開一關
+        if (event.repeat) break;
+        this.zone.runOutsideAngular(() => swallowRepeatsUntilKeyup(event.key));
+        active.click();
+        break;
       case 'Escape':
         event.stopPropagation();
         this._menuTrigger()?.focus();
@@ -395,6 +413,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /**
    * 選單模式的點擊：只有點到可用的選單項目才關（autoCloseOnAction 為 true 時）。
    * 點到分隔線、空白處不關，焦點留在選單外框；點到停用的項目也不關，焦點停在那一項。方向鍵照樣能用。
+   * 點到會在旁邊打開面板的項目也不關：選單留著，面板打開在它旁邊（焦點由 app-menu-item 自己留在那一項）。
    * 點到哪一項、停用沒，看點擊剛傳進外框時記下的（見 _clickSnapshot）
    */
   private _onMenuClick(event?: MouseEvent): void {
@@ -412,6 +431,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       item.focus();
       return;
     }
+    if (snap ? snap.opensPanel : item.hasAttribute('aria-haspopup')) return;
     if (this.autoCloseOnAction) this.closeMenu.emit();
   }
 

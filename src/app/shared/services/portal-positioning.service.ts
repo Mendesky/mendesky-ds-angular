@@ -124,6 +124,12 @@ class InternalOverlayRef implements PortalOverlayRef {
     return this.anchor.el.contains(target);
   }
 
+  /** 按到的是不是邏輯祖先錨點（point-anchored 浮層的「觸發鈕」，例如上層選單裡打開它的那一項） */
+  ancestorAnchorContains(target: EventTarget | null): boolean {
+    if (!(target instanceof Node)) return false;
+    return !!this.options.ancestorAnchorEl?.contains(target);
+  }
+
   updatePlacement(placement: Placement): void {
     this.placement = placement;
     this.scheduleReposition();
@@ -383,8 +389,10 @@ export class PortalPositioningService {
     const target = e.target;
 
     // Build a "safe" set: refs whose panel/trigger directly contains the click target.
+    // point-anchored 浮層沒有 trigger，ancestorAnchorEl 就是它的觸發鈕：按它跟按 element-anchored 的 trigger 一樣不算點外面，
+    // 由觸發鈕自己的點擊決定開關（例如再按一次上層選單裡那一項關掉面板）。不這樣的話，按下時先關、放開時又被那一項打開
     const safeRefs = new Set<InternalOverlayRef>(
-      refsArr.filter(r => r.panelContains(target) || r.triggerContains(target)),
+      refsArr.filter(r => r.panelContains(target) || r.triggerContains(target) || r.ancestorAnchorContains(target)),
     );
 
     // Ancestor-protection pass:

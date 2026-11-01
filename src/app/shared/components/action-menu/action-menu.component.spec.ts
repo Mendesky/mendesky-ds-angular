@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NgFor } from '@angular/common';
+import { NgFor, NgTemplateOutlet } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActionMenuComponent } from './action-menu.component';
 import { ButtonComponent } from '../button/button.component';
@@ -2503,4 +2503,151 @@ describe('ActionMenuComponent — 選單模式：觸發鈕放在可聚焦的格�
       document.querySelectorAll('app-action-menu').forEach(el => el.remove());
     });
   }
+});
+
+/**
+ * 會在旁邊打開面板的選項（app-menu-item 設了 opensPanel）。面板由使用端自己做，這裡只用 panelOpen 模擬它的開關。
+ * 另外放一個用 ng-template 宣告在選單裡、再用 ngTemplateOutlet 畫出來的選項（使用端在兩個位置共用同一項的寫法）
+ */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent, NgTemplateOutlet],
+  template: `
+    <div class="wrap">
+      <button type="button" data-testid="trigger" aria-haspopup="menu" [attr.aria-expanded]="open">更多</button>
+      @if (open) {
+        <app-action-menu ariaLabel="更多" (closeMenu)="onClose()">
+          <app-menu-item data-testid="plain" label="項目 A" (itemClick)="picks.push('plain')"></app-menu-item>
+          <app-menu-item data-testid="panel" label="更多設定" opensPanel="dialog" [panelOpen]="panelOpen"
+            [disabled]="panelDisabled" (itemClick)="togglePanel()"></app-menu-item>
+          <ng-template #shared>
+            <app-menu-item data-testid="from-template" label="項目 C" (itemClick)="picks.push('template')"></app-menu-item>
+          </ng-template>
+          <ng-container [ngTemplateOutlet]="shared"></ng-container>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class OpensPanelHostComponent {
+  open = false;
+  panelOpen = false;
+  panelDisabled = false;
+  picks: string[] = [];
+  closeCount = 0;
+
+  togglePanel(): void {
+    this.picks.push('panel');
+    this.panelOpen = !this.panelOpen;
+  }
+
+  onClose(): void {
+    this.closeCount++;
+    this.open = false;
+  }
+}
+
+describe('ActionMenuComponent — 選單模式：會在旁邊打開面板的選項（opensPanel）', () => {
+  let fixture: ComponentFixture<OpensPanelHostComponent>;
+  const btn = (id: string) => document.querySelector(`app-menu-item[data-testid="${id}"] button`) as HTMLElement;
+
+  async function openMenu(patch: Partial<OpensPanelHostComponent> = {}): Promise<void> {
+    fixture = TestBed.createComponent(OpensPanelHostComponent);
+    Object.assign(fixture.componentInstance, patch);
+    fixture.detectChanges();
+    (document.querySelector('[data-testid="trigger"]') as HTMLElement).focus();
+    fixture.componentInstance.open = true;
+    fixture.detectChanges();
+    await nextFrame();
+    await tick();
+  }
+
+  afterEach(() => {
+    fixture?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  it('點它：itemClick 發一次、選單不關、焦點停在它上面；再點一次關掉面板、選單還是不關', async () => {
+    await openMenu();
+    btn('panel').click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.picks).toEqual(['panel']);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+    expect(document.activeElement).toBe(btn('panel'));
+    expect(btn('panel').getAttribute('aria-expanded')).toBe('true');
+    btn('panel').click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.picks).toEqual(['panel', 'panel']);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+    expect(btn('panel').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('對照：點一般選項照樣關選單', async () => {
+    await openMenu();
+    btn('plain').click();
+    expect(fixture.componentInstance.picks).toEqual(['plain']);
+    expect(fixture.componentInstance.closeCount).toBe(1);
+  });
+
+  it('焦點在它上面按右方向鍵：跟 Enter 一樣發一次 itemClick、攔下預設動作、選單不關', async () => {
+    await openMenu();
+    btn('panel').focus();
+    const right = press('ArrowRight');
+    expect(right.defaultPrevented).toBeTrue();
+    expect(fixture.componentInstance.picks).toEqual(['panel']);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+  });
+
+  it('按住右方向鍵不放：連發不會再發 itemClick（不會一開一關）', async () => {
+    await openMenu();
+    btn('panel').focus();
+    press('ArrowRight');
+    press('ArrowRight', { repeat: true });
+    press('ArrowRight', { repeat: true });
+    expect(fixture.componentInstance.picks).toEqual(['panel']);
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }));
+  });
+
+  it('面板已經開著（aria-expanded="true"）時按右方向鍵沒有反應，不會把面板關掉', async () => {
+    await openMenu({ panelOpen: true });
+    btn('panel').focus();
+    press('ArrowRight');
+    expect(fixture.componentInstance.picks).toEqual([]);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+  });
+
+  it('一般選項按右方向鍵、左方向鍵都沒有反應', async () => {
+    await openMenu();
+    btn('plain').focus();
+    const right = press('ArrowRight');
+    const left = press('ArrowLeft');
+    expect(fixture.componentInstance.picks).toEqual([]);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+    expect(right.defaultPrevented).toBeFalse();
+    expect(left.defaultPrevented).toBeFalse();
+    expect(document.activeElement).toBe(btn('plain'));
+  });
+
+  it('停用時：點它、按 Enter、按右方向鍵都不發 itemClick，選單也不關', async () => {
+    await openMenu({ panelDisabled: true });
+    btn('panel').focus();
+    btn('panel').click();
+    press('Enter');
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+    press('ArrowRight');
+    expect(fixture.componentInstance.picks).toEqual([]);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+  });
+
+  it('用 ng-template 宣告在選單裡、ngTemplateOutlet 畫出來的選項照樣是 menuitem，方向鍵走得到、點了關選單', async () => {
+    await openMenu();
+    const item = btn('from-template');
+    expect(item.getAttribute('role')).toBe('menuitem');
+    btn('panel').focus();
+    press('ArrowDown');
+    expect(document.activeElement).toBe(item);
+    item.click();
+    expect(fixture.componentInstance.picks).toEqual(['template']);
+    expect(fixture.componentInstance.closeCount).toBe(1);
+  });
 });

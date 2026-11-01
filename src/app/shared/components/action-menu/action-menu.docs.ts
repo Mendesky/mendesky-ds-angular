@@ -9,7 +9,7 @@ export const actionMenuDoc: ComponentApi = {
       name: 'autoCloseOnAction',
       type: 'boolean',
       default: 'true',
-      description: '點擊選單內部子元素時是否自動 emit closeMenu。簡單操作選單用預設 true；含輸入欄或多選的複雜篩選面板設 false。放了 app-menu-item 時，只有點到可以用的選項才發，點到分隔線、空白處或停用的選項都不發。',
+      description: '點擊選單內部子元素時是否自動 emit closeMenu。簡單操作選單用預設 true；含輸入欄或多選的複雜篩選面板設 false。放了 app-menu-item 時，只有點到可以用的選項才發，點到分隔線、空白處或停用的選項都不發；設了 opensPanel 的選項（點了在旁邊打開面板）也不發。',
     },
     {
       name: 'align',
@@ -63,7 +63,7 @@ export const actionMenuDoc: ComponentApi = {
       name: 'ancestorAnchorEl',
       type: 'HTMLElement | null',
       default: 'null',
-      description: '巢狀 flyout 用：帶入父選單的 anchor 後，點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單。',
+      description: '巢狀 flyout 用（fixedMode）：帶入父選單裡打開這個 flyout 的元素（例如設了 opensPanel 的 app-menu-item 的元素）。點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單；按下那個元素本身也不算點外面，flyout 不會在按下時先關、放開時又被打開，再按一次就能關掉。',
     },
     {
       name: 'autoFocusFirst',
@@ -80,7 +80,7 @@ export const actionMenuDoc: ComponentApi = {
     {
       name: '(closeMenu)',
       type: 'EventEmitter<void>',
-      desc: '應關閉選單時觸發：點選單外面、按 Esc，或 autoCloseOnAction=true 時點選單內部。放了 app-menu-item 時，按 Tab 也會觸發，點內部則只有點到可以用的選項才算。',
+      desc: '應關閉選單時觸發：點選單外面、按 Esc，或 autoCloseOnAction=true 時點選單內部。放了 app-menu-item 時，按 Tab 也會觸發，點內部則只有點到可以用的選項才算，設了 opensPanel 的選項不算。',
       isOutput: true,
     },
   ],

@@ -5,13 +5,16 @@
   [class.mi--danger]="tone === 'danger'"
   [class.mi--disabled]="disabled"
   [class.mi--has-desc]="!!description"
+  [class.mi--panel-open]="!!opensPanel && panelOpen"
   [attr.role]="itemRole"
   [attr.tabindex]="inMenu ? -1 : null"
   [attr.aria-checked]="inMenu && isRadio ? selected : null"
   [attr.aria-pressed]="!inMenu && isRadio ? selected : null"
   [attr.aria-disabled]="disabled ? 'true' : null"
   [attr.aria-describedby]="description ? descriptionId : null"
-  (click)="onClick()"
+  [attr.aria-haspopup]="opensPanel || null"
+  [attr.aria-expanded]="opensPanel ? (panelOpen ? 'true' : 'false') : null"
+  (click)="onClick($event)"
 >
   @if (icon) {
     <app-icon class="mi__icon" [name]="icon" size="16"></app-icon>
@@ -24,4 +27,8 @@
     }
   </span>
   <ng-content></ng-content>
+  <!-- 右箭頭：點了會在旁邊打開面板；圖示本身是 aria-hidden，報讀軟體靠 aria-haspopup 知道 -->
+  @if (opensPanel) {
+    <app-icon class="mi__arrow" name="RightArrow" size="16"></app-icon>
+  }
 </button>

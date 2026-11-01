@@ -58,6 +58,12 @@
   text-overflow: ellipsis;
 }
 
+// 右箭頭（opensPanel）：推到最右邊，貼齊內距
+.mi__arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 // ── 說明文字：標題粗、深色，說明淺灰（跟 app-button 的雙行樣式一樣） ──
 .mi--has-desc {
   align-items: flex-start;
@@ -65,16 +71,20 @@
   padding-bottom: 8px;
   white-space: normal;
 
-  .mi__icon { margin-top: 2px; }
+  .mi__icon,
+  .mi__arrow { margin-top: 2px; }
   .mi__label { font-weight: 600; color: var(--text\/title, #1c1c2e); }
-  .mi__desc { color: var(--text\/body-light, #939393); }
+  // 一行最寬 16 個字就換行：停用原因這類長說明不會把選單撐寬；標籤本身不限寬
+  .mi__desc { max-width: 16em; color: var(--text\/body-light, #939393); }
 
   // 危險項目的標題不換深色，跟按鈕的字色走（紅字，圖示也是）；說明照樣淺灰
   &.mi--danger .mi__label { color: inherit; }
 }
 
 // ── 未選中：跟 ghost neutral 按鈕一樣，滑過實心灰底、按下深灰底 ──
-.mi:not(.mi--disabled):hover {
+//    旁邊的面板開著（opensPanel＋panelOpen）時跟滑過一樣，滑鼠移進面板後還看得出是哪一項打開的
+.mi:not(.mi--disabled):hover,
+.mi--panel-open:not(.mi--disabled) {
   background: var(--button\/neutral, #939393);
   color: var(--color\/white\/20, #f1f3f5);
 }
@@ -87,7 +97,8 @@
 .mi--danger:not(.mi--disabled) {
   color: var(--button\/error, #cc5252);
 }
-.mi--danger:not(.mi--disabled):hover {
+.mi--danger:not(.mi--disabled):hover,
+.mi--danger.mi--panel-open:not(.mi--disabled) {
   background: var(--button\/warning, #ff7373);
   color: var(--color\/white\/20, #f1f3f5);
 }
@@ -108,31 +119,37 @@
   background: var(--color\/calmblue\/100, #073045);
 }
 
-// ── 底色變深（滑過、按下、選中）時，標題、說明跟著變淺色；
+// ── 底色變深（滑過、按下、選中、面板開著）時，標題、說明跟著變淺色；
 //    投影進來用 --text/body-light 的淺灰字（app-label LightWhite）也一起變淺色，使用端不用自己寫 ──
 .mi:not(.mi--disabled):hover,
 .mi:not(.mi--disabled):active,
-.mi--selected:not(.mi--disabled) {
+.mi--selected:not(.mi--disabled),
+.mi--panel-open:not(.mi--disabled) {
   --text\/body-light: var(--color\/white\/20, #f1f3f5);
 
   .mi__label,
   .mi__desc { color: inherit; }
 }
 
-// ── 停用：停用灰字、沒有底色，滑過與按下都不變 ──
+// ── 停用：整項灰 50、沒有底色，滑過與按下都不變 ──
+//    比 --text/disabled（#939393，跟說明文字同色）淺一階：停用原因寫在說明，用 #939393 會跟能用的選項分不清。
+//    標題不加粗；投影進來用 --text/body-light 的淺灰字（app-label LightWhite）也換成灰 50，不會比標題深
 .mi--disabled {
-  color: var(--text\/disabled, #939393);
+  --text\/body-light: var(--color\/grey\/50, #aaaaaa);
+  color: var(--color\/grey\/50, #aaaaaa);
   cursor: not-allowed;
 
   .mi__label,
   .mi__desc { color: inherit; }
+  .mi__label { font-weight: 400; }
 }
 
 // ── 強制色彩模式（Windows 高對比）：瀏覽器會把自訂的底色、字色換成系統色，深藍底和停用灰字都會消失 ──
 //    選中改用系統的選取色（Highlight 底配 HighlightText 字），一樣是實心底、不加打勾，滑過、按下也不變；
 //    投影進來的 LightWhite 標籤跟著用 HighlightText。forced-color-adjust: none 是為了擋掉 Chrome 在字後面墊的
 //    Canvas 底色，不擋的話 HighlightText 的白字疊在白色墊底上會整個看不到；顏色本身都是系統色，照樣跟著使用者的主題。
-//    停用沒有用原生 disabled，要自己換成系統的停用字色 GrayText
+//    停用沒有用原生 disabled，要自己換成系統的停用字色 GrayText；LightWhite 標籤也一起換，
+//    不換的話它的灰 50 會被瀏覽器換成 CanvasText，比停用的標題還醒目
 @media (forced-colors: active) {
   .mi--selected:not(.mi--disabled),
   .mi--selected:not(.mi--disabled):hover,
@@ -144,6 +161,7 @@
   }
 
   .mi--disabled {
+    --text\/body-light: GrayText;
     color: GrayText;
   }
 }
