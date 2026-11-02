@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const numberListDoc: ComponentApi = {
   id: 'number-list',
   selector: 'app-number-list',
-  summary: 'size: S|M|L · background: white|grey · label text number1 number2 avatarText actions: NumberListAction[] · (actionClick)',
+  summary: 'size: S|M|L · background: white|grey · label text number1 number2 avatarText actions: NumberListAction[] editText · (actionClick)',
   props: [
     {
       name: 'size',
@@ -46,6 +46,12 @@ export const numberListDoc: ComponentApi = {
       type: 'NumberListAction[]',
       default: "['download']",
       desc: 'view | download | edit | delete | subview。右側按鈕固定依 檢視／下載／編輯／刪除 排列，與陣列順序無關',
+    },
+    {
+      name: 'editText',
+      type: 'string',
+      default: "'編輯'",
+      desc: '「編輯」按鈕的文字，也是手機只留圖示時的按鈕名稱（aria-label）。編的範圍需要講清楚時改，例：只改標題 →「編輯標題」',
     },
     {
       name: 'avatarText',

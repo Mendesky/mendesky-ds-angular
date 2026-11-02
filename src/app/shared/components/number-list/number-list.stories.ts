@@ -45,6 +45,10 @@ const meta: Meta<NumberListComponent> = {
       description: '顯示 Avatar；傳入姓名文字作為 avatar 內容',
       control: { type: 'text' },
     },
+    editText: {
+      description: '「編輯」按鈕的文字，也是手機只留圖示時的按鈕名稱（aria-label）；例：只改標題 →「編輯標題」',
+      control: { type: 'text' },
+    },
     actionClick: {
       description: '操作按鈕點擊時觸發，回傳 NumberListAction',
       action: 'actionClick',
@@ -59,6 +63,7 @@ const meta: Meta<NumberListComponent> = {
     number2: '',
     actions: ['view', 'download'],
     avatarText: '',
+    editText: '編輯',
   },
 };
 
