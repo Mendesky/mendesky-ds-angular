@@ -31,6 +31,8 @@ export class NumberListComponent {
   @Input() number2 = '';
   /** 操作按鈕清單：subview 出現在左側 content 區，其餘在右側按鈕區，固定依 檢視 / 下載 / 編輯 / 刪除 排列 */
   @Input() actions: NumberListAction[] = ['download'];
+  /** 「編輯」按鈕的文字，也是手機只留圖示時的按鈕名稱（aria-label）。編的範圍需要講清楚時改，例：只改標題 →「編輯標題」 */
+  @Input() editText = '編輯';
   /** 顯示 Avatar；傳入姓名文字作為 avatar 內容 */
   @Input() avatarText = '';
 

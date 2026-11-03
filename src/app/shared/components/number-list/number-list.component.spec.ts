@@ -59,6 +59,25 @@ describe('NumberListComponent — edit 動作', () => {
 
     expect(buttonLabels()).not.toContain('編輯');
   });
+
+  // 同一列只有「編輯」一個動作時看不出編的是什麼（例：檔案列的編輯其實只改標題），由使用端講清楚。
+  it('editText 改按鈕文字與 aria-label（手機只留圖示時，按鈕名稱靠 aria-label）', () => {
+    fixture.componentRef.setInput('actions', ['view', 'edit', 'delete'] satisfies NumberListAction[]);
+    fixture.componentRef.setInput('editText', '編輯標題');
+    fixture.detectChanges();
+
+    const editBtn = fixture.nativeElement.querySelectorAll('.nl-buttons .nl-action-btn')[1] as HTMLButtonElement;
+    expect(buttonLabels()).toEqual(['檢視', '編輯標題', '刪除']);
+    expect(editBtn.getAttribute('aria-label')).toBe('編輯標題');
+  });
+
+  it('沒給 editText 時維持「編輯」', () => {
+    fixture.componentRef.setInput('actions', ['edit'] satisfies NumberListAction[]);
+    fixture.detectChanges();
+
+    const editBtn = fixture.nativeElement.querySelector('.nl-buttons .nl-action-btn') as HTMLButtonElement;
+    expect(editBtn.getAttribute('aria-label')).toBe('編輯');
+  });
 });
 
 describe('NumberListComponent — label / text 截斷（寬度 1024px 以上）', () => {
