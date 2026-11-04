@@ -152,3 +152,73 @@ describe('InlineAddComponent — 報讀名稱', () => {
     expect(input.hasAttribute('aria-required')).toBeFalse();
   });
 });
+
+// ── 焦點：點開進輸入框、Enter / Esc 回觸發鈕、blur 不搶焦點（2026-11-04）──────────────
+
+/** 外面多一顆按鈕，模擬使用者點到別處讓輸入框 blur */
+@Component({
+  standalone: true,
+  imports: [InlineAddComponent],
+  template: `
+    <app-inline-add ariaLabel="從哪裡得知這項活動" placeholder="輸入其他管道後按 Enter"></app-inline-add>
+    <button type="button" class="outside">其他按鈕</button>
+  `,
+})
+class FocusHostComponent {}
+
+describe('InlineAddComponent — 焦點', () => {
+  let fixture: ComponentFixture<FocusHostComponent>;
+  let root: HTMLElement;
+
+  // autoDetectChanges：跟實際頁面一樣由 zone 決定何時更新畫面，不在測試裡手動 detectChanges 蓋掉時序
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [FocusHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(FocusHostComponent);
+    fixture.autoDetectChanges(true);
+    root = fixture.nativeElement as HTMLElement;
+    await fixture.whenStable();
+  });
+
+  const trigger = () => root.querySelector<HTMLButtonElement>('app-inline-add button');
+  const input = () => root.querySelector<HTMLInputElement>('app-inline-add input.input-field');
+
+  async function open(): Promise<HTMLInputElement> {
+    trigger()!.click();
+    await fixture.whenStable();
+    expect(input()).withContext('點觸發鈕後應出現輸入框').not.toBeNull();
+    return input()!;
+  }
+
+  async function press(key: string): Promise<void> {
+    input()!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+  }
+
+  it('點觸發鈕 → 焦點直接進輸入框', async () => {
+    const el = await open();
+    expect(document.activeElement).toBe(el);
+  });
+
+  it('按 Enter 送出 → 輸入框收起，焦點回到觸發鈕', async () => {
+    await open();
+    await press('Enter');
+    expect(input()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('按 Esc 取消 → 輸入框收起，焦點回到觸發鈕', async () => {
+    await open();
+    await press('Escape');
+    expect(input()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('焦點移到別處（blur）→ 輸入框收起，焦點留在使用者移去的地方', async () => {
+    await open();
+    const outside = root.querySelector<HTMLButtonElement>('button.outside')!;
+    outside.focus();
+    await fixture.whenStable();
+    expect(input()).toBeNull();
+    expect(document.activeElement).toBe(outside);
+  });
+});
