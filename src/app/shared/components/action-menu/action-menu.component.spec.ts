@@ -1,10 +1,14 @@
-import { Component } from '@angular/core';
-import { NgFor } from '@angular/common';
+import { Component, ElementRef, ViewChild } from '@angular/core';
+import { NgFor, NgTemplateOutlet } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActionMenuComponent } from './action-menu.component';
 import { ButtonComponent } from '../button/button.component';
 import { MenuItemComponent } from '../menu-item/menu-item.component';
 import { IconBtnComponent } from '../icon-btn/icon-btn.component';
+import { SelectComponent } from '../select/select.component';
+import { NumberInputComponent } from '../number-input/number-input.component';
+import { UploadDropzoneComponent } from '../upload-dropzone/upload-dropzone.component';
+import { DatePickerComponent } from '../date-picker/date-picker.component';
 
 /**
  * 重點：fixture 根元素本身就掛在 document.body，直接斷言根元素 parent 是恆真。
@@ -2503,4 +2507,592 @@ describe('ActionMenuComponent — 選單模式：觸發鈕放在可聚焦的格�
       document.querySelectorAll('app-action-menu').forEach(el => el.remove());
     });
   }
+});
+
+/**
+ * 會在旁邊打開面板的選項（app-menu-item 設了 opensPanel）。面板由使用端自己做，這裡只用 panelOpen 模擬它的開關。
+ * 另外放一個用 ng-template 宣告在選單裡、再用 ngTemplateOutlet 畫出來的選項（使用端在兩個位置共用同一項的寫法）
+ */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent, NgTemplateOutlet],
+  template: `
+    <div class="wrap">
+      <button type="button" data-testid="trigger" aria-haspopup="menu" [attr.aria-expanded]="open">更多</button>
+      @if (open) {
+        <app-action-menu ariaLabel="更多" (closeMenu)="onClose()">
+          <app-menu-item data-testid="plain" label="項目 A" (itemClick)="picks.push('plain')"></app-menu-item>
+          <app-menu-item data-testid="panel" label="更多設定" opensPanel="dialog" [panelOpen]="panelOpen"
+            [disabled]="panelDisabled" (itemClick)="togglePanel()"></app-menu-item>
+          <ng-template #shared>
+            <app-menu-item data-testid="from-template" label="項目 C" (itemClick)="picks.push('template')"></app-menu-item>
+          </ng-template>
+          <ng-container [ngTemplateOutlet]="shared"></ng-container>
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class OpensPanelHostComponent {
+  open = false;
+  panelOpen = false;
+  panelDisabled = false;
+  picks: string[] = [];
+  closeCount = 0;
+
+  togglePanel(): void {
+    this.picks.push('panel');
+    this.panelOpen = !this.panelOpen;
+  }
+
+  onClose(): void {
+    this.closeCount++;
+    this.open = false;
+  }
+}
+
+describe('ActionMenuComponent — 選單模式：會在旁邊打開面板的選項（opensPanel）', () => {
+  let fixture: ComponentFixture<OpensPanelHostComponent>;
+  const btn = (id: string) => document.querySelector(`app-menu-item[data-testid="${id}"] button`) as HTMLElement;
+
+  async function openMenu(patch: Partial<OpensPanelHostComponent> = {}): Promise<void> {
+    fixture = TestBed.createComponent(OpensPanelHostComponent);
+    Object.assign(fixture.componentInstance, patch);
+    fixture.detectChanges();
+    (document.querySelector('[data-testid="trigger"]') as HTMLElement).focus();
+    fixture.componentInstance.open = true;
+    fixture.detectChanges();
+    await nextFrame();
+    await tick();
+  }
+
+  afterEach(() => {
+    fixture?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  it('點它：itemClick 發一次、選單不關、焦點停在它上面；再點一次關掉面板、選單還是不關', async () => {
+    await openMenu();
+    btn('panel').click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.picks).toEqual(['panel']);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+    expect(document.activeElement).toBe(btn('panel'));
+    expect(btn('panel').getAttribute('aria-expanded')).toBe('true');
+    btn('panel').click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.picks).toEqual(['panel', 'panel']);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+    expect(btn('panel').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('對照：點一般選項照樣關選單', async () => {
+    await openMenu();
+    btn('plain').click();
+    expect(fixture.componentInstance.picks).toEqual(['plain']);
+    expect(fixture.componentInstance.closeCount).toBe(1);
+  });
+
+  it('焦點在它上面按右方向鍵：跟 Enter 一樣發一次 itemClick、攔下預設動作、選單不關', async () => {
+    await openMenu();
+    btn('panel').focus();
+    const right = press('ArrowRight');
+    expect(right.defaultPrevented).toBeTrue();
+    expect(fixture.componentInstance.picks).toEqual(['panel']);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+  });
+
+  it('按住右方向鍵不放：連發不會再發 itemClick（不會一開一關）', async () => {
+    await openMenu();
+    btn('panel').focus();
+    press('ArrowRight');
+    press('ArrowRight', { repeat: true });
+    press('ArrowRight', { repeat: true });
+    expect(fixture.componentInstance.picks).toEqual(['panel']);
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }));
+  });
+
+  it('面板已經開著（aria-expanded="true"）時按右方向鍵沒有反應，不會把面板關掉', async () => {
+    await openMenu({ panelOpen: true });
+    btn('panel').focus();
+    press('ArrowRight');
+    expect(fixture.componentInstance.picks).toEqual([]);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+  });
+
+  it('一般選項按右方向鍵、左方向鍵都沒有反應', async () => {
+    await openMenu();
+    btn('plain').focus();
+    const right = press('ArrowRight');
+    const left = press('ArrowLeft');
+    expect(fixture.componentInstance.picks).toEqual([]);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+    expect(right.defaultPrevented).toBeFalse();
+    expect(left.defaultPrevented).toBeFalse();
+    expect(document.activeElement).toBe(btn('plain'));
+  });
+
+  it('停用時：點它、按 Enter、按右方向鍵都不發 itemClick，選單也不關', async () => {
+    await openMenu({ panelDisabled: true });
+    btn('panel').focus();
+    btn('panel').click();
+    press('Enter');
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+    const right = press('ArrowRight');
+    // 選單自己就不處理停用項目的右方向鍵（不攔預設動作、不去點它），不是靠選項擋下 itemClick
+    expect(right.defaultPrevented).toBeFalse();
+    expect(fixture.componentInstance.picks).toEqual([]);
+    expect(fixture.componentInstance.closeCount).toBe(0);
+  });
+
+  it('用 ng-template 宣告在選單裡、ngTemplateOutlet 畫出來的選項照樣是 menuitem，方向鍵走得到、點了關選單', async () => {
+    await openMenu();
+    const item = btn('from-template');
+    expect(item.getAttribute('role')).toBe('menuitem');
+    btn('panel').focus();
+    press('ArrowDown');
+    expect(document.activeElement).toBe(item);
+    item.click();
+    expect(fixture.componentInstance.picks).toEqual(['template']);
+    expect(fixture.componentInstance.closeCount).toBe(1);
+  });
+});
+
+/**
+ * 選項＋旁邊的面板，兩個都是真的 app-action-menu：選單裡放設了 opensPanel 的 app-menu-item，
+ * 面板是另一個 fixedMode 的 app-action-menu，ancestorAnchorEl 指回那一項的元素（使用端的標準寫法）。
+ * 面板內容可以先是載入中（沒有可以按的東西）、之後才出現；內容可以是按鈕、輸入框、DS 的欄位，或只有隱藏的檔案輸入框。
+ */
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent, ButtonComponent, SelectComponent, NumberInputComponent, UploadDropzoneComponent, DatePickerComponent],
+  template: `
+    <div class="wrap">
+      <button type="button" data-testid="trigger" aria-haspopup="menu" [attr.aria-expanded]="open">更多</button>
+      @if (open) {
+        <app-action-menu ariaLabel="更多" (closeMenu)="closeAll()">
+          <app-menu-item #panelItem data-testid="panel" label="匯出" opensPanel="dialog" [panelOpen]="panelOpen"
+            (itemClick)="togglePanel()"></app-menu-item>
+          <app-menu-item data-testid="plain" label="項目 A" (itemClick)="picks.push('plain')"></app-menu-item>
+        </app-action-menu>
+      }
+      @if (open && panelOpen) {
+        <app-action-menu data-testid="side-panel" role="dialog" aria-label="匯出" [autoCloseOnAction]="panelAutoClose"
+          [autoFocusFirst]="panelAutoFocus" [fixedMode]="true" [fixedTop]="40" [fixedLeft]="240"
+          [ancestorAnchorEl]="panelItemRef?.nativeElement ?? null" (closeMenu)="panelOpen = false">
+          @if (!panelReady) {
+            <div class="skeleton">loading…</div>
+          } @else {
+            @switch (panelContent) {
+              @case ('input') { <input data-testid="panel-input" aria-label="檔名"> }
+              @case ('select') { <app-select data-testid="panel-select" [options]="selectOptions"></app-select> }
+              @case ('number') { <app-number-input data-testid="panel-number"></app-number-input> }
+              @case ('dropzone') { <app-upload-dropzone data-testid="panel-dropzone"></app-upload-dropzone> }
+              @case ('hiddenFile') { <input data-testid="panel-file" type="file" hidden> }
+              @case ('datePicker') { <app-date-picker data-testid="panel-date"></app-date-picker> }
+              @case ('selectThenButton') {
+                <app-select data-testid="panel-select" [options]="selectOptions"></app-select>
+                <button type="button" data-testid="panel-btn">套用</button>
+              }
+              @case ('numberThenButton') {
+                <app-number-input data-testid="panel-number"></app-number-input>
+                <button type="button" data-testid="panel-btn">套用</button>
+              }
+              @case ('ariaDisabledThenInput') {
+                <button type="button" data-testid="panel-off-btn" aria-disabled="true">停用的按鈕</button>
+                <input data-testid="panel-input" aria-label="檔名">
+              }
+              @case ('clickableDisabledOnly') {
+                <app-button data-testid="panel-ds-btn" text="下載" [disabled]="panelButtonOff" [clickableWhenDisabled]="true"></app-button>
+              }
+              @case ('editableThenButton') {
+                <div data-testid="panel-editable" contenteditable="true" role="textbox" aria-label="備註">備註</div>
+                <button type="button" data-testid="panel-btn" (click)="picks.push('panel-btn')">套用</button>
+              }
+              @case ('notShownButtons') {
+                <button type="button" data-testid="panel-first">第一顆</button>
+                <button type="button" data-testid="panel-invisible" style="visibility: hidden">看不到的按鈕</button>
+                <div inert><button type="button" data-testid="panel-inert">被擋住的按鈕</button></div>
+                <button type="button" data-testid="panel-last">最後一顆</button>
+              }
+              @case ('textThenInput') {
+                <span data-testid="panel-text" tabindex="0">說明文字</span>
+                <input data-testid="panel-input" aria-label="檔名">
+              }
+              @case ('hiddenButton') { <button type="button" data-testid="panel-btn" [hidden]="!panelButtonShown">下載</button> }
+              @default { <button type="button" data-testid="panel-btn" (click)="picks.push('panel-btn')">下載</button> }
+            }
+          }
+        </app-action-menu>
+      }
+    </div>
+  `,
+})
+class SidePanelHostComponent {
+  @ViewChild('panelItem', { read: ElementRef }) panelItemRef?: ElementRef<HTMLElement>;
+  open = false;
+  panelOpen = false;
+  panelReady = true;
+  panelContent: 'button' | 'input' | 'select' | 'number' | 'dropzone' | 'hiddenFile' | 'hiddenButton' | 'datePicker'
+    | 'selectThenButton' | 'numberThenButton' | 'ariaDisabledThenInput' | 'textThenInput'
+    | 'clickableDisabledOnly' | 'editableThenButton' | 'notShownButtons' = 'button';
+  panelButtonShown = false;
+  panelButtonOff = true;
+  panelAutoClose = false;
+  selectOptions = [{ value: 'a', label: '選項 A' }, { value: 'b', label: '選項 B' }];
+  panelAutoFocus = true;
+  picks: string[] = [];
+  closeCount = 0;
+
+  togglePanel(): void {
+    this.picks.push('panel');
+    this.panelOpen = !this.panelOpen;
+  }
+
+  closeAll(): void {
+    this.closeCount++;
+    this.open = false;
+    this.panelOpen = false;
+  }
+}
+
+describe('ActionMenuComponent — 選項＋旁邊的面板（兩個真的 app-action-menu）', () => {
+  let fixture: ComponentFixture<SidePanelHostComponent>;
+  const item = () => document.querySelector('app-menu-item[data-testid="panel"] button') as HTMLElement;
+  const panel = () => document.querySelector('app-action-menu[data-testid="side-panel"]') as HTMLElement | null;
+  const outerMenu = () => document.querySelector('app-action-menu[role="menu"]') as HTMLElement | null;
+  const host = () => fixture.componentInstance;
+
+  /** 真的使用者按一下：先按下（定位服務在這時判斷點外面），再點擊 */
+  function pressAndClick(el: HTMLElement): void {
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    el.click();
+    fixture.detectChanges();
+  }
+
+  async function openMenu(patch: Partial<SidePanelHostComponent> = {}): Promise<void> {
+    fixture = TestBed.createComponent(SidePanelHostComponent);
+    Object.assign(fixture.componentInstance, patch);
+    fixture.detectChanges();
+    (document.querySelector('[data-testid="trigger"]') as HTMLElement).focus();
+    host().open = true;
+    fixture.detectChanges();
+    await nextFrame();
+    await tick();
+  }
+
+  /** 點那一項打開面板，等面板搬到 body、種完初始焦點 */
+  async function openPanel(): Promise<void> {
+    pressAndClick(item());
+    await nextFrame();
+    await nextFrame();
+    await tick();
+  }
+
+  afterEach(() => {
+    fixture?.destroy();
+    document.querySelectorAll('app-action-menu').forEach(el => el.remove());
+  });
+
+  it('按下再點那一項：面板打開、選單不關；點面板裡的按鈕，選單和面板都不關', async () => {
+    await openMenu();
+    await openPanel();
+    expect(panel()).not.toBeNull();
+    expect(outerMenu()).not.toBeNull();
+    expect(host().closeCount).toBe(0);
+    expect(item().getAttribute('aria-expanded')).toBe('true');
+    // 面板裡沒放 app-menu-item：元件不加角色、不輸出 ariaLabel，使用端寫在外框上的 role、aria-label 照樣在
+    expect(panel()!.getAttribute('role')).toBe('dialog');
+    expect(panel()!.getAttribute('aria-label')).toBe('匯出');
+
+    pressAndClick(panel()!.querySelector('[data-testid="panel-btn"]') as HTMLElement);
+    await tick();
+    expect(host().picks).toEqual(['panel', 'panel-btn']);
+    expect(host().closeCount).toBe(0);
+    expect(host().panelOpen).toBeTrue();
+    expect(outerMenu()).not.toBeNull();
+  });
+
+  it('再按一次那一項：按下時面板不先關，點擊切換後面板關、選單不關', async () => {
+    await openMenu();
+    await openPanel();
+    item().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    // 按下那一刻：面板不能被當成點外面關掉，不然放開時切換開關又會把它打開
+    expect(host().panelOpen).toBeTrue();
+    item().click();
+    fixture.detectChanges();
+    await tick();
+    expect(host().picks).toEqual(['panel', 'panel']);
+    expect(host().panelOpen).toBeFalse();
+    expect(panel()).toBeNull();
+    expect(host().closeCount).toBe(0);
+    expect(outerMenu()).not.toBeNull();
+  });
+
+  it('按選單和面板以外的地方：兩個都關', async () => {
+    await openMenu();
+    await openPanel();
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    await tick();
+    expect(host().closeCount).toBe(1);
+    expect(panel()).toBeNull();
+    expect(outerMenu()).toBeNull();
+  });
+
+  it('面板打開時焦點移進面板裡第一個按鈕', async () => {
+    await openMenu();
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
+  });
+
+  it('面板內容超過 1 秒才出來：出來時焦點照樣移進面板', async () => {
+    await openMenu({ panelReady: false });
+    await openPanel();
+    expect(document.activeElement).toBe(item());
+    await tick(1200);
+    host().panelReady = true;
+    fixture.detectChanges();
+    await tick(30);
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
+  });
+
+  it('內容出來之前使用者把焦點移到別的選項：內容出來時不搶焦點', async () => {
+    await openMenu({ panelReady: false });
+    await openPanel();
+    item().focus();
+    press('ArrowDown');
+    const plain = document.querySelector('app-menu-item[data-testid="plain"] button');
+    expect(document.activeElement).toBe(plain);
+    host().panelReady = true;
+    fixture.detectChanges();
+    await tick(30);
+    expect(document.activeElement).toBe(plain);
+  });
+
+  it('面板裡按住 Esc 不放：第一下只關面板、焦點回到那一項，連發不會接著關掉選單', async () => {
+    await openMenu();
+    await openPanel();
+    press('Escape');
+    fixture.detectChanges();
+    await tick();
+    expect(host().panelOpen).toBeFalse();
+    expect(document.activeElement).toBe(item());
+    press('Escape', { repeat: true });
+    press('Escape', { repeat: true });
+    fixture.detectChanges();
+    expect(host().closeCount).toBe(0);
+    expect(outerMenu()).not.toBeNull();
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+  });
+
+  /** 數傳到 document 的 Esc（外層對話框多半在 document 上聽 Esc 關閉） */
+  function countEscapeAtDocument(): { count: () => number; stop: () => void } {
+    let n = 0;
+    const listener = (e: KeyboardEvent) => { if (e.key === 'Escape' || e.code === 'Escape') n++; };
+    document.addEventListener('keydown', listener);
+    return { count: () => n, stop: () => document.removeEventListener('keydown', listener) };
+  }
+
+  it('面板的輸入框用輸入法選字時按 Esc：是取消選字，面板不關，也不往外傳（外層對話框不會跟著關）', async () => {
+    await openMenu({ panelContent: 'input' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
+    const atDocument = countEscapeAtDocument();
+    try {
+      press('Escape', { isComposing: true });
+      press('Escape', { keyCode: 229 } as KeyboardEventInit);
+      press('Process', { code: 'Escape', keyCode: 229 } as KeyboardEventInit);
+      fixture.detectChanges();
+      expect(host().panelOpen).toBeTrue();
+      expect(host().closeCount).toBe(0);
+      expect(atDocument.count()).toBe(0);
+    } finally {
+      atDocument.stop();
+    }
+  });
+
+  it('選單裡收到輸入法的 Esc：選單不關，也不往外傳', async () => {
+    await openMenu();
+    item().focus();
+    const atDocument = countEscapeAtDocument();
+    try {
+      press('Escape', { isComposing: true });
+      fixture.detectChanges();
+      expect(host().closeCount).toBe(0);
+      expect(outerMenu()).not.toBeNull();
+      expect(atDocument.count()).toBe(0);
+    } finally {
+      atDocument.stop();
+    }
+  });
+
+  it('面板裡只有 DS 的下拉（role="combobox" 的 div）：焦點移到下拉', async () => {
+    await openMenu({ panelContent: 'select' });
+    await openPanel();
+    const combobox = panel()!.querySelector('app-select [role="combobox"]');
+    expect(combobox).not.toBeNull();
+    expect(document.activeElement).toBe(combobox);
+  });
+
+  it('面板裡只有數字輸入框：焦點移到輸入框，不是 Tab 停不到的增減鈕', async () => {
+    await openMenu({ panelContent: 'number' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('app-number-input input'));
+  });
+
+  it('面板裡只有上傳區：焦點移到上傳區本身，不是裡面隱藏的檔案輸入框', async () => {
+    await openMenu({ panelContent: 'dropzone' });
+    await openPanel();
+    const zone = panel()!.querySelector('app-upload-dropzone [role="button"]');
+    expect(zone).not.toBeNull();
+    expect(document.activeElement).toBe(zone);
+  });
+
+  it('面板裡只有隱藏的檔案輸入框：不算移進去，右方向鍵沒有反應；之後出現按鈕時焦點照樣移進去', async () => {
+    await openMenu({ panelContent: 'hiddenFile' });
+    await openPanel();
+    expect(document.activeElement).toBe(item());
+    const right = press('ArrowRight');
+    expect(right.defaultPrevented).toBeFalse();
+    expect(document.activeElement).toBe(item());
+    host().panelContent = 'button';
+    fixture.detectChanges();
+    await tick(30);
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
+  });
+
+  it('面板裡第一顆按鈕標了 aria-disabled="true"（停用但可點）：Tab 停得到，焦點移到它，不跳過', async () => {
+    await openMenu({ panelContent: 'ariaDisabledThenInput' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-off-btn"]'));
+  });
+
+  it('面板裡只有「停用但可點」的 app-button：焦點移到它；恢復可用後焦點還在它上面', async () => {
+    await openMenu({ panelContent: 'clickableDisabledOnly' });
+    await openPanel();
+    const btn = panel()!.querySelector('app-button[data-testid="panel-ds-btn"] button') as HTMLElement;
+    expect(btn.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(btn);
+    host().panelButtonOff = false;
+    fixture.detectChanges();
+    await tick(30);
+    expect(btn.hasAttribute('aria-disabled')).toBeFalse();
+    expect(document.activeElement).toBe(btn);
+  });
+
+  it('焦點在面板的可編輯區：空白鍵、Enter 照常輸入，不會被當成點擊，面板不關（autoCloseOnAction=true）；上下方向鍵不會把焦點搶到按鈕', async () => {
+    await openMenu({ panelContent: 'editableThenButton', panelAutoClose: true });
+    await openPanel();
+    const editable = panel()!.querySelector('[data-testid="panel-editable"]') as HTMLElement;
+    editable.focus();
+    expect(document.activeElement).toBe(editable);
+    for (const key of [' ', 'Enter', 'ArrowDown', 'ArrowUp']) {
+      const event = press(key);
+      fixture.detectChanges();
+      expect(event.defaultPrevented).withContext(key).toBeFalse();
+      expect(document.activeElement).withContext(key).toBe(editable);
+      expect(host().panelOpen).withContext(key).toBeTrue();
+    }
+    expect(host().picks).toEqual(['panel']);
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' }));
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+  });
+
+  it('上下方向鍵跳過看不到的按鈕（visibility: hidden）和被 inert 擋住的按鈕', async () => {
+    await openMenu({ panelContent: 'notShownButtons' });
+    await openPanel();
+    const first = panel()!.querySelector('[data-testid="panel-first"]');
+    const last = panel()!.querySelector('[data-testid="panel-last"]');
+    expect(document.activeElement).toBe(first);
+    press('ArrowDown');
+    expect(document.activeElement).toBe(last);
+    press('ArrowUp');
+    expect(document.activeElement).toBe(first);
+    press('ArrowUp');
+    expect(document.activeElement).toBe(last);
+  });
+
+  it('面板裡有 tabindex="0" 但不能操作的文字：不算欄位，焦點移到後面的輸入框', async () => {
+    await openMenu({ panelContent: 'textThenInput' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
+  });
+
+  it('面板裡只有 DS 的日期欄位：焦點移到欄位；按 Enter 打開日期選單後，選單維持打開（浮層不再點一次把它關掉）', async () => {
+    await openMenu({ panelContent: 'datePicker' });
+    await openPanel();
+    const field = panel()!.querySelector('app-date-picker [role="combobox"]') as HTMLElement;
+    expect(document.activeElement).toBe(field);
+    press('Enter');
+    fixture.detectChanges();
+    await tick();
+    expect(field.getAttribute('aria-expanded')).toBe('true');
+    expect(host().panelOpen).toBeTrue();
+  });
+
+  it('焦點在 DS 的下拉上按下方向鍵：下拉自己打開清單，焦點留在下拉，不會被浮層移到後面的按鈕', async () => {
+    await openMenu({ panelContent: 'selectThenButton' });
+    await openPanel();
+    const combobox = panel()!.querySelector('app-select [role="combobox"]') as HTMLElement;
+    combobox.focus();
+    press('ArrowDown');
+    fixture.detectChanges();
+    await tick();
+    expect(document.activeElement).toBe(combobox);
+    expect(combobox.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('面板有數字輸入框和按鈕：初始焦點在按鈕；上下方向鍵不會停到 Tab 停不到的增減鈕', async () => {
+    await openMenu({ panelContent: 'numberThenButton' });
+    await openPanel();
+    const apply = panel()!.querySelector('[data-testid="panel-btn"]');
+    expect(document.activeElement).toBe(apply);
+    press('ArrowUp');
+    expect(document.activeElement).toBe(apply);
+    press('ArrowDown');
+    expect(document.activeElement).toBe(apply);
+  });
+
+  it('面板裡的按鈕先藏著（hidden 屬性）、之後才顯示：顯示時焦點移進去（不是新增元素也要再試）', async () => {
+    await openMenu({ panelContent: 'hiddenButton' });
+    await openPanel();
+    expect(document.activeElement).toBe(item());
+    host().panelButtonShown = true;
+    fixture.detectChanges();
+    await tick(30);
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
+  });
+
+  it('面板裡只有輸入框：焦點移到輸入框', async () => {
+    await openMenu({ panelContent: 'input' });
+    await openPanel();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-input"]'));
+  });
+
+  it('面板開著、焦點還在那一項（面板設 autoFocusFirst=false）：按右方向鍵把焦點移進面板，不會把面板關掉', async () => {
+    await openMenu({ panelAutoFocus: false });
+    await openPanel();
+    expect(document.activeElement).toBe(item());
+    const right = press('ArrowRight');
+    fixture.detectChanges();
+    expect(right.defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
+    expect(host().picks).toEqual(['panel']);
+    expect(host().panelOpen).toBeTrue();
+  });
+
+  it('面板開著但還在載入、沒有可以按的東西：按右方向鍵沒有反應，內容出來後焦點移進去', async () => {
+    await openMenu({ panelReady: false });
+    await openPanel();
+    const right = press('ArrowRight');
+    expect(right.defaultPrevented).toBeFalse();
+    expect(document.activeElement).toBe(item());
+    expect(host().picks).toEqual(['panel']);
+    host().panelReady = true;
+    fixture.detectChanges();
+    await tick(30);
+    expect(document.activeElement).toBe(panel()!.querySelector('[data-testid="panel-btn"]'));
+  });
 });

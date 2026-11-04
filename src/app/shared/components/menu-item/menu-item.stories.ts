@@ -56,6 +56,17 @@ const meta: Meta<MenuItemComponent> = {
       description: 'null＝一般動作；true／false＝單選項的選中／未選中',
       table: { defaultValue: { summary: 'null' } },
     },
+    opensPanel: {
+      control: 'select',
+      options: [null, 'dialog'],
+      description: "點了會在旁邊打開面板時設 'dialog'：右邊加箭頭，在選單裡點了不關選單",
+      table: { defaultValue: { summary: 'null' } },
+    },
+    panelOpen: {
+      control: 'boolean',
+      description: '旁邊的面板開著沒；設了 opensPanel 才有作用',
+      table: { defaultValue: { summary: 'false' } },
+    },
     itemClick: { action: 'itemClick' },
   },
 };
@@ -73,13 +84,16 @@ export const Default: Story = {
     tone: 'neutral',
     disabled: false,
     selected: null,
+    opensPanel: null,
+    panelOpen: false,
   },
   render: (args) => ({
     props: args,
     template: inMenu(`
       <app-action-menu ariaLabel="更多操作">
         <app-menu-item [label]="label" [description]="description" [icon]="icon" [tone]="tone"
-          [disabled]="disabled" [selected]="selected" (itemClick)="itemClick()"></app-menu-item>
+          [disabled]="disabled" [selected]="selected" [opensPanel]="opensPanel" [panelOpen]="panelOpen"
+          (itemClick)="itemClick()"></app-menu-item>
         <app-menu-item label="複製項目"></app-menu-item>
         <app-menu-item label="封存項目"></app-menu-item>
       </app-action-menu>
@@ -132,18 +146,36 @@ export const Danger: Story = {
   }),
 };
 
-// ── 停用：停用灰字、滑過不變色；方向鍵仍停得到，點了沒反應 ─────────
+// ── 停用：整項灰 50、標題不加粗，原因寫在說明；滑過不變色，方向鍵仍停得到，點了沒反應 ─────────
 export const Disabled: Story = {
   name: '停用',
   render: () => ({
     template: inMenu(`
       <app-action-menu ariaLabel="更多操作">
         <app-menu-item label="編輯項目" icon="Edit"></app-menu-item>
-        <app-menu-item label="封存項目" icon="Archive" [disabled]="true"></app-menu-item>
+        <app-menu-item label="封存項目" icon="Archive" [disabled]="true" description="先完成上一步才能使用"></app-menu-item>
         <app-menu-item label="複製項目" icon="Copy"></app-menu-item>
       </app-action-menu>
-    `),
+    `, 200),
     moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent] },
+  }),
+};
+
+// ── 在旁邊打開面板：右邊有箭頭，點了不關選單；面板開著時跟滑過一樣亮著 ─────────
+//    面板由使用端自己做（另一個 app-action-menu，見說明的用法範例），這裡只示範箭頭和開著的樣子
+export const OpensPanel: Story = {
+  name: '在旁邊打開面板',
+  render: () => ({
+    template: inMenu(`
+      <app-action-menu ariaLabel="更多操作">
+        <app-menu-item label="編輯項目" icon="Edit"></app-menu-item>
+        <app-menu-item label="匯出" icon="Download" opensPanel="dialog" [panelOpen]="open" (itemClick)="open = !open"></app-menu-item>
+        <app-divider role="separator"></app-divider>
+        <app-menu-item label="刪除項目" icon="Trash-Del" tone="danger"></app-menu-item>
+      </app-action-menu>
+    `),
+    props: { open: true },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, DividerComponent] },
   }),
 };
 

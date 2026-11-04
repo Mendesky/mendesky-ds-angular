@@ -418,6 +418,57 @@ describe('PortalPositioningService', () => {
       refA.detach();
     });
 
+    // 會打開旁邊面板的選單選項（app-menu-item opensPanel）：再按一次那一項要能關掉面板。
+    // 按下時面板若先被當成點外面關掉，放開後那一項的點擊又把面板打開，看起來像沒反應
+    it('stacked overlays (point-anchored child + ancestorAnchorEl)：按子 flyout 的上層錨點那一項，子 flyout 與父選單都不關', () => {
+      const panelA = track(makePanelEl());
+      const onCloseA = jasmine.createSpy('onCloseA');
+      const refA = service.attach(tRef(), new ElementRef(panelA), { closeOnClickOutside: true, onClose: onCloseA });
+
+      const childTrigger = track(document.createElement('div'));
+      const childTriggerLabel = document.createElement('span');
+      childTrigger.appendChild(childTriggerLabel);
+      panelA.appendChild(childTrigger);
+
+      const panelB = track(makePanelEl());
+      const onCloseB = jasmine.createSpy('onCloseB');
+      const refB = service.attachAtPoint(100, 200, new ElementRef(panelB), {
+        closeOnClickOutside: true, onClose: onCloseB, ancestorAnchorEl: childTrigger,
+      });
+
+      pointerdownOn(childTriggerLabel); // 按到那一項裡面的文字也算
+
+      expect(onCloseB).not.toHaveBeenCalled();
+      expect(onCloseA).not.toHaveBeenCalled();
+
+      refA.detach();
+      refB.detach();
+    });
+
+    it('stacked overlays (point-anchored child + ancestorAnchorEl)：按父選單裡別的項目，子 flyout 照樣當成點外面關掉、父選單不關', () => {
+      const panelA = track(makePanelEl());
+      const onCloseA = jasmine.createSpy('onCloseA');
+      const refA = service.attach(tRef(), new ElementRef(panelA), { closeOnClickOutside: true, onClose: onCloseA });
+
+      const childTrigger = track(document.createElement('div'));
+      const otherItem = track(document.createElement('div'));
+      panelA.appendChild(childTrigger);
+      panelA.appendChild(otherItem);
+
+      const panelB = track(makePanelEl());
+      const onCloseB = jasmine.createSpy('onCloseB');
+      service.attachAtPoint(100, 200, new ElementRef(panelB), {
+        closeOnClickOutside: true, onClose: onCloseB, ancestorAnchorEl: childTrigger,
+      });
+
+      pointerdownOn(otherItem);
+
+      expect(onCloseB).toHaveBeenCalledOnceWith('click-outside');
+      expect(onCloseA).not.toHaveBeenCalled();
+
+      refA.detach();
+    });
+
     it('stacked overlays: clicking outside all panels closes both A and B', () => {
       const panelA = track(makePanelEl());
       const onCloseA = jasmine.createSpy('onCloseA');

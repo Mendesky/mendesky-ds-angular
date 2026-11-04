@@ -35,6 +35,8 @@ export interface AttachOptions {
    * 邏輯祖先錨點：point-anchored（attachAtPoint，無 trigger 元素）的浮層用此告訴 click-outside
    * 的 ancestor-protection「我邏輯上屬於哪個元素之下」。典型：巢狀 flyout（如下載 submenu）的觸發鈕
    * 位於父選單 panel 內 → 帶入該觸發鈕，點 flyout 內容時父選單不會被誤判成 click-outside 而關閉。
+   * 它也就是這個浮層的觸發鈕：按下它本身不算點外面，跟 element-anchored 的 trigger 一樣
+   * （浮層不會在按下時先關；再按一次要不要關，由觸發鈕的點擊處理切換）。
    */
   ancestorAnchorEl?: HTMLElement;
   /**
@@ -122,6 +124,12 @@ class InternalOverlayRef implements PortalOverlayRef {
     if (this.anchor.kind !== 'element') return false;
     if (!(target instanceof Node)) return false;
     return this.anchor.el.contains(target);
+  }
+
+  /** 按到的是不是邏輯祖先錨點（point-anchored 浮層的「觸發鈕」，例如上層選單裡打開它的那一項） */
+  ancestorAnchorContains(target: EventTarget | null): boolean {
+    if (!(target instanceof Node)) return false;
+    return !!this.options.ancestorAnchorEl?.contains(target);
   }
 
   updatePlacement(placement: Placement): void {
@@ -383,8 +391,10 @@ export class PortalPositioningService {
     const target = e.target;
 
     // Build a "safe" set: refs whose panel/trigger directly contains the click target.
+    // point-anchored 浮層沒有 trigger，ancestorAnchorEl 就是它的觸發鈕：按它跟按 element-anchored 的 trigger 一樣不算點外面，
+    // 由觸發鈕自己的點擊決定開關（例如再按一次上層選單裡那一項關掉面板）。不這樣的話，按下時先關、放開時又被那一項打開
     const safeRefs = new Set<InternalOverlayRef>(
-      refsArr.filter(r => r.panelContains(target) || r.triggerContains(target)),
+      refsArr.filter(r => r.panelContains(target) || r.triggerContains(target) || r.ancestorAnchorContains(target)),
     );
 
     // Ancestor-protection pass:

@@ -5,7 +5,7 @@ import {
  ChangeDetectionStrategy, } from '@angular/core';
 import { CloseReason, Placement, PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
 import {
-  MENU_CONTEXT, MenuContext, expandedMenuTrigger, initialMenuItem, isFormFieldTarget, isInteractiveTarget,
+  MENU_CONTEXT, MenuContext, WIDGET_ROLES, expandedMenuTrigger, initialMenuItem, isFormFieldTarget, isInteractiveTarget,
   menuItemsIn,
 } from './menu-context';
 
@@ -48,7 +48,9 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   @Input() fixedWidth: number | null = null;
   /**
    * 邏輯祖先錨點（僅 fixedMode/point-anchored 用）：巢狀 flyout 的觸發元素（位於父選單 panel 內）。
-   * 帶入後，點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單。
+   * 帶入後，點此 flyout 內容時 click-outside 的 ancestor-protection 不會誤關父選單；
+   * 按下這個元素本身也不算點外面（flyout 不會在按下時先關，再按一次關不關由使用端的切換決定）。
+   * 選單裡的那一項在 flyout 開著時按右方向鍵，也靠它找到這個 flyout、把焦點移進來。
    */
   @Input() ancestorAnchorEl: HTMLElement | null = null;
 
@@ -74,7 +76,6 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   private _triggerEl: HTMLElement | null = null;
   /** focus-when-ready：等非同步內容（skeleton→內容）出現才種初始焦點用。 */
   private _focusObserver: MutationObserver | null = null;
-  private _focusTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** 已登記的 app-menu-item；有任何一個就是選單模式 */
   private readonly _menuItems = new Set<object>();
@@ -103,10 +104,10 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /** 最近一次按下的是不是選單裡面。要在按下時記：按到的選項可能接著被重建、離開畫面，關閉時已經查不出來 */
   private _pressedInMenu = false;
   /**
-   * 點擊剛傳進外框、還沒到選項自己的點擊監聽之前，按到的是哪個選單項目、它當時停用沒。
+   * 點擊剛傳進外框、還沒到選項自己的點擊監聽之前，按到的是哪個選單項目、它當時停用沒、會不會在旁邊打開面板。
    * 選項的 itemClick 跑完後畫面會先更新一次，外框收到這次點擊時，那一項可能已經停用、被重建或換掉了圖示
    */
-  private _clickSnapshot: { event: Event; item: HTMLElement | null; disabled: boolean } | null = null;
+  private _clickSnapshot: { event: Event; item: HTMLElement | null; disabled: boolean; opensPanel: boolean } | null = null;
   /** 選單模式下最後拿到焦點的選單項目和它的位置：那一項在選單開著時被拿掉，才知道焦點要補到哪 */
   private _focusedItem: HTMLElement | null = null;
   private _focusedIndex = -1;
@@ -121,7 +122,12 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 
   private readonly _onHostClickCapture = (event: MouseEvent): void => {
     const item = this._menuItemAt(event.target);
-    this._clickSnapshot = { event, item, disabled: item?.getAttribute('aria-disabled') === 'true' };
+    this._clickSnapshot = {
+      event,
+      item,
+      disabled: item?.getAttribute('aria-disabled') === 'true',
+      opensPanel: !!item?.hasAttribute('aria-haspopup'),
+    };
   };
 
   /** MenuContext：app-menu-item 建立時登記 */
@@ -185,6 +191,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 
   ngOnDestroy(): void {
     this._destroyed = true;
+    sidePanels.delete(this);
     const host = this.el.nativeElement as HTMLElement;
     window.removeEventListener('pointerdown', this._onWindowPointerDown, true);
     host.removeEventListener('click', this._onHostClickCapture, true);
@@ -260,11 +267,16 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       this._onMenuKeydown(event);
       return;
     }
+    // 同選單模式：用輸入法選字時的按鍵是給輸入法的（例如在面板的輸入框按 Esc 是取消選字），浮層不處理
+    if (yieldToIme(event)) return;
+    // 裡面的欄位自己處理過這個鍵（例如 #select、#date-picker 按方向鍵、Enter 打開清單，並取消預設動作）：交給它，
+    // 不然方向鍵會把焦點搶走、Enter 會再點一次把剛打開的清單關掉。Esc 照舊由浮層處理，欄位要留住 Esc 會自己擋下不往外傳
+    if (event.defaultPrevented && event.key !== 'Escape') return;
     switch (event.key) {
       case 'ArrowDown':
       case 'ArrowUp': {
-        const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
-        if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+        // 焦點在輸入框、下拉、多行輸入框、可編輯區裡：方向鍵是移動游標，不搶焦點
+        if (isFormFieldTarget(document.activeElement)) return;
         event.preventDefault();
         const items = this._getFocusableItems();
         if (!items.length) return;
@@ -278,9 +290,8 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       }
       case 'Enter':
       case ' ': {
-        // 跳過表單元素：input/textarea/select 有各自的原生 Enter/Space 行為
-        const activeTag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
-        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+        // 跳過表單欄位：輸入框、多行輸入框、下拉、可編輯區有各自的原生 Enter/Space 行為（例如打字、換行）
+        if (isFormFieldTarget(document.activeElement)) return;
         event.preventDefault();
         // 消費後不再冒泡：否則同一個 Enter 會續傳到 document 層快速鍵（如 kanban Enter 重開卡片選單），
         // 造成選單「關了又被重開、浮在剛開的 modal 上」（比照下方 Escape 分支）。
@@ -296,6 +307,10 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       }
       case 'Escape':
         event.stopPropagation();
+        // 按住不放的連發吃掉：選單旁邊的面板按 Esc，第一下關面板、焦點回到選單裡打開它的那一項，
+        // 接下來的連發會落進選單、把選單也關掉
+        if (event.repeat) break;
+        this.zone.runOutsideAngular(() => swallowRepeatsUntilKeyup(event.key));
         this._triggerEl?.focus();
         this.closeMenu.emit();
         break;
@@ -340,10 +355,11 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /**
    * 選單模式的鍵盤（WAI-ARIA APG Menu）：上下方向鍵只在選單項目間循環（停用的也停得到）、
    * Home／End 跳頭尾、Enter／空白鍵執行目前這一項、Esc 與 Tab 關閉並把焦點交回觸發鈕。
+   * 會在旁邊打開面板的項目（app-menu-item 設了 opensPanel），右方向鍵跟 Enter 一樣打開面板。
    */
   private _onMenuKeydown(event: KeyboardEvent): void {
     // 用輸入法選字時的按鍵（Esc 取消選字、Enter 確定）是給輸入法的，選單不處理
-    if (event.isComposing || event.keyCode === 229) return;
+    if (yieldToIme(event)) return;
     // 焦點在輸入框、下拉、可編輯區時（規格不允許放進選單，萬一放了）：跟一般模式一樣只有 Esc 關選單，
     // 其他鍵交給欄位自己，不然空白打不進去、方向鍵移不了游標、Tab 會把選單關掉
     if (event.key !== 'Escape' && isFormFieldTarget(event.target)) return;
@@ -379,6 +395,25 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
         this.zone.runOutsideAngular(() => swallowRepeatsUntilKeyup(event.key));
         active?.click();
         break;
+      case 'ArrowRight':
+        // 只處理會在旁邊打開面板的項目（APG 子選單的做法）。停用的不動；其他項目和左方向鍵都不處理，事件照常往外傳
+        if (!active || !items.includes(active) || !active.hasAttribute('aria-haspopup')) break;
+        if (active.getAttribute('aria-disabled') === 'true') break;
+        if (active.getAttribute('aria-expanded') === 'true') {
+          // 面板已經開著、焦點卻還在這一項（例如內容載入中、面板設了 autoFocusFirst=false）：把焦點移進面板。
+          // 不再按一次，那會把面板關掉。找不到面板（沒用 ancestorAnchorEl 指回這一項），或面板裡還沒有可以操作的東西就不動
+          if (!sidePanelOpenedBy(active)?._focusFirst()) break;
+          event.preventDefault();
+          event.stopPropagation();
+          break;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        // 同 Enter：按住不放的連發不執行，執行之後、放開之前的連發都吃掉，不然面板會一開一關
+        if (event.repeat) break;
+        this.zone.runOutsideAngular(() => swallowRepeatsUntilKeyup(event.key));
+        active.click();
+        break;
       case 'Escape':
         event.stopPropagation();
         this._menuTrigger()?.focus();
@@ -395,6 +430,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /**
    * 選單模式的點擊：只有點到可用的選單項目才關（autoCloseOnAction 為 true 時）。
    * 點到分隔線、空白處不關，焦點留在選單外框；點到停用的項目也不關，焦點停在那一項。方向鍵照樣能用。
+   * 點到會在旁邊打開面板的項目也不關：選單留著，面板打開在它旁邊（焦點由 app-menu-item 自己留在那一項）。
    * 點到哪一項、停用沒，看點擊剛傳進外框時記下的（見 _clickSnapshot）
    */
   private _onMenuClick(event?: MouseEvent): void {
@@ -412,6 +448,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       item.focus();
       return;
     }
+    if (snap ? snap.opensPanel : item.hasAttribute('aria-haspopup')) return;
     if (this.autoCloseOnAction) this.closeMenu.emit();
   }
 
@@ -490,43 +527,62 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     (items[Math.min(this._focusedIndex, items.length - 1)] ?? host).focus();
   }
 
+  /** 一般模式上下方向鍵走得到的按鈕：Tab 停不到的輔助鈕（tabindex="-1"，例如 #number-input 的增減鈕）、看不到的不算（見 isShown） */
   private _getFocusableItems(): HTMLElement[] {
     const host = this.el.nativeElement as HTMLElement;
     return Array.from(
-      host.querySelectorAll<HTMLElement>('button:not(:disabled), [role="menuitem"]:not([disabled])')
-    );
+      host.querySelectorAll<HTMLElement>('button:not(:disabled):not([tabindex="-1"]), [role="menuitem"]:not([disabled])')
+    ).filter(isShown);
   }
 
-  /** 種初始焦點：一般模式到第一個可聚焦項；選單模式到已選中的那項，沒有就第一項。成功回 true、無可聚焦項回 false。 */
-  private _focusFirst(): boolean {
-    const first = this._isMenu
-      ? initialMenuItem(menuItemsIn(this.el.nativeElement as HTMLElement))
-      : this._getFocusableItems()[0];
-    if (!first) return false;
-    first.focus();
-    return true;
+  /**
+   * 種初始焦點：一般模式到第一顆按鈕，沒有按鈕才到第一個欄位或連結（見 FIELD_SELECTOR）；
+   * Tab 停不到的不算（見 focusIfTabbable），真的拿到焦點才算成功。
+   * 選單模式到已選中的那項，沒有就第一項。成功回 true、沒有可以聚焦的回 false。
+   * 選單裡的選項按右方向鍵、面板已經開著時也呼叫它（見 _onMenuKeydown），所以不是 private
+   */
+  _focusFirst(): boolean {
+    const host = this.el.nativeElement as HTMLElement;
+    if (this._isMenu) {
+      const first = initialMenuItem(menuItemsIn(host));
+      if (!first) return false;
+      first.focus();
+      return true;
+    }
+    const buttons = Array.from(host.querySelectorAll<HTMLElement>('button'));
+    const fields = Array.from(host.querySelectorAll<HTMLElement>(FIELD_SELECTOR));
+    return [...buttons, ...fields].some(focusIfTabbable);
   }
 
   /**
    * 種初始焦點，並容忍「非同步內容」：若當下沒有可聚焦項（如 flyout 正顯示 loading skeleton，
    * 內容尚未由 API 回填），掛 MutationObserver 等內容出現的那一刻立即補種焦點、隨即 disconnect。
-   * 同步內容（一般 More 選單）在首次即成功、不會掛 observer。安全上限避免洩漏。
+   * 同步內容（一般 More 選單）在首次即成功、不會掛 observer。
+   * 不設時間上限：內容晚多久出來都等（後端慢的時候，用鍵盤的人才進得了面板）。浮層關掉（ngOnDestroy）就停；
+   * 內容出來之前使用者已經把焦點移到別處（例如回選單換了一項）也停，不搶回來。
    * （對齊 DS pattern loading.api-hydration-skeleton：skeleton 無 tabindex、內容備妥才進焦點。）
    */
   private _focusFirstWhenReady(): void {
     if (this._focusFirst()) return;
     const host = this.el.nativeElement as HTMLElement;
+    const waitingOn = document.activeElement;
     this._focusObserver = new MutationObserver(() => {
-      if (this._focusFirst()) this._teardownFocusWatch();
+      const active = document.activeElement;
+      const stillWaiting = !active || active === waitingOn || active === document.body || active === document.documentElement;
+      if (!stillWaiting || this._focusFirst()) this._teardownFocusWatch();
     });
-    this._focusObserver.observe(host, { childList: true, subtree: true });
-    this._focusTimer = setTimeout(() => this._teardownFocusWatch(), 1000);
+    // 內容不一定是新增的元素，也可能是原本藏著（hidden、class、style）、停用或 tabindex="-1" 的元素變成可以用，這些也要再試
+    this._focusObserver.observe(host, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['hidden', 'class', 'style', 'disabled', 'tabindex', 'inert'],
+    });
   }
 
   private _teardownFocusWatch(): void {
     this._focusObserver?.disconnect();
     this._focusObserver = null;
-    if (this._focusTimer) { clearTimeout(this._focusTimer); this._focusTimer = null; }
   }
 
   private _hasLegacyCoords(): boolean {
@@ -559,6 +615,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     else if (this.fixedBottom !== null)                             placement = 'top-start';
     else if (this.fixedRight  !== null)                             placement = 'bottom-end';
 
+    if (this.ancestorAnchorEl) sidePanels.add(this);
     this._overlayRef = this.positioning.attachAtPoint(x, y, this.el, {
       placement,
       gap: 0,
@@ -570,6 +627,58 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     });
     if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
   }
+}
+
+/**
+ * 一般模式沒有按鈕時，初始焦點改落在的欄位：原生的輸入框、下拉、多行輸入框、連結、可編輯區，
+ * 以及用 tabindex 加控制項角色做成的欄位（DS 的 #select、#date-picker 是 role="combobox" 的 div，
+ * #upload-dropzone 是 role="button" 的 div）。只有 tabindex、沒有控制項角色的（例如文字被截斷時才加 tabindex 的提示文字）不算
+ */
+const FIELD_SELECTOR = [
+  'input:not([type="hidden"])', 'select', 'textarea', 'a[href]',
+  '[contenteditable]:not([contenteditable="false"])',
+  ...WIDGET_ROLES.map((r) => `[role="${r}"][tabindex]`),
+].join(', ');
+
+/** 看得到、也沒被 inert 擋住：方向鍵清單和初始焦點用同一套標準 */
+function isShown(el: HTMLElement): boolean {
+  return !el.closest('[inert]') && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+}
+
+/**
+ * Tab 停得到才把焦點放上去，回傳是不是真的拿到焦點。
+ * tabindex="-1" 的輔助鈕（例如 #number-input 的增減鈕）、原生 disabled 的、
+ * 看不到的（例如 #upload-dropzone 裡 hidden 的檔案輸入框）都不算。
+ * aria-disabled="true" 的算：#button 的「停用但可點」就是要讓人停得到、看得到原因，Tab 也停得到它
+ */
+function focusIfTabbable(el: HTMLElement): boolean {
+  if (el.getAttribute('tabindex') === '-1' || el.matches(':disabled')) return false;
+  if (!isShown(el)) return false;
+  el.focus();
+  return el.contains(document.activeElement);
+}
+
+/**
+ * 用輸入法選字時的按鍵（Esc 取消選字、Enter 確定）是給輸入法的，浮層不處理，回傳 true。
+ * Esc 照樣不往外傳：外層的對話框多半在 document 上聽 Esc 關閉，傳出去會把對話框關掉。
+ * 有的瀏覽器選字時 key 是 "Process"，所以也看 code
+ */
+function yieldToIme(event: KeyboardEvent): boolean {
+  if (!event.isComposing && event.keyCode !== 229) return false;
+  if (event.key === 'Escape' || event.code === 'Escape') event.stopPropagation();
+  return true;
+}
+
+/** 開著、用 ancestorAnchorEl 指回選單裡某一項的面板（fixedMode 的 app-action-menu） */
+const sidePanels = new Set<ActionMenuComponent>();
+
+/** 找打開這一項旁邊面板的那個浮層：面板的 ancestorAnchorEl 是這一項，或包著這一項（例如 app-menu-item 的元素） */
+function sidePanelOpenedBy(item: HTMLElement): ActionMenuComponent | null {
+  for (const panel of sidePanels) {
+    const anchor = panel.ancestorAnchorEl;
+    if (anchor && anchor.contains(item)) return panel;
+  }
+  return null;
 }
 
 /**

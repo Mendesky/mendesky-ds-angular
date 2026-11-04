@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const menuItemDoc: ComponentApi = {
   id: 'menu-item',
   selector: 'app-menu-item',
-  summary: 'label（必填）· description · icon · tone: neutral|danger · [disabled] · [selected]: boolean|null（null＝一般動作）· (itemClick) · 文字後面可投影 app-label',
+  summary: "label（必填）· description · icon · tone: neutral|danger · [disabled] · [selected]: boolean|null（null＝一般動作）· opensPanel: 'dialog'|null · [panelOpen] · (itemClick) · 文字後面可投影 app-label",
   props: [
     {
       name: 'label',
@@ -14,7 +14,7 @@ export const menuItemDoc: ComponentApi = {
       name: 'description',
       type: 'string',
       default: "''",
-      desc: '顯示在文字下方的說明。有值時文字變成粗體標題（一般項目是深色，tone 是 danger 時維持紅字），說明用淺灰色；內層按鈕用 aria-describedby 指向它，不算進名稱。空字串不顯示。',
+      desc: '顯示在文字下方的說明。有值時文字變成粗體標題（一般項目是深色，tone 是 danger 時維持紅字），說明用淺灰色；一行最寬 16em（約 16 個字），超過就換行。內層按鈕用 aria-describedby 指向它，不算進名稱。停用時用它寫原因。空字串不顯示。',
     },
     {
       name: 'icon',
@@ -32,13 +32,25 @@ export const menuItemDoc: ComponentApi = {
       name: 'disabled',
       type: 'boolean',
       default: 'false',
-      desc: '停用。內層按鈕用 aria-disabled="true"，不用原生 disabled，所以在選單裡方向鍵還停得到；點了、按 Enter 都不會發 itemClick，選單也不會關。',
+      desc: '停用。內層按鈕用 aria-disabled="true"，不用原生 disabled，所以在選單裡方向鍵還停得到；點了、按 Enter 都不會發 itemClick，選單也不會關。整項換成灰 50（--color/grey/50），標題不加粗；原因寫在 description。',
     },
     {
       name: 'selected',
       type: 'boolean | null',
       default: 'null',
       desc: '不設（null）是一般動作；設成 true／false 就是一組單選裡的一個值，true 是選中（深藍實心底）。在 app-action-menu 裡輸出 role="menuitemradio" 與 aria-checked；在選單外輸出 aria-pressed。',
+    },
+    {
+      name: 'opensPanel',
+      type: "MenuItemPanel | null",
+      default: 'null',
+      desc: "點了會在旁邊打開面板時設 'dialog'（面板裡是按鈕、輸入框這類一般內容）。右邊加 RightArrow 箭頭，內層按鈕輸出 aria-haspopup 與 aria-expanded。在 app-action-menu 裡點了不關選單，焦點留在這一項；焦點在上面時按右方向鍵也會發 itemClick。面板已經開著時按右方向鍵不發，改成把焦點移進面板（面板要用 fixedMode 加固定座標打開、ancestorAnchorEl 指回這一項）。",
+    },
+    {
+      name: 'panelOpen',
+      type: 'boolean',
+      default: 'false',
+      desc: '旁邊的面板開著沒。設了 opensPanel 才有作用：輸出成 aria-expanded，true 時跟滑過一樣亮著（危險項目是淺紅底）。面板開關由使用端自己管。',
     },
     {
       name: '(itemClick)',
@@ -68,12 +80,32 @@ export const menuItemDoc: ComponentApi = {
 </div>`,
     },
     {
-      label: '執行動作的選單：圖示、停用、危險動作',
+      label: '執行動作的選單：圖示、停用（原因寫在說明）、危險動作',
       code: `<app-action-menu ariaLabel="更多操作" (closeMenu)="moreOpen.set(false)">
   <app-menu-item label="編輯項目" icon="Edit" (itemClick)="edit()"></app-menu-item>
-  <app-menu-item label="封存項目" icon="Archive" [disabled]="!canArchive()" (itemClick)="archive()"></app-menu-item>
+  <app-menu-item label="封存項目" icon="Archive" [disabled]="!!archiveBlockedReason()"
+    [description]="archiveBlockedReason()" (itemClick)="archive()"></app-menu-item>
   <app-menu-item label="刪除項目" icon="Trash-Del" tone="danger" (itemClick)="remove()"></app-menu-item>
 </app-action-menu>`,
+    },
+    {
+      label: '在旁邊打開面板：選項設 opensPanel、panelOpen，點擊切換面板開關；面板是另一個 app-action-menu，標成對話框，ancestorAnchorEl 傳那一項的元素',
+      code: `<app-action-menu ariaLabel="更多操作" (closeMenu)="closeAll()">
+  <app-menu-item #exportItem label="匯出" icon="Download" opensPanel="dialog"
+    [panelOpen]="exportOpen()" (itemClick)="toggleExport()"></app-menu-item>
+  <app-menu-item label="編輯項目" icon="Edit" (itemClick)="edit()"></app-menu-item>
+</app-action-menu>
+
+@if (exportOpen()) {
+  <!-- 打開時焦點移進面板（app-action-menu 預設會移，內容載入中就等內容出來）；
+       面板裡按 Esc 只關面板，焦點回到「匯出」；按「匯出」以外的地方照常關面板。
+       名稱用原生 aria-label 屬性：面板裡沒放 app-menu-item，ariaLabel 不會輸出 -->
+  <app-action-menu role="dialog" aria-label="匯出" [autoCloseOnAction]="false"
+    [fixedMode]="true" [fixedTop]="exportTop()" [fixedLeft]="exportLeft()"
+    [ancestorAnchorEl]="exportItemEl()?.nativeElement ?? null" (closeMenu)="exportOpen.set(false)">
+    <!-- 面板內容：app-button-group、app-button -->
+  </app-action-menu>
+}`,
     },
     {
       label: '文字後面放標籤（自訂內容）',
@@ -100,7 +132,8 @@ export const menuItemDoc: ComponentApi = {
       type: 'warn',
       content: '要聽 (itemClick)，不要在 app-menu-item 上聽 (click)。停用的項目沒有用原生 disabled，裡面按鈕的 click 事件照樣會冒到外框，(click) 在停用時也會觸發。',
     },
-    '投影進來的 app-label 用 LightWhite 時，字色來自 CSS 變數 --text/body-light。滑過、按下、選中時元件會把這個變數改成淺色，所以標籤字會跟著變白；其他寫死顏色的自訂內容不會變。',
+    '投影進來的 app-label 用 LightWhite 時，字色來自 CSS 變數 --text/body-light。滑過、按下、選中、面板開著時元件會把這個變數改成淺色，所以標籤字會跟著變白；停用時改成灰 50，跟標題一樣。其他寫死顏色的自訂內容不會變。',
+    'ancestorAnchorEl 要的是元素，不是元件。用 viewChild(\'exportItem\', { read: ElementRef }) 取到 ElementRef，傳它的 nativeElement（app-menu-item 的元素）；不傳的話，點面板裡面會把外面的選單當成點外面關掉，再按一次「匯出」也會先關掉面板、放開時又打開。',
     '文字後面的自訂內容放在內層按鈕裡、沒有 aria-hidden，報讀軟體會把它接在 label 後面一起念進名稱，例如「項目 C 圖片 已封存」。',
   ],
 };
