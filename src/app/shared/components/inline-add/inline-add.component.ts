@@ -29,6 +29,11 @@ export class InlineAddComponent {
   @Input() size: 'S' | 'M' = 'S';
   /** disable 觸發鈕（權限 gating 用）；additive、預設 false、向後相容。 */
   @Input() disabled = false;
+  /**
+   * 報讀軟體念的名稱，交給內層輸入框；放在有標題的欄位裡時設成欄位標題，不設時只念提示文字。
+   * 內層輸入框不會連到外層 app-field 的標題，所以要從這裡給。
+   */
+  @Input() ariaLabel = '';
   /** 提交事件：emit trim 後的非空字串 */
   @Output() add = new EventEmitter<string>();
 

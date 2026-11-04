@@ -91,7 +91,7 @@ export const InChipGroup: Story = {
               @for (reason of reasons; track reason) {
                 <app-check-chip [text]="reason" theme="default" size="s" [(ngModel)]="checked[reason]"></app-check-chip>
               }
-              <app-inline-add placeholder="輸入其他管道後按 Enter" (add)="addCustom($event)"></app-inline-add>
+              <app-inline-add ariaLabel="從哪裡得知這項活動" placeholder="輸入其他管道後按 Enter" (add)="addCustom($event)"></app-inline-add>
             </div>
           </app-field>
         </div>
