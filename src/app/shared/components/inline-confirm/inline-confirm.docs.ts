@@ -51,7 +51,7 @@ export const inlineConfirmDoc: ComponentApi = {
       name: 'hideRequiredIcon',
       type: 'boolean',
       default: 'false',
-      desc: '隱藏 required 模式的 Alert icon（已有其他警示元素時使用）',
+      desc: '隱藏 required 模式的 Alert-Info icon（已有其他警示元素時使用）',
     },
     {
       name: 'disabled',

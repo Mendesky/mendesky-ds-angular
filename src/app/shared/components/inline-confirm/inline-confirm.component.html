@@ -9,7 +9,7 @@
   @if (label() || (requirement() === 'required' && !hideRequiredIcon())) {
     <legend class="inline-confirm__label" [id]="uid + '-label'">
       @if (requirement() === 'required' && !hideRequiredIcon()) {
-        <app-icon name="Alert" [size]="size() === 'lg' ? '24' : '16'" class="inline-confirm__icon-required"></app-icon>
+        <app-icon name="Alert-Info" [size]="size() === 'lg' ? '24' : '16'" class="inline-confirm__icon-required"></app-icon>
       }
       <span>{{ label() }}</span>
     </legend>
