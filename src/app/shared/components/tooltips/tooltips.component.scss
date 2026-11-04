@@ -1,5 +1,3 @@
-@use '../../../../styles/breakpoints' as bp;
-
 /* Wrapper layout */
 .tooltip {
   display: inline-flex;
@@ -82,8 +80,11 @@
 .tooltip__arrow--down.arrow--grey    { border-top: 5px solid var(--button\/neutral, #939393); }
 .tooltip__arrow--down.arrow--warning { border-top: 5px solid var(--icon\/warning, #cc5252); }
 
-/* ─── RWD：觸控裝置隱藏 tooltip ─── */
-@include bp.tablet-landscape-down {
+/* ─── 觸控裝置隱藏 tooltip ───
+   看「有沒有滑鼠」，不看視窗寬度：電腦視窗拉窄照樣顯示，iPad 不論直放橫放都藏。
+   條件跟 mendesky-web 的 TouchDeviceService 一樣；Number List 的換行規則也用同一個條件，改的話三處一起改
+   （tooltip-portal.component.scss、number-list.component.scss）。 */
+@media (hover: none) and (pointer: coarse) {
   .tooltip {
     display: none;
   }

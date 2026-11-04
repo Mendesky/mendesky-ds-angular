@@ -34,4 +34,7 @@ export const tooltipsDoc: ComponentApi = {
 ></app-tooltips>`,
     },
   ],
+  usageNotes: [
+    { type: 'info', content: '觸控裝置（手機、平板，沒有滑鼠的裝置）上 tooltip 不會出現，電腦不論視窗多窄都照常顯示。判斷條件跟滑過提示（appTooltip）一樣。' },
+  ],
 };

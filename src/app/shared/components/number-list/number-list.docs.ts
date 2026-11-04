@@ -21,13 +21,13 @@ export const numberListDoc: ComponentApi = {
       name: 'label',
       type: 'string',
       default: "''",
-      desc: '左側 chip 文字；空字串時不顯示。放不下時截成「…」，被截斷時才給 tooltip 與 tab 停點；小於 1024px 換行',
+      desc: '左側 chip 文字；空字串時不顯示。放不下時截成「…」，被截斷時才給 tooltip 與 tab 停點；小於 1024px 或觸控裝置上換行',
     },
     {
       name: 'text',
       type: 'string',
       default: "''",
-      desc: '主文字；規則同 label（≥1024 截斷＋截斷才給 tooltip，<1024 換行）',
+      desc: '主文字；規則同 label（≥1024 截斷＋截斷才給 tooltip；<1024 或觸控裝置換行）',
     },
     {
       name: 'number1',

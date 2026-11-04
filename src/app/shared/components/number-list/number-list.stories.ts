@@ -22,7 +22,7 @@ const meta: Meta<NumberListComponent> = {
       table: { defaultValue: { summary: 'white' } },
     },
     label: {
-      description: 'Label chip 文字；空字串時不顯示。≥1024px 放不下截成「…」並在截斷時給全文 tooltip；<1024px 換行',
+      description: 'Label chip 文字；空字串時不顯示。≥1024px 放不下截成「…」並在截斷時給全文 tooltip；<1024px 或觸控裝置換行',
       control: { type: 'text' },
     },
     text: {

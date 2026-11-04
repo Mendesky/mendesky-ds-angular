@@ -5,6 +5,8 @@ import { NumberListComponent, NumberListAction } from './number-list.component';
  * 截斷／換行／手機排法都由 media query 決定（tablet-landscape-down <1024、tablet-down <768），
  * 看的是「視窗寬」而不是元件寬。Karma 預設在 iframe 裡跑、寬度約 800px（已落在 <1024），
  * 所以每個版面測試都要自己設定 iframe 寬度，跑完還原。
+ * 觸控裝置不論寬度都換行；Karma 的 Chrome 有滑鼠、切不成觸控裝置，
+ * 這條規則改由 src/app/shared/touch-hide-rules.spec.ts 讀樣式條件驗證。
  */
 function setViewportWidth(px: number): () => void {
   const frame = window.frameElement as HTMLElement | null;
