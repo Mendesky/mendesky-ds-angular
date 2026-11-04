@@ -1,5 +1,3 @@
-@use '../../../../styles/breakpoints' as bp;
-
 /* Portal host — fixed positioning set by TooltipDirective */
 :host {
   position: fixed;
@@ -108,7 +106,9 @@
 .tooltip__arrow--down.arrow--grey    { border-top: 5px solid var(--button\/neutral, #939393); }
 .tooltip__arrow--down.arrow--warning { border-top: 5px solid var(--icon\/warning, #cc5252); }
 
-/* ─── RWD：觸控裝置隱藏 ─── */
-@include bp.tablet-landscape-down {
+/* ─── 觸控裝置隱藏 ───
+   看「有沒有滑鼠」，不看視窗寬度：電腦視窗拉窄照樣顯示，iPad 不論直放橫放都藏。
+   條件跟 tooltips.component.scss、number-list.component.scss 同一個，改的話三處一起改。 */
+@media (hover: none) and (pointer: coarse) {
   :host { display: none !important; }
 }

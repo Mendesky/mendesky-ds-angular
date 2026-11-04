@@ -90,16 +90,13 @@ class WrapHostComponent {
 
 describe('TooltipDirective — appTooltipWrap', () => {
   let fixture: ComponentFixture<WrapHostComponent>;
-  let restoreViewport: () => void;
 
   beforeEach(async () => {
-    // tooltip 在寬度小於 1024px 一律隱藏（display:none，量到的寬度是 0），要在寬螢幕量才有意義
-    const frame = window.frameElement as HTMLElement | null;
-    if (!frame) throw new Error('需在 Karma 的 iframe 內執行，才能控制視窗寬度');
-    const prev = frame.style.width;
-    frame.style.width = '1280px';
-    frame.getBoundingClientRect();
-    restoreViewport = () => { frame.style.width = prev; };
+    // tooltip 只在觸控裝置隱藏。Karma 跑在有滑鼠的桌機 Chrome，量得到尺寸；
+    // 如果哪天量到 0，先確認測試環境是不是被當成觸控裝置。
+    expect(matchMedia('(hover: none) and (pointer: coarse)').matches)
+      .withContext('測試環境被當成觸控裝置，tooltip 會被藏起來、量不到尺寸')
+      .toBeFalse();
 
     await TestBed.configureTestingModule({ imports: [WrapHostComponent] }).compileComponents();
     fixture = TestBed.createComponent(WrapHostComponent);
@@ -109,7 +106,6 @@ describe('TooltipDirective — appTooltipWrap', () => {
   afterEach(() => {
     (fixture.nativeElement as HTMLElement).remove();
     document.querySelectorAll('app-tooltip-portal').forEach((n) => n.remove());
-    restoreViewport();
   });
 
   function openAndMeasure(): DOMRect {

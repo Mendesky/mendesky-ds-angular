@@ -32,7 +32,7 @@
 
 // ── Label chip ────────────────────────────────────────────────
 // 放不下時截成「…」：比照 app-label 的 truncate 模式（可縮、最寬 100%）。
-// 全文由 [appTooltipOnlyWhenTruncated] 在被截斷時提供。寬度小於 1024px 改換行，見檔尾。
+// 全文由 [appTooltipOnlyWhenTruncated] 在被截斷時提供。寬度小於 1024px 或觸控裝置改換行，見檔尾。
 .nl-label {
   display: inline-block;
   flex-shrink: 1;
@@ -153,10 +153,11 @@
   .nl-buttons { margin-bottom: 2px; }
 }
 
-// ── 寬度小於 1024px：標題與檔名換行完整顯示，不截斷 ─────────────────────────
-// 斷點與 DS tooltip 的隱藏斷點相同（tooltip-portal 在 tablet-landscape-down 一律隱藏）：
-// tooltip 不出現的寬度就不能截斷，否則會「截斷又看不到全文」。代價是名稱長的列會變高。
-@include bp.tablet-landscape-down {
+// ── 寬度小於 1024px、或觸控裝置：標題與檔名換行完整顯示，不截斷 ──────────────
+// 觸控裝置看不到 DS tooltip（tooltip-portal 在 (hover: none) and (pointer: coarse) 隱藏），
+// tooltip 不出現的地方就不能截斷，否則會「截斷又看不到全文」。寬度小於 1024px 也換行，維持窄畫面原本的版面。
+// 代價是名稱長的列會變高。
+@media (max-width: #{bp.$bp-desktop - 1}), (hover: none) and (pointer: coarse) {
   .nl-label,
   .nl-text {
     white-space: normal;
