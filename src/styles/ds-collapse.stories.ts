@@ -57,33 +57,13 @@ const meta: Meta<CollapseArgs> = {
 export default meta;
 type Story = StoryObj<CollapseArgs>;
 
-// ── 主範例：用 Controls 切換 expanded，可看到 300ms 收合動畫 ─────
-export const Default: Story = {
-  name: '預設（用 Controls 切換）',
-  parameters: {
-    docs: {
-      source: {
-        code: `<div class="ds-collapse" [class.ds-collapse--expanded]="isExpanded">
-  <div class="ds-collapse__inner">
-    <!-- 可收合的內容 -->
-  </div>
-</div>`,
-      },
-    },
-  },
-};
-
-// ── 收合狀態 ─────────────────────────────────────────────────────
-export const Collapsed: Story = {
-  name: '收合狀態',
-  args: { expanded: false },
-};
-
-// ── 互動：按鈕切換 ───────────────────────────────────────────────
+// ── 主範例：按鈕切換 ─────────────────────────────────────────────
+// 排第一個：文件網站的元件頁「用法」嵌入的是第一個範例，嵌進去以後看不到 Controls，
+// 只有用按鈕切換的範例才收得起來。一開始是展開的，讓人先看到內容。
 export const Interactive: Story = {
   name: '互動（按鈕切換）',
   render: () => ({
-    props: { open: false },
+    props: { open: true },
     template: `
       <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;">
         <app-button
@@ -104,7 +84,39 @@ export const Interactive: Story = {
   }),
   parameters: {
     controls: { disable: true },
+    docs: {
+      source: {
+        code: `<app-button [text]="isExpanded ? '收合' : '展開'" (btnClick)="isExpanded = !isExpanded"></app-button>
+<div class="ds-collapse" [class.ds-collapse--expanded]="isExpanded">
+  <div class="ds-collapse__inner">
+    <!-- 可收合的內容 -->
+  </div>
+</div>`,
+      },
+    },
   },
+};
+
+// ── 用 Controls 切換 expanded，可看到 300ms 收合動畫 ─────
+export const Default: Story = {
+  name: '用 Controls 切換',
+  parameters: {
+    docs: {
+      source: {
+        code: `<div class="ds-collapse" [class.ds-collapse--expanded]="isExpanded">
+  <div class="ds-collapse__inner">
+    <!-- 可收合的內容 -->
+  </div>
+</div>`,
+      },
+    },
+  },
+};
+
+// ── 收合狀態 ─────────────────────────────────────────────────────
+export const Collapsed: Story = {
+  name: '收合狀態',
+  args: { expanded: false },
 };
 
 // ── 對照：少了 .ds-collapse__inner ──────────────────────────────
