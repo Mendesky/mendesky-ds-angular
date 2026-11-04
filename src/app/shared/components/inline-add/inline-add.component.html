@@ -15,6 +15,7 @@
     [size]="size"
     [text]="buttonText"
     [disabled]="disabled"
+    (keydown)="onTriggerKeydown($event)"
     (btnClick)="onTriggerClick()">
   </app-button>
 }

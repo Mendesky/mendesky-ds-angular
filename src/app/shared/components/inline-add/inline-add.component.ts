@@ -9,6 +9,7 @@ import { InputComponent } from '../input/input.component';
  * 取代 native `window.prompt`：ghost 觸發鈕點下後原地變成 inline 輸入框，
  * 打字 + Enter 提交 → emit(trim 後字串)；Esc / blur 一律取消（最不意外）。
  * 焦點：點開後直接進輸入框；Enter / Esc 收起後回到觸發鈕；blur 取消時焦點已被移走，不拉回。
+ * 按住 Enter 只算一下；用輸入法選字時的 Enter / Esc 交給輸入法，不送出也不收起。
  *
  * 展示櫃原則：本元件只負責「輸入 affordance」，不持有清單 / 勾選狀態。
  * 去重、加入清單、勾選由父層在 (add) handler 處理。
@@ -62,8 +63,12 @@ export class InlineAddComponent {
   onInputKeydown(event: KeyboardEvent): void {
     // 阻止方向鍵等冒泡到 chip 群組 roving focus（輸入態游標應留在輸入框內）
     event.stopPropagation();
+    // 用輸入法選字時的 Enter（確定）、Esc（取消選字）是給輸入法的。Safari 確定選字的 Enter 沒有 isComposing，只看得出 keyCode 229
+    if (event.isComposing || event.keyCode === 229) return;
     if (event.key === 'Enter') {
       event.preventDefault();
+      // 按住 Enter 會連發，只認第一下
+      if (event.repeat) return;
       this.commit();
       this.focusTrigger();
     } else if (event.key === 'Escape') {
@@ -71,6 +76,11 @@ export class InlineAddComponent {
       this.cancel();
       this.focusTrigger();
     }
+  }
+
+  /** Enter 送出後焦點回到觸發鈕，按住 Enter 的連發會落在這顆鈕上；擋掉才不會又打開輸入框，一開一關地閃 */
+  onTriggerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && event.repeat) event.preventDefault();
   }
 
   /** blur 一律取消（只有 Enter 提交）；焦點已經被使用者移走，不拉回觸發鈕 */
