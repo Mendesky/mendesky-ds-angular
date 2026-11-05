@@ -123,7 +123,7 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
    *   不往外傳（頁面的快捷鍵會把這一下搶走，例如看板的 Enter 開卡片選單）；
    *   按住不放的連發擋掉（選了月份換成日期格後，連發會直接選到日期），但「上一年／下一年」放行，可以按住連續換年
    * - 最後一個停點按 Tab、第一個停點按 Shift+Tab：通知 date-picker 關面板
-   * Esc 關閉不在這裡，由浮層定位服務處理。
+   * Esc 關閉不在這裡：date-picker 打開面板時在 document 的捕獲階段聽 Esc（onEscape），面板外的焦點也接得到。
    */
   onPanelKeydown(event: KeyboardEvent): void {
     this.keyboardNav = true;

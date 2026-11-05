@@ -1,5 +1,5 @@
 import {
-  Component, Input, OnDestroy, ElementRef, ApplicationRef,
+  Component, Input, OnDestroy, ElementRef, ApplicationRef, NgZone,
   EnvironmentInjector, ComponentRef, forwardRef, signal, createComponent, inject,
  ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -63,11 +63,14 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
 
   private panelRef: ComponentRef<DatePanelComponent> | null = null;
   private _overlayRef: PortalOverlayRef | null = null;
+  /** 正在擋 Esc 連發時，呼叫它停止（見 swallowEscapeRepeats） */
+  private stopSwallowingEscape: (() => void) | null = null;
   private onChange: (v: string) => void = () => {};
   private onTouched: () => void = () => {};
 
   private readonly el = inject(ElementRef<HTMLElement>);
   private readonly appRef = inject(ApplicationRef);
+  private readonly zone = inject(NgZone);
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly positioning = inject(PortalPositioningService);
   /** 直接包住它的 app-field（同一個模板裡）；包在別的元件裡時找不到，跟 app-input 一樣 */
@@ -276,6 +279,9 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
         closeOnClickOutside: true,
         // Esc 不交給浮層服務：服務在 document 冒泡階段處理，擋不住同樣掛在 document 上的外層視窗。改由下面的 onEscape 處理。
         closeOnEscape: false,
+        // 面板開著時又打開 app-dialog、app-modal-shell 這類視窗（登記在 ModalStack）：面板先關，Esc 留給那個視窗。
+        // 面板的層級比視窗高，不關會浮在視窗上面。焦點照樣回到按鈕，視窗接手後關掉時才有地方還回來。
+        closeOnModalOpen: true,
         onClose: (reason) => {
           if (reason === 'manual') return;
           this.closePanel(true);
@@ -289,12 +295,47 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
    * 面板開著時按 Esc：關面板、焦點回按鈕，不往外傳。
    * 掛在 document 的捕獲階段，比外層視窗在 document 上的 Esc 處理（冒泡階段）先收到；
    * 焦點不在面板上（例如點了面板空白處，焦點落到 body）也接得到。面板關閉時拿掉，之後的 Esc 照常傳給外層。
+   * 按住不放時，關掉面板後的連發也擋下，見 swallowEscapeRepeats。
    */
   private readonly onEscape = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape' || !this.isOpen()) return;
     event.stopPropagation();
     this.closePanel(true);
+    this.swallowEscapeRepeats();
   };
+
+  /**
+   * 用 Esc 關掉面板後，按住不放的連發（keydown 的 repeat 為 true）也不往外傳，不然外層視窗會一直收到 Esc。
+   * 放開 Esc、按了新的一下 Esc、視窗失去焦點、或元件被移除時停止。
+   * 跟 Action Menu 擋連發同一個做法（action-menu.component.ts 的 swallowRepeatsUntilKeyup）：掛在 window 的捕獲階段、跑在 NgZone 外。
+   */
+  private swallowEscapeRepeats(): void {
+    this.stopSwallowingEscape?.();
+    const stop = (): void => {
+      window.removeEventListener('keydown', onKeydown, true);
+      window.removeEventListener('keyup', onKeyup, true);
+      window.removeEventListener('blur', stop);
+      if (this.stopSwallowingEscape === stop) this.stopSwallowingEscape = null;
+    };
+    const onKeydown = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return;
+      if (!e.repeat) {
+        stop();
+        return;
+      }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    };
+    const onKeyup = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') stop();
+    };
+    this.zone.runOutsideAngular(() => {
+      window.addEventListener('keydown', onKeydown, true);
+      window.addEventListener('keyup', onKeyup, true);
+      window.addEventListener('blur', stop);
+    });
+    this.stopSwallowingEscape = stop;
+  }
 
   closePanel(returnFocus = true): void {
     if (returnFocus) {
@@ -316,6 +357,7 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
 
   ngOnDestroy(): void {
     this.closePanel(false);
+    this.stopSwallowingEscape?.();
   }
 
   writeValue(val: string): void {
