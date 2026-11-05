@@ -39,7 +39,7 @@ export const inlineAddDoc: ComponentApi = {
       name: 'ariaLabel',
       type: 'string',
       default: "''",
-      desc: '輸入框的報讀名稱；放在有標題的 app-field 裡時設成欄位標題，不設時報讀軟體只念提示文字。要寫 ariaLabel，不要寫 aria-label：aria-label 會留在外框上，輸入框還是沒有名稱。',
+      desc: '輸入框的報讀名稱，一律要設：放在有標題的 app-field 裡時用欄位標題；沒有欄位時，寫這一格要新增什麼。不設時報讀軟體只念提示文字。要寫 ariaLabel，不要寫 aria-label：aria-label 會留在外框上，輸入框還是只念提示文字。',
     },
   ],
   usage: [

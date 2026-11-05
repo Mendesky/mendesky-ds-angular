@@ -52,3 +52,58 @@ describe('IconBtnComponent — ariaHaspopup／ariaExpanded（打開選單的圖�
     expect(inner('plain').hasAttribute('aria-expanded')).toBeFalse();
   });
 });
+
+/**
+ * 實心主色（PrimaryFilled）＋ size="12"：頁面主要的新增入口。外觀要跟全域 .app-action-cta-btn 一樣：
+ * 24×24、主色底、白色圖示、圓角 4px、停用 40% 不透明。斷言查計算後樣式，不只查 class。
+ */
+@Component({
+  standalone: true,
+  imports: [IconBtnComponent],
+  template: `
+    <app-icon-btn size="12" propClass="PrimaryFilled" ariaLabel="新增項目" [disabled]="disabled">
+      <span class="glyph"></span>
+    </app-icon-btn>
+  `,
+})
+class PrimaryFilledHostComponent {
+  disabled = false;
+}
+
+describe('IconBtnComponent — PrimaryFilled 與 size="12"', () => {
+  let fixture: ComponentFixture<PrimaryFilledHostComponent>;
+  const btn = () => fixture.nativeElement.querySelector('button.icon-btn') as HTMLButtonElement;
+  const iconWrap = () => fixture.nativeElement.querySelector('.icon-btn__icon-wrap') as HTMLElement;
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(PrimaryFilledHostComponent);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => fixture.destroy());
+
+  it('按鈕 24×24、圖示區 12×12', () => {
+    const r = btn().getBoundingClientRect();
+    expect([r.width, r.height]).toEqual([24, 24]);
+    const w = iconWrap().getBoundingClientRect();
+    expect([w.width, w.height]).toEqual([12, 12]);
+  });
+
+  it('主色底、白色圖示、圓角 4px', () => {
+    const cs = getComputedStyle(btn());
+    expect(cs.backgroundColor).toBe('rgb(58, 156, 205)');
+    expect(cs.color).toBe('rgb(255, 255, 255)');
+    expect(cs.borderTopLeftRadius).toBe('4px');
+  });
+
+  it('停用時 40% 不透明，跟全域新增鈕一樣（其他外觀是 50%）', () => {
+    fixture.componentInstance.disabled = true;
+    fixture.detectChanges();
+    expect(btn().disabled).toBeTrue();
+    expect(getComputedStyle(btn()).opacity).toBe('0.4');
+  });
+
+  it('ariaLabel 落在內層按鈕', () => {
+    expect(btn().getAttribute('aria-label')).toBe('新增項目');
+  });
+});

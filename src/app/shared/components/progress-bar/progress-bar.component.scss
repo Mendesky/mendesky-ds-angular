@@ -11,6 +11,10 @@
   overflow: hidden;
 }
 
+.ds-progress--s {
+  height: 6px;
+}
+
 .ds-progress__fill {
   display: block;
   height: 100%;
@@ -19,8 +23,27 @@
   transition: width 200ms var(--ease-enter);
 }
 
+/* 不定狀態：寬度固定 40%，靠位移表達「在動但不知道進度」。
+   參數沿用 dashboard 上傳進度條的現成實作（1.5s、ease-in-out、無限循環）。 */
+.ds-progress__fill--indeterminate {
+  width: 40%;
+  transition: none;
+  animation: ds-progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes ds-progress-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ds-progress__fill {
     transition: none;
+  }
+
+  /* 不動，停在正中間（30%～70%）：停在最左邊看起來會像做到 40% */
+  .ds-progress__fill--indeterminate {
+    animation: none;
+    transform: translateX(75%);
   }
 }

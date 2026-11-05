@@ -1,10 +1,15 @@
 <div
   class="ds-progress"
+  [class.ds-progress--s]="size === 'S'"
   role="progressbar"
   aria-valuemin="0"
   [attr.aria-valuemax]="safeMax"
-  [attr.aria-valuenow]="clampedValue"
+  [attr.aria-valuenow]="indeterminate ? null : clampedValue"
   [attr.aria-label]="ariaLabel || null"
 >
-  <span class="ds-progress__fill" [style.width.%]="percent"></span>
+  <span
+    class="ds-progress__fill"
+    [class.ds-progress__fill--indeterminate]="indeterminate"
+    [style.width.%]="indeterminate ? null : percent"
+  ></span>
 </div>
