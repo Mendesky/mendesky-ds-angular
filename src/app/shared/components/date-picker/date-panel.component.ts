@@ -1,5 +1,5 @@
 import {
-  Component, Input, Output, EventEmitter, OnInit, AfterViewInit,
+  Component, Input, Output, EventEmitter, OnInit, AfterViewInit, AfterViewChecked,
   signal, HostListener, ElementRef, HostBinding, inject,
  ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -15,7 +15,7 @@ import { CellBtnComponent } from '../cell-btn/cell-btn.component';
   styleUrls: ['./date-panel.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DatePanelComponent implements OnInit, AfterViewInit {
+export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewChecked {
   @Input() minYear = 110;
   @Input() maxYear = 125;
   /** 不允許選超過此月份（需搭配 maxYear）。null 表示無限制。 */
@@ -30,6 +30,11 @@ export class DatePanelComponent implements OnInit, AfterViewInit {
   @Input() width = 0;
 
   @Output() dateSelected = new EventEmitter<{ year: number; month: number; day: number }>();
+  /**
+   * 焦點在面板的最後一個停點按 Tab（'forward'）、或第一個停點按 Shift+Tab（'backward'）。
+   * 收到後由 date-picker 關面板、把焦點放回按鈕；'forward' 不擋預設動作，瀏覽器接著把焦點移到按鈕的下一個元素。
+   */
+  @Output() tabOut = new EventEmitter<'forward' | 'backward'>();
 
   @HostBinding('style.position') readonly pos = 'fixed';
   @HostBinding('style.min-width.px') get hostMinWidth() { return this.width; }
@@ -76,9 +81,12 @@ export class DatePanelComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.viewState() === 'year-grid') {
-      setTimeout(() => this.focusYearCell(this.initYear));
-    }
+    // 打開時焦點移進格子：只用鍵盤的人打開就能選（滑鼠點開也一樣，焦點框只在用鍵盤時出現）
+    setTimeout(() => this.focusCurrentGrid());
+  }
+
+  ngAfterViewChecked(): void {
+    this.syncTabStop();
   }
 
   /** 月曆模式下點年份標題 → 展開年份清單快速跳年（year mode 的年清單本就是根視圖，不需此入口）。 */
@@ -86,43 +94,118 @@ export class DatePanelComponent implements OnInit, AfterViewInit {
     if (this.mode === 'year') return;
     this.viewState.set('year-grid');
     // 展開後把焦點/捲動落在目前顯示的年份，遠年一鍵到位（focus 會把 cell 捲進可視區）
-    setTimeout(() => this.focusYearCell(this.displayYear()));
+    setTimeout(() => this.focusCurrentGrid());
   }
 
-  /** 年度網格方向鍵導航（2 欄佈局） */
-  onYearGridKeydown(event: KeyboardEvent): void {
-    const grid = this.el.nativeElement.querySelector('.dp-panel__year-grid');
+  /**
+   * 面板的鍵盤操作：
+   * - 方向鍵在格子間移動（年份 2 欄、月份 3 欄、日期 7 欄），跳過不能選的格子與空白格，碰到邊停住
+   * - 按住 Enter 的連發不再按一次格子（選了月份換成日期格後，連發會直接選到日期）
+   * - 最後一個停點按 Tab、第一個停點按 Shift+Tab：通知 date-picker 關面板
+   * Enter／空白鍵選取、Esc 關閉不在這裡：前者是按鈕原生行為，後者由浮層定位服務處理。
+   */
+  onPanelKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Tab') {
+      this.onTab(event);
+      return;
+    }
+    if ((event.key === 'Enter' || event.key === ' ') && event.repeat) {
+      event.preventDefault();
+      return;
+    }
+    const grid = this.currentGrid();
     if (!grid) return;
-    const buttons = Array.from(grid.querySelectorAll('button.cell-btn')) as HTMLElement[];
-    const current = buttons.indexOf(document.activeElement as HTMLElement);
+    const cells = this.gridCells(grid);
+    const current = cells.indexOf(document.activeElement as HTMLButtonElement);
     if (current === -1) return;
 
-    const cols = 2;
-    let next = current;
-    switch (event.key) {
-      case 'ArrowRight': next = Math.min(current + 1, buttons.length - 1); break;
-      case 'ArrowLeft':  next = Math.max(current - 1, 0); break;
-      case 'ArrowDown':  next = Math.min(current + cols, buttons.length - 1); break;
-      case 'ArrowUp':    next = Math.max(current - cols, 0); break;
-      default: return;
-    }
+    const cols = this.gridColumns();
+    const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[event.key];
+    if (step === undefined) return;
     event.preventDefault();
-    buttons[current].setAttribute('tabindex', '-1');
-    buttons[next].setAttribute('tabindex', '0');
-    (buttons[next] as HTMLElement).focus();
+
+    let next = current + step;
+    while (next >= 0 && next < cells.length && !this.isFocusable(cells[next])) next += step;
+    if (next < 0 || next >= cells.length) return;
+    this.focusCell(grid, cells[next]!);
   }
 
-  private focusYearCell(year: number): void {
-    const grid = this.el.nativeElement.querySelector('.dp-panel__year-grid');
-    if (!grid) return;
-    const buttons = grid.querySelectorAll('button.cell-btn');
-    buttons.forEach((b: HTMLElement) => b.setAttribute('tabindex', '-1'));
-    const idx = this.yearRange.indexOf(year);
-    const index = idx >= 0 ? idx : 0;
-    if (buttons[index]) {
-      buttons[index].setAttribute('tabindex', '0');
-      (buttons[index] as HTMLElement).focus();
+  /**
+   * Tab 在面板裡自己移：Safari 預設不讓 Tab 停在按鈕上，交給瀏覽器的話，面板上方的年份按鈕在 Safari 停不到，
+   * 而且從格子按 Shift+Tab 會直接跳出面板、面板卻沒關。所以面板裡的停點一律由這裡依序移動。
+   * 最後一個停點按 Tab 不擋預設動作：date-picker 把焦點放回按鈕後，瀏覽器接著移到按鈕的下一個元素。
+   */
+  private onTab(event: KeyboardEvent): void {
+    const stops = Array.from(
+      (this.el.nativeElement as HTMLElement).querySelectorAll('button:not([disabled])'),
+    ).filter((b) => b.getAttribute('tabindex') !== '-1') as HTMLElement[];
+    const at = stops.indexOf(document.activeElement as HTMLElement);
+    if (at === -1) return;
+    if (event.shiftKey) {
+      event.preventDefault();
+      if (at === 0) this.tabOut.emit('backward');
+      else stops[at - 1].focus();
+    } else if (at === stops.length - 1) {
+      this.tabOut.emit('forward');
+    } else {
+      event.preventDefault();
+      stops[at + 1].focus();
     }
+  }
+
+  /** 目前顯示的格子區 */
+  private currentGrid(): HTMLElement | null {
+    return (this.el.nativeElement as HTMLElement).querySelector('[role="listbox"]');
+  }
+
+  private gridColumns(): number {
+    const view = this.viewState();
+    if (view === 'year-grid') return 2;
+    if (view === 'day-grid') return 7;
+    return 3;
+  }
+
+  /** 格子區裡每一格的按鈕，順序跟畫面上的位置一樣；空白格是 null */
+  private gridCells(grid: HTMLElement): (HTMLButtonElement | null)[] {
+    return Array.from(grid.querySelectorAll('app-cell-btn')).map((c) => c.querySelector('button'));
+  }
+
+  private isFocusable(cell: HTMLButtonElement | null): cell is HTMLButtonElement {
+    return !!cell && !cell.disabled;
+  }
+
+  /** 格子區只留一個 Tab 停點（tabindex=0），其餘 -1；方向鍵在格子間移動 */
+  private focusCell(grid: HTMLElement, cell: HTMLButtonElement): void {
+    for (const b of this.gridCells(grid)) b?.setAttribute('tabindex', '-1');
+    cell.setAttribute('tabindex', '0');
+    cell.focus();
+  }
+
+  /** 焦點移到目前格子區：選中的格子，沒有就第一個可選的格子 */
+  private focusCurrentGrid(): void {
+    const grid = this.currentGrid();
+    if (!grid) return;
+    const target = this.preferredCell(this.gridCells(grid).filter((c) => this.isFocusable(c)) as HTMLButtonElement[]);
+    if (target) this.focusCell(grid, target);
+  }
+
+  private preferredCell(cells: HTMLButtonElement[]): HTMLButtonElement | undefined {
+    return cells.find((c) => c.getAttribute('aria-selected') === 'true') ?? cells[0];
+  }
+
+  /**
+   * 畫面更新後確保格子區剛好有一個可以停的 Tab 停點：
+   * 換年後原本的停點可能變成不能選，或格子區整個換掉（月份格換成日期格）。
+   */
+  private syncTabStop(): void {
+    const grid = this.currentGrid();
+    if (!grid) return;
+    const cells = this.gridCells(grid).filter((c) => this.isFocusable(c)) as HTMLButtonElement[];
+    if (cells.length === 0) return;
+    const stops = cells.filter((c) => c.getAttribute('tabindex') === '0');
+    if (stops.length === 1) return;
+    const keep = cells.find((c) => c === document.activeElement) ?? stops[0] ?? this.preferredCell(cells)!;
+    for (const b of this.gridCells(grid)) b?.setAttribute('tabindex', b === keep ? '0' : '-1');
   }
 
   prevYear(): void {
@@ -141,6 +224,7 @@ export class DatePanelComponent implements OnInit, AfterViewInit {
     }
     this.displayYear.set(year);
     this.viewState.set('month-grid');
+    setTimeout(() => this.focusCurrentGrid());
   }
 
   /** 年份清單中不可選超過 maxDate 的未來年（配合 date-picker 的 maxDate；yearRange 上限通常已含 maxYear 收斂）。 */
@@ -152,6 +236,7 @@ export class DatePanelComponent implements OnInit, AfterViewInit {
     if (this.mode === 'day') {
       this.selectedMonth.set(month);
       this.viewState.set('day-grid');
+      setTimeout(() => this.focusCurrentGrid());
     } else {
       this.dateSelected.emit({ year: this.displayYear(), month, day: 0 });
     }
@@ -163,6 +248,7 @@ export class DatePanelComponent implements OnInit, AfterViewInit {
 
   backToMonths(): void {
     this.viewState.set('month-grid');
+    setTimeout(() => this.focusCurrentGrid());
   }
 
   prevMonth(): void {

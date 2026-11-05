@@ -143,7 +143,7 @@ export const datePickerDoc: ComponentApi = {
     },
     {
       type: 'info',
-      content: 'Tab／Shift+Tab 關閉 panel 時會把表單控制項標記為 touched，讓 Angular form validation 正確觸發。',
+      content: '鍵盤操作：在按鈕上按 Enter 或空白鍵會打開面板，焦點落在已選的格子，沒有值時落在第一個能選的格子。方向鍵在格子之間移動，不會停在停用的格子或空白格上，往那個方向已經沒有能選的格子時，焦點留在原地；Enter 選取後面板關閉、焦點回到按鈕，Esc 直接關閉。Tab 依序經過面板上方的按鈕再到格子，在格子上再按 Tab 會關閉面板、焦點移到下一個欄位；在第一個按鈕上按 Shift+Tab 會關閉面板、焦點回到按鈕。用 Tab 或 Shift+Tab 離開面板時，表單控制項會標記為 touched，讓 Angular 表單驗證正確觸發。',
     },
     {
       type: 'info',
