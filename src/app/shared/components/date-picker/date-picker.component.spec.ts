@@ -572,6 +572,7 @@ describe('DatePickerComponent — 面板的鍵盤操作', () => {
         [maxYear]="maxYear"
         [maxMonth]="maxMonth"
         [maxDate]="maxDate"
+        [disabled]="disabled"
         [ngModel]="value"
         (ngModelChange)="onChange($event)"></app-date-picker>
     </app-field>
@@ -581,6 +582,7 @@ class PeriodHostComponent {
   maxYear = 125;
   maxMonth: number | null = null;
   maxDate: { year: number; month: number; day: number } | null = null;
+  disabled = false;
   value = '';
   changes: string[] = [];
   onChange(v: string): void {
@@ -725,5 +727,86 @@ describe('DatePickerComponent — 期別模式', () => {
     cell('5~6 月').click();
     await settle();
     expect(host.changes).toEqual(['112-5']);
+  });
+
+  // ── 以下 2026-11-05 #48 審查第 1 輪補：上限只用單數月測，換成「比第幾期」的寫法也會全綠 ──
+  const disabledFlags = () => gridButtons().map((b) => b.disabled);
+
+  it('上限 maxYear 114＋maxMonth 3：「3~4 月」可以選，「5~6 月」以後不能選', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 3;
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  it('上限 maxYear 114＋maxMonth 4（雙數月）：「3~4 月」可以選，「5~6 月」以後不能選', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 4;
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  it('上限 maxDate 114-4-30（雙數月）：「3~4 月」可以選，「5~6 月」以後不能選', async () => {
+    host.maxDate = { year: 114, month: 4, day: 30 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  it('maxDate 在下一年 115-2-1：114 年每一期都能選；按「下一年」到 115 年，只有「1~2 月」能選', async () => {
+    host.maxDate = { year: 115, month: 2, day: 1 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, false, false, false, false]);
+    headerBtn('下一年').click();
+    await settle();
+    expect(disabledFlags()).toEqual([false, true, true, true, true, true]);
+  });
+
+  it('maxDate 在上一年 113-12-31、值是 114-1：114 年每一期都不能選', async () => {
+    host.maxDate = { year: 113, month: 12, day: 31 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([true, true, true, true, true, true]);
+  });
+
+  it('maxDate 比 maxYear＋maxMonth 嚴（maxMonth 9、maxDate 114-4-1）：以 maxDate 為準，「5~6 月」以後不能選', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 9;
+    host.maxDate = { year: 114, month: 4, day: 1 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  for (const [value, text, label] of [
+    ['114-2', '114 年 1~2 月', '1~2 月'],
+    ['114-6', '114 年 5~6 月', '5~6 月'],
+    ['114-12', '114 年 11~12 月', '11~12 月'],
+  ]) {
+    it(`收到雙數月 ${value}：顯示「${text}」、「${label}」標成選中；值不改寫，也不送出`, async () => {
+      await open(value);
+      expect(triggerText()).toBe(text);
+      expect(cell(label).getAttribute('aria-selected')).toBe('true');
+      expect(picker().value()).toBe(value);
+      expect(host.changes).toEqual([]);
+    });
+  }
+
+  it('停用時：點按鈕、按 Enter、按 ↓ 都不會打開面板', async () => {
+    host.disabled = true;
+    await settle();
+    trigger().click();
+    await settle();
+    expect(panel()).withContext('點按鈕').toBeNull();
+    key(trigger(), 'Enter');
+    await settle();
+    expect(panel()).withContext('按 Enter').toBeNull();
+    key(trigger(), 'ArrowDown');
+    await settle();
+    expect(panel()).withContext('按 ↓').toBeNull();
+  });
+
+  it('期別格排成 3 欄 2 列', async () => {
+    await open('114-1');
+    const rects = gridButtons().map((b) => b.getBoundingClientRect());
+    expect(new Set(rects.map((r) => Math.round(r.left))).size).toBe(3);
+    expect(new Set(rects.map((r) => Math.round(r.top))).size).toBe(2);
   });
 });

@@ -69,7 +69,7 @@ export const datePickerDoc: ComponentApi = {
       name: 'maxMonth',
       type: 'number | null',
       default: 'null',
-      desc: '不允許選超過此月份，需搭配 maxYear 一起用，只在 maxYear 那一年生效；期別格是起始月超過它的那一期不能選。null 表示無限制。注意與 maxYear／maxDate 是不同層級的限制，勿誤以為 maxYear 已涵蓋',
+      desc: '不允許選超過此月份，需搭配 maxYear 一起用：maxYear 那一年，超過它的月份不能選；期別格是起始月超過它的那一期不能選。null 表示無限制。注意與 maxYear／maxDate 是不同層級的限制，勿誤以為 maxYear 已涵蓋',
     },
     {
       name: 'errorMessage',
