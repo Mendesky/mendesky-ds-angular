@@ -32,7 +32,6 @@ export const INTERNAL_COMPONENTS = [
   'autocomplete-panel',
   'date-panel',
   'select-panel',
-  'year-month-panel',
   'template-var-panel',
   'tooltip-portal',
   'rte-table-grip',

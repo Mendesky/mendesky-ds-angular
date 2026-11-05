@@ -40,8 +40,11 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
   @Input() maxYear = 125;
   /** 不允許選超過此月份（需搭配 maxYear）。null 表示無限制。 */
   @Input() maxMonth: number | null = null;
-  /** 選取粒度：'year' 只選年、'month' 選年月（預設）、'day' 選年月日 */
-  @Input() mode: 'year' | 'month' | 'day' = 'month';
+  /**
+   * 選取粒度：'year' 只選年、'month' 選年月（預設）、'period' 選期別（兩個月一期）、'day' 選年月日。
+   * period 的值是那一期的起始月（'114-3' 代表 3~4 月）；收到雙數月（例如舊資料 '114-4'）時顯示成它所屬的那一期，值原樣保留。
+   */
+  @Input() mode: 'year' | 'month' | 'period' | 'day' = 'month';
   /** @deprecated 請改用 mode="year" */
   @Input() yearOnly = false;
   @Input() disabled = false;
@@ -70,13 +73,13 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
   /** 直接包住它的 app-field（同一個模板裡）；包在別的元件裡時找不到，跟 app-input 一樣 */
   private readonly field = inject(FieldComponent, { optional: true, host: true });
 
-  get resolvedMode(): 'year' | 'month' | 'day' {
+  get resolvedMode(): 'year' | 'month' | 'period' | 'day' {
     return this.yearOnly ? 'year' : this.mode;
   }
 
   get effectivePlaceholder(): string {
     if (this.placeholder) return this.placeholder;
-    const map: Record<string, string> = { year: '選擇年度', month: '選擇月份', day: '選擇日期' };
+    const map: Record<string, string> = { year: '選擇年度', month: '選擇月份', period: '選擇期別', day: '選擇日期' };
     return map[this.resolvedMode] ?? '選擇日期';
   }
 
@@ -134,6 +137,10 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     const month = parseInt(parts[1]);
     if (isNaN(month)) return '';
     if (this.resolvedMode === 'month') return `${year} 年 ${month} 月`;
+    if (this.resolvedMode === 'period') {
+      const start = DatePickerComponent.periodStart(month);
+      return `${year} 年 ${start}~${start + 1} 月`;
+    }
     const day = parseInt(parts[2]);
     if (isNaN(day)) return '';
     return `${year} 年 ${month} 月 ${day} 日`;
@@ -153,7 +160,14 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     const v = this.value();
     if (!v) return null;
     const m = parseInt(v.split('-')[1]);
-    return isNaN(m) ? null : m;
+    if (isNaN(m)) return null;
+    // 期別面板的格子是起始月，雙數月的值要對到它所屬那一期的格子才會標成選中
+    return this.resolvedMode === 'period' ? DatePickerComponent.periodStart(m) : m;
+  }
+
+  /** 月份所屬那一期的起始月：2→1、4→3…12→11；單數月不變 */
+  private static periodStart(month: number): number {
+    return month % 2 === 0 ? month - 1 : month;
   }
 
   get currentDay(): number | null {
@@ -240,7 +254,7 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
 
       let val: string;
       if (this.resolvedMode === 'year') val = `${year}`;
-      else if (this.resolvedMode === 'month') val = `${year}-${month}`;
+      else if (this.resolvedMode === 'month' || this.resolvedMode === 'period') val = `${year}-${month}`;
       else val = `${year}-${month}-${day}`;
       this.value.set(val);
       this.onChange(val);

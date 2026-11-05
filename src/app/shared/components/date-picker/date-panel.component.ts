@@ -25,7 +25,8 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
   @Input() initYear = 115;
   @Input() initMonth: number | null = null;
   @Input() initDay: number | null = null;
-  @Input() mode: 'year' | 'month' | 'day' = 'month';
+  /** 'period'：一期兩個月，格子是 6 期的起始月（1、3、5…11）；initMonth 由 date-picker 先換成起始月 */
+  @Input() mode: 'year' | 'month' | 'period' | 'day' = 'month';
   /** panel 寬度（px），由 DatePickerComponent 傳入 trigger 寬度 */
   @Input() width = 0;
 
@@ -45,6 +46,13 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   readonly MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   readonly WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+  /** 期別格的 6 期，各是那一期的起始月 */
+  readonly PERIOD_STARTS = [1, 3, 5, 7, 9, 11];
+
+  /** 期別格的文字：'1~2 月'、'3~4 月'…'11~12 月' */
+  periodLabel(start: number): string {
+    return `${start}~${start + 1} 月`;
+  }
 
   private readonly el = inject(ElementRef<HTMLElement>);
 

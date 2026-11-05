@@ -18,8 +18,8 @@ const meta: Meta<DatePickerComponent> = {
   argTypes: {
     mode: {
       control: 'select',
-      options: ['year', 'month', 'day'],
-      description: '選取粒度：year=只選年、month=選年月、day=選年月日',
+      options: ['year', 'month', 'period', 'day'],
+      description: '選取粒度：year=只選年、month=選年月、period=選期別（兩個月一期）、day=選年月日',
       table: { defaultValue: { summary: 'month' } },
     },
     size: {
@@ -30,7 +30,7 @@ const meta: Meta<DatePickerComponent> = {
     },
     placeholder: {
       control: 'text',
-      description: "空值時的 placeholder；不傳時依 mode 推導（day='選擇日期'、month='選擇月份'、year='選擇年度'）",
+      description: "空值時的 placeholder；不傳時依 mode 推導（day='選擇日期'、month='選擇月份'、period='選擇期別'、year='選擇年度'）",
     },
     emptyLabel: {
       control: 'text',
@@ -172,6 +172,27 @@ export const DayModeWithMaxDate: Story = {
           </app-date-picker>
         </app-field>
         <div style="${VALUE_STYLE}">目前值：'{{ pickerValue }}'</div>
+      </div>
+    `,
+    moduleMetadata: { imports: [DatePickerComponent, FieldComponent, FormsModule] },
+  }),
+};
+
+// ── 選期別（兩個月一期） ─────────────────────────────────
+export const PeriodMode: Story = {
+  name: '選期別（兩個月一期）',
+  render: () => ({
+    props: { pickerValue: '' },
+    template: `
+      <div style="${WRAP_STYLE}">
+        <app-field label="開始期別">
+          <app-date-picker
+            mode="period"
+            size="L"
+            [(ngModel)]="pickerValue">
+          </app-date-picker>
+        </app-field>
+        <div style="${VALUE_STYLE}">目前值：'{{ pickerValue }}'（值是那一期的起始月，'114-3' 代表 3~4 月）</div>
       </div>
     `,
     moduleMetadata: { imports: [DatePickerComponent, FieldComponent, FormsModule] },

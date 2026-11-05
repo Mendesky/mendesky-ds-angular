@@ -64,8 +64,6 @@ export * from './app/shared/components/toast-container/toast-container.component
 export * from './app/shared/components/toggle/toggle.component';
 export * from './app/shared/components/tooltips/tooltips.component';
 export * from './app/shared/components/upload-dropzone/upload-dropzone.component';
-export * from './app/shared/components/year-month-picker/year-month-panel.component';
-export * from './app/shared/components/year-month-picker/year-month-picker.component';
 export * from './app/shared/directives/auto-height.directive';
 export * from './app/shared/directives/copy.directive';
 export * from './app/shared/directives/error-tooltip.directive';
