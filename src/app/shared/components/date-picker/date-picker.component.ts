@@ -274,14 +274,27 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
         gap: 4,
         trackScroll: false,
         closeOnClickOutside: true,
-        closeOnEscape: true,
+        // Esc 不交給浮層服務：服務在 document 冒泡階段處理，擋不住同樣掛在 document 上的外層視窗。改由下面的 onEscape 處理。
+        closeOnEscape: false,
         onClose: (reason) => {
           if (reason === 'manual') return;
           this.closePanel(true);
         },
       }
     );
+    document.addEventListener('keydown', this.onEscape, true);
   }
+
+  /**
+   * 面板開著時按 Esc：關面板、焦點回按鈕，不往外傳。
+   * 掛在 document 的捕獲階段，比外層視窗在 document 上的 Esc 處理（冒泡階段）先收到；
+   * 焦點不在面板上（例如點了面板空白處，焦點落到 body）也接得到。面板關閉時拿掉，之後的 Esc 照常傳給外層。
+   */
+  private readonly onEscape = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || !this.isOpen()) return;
+    event.stopPropagation();
+    this.closePanel(true);
+  };
 
   closePanel(returnFocus = true): void {
     if (returnFocus) {
@@ -289,6 +302,7 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
       const trigger = this.el.nativeElement.querySelector('.dp-trigger') as HTMLElement | null;
       trigger?.focus();
     }
+    document.removeEventListener('keydown', this.onEscape, true);
     const ref = this._overlayRef;
     this._overlayRef = null;
     ref?.detach();

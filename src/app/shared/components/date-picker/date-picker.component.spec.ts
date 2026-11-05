@@ -1,4 +1,4 @@
-import { ApplicationRef, Component } from '@angular/core';
+import { ApplicationRef, Component, HostListener } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { DatePickerComponent } from './date-picker.component';
@@ -808,5 +808,137 @@ describe('DatePickerComponent — 期別模式', () => {
     const rects = gridButtons().map((b) => b.getBoundingClientRect());
     expect(new Set(rects.map((r) => Math.round(r.left))).size).toBe(3);
     expect(new Set(rects.map((r) => Math.round(r.top))).size).toBe(2);
+  });
+});
+
+// ── Esc 不傳給外層（2026-11-05）──────────────────────────────────
+// 面板開著時按 Esc，原本只有面板關閉、事件照樣傳到 document，外層視窗在 document 上聽 Esc 的話也會收到，
+// 跟著跳出關閉確認或直接關閉。現在面板開著時由 date-picker 先接住 Esc：關面板、焦點回按鈕、不往外傳。
+// 外層用 @HostListener('document:keydown.escape') 模擬，跟使用端視窗的寫法一樣。
+
+@Component({
+  standalone: true,
+  imports: [FieldComponent, DatePickerComponent, FormsModule],
+  template: `
+    @if (show) {
+      <app-field label="完成日期">
+        <app-date-picker [mode]="mode" [(ngModel)]="value"></app-date-picker>
+      </app-field>
+    }
+  `,
+})
+class OuterEscHostComponent {
+  mode: 'year' | 'month' | 'period' | 'day' = 'month';
+  show = true;
+  value = '';
+  outerEsc = 0;
+  @HostListener('document:keydown.escape')
+  onOuterEsc(): void {
+    this.outerEsc++;
+  }
+}
+
+describe('DatePickerComponent — Esc 不傳給外層', () => {
+  let fixture: ComponentFixture<OuterEscHostComponent>;
+  let host: OuterEscHostComponent;
+  let appRef: ApplicationRef;
+
+  const root = () => fixture.nativeElement as HTMLElement;
+  const trigger = () => root().querySelector('.dp-trigger') as HTMLElement;
+  const panel = () => document.querySelector('app-date-panel') as HTMLElement | null;
+  const active = () => document.activeElement as HTMLElement | null;
+  const gridButtons = () =>
+    Array.from(panel()!.querySelectorAll('[role="listbox"] button.cell-btn')) as HTMLButtonElement[];
+
+  async function settle(): Promise<void> {
+    fixture.detectChanges();
+    appRef.tick();
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+    appRef.tick();
+    await fixture.whenStable();
+  }
+
+  function key(target: Element, k: string): KeyboardEvent {
+    const e = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
+    target.dispatchEvent(e);
+    return e;
+  }
+
+  async function open(): Promise<void> {
+    trigger().focus();
+    key(trigger(), 'Enter');
+    await settle();
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [OuterEscHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(OuterEscHostComponent);
+    host = fixture.componentInstance;
+    appRef = TestBed.inject(ApplicationRef);
+    document.body.appendChild(fixture.nativeElement);
+    await settle();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    (fixture.nativeElement as HTMLElement).remove();
+  });
+
+  for (const mode of ['year', 'month', 'period', 'day'] as const) {
+    it(`${mode} 模式：面板開著，在格子上按 Esc → 面板關閉、焦點回到按鈕，外層收不到`, async () => {
+      host.mode = mode;
+      await settle();
+      await open();
+      expect(panel()).withContext('面板有打開').not.toBeNull();
+      key(active()!, 'Escape');
+      await settle();
+      expect(panel()).toBeNull();
+      expect(active()).toBe(trigger());
+      expect(host.outerEsc).toBe(0);
+    });
+  }
+
+  it('焦點不在面板上（例如點了面板空白處，焦點落到 body）時按 Esc → 一樣只關面板，外層收不到', async () => {
+    await open();
+    (active() as HTMLElement).blur();
+    expect(active()).toBe(document.body);
+    key(document.body, 'Escape');
+    await settle();
+    expect(panel()).toBeNull();
+    expect(active()).toBe(trigger());
+    expect(host.outerEsc).toBe(0);
+  });
+
+  it('面板關著時按 Esc → 照常傳給外層', async () => {
+    trigger().focus();
+    key(trigger(), 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('用 Esc 關掉面板後，再按一次 Esc → 這次傳給外層', async () => {
+    await open();
+    key(active()!, 'Escape');
+    await settle();
+    key(active()!, 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('選了值、面板關閉後按 Esc → 傳給外層', async () => {
+    await open();
+    gridButtons()[0].click();
+    await settle();
+    expect(panel()).toBeNull();
+    key(active()!, 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('面板開著時元件被移除 → 之後按 Esc 照常傳給外層', async () => {
+    await open();
+    host.show = false;
+    await settle();
+    expect(panel()).toBeNull();
+    key(document.body, 'Escape');
+    expect(host.outerEsc).toBe(1);
   });
 });
