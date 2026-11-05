@@ -1,8 +1,10 @@
-import { ApplicationRef, Component } from '@angular/core';
+import { ApplicationRef, Component, HostListener } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { DatePickerComponent } from './date-picker.component';
 import { FieldComponent } from '../field/field.component';
+import { DialogComponent } from '../dialog/dialog.component';
+import { ModalShellComponent } from '../modal-shell/modal-shell.component';
 
 // ── 報讀名稱（2026-11-05）──────────────────────────────────────
 // 原本按鈕只念目前文字（值或提示文字），聽不出是哪個欄位；清除鈕寫死念「清除起始日」，用在結束日期也這樣念。
@@ -808,5 +810,260 @@ describe('DatePickerComponent — 期別模式', () => {
     const rects = gridButtons().map((b) => b.getBoundingClientRect());
     expect(new Set(rects.map((r) => Math.round(r.left))).size).toBe(3);
     expect(new Set(rects.map((r) => Math.round(r.top))).size).toBe(2);
+  });
+});
+
+// ── Esc 不傳給外層（2026-11-05）──────────────────────────────────
+// 面板開著時按 Esc，原本只有面板關閉、事件照樣傳到 document，外層視窗在 document 上聽 Esc 的話也會收到，
+// 跟著跳出關閉確認或直接關閉。現在面板開著時由 date-picker 先接住 Esc：關面板、焦點回按鈕、不往外傳。
+// 外層用 @HostListener('document:keydown.escape') 模擬，跟使用端視窗的寫法一樣。
+
+@Component({
+  standalone: true,
+  imports: [FieldComponent, DatePickerComponent, DialogComponent, ModalShellComponent, FormsModule],
+  template: `
+    @if (show) {
+      <app-field label="完成日期">
+        <app-date-picker [mode]="mode" [(ngModel)]="value"></app-date-picker>
+      </app-field>
+    }
+    <app-dialog [isOpen]="dialogOpen" header="提示" content="內容" (cancel)="onDialogCancel()"></app-dialog>
+    <app-modal-shell [isOpen]="shellOpen" ariaLabel="視窗" (escapePress)="shellOpen = false">
+      <button type="button" class="in-shell">確定</button>
+    </app-modal-shell>
+  `,
+})
+class OuterEscHostComponent {
+  mode: 'year' | 'month' | 'period' | 'day' = 'month';
+  show = true;
+  value = '';
+  outerEsc = 0;
+  dialogOpen = false;
+  dialogCancels = 0;
+  shellOpen = false;
+  onDialogCancel(): void {
+    this.dialogCancels++;
+    this.dialogOpen = false;
+  }
+  @HostListener('document:keydown.escape')
+  onOuterEsc(): void {
+    this.outerEsc++;
+  }
+}
+
+describe('DatePickerComponent — Esc 不傳給外層', () => {
+  let fixture: ComponentFixture<OuterEscHostComponent>;
+  let host: OuterEscHostComponent;
+  let appRef: ApplicationRef;
+
+  const root = () => fixture.nativeElement as HTMLElement;
+  const trigger = () => root().querySelector('.dp-trigger') as HTMLElement;
+  const panel = () => document.querySelector('app-date-panel') as HTMLElement | null;
+  const active = () => document.activeElement as HTMLElement | null;
+  const gridButtons = () =>
+    Array.from(panel()!.querySelectorAll('[role="listbox"] button.cell-btn')) as HTMLButtonElement[];
+
+  async function settle(): Promise<void> {
+    fixture.detectChanges();
+    appRef.tick();
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+    appRef.tick();
+    await fixture.whenStable();
+  }
+
+  function key(target: Element, k: string): KeyboardEvent {
+    const e = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
+    target.dispatchEvent(e);
+    return e;
+  }
+
+  async function open(): Promise<void> {
+    trigger().focus();
+    key(trigger(), 'Enter');
+    await settle();
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [OuterEscHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(OuterEscHostComponent);
+    host = fixture.componentInstance;
+    appRef = TestBed.inject(ApplicationRef);
+    document.body.appendChild(fixture.nativeElement);
+    await settle();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    (fixture.nativeElement as HTMLElement).remove();
+  });
+
+  for (const mode of ['year', 'month', 'period', 'day'] as const) {
+    it(`${mode} 模式：面板開著，在格子上按 Esc → 面板關閉、焦點回到按鈕，外層收不到`, async () => {
+      host.mode = mode;
+      await settle();
+      await open();
+      expect(panel()).withContext('面板有打開').not.toBeNull();
+      key(active()!, 'Escape');
+      await settle();
+      expect(panel()).toBeNull();
+      expect(active()).toBe(trigger());
+      expect(host.outerEsc).toBe(0);
+    });
+  }
+
+  it('焦點不在面板上（例如點了面板空白處，焦點落到 body）時按 Esc → 一樣只關面板，外層收不到', async () => {
+    await open();
+    (active() as HTMLElement).blur();
+    expect(active()).toBe(document.body);
+    key(document.body, 'Escape');
+    await settle();
+    expect(panel()).toBeNull();
+    expect(active()).toBe(trigger());
+    expect(host.outerEsc).toBe(0);
+  });
+
+  it('面板關著時按 Esc → 照常傳給外層', async () => {
+    trigger().focus();
+    key(trigger(), 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('用 Esc 關掉面板後，再按一次 Esc → 這次傳給外層', async () => {
+    await open();
+    key(active()!, 'Escape');
+    await settle();
+    key(active()!, 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('選了值、面板關閉後按 Esc → 傳給外層', async () => {
+    await open();
+    gridButtons()[0].click();
+    await settle();
+    expect(panel()).toBeNull();
+    key(active()!, 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  // ── 以下 2026-11-05 #49 審查第 1 輪補 ──
+  function keyRepeat(target: Element, k: string): KeyboardEvent {
+    const e = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, repeat: true });
+    target.dispatchEvent(e);
+    return e;
+  }
+
+  function keyup(target: Element, k: string): void {
+    target.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true, cancelable: true }));
+  }
+
+  it('按住 Esc 不放：第一下關面板，之後的連發外層都收不到；放開後再按一次 → 外層收到', async () => {
+    await open();
+    key(active()!, 'Escape');
+    await settle();
+    expect(panel()).toBeNull();
+    for (let i = 0; i < 4; i++) keyRepeat(active()!, 'Escape');
+    expect(host.outerEsc).withContext('連發').toBe(0);
+    keyup(active()!, 'Escape');
+    key(active()!, 'Escape');
+    expect(host.outerEsc).withContext('放開後新的一下').toBe(1);
+  });
+
+  it('按住 Esc 時沒收到放開、直接按了新的一下 Esc → 這一下傳給外層', async () => {
+    await open();
+    key(active()!, 'Escape');
+    await settle();
+    keyRepeat(active()!, 'Escape');
+    key(active()!, 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('按住 Esc 時視窗失去焦點 → 停止擋連發', async () => {
+    await open();
+    key(active()!, 'Escape');
+    await settle();
+    window.dispatchEvent(new Event('blur'));
+    keyRepeat(active()!, 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('按住 Esc 時元件被移除 → 之後的連發照常傳給外層', async () => {
+    await open();
+    key(active()!, 'Escape');
+    await settle();
+    host.show = false;
+    await settle();
+    keyRepeat(document.body, 'Escape');
+    expect(host.outerEsc).toBe(1);
+  });
+
+  it('面板開著時蓋上 app-dialog → 面板關閉、焦點進對話框；按一次 Esc 關的是對話框', async () => {
+    await open();
+    host.dialogOpen = true;
+    await settle();
+    expect(panel()).withContext('對話框打開時面板關閉').toBeNull();
+    expect(document.querySelector('app-dialog')!.contains(active())).withContext('焦點在對話框裡').toBeTrue();
+    key(active() ?? document.body, 'Escape');
+    await settle();
+    expect(host.dialogCancels).toBe(1);
+  });
+
+  it('面板開著時蓋上 app-modal-shell → 面板關閉；視窗接手焦點，關掉後焦點回到日期按鈕', async () => {
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    await open();
+    host.shellOpen = true;
+    await settle();
+    expect(panel()).withContext('視窗打開時面板關閉').toBeNull();
+    await wait(500); // modal-shell 進場 450ms 後才接手焦點
+    await settle();
+    expect(active()?.classList.contains('in-shell')).withContext('焦點在視窗裡').toBeTrue();
+    key(active()!, 'Escape');
+    await settle();
+    expect(host.shellOpen).withContext('Esc 關的是視窗').toBeFalse();
+    await wait(500);
+    await settle();
+    expect(active()).withContext('視窗關掉後焦點回到日期按鈕').toBe(trigger());
+  });
+
+  it('開關面板幾次後，日期元件在 document、window 捕獲階段掛的按鍵監聽都有拿掉', async () => {
+    type Entry = { target: EventTarget; type: string; fn: unknown };
+    const live: Entry[] = [];
+    const isCapture = (opt: unknown) => (typeof opt === 'boolean' ? opt : !!(opt as AddEventListenerOptions | undefined)?.capture);
+    for (const target of [document, window] as EventTarget[]) {
+      const add = target.addEventListener.bind(target);
+      const remove = target.removeEventListener.bind(target);
+      spyOn(target, 'addEventListener').and.callFake((type: string, fn: EventListenerOrEventListenerObject, opt?: boolean | AddEventListenerOptions) => {
+        if ((type === 'keydown' || type === 'keyup') && isCapture(opt)) live.push({ target, type, fn });
+        add(type, fn, opt);
+      });
+      spyOn(target, 'removeEventListener').and.callFake((type: string, fn: EventListenerOrEventListenerObject, opt?: boolean | EventListenerOptions) => {
+        const i = live.findIndex((e) => e.target === target && e.type === type && e.fn === fn);
+        if (i >= 0 && isCapture(opt)) live.splice(i, 1);
+        remove(type, fn, opt);
+      });
+    }
+    const liveTypes = () => live.map((e) => `${e.target === window ? 'window' : 'document'}:${e.type}`);
+    await open();
+    key(active()!, 'Escape');
+    await settle();
+    keyup(active()!, 'Escape');
+    expect(liveTypes()).withContext('用 Esc 關掉、放開 Esc 之後').toEqual([]);
+    await open();
+    gridButtons()[0].click();
+    await settle();
+    expect(liveTypes()).withContext('選了值關閉之後').toEqual([]);
+    await open();
+    host.show = false;
+    await settle();
+    expect(liveTypes()).withContext('面板開著時元件被移除之後').toEqual([]);
+  });
+
+  it('面板開著時元件被移除 → 之後按 Esc 照常傳給外層', async () => {
+    await open();
+    host.show = false;
+    await settle();
+    expect(panel()).toBeNull();
+    key(document.body, 'Escape');
+    expect(host.outerEsc).toBe(1);
   });
 });
