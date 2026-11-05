@@ -1,8 +1,8 @@
-<div class="dp-panel">
+<div class="dp-panel" (keydown)="onPanelKeydown($event)">
 
   @if (viewState() === 'year-grid') {
     <!-- 年度選取模式：直接顯示年份網格 -->
-    <div class="dp-panel__year-grid" role="listbox" (keydown)="onYearGridKeydown($event)">
+    <div class="dp-panel__year-grid" role="listbox">
       @for (y of yearRange; track y) {
         <app-cell-btn
           [text]="y + ' 年'"
@@ -17,6 +17,7 @@
     <!-- 月份選取模式 -->
     <div class="dp-panel__header">
       <app-icon-btn
+        class="dp-panel__year-step"
         propClass="SectionBtn"
         size="16"
         ariaLabel="上一年"
@@ -33,6 +34,7 @@
         <app-icon name="DownArrow" size="12"></app-icon>
       </button>
       <app-icon-btn
+        class="dp-panel__year-step"
         propClass="SectionBtn"
         size="16"
         ariaLabel="下一年"

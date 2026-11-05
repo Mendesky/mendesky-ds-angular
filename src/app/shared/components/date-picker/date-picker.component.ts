@@ -189,7 +189,15 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     this.onTouched();
   }
 
-  /** ArrowUp / ArrowDown：開啟面板並讓 panel 自動聚焦 */
+  /** Enter／空白鍵開關面板；按住不放的連發不算（不然選完關面板後，連發會在按鈕上把面板再打開） */
+  /** Angular 模板把 keydown.enter／keydown.space 的事件型別當成 Event，所以這裡收 Event 再轉型 */
+  onTriggerKey(event: Event): void {
+    event.preventDefault();
+    if ((event as KeyboardEvent).repeat) return;
+    this.onTriggerClick();
+  }
+
+  /** ArrowUp / ArrowDown：開啟面板，面板打開後自己把焦點移進格子 */
   onTriggerArrow(dir: 1 | -1): void {
     if (this.disabled) return;
     if (!this.isOpen()) this.openPanel();
@@ -217,6 +225,13 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     ref.instance.initDay = this.currentDay;
     ref.instance.mode = this.resolvedMode;
     ref.setInput('width', rect.width);
+
+    // 面板最後一個停點按 Tab、第一個按 Shift+Tab：關面板、焦點先回到按鈕。
+    // Tab 不擋預設動作，瀏覽器接著從按鈕往下移，等於跳到按鈕的下一個元素。
+    ref.instance.tabOut.subscribe(() => {
+      this.closePanel(true);
+      this.onTouched();
+    });
 
     ref.instance.dateSelected.subscribe(({ year, month, day }) => {
       // Restore focus to trigger BEFORE any downstream state updates (e.g. a parent's signal chain)
