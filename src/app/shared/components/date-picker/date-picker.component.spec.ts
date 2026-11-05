@@ -556,3 +556,257 @@ describe('DatePickerComponent — 面板的鍵盤操作', () => {
     expect(focusSpy.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ focusVisible: true }));
   });
 });
+
+// ── 期別模式（2026-11-05）──────────────────────────────────────
+// 取代 Year Month Picker 的期別模式：一期兩個月，值是那一期的起始月（'114-3' 代表 3~4 月）。
+// 規格：本體 v0.7.1 date-picker 規格的「值格式」「顯示文字」「行為規格」三段。
+
+@Component({
+  standalone: true,
+  imports: [FieldComponent, DatePickerComponent, FormsModule],
+  template: `
+    <app-field label="開始期別">
+      <app-date-picker
+        mode="period"
+        size="L"
+        [maxYear]="maxYear"
+        [maxMonth]="maxMonth"
+        [maxDate]="maxDate"
+        [disabled]="disabled"
+        [ngModel]="value"
+        (ngModelChange)="onChange($event)"></app-date-picker>
+    </app-field>
+  `,
+})
+class PeriodHostComponent {
+  maxYear = 125;
+  maxMonth: number | null = null;
+  maxDate: { year: number; month: number; day: number } | null = null;
+  disabled = false;
+  value = '';
+  changes: string[] = [];
+  onChange(v: string): void {
+    this.changes.push(v);
+    this.value = v;
+  }
+}
+
+describe('DatePickerComponent — 期別模式', () => {
+  let fixture: ComponentFixture<PeriodHostComponent>;
+  let host: PeriodHostComponent;
+  let appRef: ApplicationRef;
+
+  const root = () => fixture.nativeElement as HTMLElement;
+  const trigger = () => root().querySelector('.dp-trigger') as HTMLElement;
+  const triggerText = () => root().querySelector('.dp-trigger__text')?.textContent?.trim() ?? '';
+  const panel = () => document.querySelector('app-date-panel') as HTMLElement | null;
+  const active = () => document.activeElement as HTMLElement | null;
+  const activeText = () => active()?.textContent?.trim() ?? '';
+  const gridButtons = () =>
+    Array.from(panel()!.querySelectorAll('[role="listbox"] button.cell-btn')) as HTMLButtonElement[];
+  const cellTexts = () => gridButtons().map((b) => b.textContent?.trim());
+  const cell = (text: string) => gridButtons().find((b) => b.textContent?.trim() === text)!;
+  const headerBtn = (label: string) => panel()!.querySelector(`button[aria-label="${label}"]`) as HTMLButtonElement;
+  const picker = () => fixture.debugElement.query((d) => d.componentInstance instanceof DatePickerComponent)
+    .componentInstance as DatePickerComponent;
+
+  async function settle(): Promise<void> {
+    fixture.detectChanges();
+    appRef.tick();
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+    appRef.tick();
+    await fixture.whenStable();
+  }
+
+  function key(target: Element, k: string): KeyboardEvent {
+    const e = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
+    target.dispatchEvent(e);
+    return e;
+  }
+
+  async function open(value = ''): Promise<void> {
+    host.value = value;
+    await settle();
+    trigger().focus();
+    key(trigger(), 'Enter');
+    await settle();
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [PeriodHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(PeriodHostComponent);
+    host = fixture.componentInstance;
+    appRef = TestBed.inject(ApplicationRef);
+    document.body.appendChild(fixture.nativeElement);
+    await settle();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    (fixture.nativeElement as HTMLElement).remove();
+  });
+
+  it('面板有 6 格，從「1~2 月」到「11~12 月」；在 114 年選「3~4 月」→ 送出 114-3，按鈕顯示「114 年 3~4 月」', async () => {
+    await open('114-1');
+    expect(cellTexts()).toEqual(['1~2 月', '3~4 月', '5~6 月', '7~8 月', '9~10 月', '11~12 月']);
+    cell('3~4 月').click();
+    await settle();
+    expect(host.changes).toEqual(['114-3']);
+    expect(panel()).toBeNull();
+    expect(triggerText()).toBe('114 年 3~4 月');
+  });
+
+  it('收到雙數月 114-4：顯示「114 年 3~4 月」、「3~4 月」標成選中、焦點落在它上面；值不改寫，也不送出', async () => {
+    await open('114-4');
+    expect(triggerText()).toBe('114 年 3~4 月');
+    expect(cell('3~4 月').getAttribute('aria-selected')).toBe('true');
+    expect(activeText()).toBe('3~4 月');
+    expect(picker().value()).toBe('114-4');
+    expect(host.changes).toEqual([]);
+  });
+
+  it('沒有值、也沒設提示文字：按鈕顯示「選擇期別」', () => {
+    expect(triggerText()).toBe('選擇期別');
+  });
+
+  it('跟說明檔範例同樣的組合（「開始期別」欄位、size L、沒設提示文字）：空值念「開始期別 選擇期別」；選「3~4 月」後念「開始期別 114 年 3~4 月」', async () => {
+    expect(accessibleName(trigger())).toBe('開始期別 選擇期別');
+    await open('114-1');
+    cell('3~4 月').click();
+    await settle();
+    expect(accessibleName(trigger())).toBe('開始期別 114 年 3~4 月');
+  });
+
+  it('沒有值時打開：焦點落在第一格「1~2 月」', async () => {
+    await open();
+    expect(activeText()).toBe('1~2 月');
+  });
+
+  it('上限 maxDate 114-5-10：114 年「7~8 月」以後不能選，「5~6 月」可以選', async () => {
+    host.maxDate = { year: 114, month: 5, day: 10 };
+    await open('114-1');
+    expect(gridButtons().map((b) => b.disabled)).toEqual([false, false, false, true, true, true]);
+  });
+
+  it('上限 maxYear 114＋maxMonth 5：114 年「7~8 月」以後不能選；113 年每一期都能選', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 5;
+    await open('114-1');
+    expect(gridButtons().map((b) => b.disabled)).toEqual([false, false, false, true, true, true]);
+    headerBtn('上一年').click();
+    await settle();
+    expect(gridButtons().map((b) => b.disabled)).toEqual([false, false, false, false, false, false]);
+  });
+
+  it('maxDate 和 maxYear＋maxMonth 都設時以 maxDate 為準', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 5;
+    host.maxDate = { year: 114, month: 9, day: 1 };
+    await open('114-1');
+    expect(gridButtons().map((b) => b.disabled)).toEqual([false, false, false, false, false, true]);
+  });
+
+  it('方向鍵：3 欄，在「1~2 月」按 ↓ 到「7~8 月」，→ 到「9~10 月」', async () => {
+    await open('114-1');
+    expect(activeText()).toBe('1~2 月');
+    key(active()!, 'ArrowDown');
+    expect(activeText()).toBe('7~8 月');
+    key(active()!, 'ArrowRight');
+    expect(activeText()).toBe('9~10 月');
+  });
+
+  it('快速跳年：點「選擇年份」選 112 年 → 回到期別格，焦點在期別格上，選「5~6 月」送出 112-5', async () => {
+    await open('114-1');
+    headerBtn('選擇年份').click();
+    await settle();
+    cell('112 年').click();
+    await settle();
+    expect(cellTexts()).toEqual(['1~2 月', '3~4 月', '5~6 月', '7~8 月', '9~10 月', '11~12 月']);
+    expect(activeText()).toBe('1~2 月');
+    cell('5~6 月').click();
+    await settle();
+    expect(host.changes).toEqual(['112-5']);
+  });
+
+  // ── 以下 2026-11-05 #48 審查第 1 輪補：上限只用單數月測，換成「比第幾期」的寫法也會全綠 ──
+  const disabledFlags = () => gridButtons().map((b) => b.disabled);
+
+  it('上限 maxYear 114＋maxMonth 3：「3~4 月」可以選，「5~6 月」以後不能選', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 3;
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  it('上限 maxYear 114＋maxMonth 4（雙數月）：「3~4 月」可以選，「5~6 月」以後不能選', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 4;
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  it('上限 maxDate 114-4-30（雙數月）：「3~4 月」可以選，「5~6 月」以後不能選', async () => {
+    host.maxDate = { year: 114, month: 4, day: 30 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  it('maxDate 在下一年 115-2-1：114 年每一期都能選；按「下一年」到 115 年，只有「1~2 月」能選', async () => {
+    host.maxDate = { year: 115, month: 2, day: 1 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, false, false, false, false]);
+    headerBtn('下一年').click();
+    await settle();
+    expect(disabledFlags()).toEqual([false, true, true, true, true, true]);
+  });
+
+  it('maxDate 在上一年 113-12-31、值是 114-1：114 年每一期都不能選', async () => {
+    host.maxDate = { year: 113, month: 12, day: 31 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([true, true, true, true, true, true]);
+  });
+
+  it('maxDate 比 maxYear＋maxMonth 嚴（maxMonth 9、maxDate 114-4-1）：以 maxDate 為準，「5~6 月」以後不能選', async () => {
+    host.maxYear = 114;
+    host.maxMonth = 9;
+    host.maxDate = { year: 114, month: 4, day: 1 };
+    await open('114-1');
+    expect(disabledFlags()).toEqual([false, false, true, true, true, true]);
+  });
+
+  for (const [value, text, label] of [
+    ['114-2', '114 年 1~2 月', '1~2 月'],
+    ['114-6', '114 年 5~6 月', '5~6 月'],
+    ['114-12', '114 年 11~12 月', '11~12 月'],
+  ]) {
+    it(`收到雙數月 ${value}：顯示「${text}」、「${label}」標成選中；值不改寫，也不送出`, async () => {
+      await open(value);
+      expect(triggerText()).toBe(text);
+      expect(cell(label).getAttribute('aria-selected')).toBe('true');
+      expect(picker().value()).toBe(value);
+      expect(host.changes).toEqual([]);
+    });
+  }
+
+  it('停用時：點按鈕、按 Enter、按 ↓ 都不會打開面板', async () => {
+    host.disabled = true;
+    await settle();
+    trigger().click();
+    await settle();
+    expect(panel()).withContext('點按鈕').toBeNull();
+    key(trigger(), 'Enter');
+    await settle();
+    expect(panel()).withContext('按 Enter').toBeNull();
+    key(trigger(), 'ArrowDown');
+    await settle();
+    expect(panel()).withContext('按 ↓').toBeNull();
+  });
+
+  it('期別格排成 3 欄 2 列', async () => {
+    await open('114-1');
+    const rects = gridButtons().map((b) => b.getBoundingClientRect());
+    expect(new Set(rects.map((r) => Math.round(r.left))).size).toBe(3);
+    expect(new Set(rects.map((r) => Math.round(r.top))).size).toBe(2);
+  });
+});

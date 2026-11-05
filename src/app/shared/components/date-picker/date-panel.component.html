@@ -43,16 +43,30 @@
         <app-icon name="RightArrow" size="16"></app-icon>
       </app-icon-btn>
     </div>
-    <div class="dp-panel__month-grid" role="listbox">
-      @for (m of MONTHS; track m) {
-        <app-cell-btn
-          [text]="m + ' 月'"
-          [selected]="isMonthSelected(m)"
-          [disabled]="isMonthDisabled(m)"
-          (cellClick)="selectMonth(m)">
-        </app-cell-btn>
-      }
-    </div>
+    @if (mode === 'period') {
+      <!-- 期別：一期兩個月，格子代表那一期的起始月 -->
+      <div class="dp-panel__period-grid" role="listbox">
+        @for (s of PERIOD_STARTS; track s) {
+          <app-cell-btn
+            [text]="periodLabel(s)"
+            [selected]="isMonthSelected(s)"
+            [disabled]="isMonthDisabled(s)"
+            (cellClick)="selectMonth(s)">
+          </app-cell-btn>
+        }
+      </div>
+    } @else {
+      <div class="dp-panel__month-grid" role="listbox">
+        @for (m of MONTHS; track m) {
+          <app-cell-btn
+            [text]="m + ' 月'"
+            [selected]="isMonthSelected(m)"
+            [disabled]="isMonthDisabled(m)"
+            (cellClick)="selectMonth(m)">
+          </app-cell-btn>
+        }
+      </div>
+    }
 
   } @else if (viewState() === 'day-grid') {
     <!-- 日期選取模式 -->

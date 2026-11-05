@@ -63,8 +63,9 @@
     margin: -4px;
   }
 
-  /* Month grid */
-  &__month-grid {
+  /* Month grid；期別格（一期兩個月）同樣 3 欄 */
+  &__month-grid,
+  &__period-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing\/xxs, 4px);
