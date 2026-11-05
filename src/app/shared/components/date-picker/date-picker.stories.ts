@@ -62,6 +62,11 @@ const meta: Meta<DatePickerComponent> = {
       description: '有值且非停用時顯示清除鈕，點擊清空（emit 空字串）',
       table: { defaultValue: { summary: 'false' } },
     },
+    ariaLabel: {
+      control: 'text',
+      description: '報讀軟體念的欄位名稱；放在有標題的 app-field 裡不用設，沒有欄位標題、或同一個欄位放兩個時才設',
+      table: { defaultValue: { summary: "''" } },
+    },
     disabled: {
       control: 'boolean',
       description: '停用：灰底、不可點擊',
@@ -97,6 +102,7 @@ export const Default: Story = {
     maxMonth: null,
     maxDate: null,
     clearable: false,
+    ariaLabel: '',
     disabled: false,
     errorMessage: '',
     errorPosition: 'bottom',
@@ -115,6 +121,7 @@ export const Default: Story = {
           [maxMonth]="maxMonth"
           [maxDate]="maxDate"
           [clearable]="clearable"
+          [ariaLabel]="ariaLabel"
           [disabled]="disabled"
           [errorMessage]="errorMessage"
           [errorPosition]="errorPosition"
@@ -182,10 +189,11 @@ export const EmptyLabelClearable: Story = {
           size="M"
           mode="month"
           [clearable]="true"
+          ariaLabel="開始月份"
           emptyLabel="審核通過後開始"
           [(ngModel)]="pickerValue">
         </app-date-picker>
-        <div style="${VALUE_STYLE}">選取後欄位內出現清除鈕，清除後回到「審核通過後開始」。目前值：'{{ pickerValue }}'</div>
+        <div style="${VALUE_STYLE}">選取後欄位內出現清除鈕，清除後回到「審核通過後開始」。這裡沒有欄位標題，用 ariaLabel 給名稱，清除鈕念「清除開始月份」。目前值：'{{ pickerValue }}'</div>
       </div>
     `,
     moduleMetadata: { imports: [DatePickerComponent, FormsModule] },

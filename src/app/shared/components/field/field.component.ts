@@ -32,7 +32,7 @@ export class FieldComponent {
     return this.labelValue();
   }
 
-  /** 顯示「必填」badge；直接寫在裡面的 app-input 同時帶 aria-required="true" */
+  /** 顯示「必填」badge；直接寫在裡面的 app-input、app-date-picker 同時帶 aria-required="true" */
   @Input()
   set required(value: boolean) {
     this.requiredValue.set(!!value);

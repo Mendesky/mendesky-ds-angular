@@ -12,7 +12,9 @@
   role="combobox"
   [attr.aria-expanded]="isOpen()"
   aria-haspopup="listbox"
-  [attr.aria-label]="displayText || emptyLabel || effectivePlaceholder"
+  [attr.aria-label]="triggerLabel"
+  [attr.aria-labelledby]="triggerLabelledBy"
+  [attr.aria-required]="ariaRequired"
   [attr.tabindex]="disabled ? -1 : 0"
   (click)="onTriggerClick()"
   (keydown.enter)="onTriggerClick(); $event.preventDefault()"
@@ -21,8 +23,8 @@
   (keydown.arrowDown)="onTriggerArrow(-1); $event.preventDefault()"
   (keydown.tab)="onTriggerTab()"
   (keydown.shift.tab)="onTriggerTab()">
-  <span class="dp-trigger__text">
-    {{ displayText || emptyLabel || effectivePlaceholder }}
+  <span class="dp-trigger__text" [id]="textId">
+    {{ triggerText }}
   </span>
   @if (showClear) {
     <app-icon
@@ -32,7 +34,7 @@
       data-testid="date-picker-clear"
       role="button"
       tabindex="0"
-      aria-label="清除起始日"
+      [attr.aria-label]="clearLabel"
       style="color:var(--text\/body-light,#939393); flex-shrink:0; cursor:pointer"
       (click)="onClear($event)"
       (keydown.enter)="onClear($event); $event.preventDefault()"

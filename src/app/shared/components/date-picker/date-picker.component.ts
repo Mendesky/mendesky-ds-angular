@@ -7,6 +7,7 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
 import { DatePanelComponent } from './date-panel.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
+import { FieldComponent } from '../field/field.component';
 import { PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
 
 @Component({
@@ -23,6 +24,11 @@ import { PortalOverlayRef, PortalPositioningService } from '../../services/porta
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
+  private static counter = 0;
+
+  /** 按鈕文字的 id；放在有標題的 app-field 裡時，報讀名稱＝欄位標題＋這段文字 */
+  readonly textId = `app-date-picker-text-${++DatePickerComponent.counter}`;
+
   @Input() size: 'S' | 'M' | 'L' = 'M';
   @Input() errorMessage = '';
   @Input() errorPosition: 'top' | 'bottom' = 'bottom';
@@ -43,6 +49,11 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
   @Input() maxDate: { year: number; month: number; day: number } | null = null;
   /** 顯示清除按鈕（有值且非 disabled 時）；點擊 emit ''（清空）。opt-in，預設關閉。 */
   @Input() clearable = false;
+  /**
+   * 報讀軟體念的名稱（欄位名稱，例如「開始日期」）。
+   * 放在有標題的 app-field 裡不用設（會念欄位標題）；沒有欄位標題時才設。設了就只用它，不用欄位標題。
+   */
+  @Input() ariaLabel = '';
 
   value = signal('');
   isOpen = signal(false);
@@ -56,6 +67,8 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
   private readonly appRef = inject(ApplicationRef);
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly positioning = inject(PortalPositioningService);
+  /** 直接包住它的 app-field（同一個模板裡）；包在別的元件裡時找不到，跟 app-input 一樣 */
+  private readonly field = inject(FieldComponent, { optional: true, host: true });
 
   get resolvedMode(): 'year' | 'month' | 'day' {
     return this.yearOnly ? 'year' : this.mode;
@@ -65,6 +78,50 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     if (this.placeholder) return this.placeholder;
     const map: Record<string, string> = { year: '選擇年度', month: '選擇月份', day: '選擇日期' };
     return map[this.resolvedMode] ?? '選擇日期';
+  }
+
+  /** 按鈕上顯示的文字：值，沒有值時是空值語意文字，再沒有就是提示文字 */
+  get triggerText(): string {
+    return this.displayText || this.emptyLabel || this.effectivePlaceholder;
+  }
+
+  /** ariaLabel 去掉前後空白；只有空白、或沒開嚴格檢查的 template 傳進 undefined，都當成沒設 */
+  protected get labelText(): string {
+    return (this.ariaLabel ?? '').trim();
+  }
+
+  /** 欄位名稱：ariaLabel 優先，其次是直接包住它的欄位標題；都沒有是空字串 */
+  protected get nameText(): string {
+    return this.labelText || this.field?.labelText() || '';
+  }
+
+  /** 名稱跟按鈕上的文字一樣（例如提示文字就寫欄位名稱）時只念一次，不念成「開始日期 開始日期」 */
+  private sameAsTriggerText(name: string): boolean {
+    return name === this.triggerText.trim();
+  }
+
+  /** 有欄位標題且沒設 ariaLabel 時，名稱指到欄位標題＋按鈕文字（同一時間只輸出一種名稱屬性） */
+  protected get triggerLabelledBy(): string | null {
+    const fieldLabel = this.field?.labelText();
+    if (this.labelText || !fieldLabel) return null;
+    return this.sameAsTriggerText(fieldLabel) ? this.field!.labelId : `${this.field!.labelId} ${this.textId}`;
+  }
+
+  /** 沒有指到欄位標題時的名稱：設了 ariaLabel 念「名稱＋按鈕文字」，否則只念按鈕文字 */
+  protected get triggerLabel(): string | null {
+    if (this.triggerLabelledBy) return null;
+    if (!this.labelText) return this.triggerText;
+    return this.sameAsTriggerText(this.labelText) ? this.labelText : `${this.labelText} ${this.triggerText}`;
+  }
+
+  /** 直接包住它的欄位必填時帶 aria-required（跟 app-input 一樣）；包在別的元件裡的不帶 */
+  protected get ariaRequired(): 'true' | null {
+    return this.field?.isRequired() ? 'true' : null;
+  }
+
+  /** 清除鈕的名稱：「清除＋欄位名稱」；沒有欄位名稱時念「清除日期」 */
+  protected get clearLabel(): string {
+    return `清除${this.nameText || '日期'}`;
   }
 
   get displayText(): string {

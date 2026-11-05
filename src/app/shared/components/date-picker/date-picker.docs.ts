@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const datePickerDoc: ComponentApi = {
   id: 'date-picker',
   selector: 'app-date-picker',
-  summary: 'mode: year|month|day · size: S|M|L · minYear maxYear · [maxDate] [clearable] [emptyLabel] · month/day 模式點標題年份展開年份清單快速跳年 · CVA 控制 value',
+  summary: 'mode: year|month|day · size: S|M|L · minYear maxYear · [maxDate] [clearable] [emptyLabel] · ariaLabel · month/day 模式點標題年份展開年份清單快速跳年 · CVA 控制 value',
   props: [
     {
       name: 'mode',
@@ -51,7 +51,13 @@ export const datePickerDoc: ComponentApi = {
       name: 'clearable',
       type: 'boolean',
       default: 'false',
-      desc: '顯示清除按鈕：有值且非 disabled 時於欄位內顯示 ✕ icon（data-testid="date-picker-clear"），點擊 emit 空字串清空。opt-in，用於空值合法的場景（如非必填起始日）。',
+      desc: '顯示清除按鈕：有值且非 disabled 時於欄位內顯示 ✕ icon（data-testid="date-picker-clear"），點擊 emit 空字串清空。清除鈕念「清除＋欄位名稱」，例如「清除完成日期」；沒有欄位名稱時念「清除日期」。opt-in，用於空值合法的場景（如非必填的開始日期）。',
+    },
+    {
+      name: 'ariaLabel',
+      type: 'string',
+      default: "''",
+      desc: '報讀軟體念的欄位名稱。直接寫在有 label 的 app-field 裡不用設，會自動念欄位標題；沒有欄位標題、或包在別的元件裡時才設（例如篩選列的開始、結束日期）。設了就只用它，不用欄位標題。按鈕念「名稱＋目前文字」，清除鈕念「清除＋名稱」；名稱跟按鈕上的文字一樣時（例如提示文字就寫「開始日期」）只念一次。同一個欄位裡放兩個（例如日期區間的開始與結束）時兩個都要設，不然兩顆清除鈕會念一樣的名稱。要寫 ariaLabel，不要寫 aria-label：aria-label 會留在外框上，按鈕還是念不出欄位名稱。',
     },
     {
       name: 'emptyLabel',
@@ -105,6 +111,22 @@ export const datePickerDoc: ComponentApi = {
 </app-date-picker>`,
     },
     {
+      label: '放在有標題的欄位裡：報讀軟體念「完成日期 114 年 3 月 15 日」，欄位必填時也會念出必填，不用另外設名稱',
+      code: `<app-field label="完成日期" [required]="true">
+  <app-date-picker
+    mode="day"
+    size="L"
+    [ngModel]="completedDate"
+    (ngModelChange)="onCompletedDateChange($event)">
+  </app-date-picker>
+</app-field>`,
+    },
+    {
+      label: '沒有欄位標題時用 ariaLabel 給名稱（例：篩選列的日期區間）',
+      code: `<app-date-picker mode="day" size="S" ariaLabel="開始日期" placeholder="開始日期" [clearable]="true" [ngModel]="from" (ngModelChange)="onFromChange($event)"></app-date-picker>
+<app-date-picker mode="day" size="S" ariaLabel="結束日期" placeholder="結束日期" [clearable]="true" [ngModel]="to" (ngModelChange)="onToChange($event)"></app-date-picker>`,
+    },
+    {
       label: '選年月日',
       code: `<app-date-picker
   mode="day"
@@ -122,6 +144,10 @@ export const datePickerDoc: ComponentApi = {
     {
       type: 'info',
       content: 'Tab／Shift+Tab 關閉 panel 時會把表單控制項標記為 touched，讓 Angular form validation 正確觸發。',
+    },
+    {
+      type: 'info',
+      content: '欄位標題和必填只認同一個模板裡直接包住它的 app-field（跟 app-input 一樣）。把 app-date-picker 包進自己寫的元件、再把那個元件放進 app-field，就念不到外層的標題和必填，這時要在自己的元件上接一個名稱再傳給 ariaLabel。',
     },
   ],
 };
