@@ -64,7 +64,7 @@ const meta: Meta<DatePickerComponent> = {
     },
     ariaLabel: {
       control: 'text',
-      description: '報讀軟體念的欄位名稱；放在有標題的 app-field 裡不用設，沒有欄位標題時才設',
+      description: '報讀軟體念的欄位名稱；放在有標題的 app-field 裡不用設，沒有欄位標題、或同一個欄位放兩個時才設',
       table: { defaultValue: { summary: "''" } },
     },
     disabled: {

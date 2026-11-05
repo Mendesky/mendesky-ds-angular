@@ -14,6 +14,7 @@
   aria-haspopup="listbox"
   [attr.aria-label]="triggerLabel"
   [attr.aria-labelledby]="triggerLabelledBy"
+  [attr.aria-required]="ariaRequired"
   [attr.tabindex]="disabled ? -1 : 0"
   (click)="onTriggerClick()"
   (keydown.enter)="onTriggerClick(); $event.preventDefault()"

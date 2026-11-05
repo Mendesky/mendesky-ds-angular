@@ -95,16 +95,28 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     return this.labelText || this.field?.labelText() || '';
   }
 
+  /** 名稱跟按鈕上的文字一樣（例如提示文字就寫欄位名稱）時只念一次，不念成「開始日期 開始日期」 */
+  private sameAsTriggerText(name: string): boolean {
+    return name === this.triggerText.trim();
+  }
+
   /** 有欄位標題且沒設 ariaLabel 時，名稱指到欄位標題＋按鈕文字（同一時間只輸出一種名稱屬性） */
   protected get triggerLabelledBy(): string | null {
-    if (this.labelText || !this.field?.labelText()) return null;
-    return `${this.field.labelId} ${this.textId}`;
+    const fieldLabel = this.field?.labelText();
+    if (this.labelText || !fieldLabel) return null;
+    return this.sameAsTriggerText(fieldLabel) ? this.field!.labelId : `${this.field!.labelId} ${this.textId}`;
   }
 
   /** 沒有指到欄位標題時的名稱：設了 ariaLabel 念「名稱＋按鈕文字」，否則只念按鈕文字 */
   protected get triggerLabel(): string | null {
     if (this.triggerLabelledBy) return null;
-    return this.labelText ? `${this.labelText} ${this.triggerText}` : this.triggerText;
+    if (!this.labelText) return this.triggerText;
+    return this.sameAsTriggerText(this.labelText) ? this.labelText : `${this.labelText} ${this.triggerText}`;
+  }
+
+  /** 直接包住它的欄位必填時帶 aria-required（跟 app-input 一樣）；包在別的元件裡的不帶 */
+  protected get ariaRequired(): 'true' | null {
+    return this.field?.isRequired() ? 'true' : null;
   }
 
   /** 清除鈕的名稱：「清除＋欄位名稱」；沒有欄位名稱時念「清除日期」 */
