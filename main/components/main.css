@@ -770,6 +770,10 @@ button {
   .card--settled {
     animation: none !important;
   }
+  /* 骨架屏：停在灰底佔位，不閃 */
+  .sk-shimmer {
+    animation: none !important;
+  }
 }
 /* ── 新增 CTA 按鈕（header + empty-state 共用） ──────────── */
 .app-action-cta-btn {
