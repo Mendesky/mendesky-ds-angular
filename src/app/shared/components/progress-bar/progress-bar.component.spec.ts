@@ -147,4 +147,38 @@ describe('ProgressBarComponent', () => {
       expect(barEl().getBoundingClientRect().height).toBe(6);
     });
   });
+
+  // Karma 不能切換使用者的「減少動態」設定，所以直接讀元件樣式表裡 prefers-reduced-motion 區塊的規則。
+  // class 名稱要整段相符：.ds-progress__fill 不能比對到 .ds-progress__fill--indeterminate。
+  describe('減少動態', () => {
+    const reducedMotionRule = (className: string): CSSStyleDeclaration => {
+      const selector = new RegExp(`\\.${className}(?![\\w-])`);
+      for (const sheet of Array.from(document.styleSheets)) {
+        for (const rule of Array.from(sheet.cssRules)) {
+          if (!(rule instanceof CSSMediaRule) || !rule.media.mediaText.includes('prefers-reduced-motion: reduce')) continue;
+          for (const inner of Array.from(rule.cssRules)) {
+            if (inner instanceof CSSStyleRule && selector.test(inner.selectorText)) return inner.style;
+          }
+        }
+      }
+      throw new Error(`「減少動態」區塊裡找不到 .${className} 的規則`);
+    };
+
+    it('不定狀態的色段不動，停在正中間（30%～70%）', () => {
+      set({ value: null });
+      const style = reducedMotionRule('ds-progress__fill--indeterminate');
+      expect(style.animationName).toBe('none');
+      // 色段寬 40%，往右移自身寬度的 translateX%；中心點要落在整條的 50%
+      const shift = /^translateX\(([\d.]+)%\)$/.exec(style.transform);
+      expect(shift).withContext(`transform 是「${style.transform}」`).not.toBeNull();
+      const left = widthRatio() * Number(shift![1]) / 100;
+      expect(left).toBeCloseTo(0.3, 2);
+      expect(left + widthRatio() / 2).toBeCloseTo(0.5, 2);
+    });
+
+    it('有進度時填色長度直接跳到新值，不跑 0.2 秒的過場', () => {
+      set({ value: 10 });
+      expect(reducedMotionRule('ds-progress__fill').transitionProperty).toBe('none');
+    });
+  });
 });
