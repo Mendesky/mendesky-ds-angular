@@ -13,7 +13,7 @@ const meta: Meta<ProgressBarComponent> = {
   argTypes: {
     value: {
       control: { type: 'number' },
-      description: '目前完成量，與 max 同單位；會被夾在 0～max 之間',
+      description: '目前完成量，與 max 同單位；會被夾在 0～max 之間。null ＝ 不定狀態',
       table: { defaultValue: { summary: '0' } },
     },
     max: {
@@ -25,6 +25,12 @@ const meta: Meta<ProgressBarComponent> = {
       control: 'text',
       description: '讀屏文字。進度條本身沒有可見文字，建議一定要給',
       table: { defaultValue: { summary: "''" } },
+    },
+    size: {
+      control: 'select',
+      options: ['M', 'S'],
+      description: '粗細：M＝8px；S＝6px',
+      table: { defaultValue: { summary: 'M' } },
     },
   },
   args: {
@@ -80,4 +86,17 @@ export const ZeroMax: Story = {
 export const Overflow: Story = {
   name: '超過總量（55 / 40 → 夾在 100%）',
   args: { value: 55, max: 40, ariaLabel: '批次授權進度' },
+};
+
+// ── 不定狀態：還不知道總量、或對方不回報進度 ─────────────────────
+// 系統設定「減少動態」時，色段停在正中間不動。
+export const Indeterminate: Story = {
+  name: '不定狀態（value = null）',
+  args: { value: null, ariaLabel: '上傳進度' },
+};
+
+// ── 小尺寸（6px）────────────────────────────────────────────────
+export const Small: Story = {
+  name: '小尺寸（size = S）',
+  args: { value: 12, max: 40, size: 'S', ariaLabel: '批次授權進度' },
 };
