@@ -565,9 +565,10 @@ describe('DatePickerComponent — 面板的鍵盤操作', () => {
   standalone: true,
   imports: [FieldComponent, DatePickerComponent, FormsModule],
   template: `
-    <app-field label="期別">
+    <app-field label="開始期別">
       <app-date-picker
         mode="period"
+        size="L"
         [maxYear]="maxYear"
         [maxMonth]="maxMonth"
         [maxDate]="maxDate"
@@ -665,6 +666,14 @@ describe('DatePickerComponent — 期別模式', () => {
 
   it('沒有值、也沒設提示文字：按鈕顯示「選擇期別」', () => {
     expect(triggerText()).toBe('選擇期別');
+  });
+
+  it('跟說明檔範例同樣的組合（「開始期別」欄位、size L、沒設提示文字）：空值念「開始期別 選擇期別」；選「3~4 月」後念「開始期別 114 年 3~4 月」', async () => {
+    expect(accessibleName(trigger())).toBe('開始期別 選擇期別');
+    await open('114-1');
+    cell('3~4 月').click();
+    await settle();
+    expect(accessibleName(trigger())).toBe('開始期別 114 年 3~4 月');
   });
 
   it('沒有值時打開：焦點落在第一格「1~2 月」', async () => {
