@@ -4,7 +4,7 @@ import { TooltipDirective } from '../../directives/tooltip/tooltip.directive';
 import { TooltipPortalDirection } from '../../directives/tooltip/tooltip-portal.component';
 
 /** 圖示尺寸 — 對應 Figma IconBtn size 參數 */
-export type IconBtnSize = '16-' | '16' | '24' | '32' | '36' | '48';
+export type IconBtnSize = '12' | '16-' | '16' | '24' | '32' | '36' | '48';
 
 /**
  * 按鈕外觀類型
@@ -18,11 +18,13 @@ export type IconBtnSize = '16-' | '16' | '24' | '32' | '36' | '48';
  * - Block              : 矩形（非圓形），白底，padding 非對稱（6px h / 1px v）
  * - Block-Transparent  : 矩形（非圓形），透明底，同 Block 尺寸
  * - Icon+Text          : 圓形灰底 + 下方文字標籤，垂直排列（需搭配 label input）
+ * - PrimaryFilled      : 實心主色、白色圖示、圓角方形；頁面主要的新增入口（例：頁首新增鈕），搭配 size="12"。
+ *                        外觀同全域 .app-action-cta-btn：滑過 85% 不透明、停用 40% 不透明
  */
 export type IconBtnClass =
   | 'Normal' | 'Warning' | 'CardBtn' | 'CardBtnPdSmall'
   | 'Modal' | 'SectionBtn' | 'Drag' | 'Block' | 'Block-Transparent'
-  | 'Icon+Text';
+  | 'Icon+Text' | 'PrimaryFilled';
 
 /** aria-haspopup 的值：這顆按鈕會打開哪一種浮層。目前只開放 'menu'（打開放了 app-menu-item 的 app-action-menu） */
 export type IconBtnAriaHaspopup = 'menu';
@@ -83,6 +85,7 @@ export class IconBtnComponent {
   @Output() btnClick = new EventEmitter<void>();
 
   private readonly SIZE_CSS: Record<IconBtnSize, string> = {
+    '12':  'icon-btn--2xs',
     '16-': 'icon-btn--xs',
     '16':  'icon-btn--sm',
     '24':  'icon-btn--md',
@@ -102,6 +105,7 @@ export class IconBtnComponent {
     'Block':             'icon-btn--block',
     'Block-Transparent': 'icon-btn--block-transparent',
     'Icon+Text':         'icon-btn--icon-text',
+    'PrimaryFilled':     'icon-btn--primary-filled',
   };
 
   get hostClasses(): Record<string, boolean> {

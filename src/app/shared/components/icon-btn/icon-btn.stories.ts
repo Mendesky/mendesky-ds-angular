@@ -11,14 +11,14 @@ const meta: Meta<IconBtnComponent> = {
       control: 'select',
       options: [
         'Normal', 'Warning', 'CardBtn', 'CardBtnPdSmall',
-        'Modal', 'SectionBtn', 'Drag', 'Block', 'Block-Transparent',
+        'Modal', 'SectionBtn', 'Drag', 'Block', 'Block-Transparent', 'PrimaryFilled',
       ],
       description: '按鈕外觀類型',
       table: { defaultValue: { summary: 'Normal' } },
     },
     size: {
       control: 'select',
-      options: ['16-', '16', '24', '32', '36', '48'],
+      options: ['12', '16-', '16', '24', '32', '36', '48'],
       description: 'Icon 尺寸',
       table: { defaultValue: { summary: '24' } },
     },
@@ -203,6 +203,31 @@ export const TooltipPositions: Story = {
         <app-icon-btn propClass="Normal" size="24" tooltip="在右方（Left）" tooltipPos="Left">
           <app-icon name="Search" size="24"></app-icon>
         </app-icon-btn>
+      </div>
+    `,
+    moduleMetadata: { imports: [IconBtnComponent, IconComponent] },
+  }),
+};
+
+// ── 實心主色（頁面主要的新增入口）────────────────────
+// 外觀同全域 .app-action-cta-btn：24×24、主色底、白色圖示、圓角方形；只有圖示，一律設 ariaLabel。
+export const PrimaryFilled: Story = {
+  name: '實心主色（PrimaryFilled）',
+  render: () => ({
+    template: `
+      <div style="display:flex;gap:24px;align-items:center;padding:16px;">
+        <div style="text-align:center;">
+          <app-icon-btn propClass="PrimaryFilled" size="12" ariaLabel="新增">
+            <app-icon name="Plus" size="12"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">一般</div>
+        </div>
+        <div style="text-align:center;">
+          <app-icon-btn propClass="PrimaryFilled" size="12" ariaLabel="新增" [disabled]="true">
+            <app-icon name="Plus" size="12"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">停用</div>
+        </div>
       </div>
     `,
     moduleMetadata: { imports: [IconBtnComponent, IconComponent] },
