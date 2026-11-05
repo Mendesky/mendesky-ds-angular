@@ -217,7 +217,7 @@ describe('DatePickerComponent — 沒有欄位標題時的報讀名稱', () => {
 
 // ── 面板的鍵盤操作（2026-11-05）──────────────────────────────────
 // 原本按 Enter 打得開面板，但焦點留在外面的按鈕上，方向鍵沒反應，再按 Tab 面板就關了：只用鍵盤選不了月份或日期。
-// 現在：打開時焦點落在選中的格子（沒有就第一個可選的格子），方向鍵在格子間移動、不停在不能選的格子或空白格上、碰到邊停住；
+// 現在：打開時焦點落在選中的格子（選年月日的月份格落在正在看的月份，沒有就第一個可選的格子），方向鍵在格子間移動、不停在不能選的格子或空白格上、碰到邊停住；
 // Enter／空白鍵選取（按鈕原生行為）；Esc 關閉並回到按鈕；Tab 依序經過面板裡的按鈕，最後一個再按 Tab 關面板、
 // 讓瀏覽器把焦點移到按鈕的下一個元素；第一個按 Shift+Tab 關面板、回到按鈕。
 // 合成的鍵盤事件不會觸發瀏覽器的預設動作（Enter 按下按鈕、Tab 移焦點），所以這裡用 click() 代替 Enter，
@@ -253,6 +253,7 @@ describe('DatePickerComponent — 面板的鍵盤操作', () => {
   const gridButtons = () =>
     Array.from(panel()!.querySelectorAll('[role="listbox"] button.cell-btn')) as HTMLButtonElement[];
   const cell = (text: string) => gridButtons().find((b) => b.textContent?.trim() === text)!;
+  const headerBtn = (label: string) => panel()!.querySelector(`button[aria-label="${label}"]`) as HTMLButtonElement;
 
   async function settle(): Promise<void> {
     fixture.detectChanges();
@@ -363,6 +364,8 @@ describe('DatePickerComponent — 面板的鍵盤操作', () => {
   it('最後一個停點按 Tab → 面板關閉、焦點先回到按鈕，不擋預設動作（瀏覽器接著移到下一個欄位）', async () => {
     await open('114-3');
     const e = key(active()!, 'Tab');
+    // 瀏覽器在 keydown 處理完就執行 Tab 的預設動作，焦點必須在這之前就回到按鈕
+    expect(active()).toBe(trigger());
     await settle();
     expect(e.defaultPrevented).toBeFalse();
     expect(panel()).toBeNull();
@@ -389,6 +392,7 @@ describe('DatePickerComponent — 面板的鍵盤操作', () => {
     const first = panel()!.querySelector('button[aria-label="上一年"]') as HTMLButtonElement;
     first.focus();
     const e = key(first, 'Tab', { shiftKey: true });
+    expect(active()).toBe(trigger());
     await settle();
     expect(e.defaultPrevented).toBeTrue();
     expect(panel()).toBeNull();
@@ -460,5 +464,95 @@ describe('DatePickerComponent — 面板的鍵盤操作', () => {
     key(trigger(), 'Enter', { repeat: true });
     await settle();
     expect(panel()).toBeNull();
+  });
+  it('選年月日有值時打開 → 焦點在值的月份（月份格不標示選中）；從日期格按「返回月份」→ 焦點回到剛才的月份', async () => {
+    host.mode = 'day';
+    await open('114-3-15');
+    expect(activeText()).toBe('3 月');
+    expect(cell('3 月').getAttribute('aria-selected')).not.toBe('true');
+    cell('5 月').click();
+    await settle();
+    headerBtn('返回月份').click();
+    await settle();
+    expect(activeText()).toBe('5 月');
+  });
+
+  it('選年份沒有值時打開 → 焦點在今年（今年本來就標示為選中）', async () => {
+    host.mode = 'year';
+    await open();
+    expect(activeText()).toBe(`${new Date().getFullYear() - 1911} 年`);
+  });
+
+  it('用鍵盤按「下一年」到上限、按鈕變停用 → 焦點移到「選擇年份」，Tab 還能進格子；「上一年」到下限也一樣', async () => {
+    host.maxDate = { year: 114, month: 6, day: 30 };
+    await open('113-5');
+    const next = headerBtn('下一年');
+    next.focus();
+    next.click();
+    await settle();
+    expect(next.disabled).toBeTrue();
+    expect(active()!.getAttribute('aria-label')).toBe('選擇年份');
+    expect(key(active()!, 'Tab').defaultPrevented).toBeTrue();
+    expect(activeText()).toBe('5 月');
+
+    key(active()!, 'Escape');
+    await settle();
+    host.maxDate = null;
+    await open('111-5');
+    const prev = headerBtn('上一年');
+    prev.focus();
+    prev.click();
+    await settle();
+    expect(prev.disabled).toBeTrue();
+    expect(active()!.getAttribute('aria-label')).toBe('選擇年份');
+  });
+
+  it('換年後原本的停點變成不能選 → 停點移到能選的格子，從「選擇年份」按 Tab 進得去格子', async () => {
+    host.maxDate = { year: 114, month: 6, day: 30 };
+    await open('113-12');
+    expect(activeText()).toBe('12 月');
+    const next = headerBtn('下一年');
+    next.focus();
+    next.click();
+    await settle();
+    expect(cell('12 月').disabled).toBeTrue();
+    const stops = gridButtons().filter((b) => !b.disabled && b.getAttribute('tabindex') === '0');
+    expect(stops.map((b) => b.textContent?.trim())).toEqual(['1 月']);
+    expect(key(active()!, 'Tab').defaultPrevented).toBeTrue();
+    expect(activeText()).toBe('1 月');
+    expect(panel()).not.toBeNull();
+  });
+
+  it('格子上的第一下 Enter／空白鍵不擋（按鈕照常被按下），也不往外傳給頁面的快捷鍵', async () => {
+    await open('114-3');
+    const pageKeys: string[] = [];
+    const listener = (e: KeyboardEvent) => pageKeys.push(e.key);
+    document.addEventListener('keydown', listener);
+    try {
+      expect(key(active()!, 'Enter').defaultPrevented).toBeFalse();
+      expect(key(active()!, ' ').defaultPrevented).toBeFalse();
+      expect(pageKeys).toEqual([]);
+    } finally {
+      document.removeEventListener('keydown', listener);
+    }
+  });
+
+  it('在「上一年／下一年」上按住 Enter → 連發不擋，可以連續換年；格子上的空白鍵連發一樣擋掉', async () => {
+    await open('114-3');
+    expect(key(active()!, ' ', { repeat: true }).defaultPrevented).toBeTrue();
+    const next = headerBtn('下一年');
+    next.focus();
+    expect(key(next, 'Enter', { repeat: true }).defaultPrevented).toBeFalse();
+  });
+
+  it('用鍵盤移動焦點時明確要求顯示焦點框（Safari 用滑鼠點開後，程式移動的焦點預設不畫框）', async () => {
+    await open('114-3');
+    const focusSpy = spyOn(HTMLElement.prototype, 'focus').and.callThrough();
+    key(active()!, 'ArrowRight');
+    expect(focusSpy.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ focusVisible: true }));
+    headerBtn('上一年').focus();
+    focusSpy.calls.reset();
+    key(active()!, 'Tab');
+    expect(focusSpy.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ focusVisible: true }));
   });
 });

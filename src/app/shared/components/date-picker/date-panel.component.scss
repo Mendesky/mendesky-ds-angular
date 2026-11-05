@@ -58,6 +58,9 @@
     /* 年份範圍可能很長（如出生日期 40..今年）→ 限高可捲動，開啟時自動捲到當前年 */
     max-height: 232px;
     overflow-y: auto;
+    /* 焦點框畫在格子外側 4px，捲動容器會把邊上的框切掉：內縮 4px 留位置，外推 4px 抵銷，版面不變 */
+    padding: 4px;
+    margin: -4px;
   }
 
   /* Month grid */

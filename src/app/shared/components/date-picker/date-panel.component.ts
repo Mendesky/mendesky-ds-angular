@@ -48,6 +48,17 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private readonly el = inject(ElementRef<HTMLElement>);
 
+  /**
+   * 最近一次操作是不是鍵盤。鍵盤移焦點時要求瀏覽器畫焦點框：
+   * Safari 在滑鼠點開面板後，程式移動的焦點預設不畫框，連之後按方向鍵、Tab 也不畫。
+   */
+  private keyboardNav = false;
+
+  @HostListener('pointerdown')
+  onPointerDown(): void {
+    this.keyboardNav = false;
+  }
+
   get yearRange(): number[] {
     const years: number[] = [];
     for (let y = this.minYear; y <= this.maxYear; y++) years.push(y);
@@ -100,17 +111,21 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
   /**
    * 面板的鍵盤操作：
    * - 方向鍵在格子間移動（年份 2 欄、月份 3 欄、日期 7 欄），跳過不能選的格子與空白格，碰到邊停住
-   * - 按住 Enter 的連發不再按一次格子（選了月份換成日期格後，連發會直接選到日期）
+   * - Enter／空白鍵：按下按鈕是瀏覽器原生行為，這裡不擋第一下，只做兩件事：
+   *   不往外傳（頁面的快捷鍵會把這一下搶走，例如看板的 Enter 開卡片選單）；
+   *   按住不放的連發擋掉（選了月份換成日期格後，連發會直接選到日期），但「上一年／下一年」放行，可以按住連續換年
    * - 最後一個停點按 Tab、第一個停點按 Shift+Tab：通知 date-picker 關面板
-   * Enter／空白鍵選取、Esc 關閉不在這裡：前者是按鈕原生行為，後者由浮層定位服務處理。
+   * Esc 關閉不在這裡，由浮層定位服務處理。
    */
   onPanelKeydown(event: KeyboardEvent): void {
+    this.keyboardNav = true;
     if (event.key === 'Tab') {
       this.onTab(event);
       return;
     }
-    if ((event.key === 'Enter' || event.key === ' ') && event.repeat) {
-      event.preventDefault();
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.stopPropagation();
+      if (event.repeat && !(event.target as HTMLElement).closest('.dp-panel__year-step')) event.preventDefault();
       return;
     }
     const grid = this.currentGrid();
@@ -144,12 +159,12 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
     if (event.shiftKey) {
       event.preventDefault();
       if (at === 0) this.tabOut.emit('backward');
-      else stops[at - 1].focus();
+      else this.moveFocus(stops[at - 1]);
     } else if (at === stops.length - 1) {
       this.tabOut.emit('forward');
     } else {
       event.preventDefault();
-      stops[at + 1].focus();
+      this.moveFocus(stops[at + 1]);
     }
   }
 
@@ -178,19 +193,37 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
   private focusCell(grid: HTMLElement, cell: HTMLButtonElement): void {
     for (const b of this.gridCells(grid)) b?.setAttribute('tabindex', '-1');
     cell.setAttribute('tabindex', '0');
-    cell.focus();
+    this.moveFocus(cell);
   }
 
-  /** 焦點移到目前格子區：選中的格子，沒有就第一個可選的格子 */
+  /** 移焦點；用鍵盤操作時明確要求畫焦點框（focusVisible 還不在 TypeScript 的 FocusOptions 型別裡，不支援的瀏覽器會忽略） */
+  private moveFocus(el: HTMLElement): void {
+    el.focus(this.keyboardNav ? ({ focusVisible: true } as FocusOptions) : undefined);
+  }
+
+  /** 焦點移到目前格子區的優先落點 */
   private focusCurrentGrid(): void {
     const grid = this.currentGrid();
     if (!grid) return;
-    const target = this.preferredCell(this.gridCells(grid).filter((c) => this.isFocusable(c)) as HTMLButtonElement[]);
+    const target = this.preferredCell(grid);
     if (target) this.focusCell(grid, target);
   }
 
-  private preferredCell(cells: HTMLButtonElement[]): HTMLButtonElement | undefined {
-    return cells.find((c) => c.getAttribute('aria-selected') === 'true') ?? cells[0];
+  /**
+   * 焦點的優先落點：選中的格子。選年月日的月份格不標示選中，改落在正在看的月份
+   * （打開時是值的月份，從日期格返回時是剛才那個月）。都沒有、或那一格不能選，就落在第一個能選的格子。
+   */
+  private preferredCell(grid: HTMLElement): HTMLButtonElement | undefined {
+    const cells = this.gridCells(grid);
+    const focusable = cells.filter((c): c is HTMLButtonElement => this.isFocusable(c));
+    const selected = focusable.find((c) => c.getAttribute('aria-selected') === 'true');
+    if (selected) return selected;
+    const month = this.selectedMonth();
+    if (this.mode === 'day' && this.viewState() === 'month-grid' && month) {
+      const viewing = cells[month - 1];
+      if (this.isFocusable(viewing)) return viewing;
+    }
+    return focusable[0];
   }
 
   /**
@@ -204,16 +237,28 @@ export class DatePanelComponent implements OnInit, AfterViewInit, AfterViewCheck
     if (cells.length === 0) return;
     const stops = cells.filter((c) => c.getAttribute('tabindex') === '0');
     if (stops.length === 1) return;
-    const keep = cells.find((c) => c === document.activeElement) ?? stops[0] ?? this.preferredCell(cells)!;
+    const keep = cells.find((c) => c === document.activeElement) ?? stops[0] ?? this.preferredCell(grid)!;
     for (const b of this.gridCells(grid)) b?.setAttribute('tabindex', b === keep ? '0' : '-1');
   }
 
   prevYear(): void {
     if (this.displayYear() > this.minYear) this.displayYear.update(y => y - 1);
+    if (!this.canGoPrevYear()) this.moveFocusOffYearStep();
   }
 
   nextYear(): void {
     if (this.displayYear() < this.maxYear) this.displayYear.update(y => y + 1);
+    if (!this.canGoNextYear()) this.moveFocusOffYearStep();
+  }
+
+  /**
+   * 「上一年／下一年」到上下限會變停用。焦點如果在它身上，停用後會掉出面板，鍵盤操作就全部失效，
+   * 所以先把焦點移到「選擇年份」。焦點不在它身上（例如 Safari 用滑鼠點，按鈕不會拿到焦點）就不動。
+   */
+  private moveFocusOffYearStep(): void {
+    if (!(document.activeElement as HTMLElement | null)?.closest('.dp-panel__year-step')) return;
+    const toggle = (this.el.nativeElement as HTMLElement).querySelector('.dp-panel__year-toggle') as HTMLElement | null;
+    if (toggle) this.moveFocus(toggle);
   }
 
   selectYear(year: number): void {
