@@ -117,7 +117,7 @@ export const iconBtnDoc: ComponentApi = {
       code: `<app-icon-btn
   size="12"
   propClass="PrimaryFilled"
-  ariaLabel="新增報價案件"
+  ariaLabel="新增項目"
   (btnClick)="onAdd()">
   <app-icon name="Plus" size="12"></app-icon>
 </app-icon-btn>`,

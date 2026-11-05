@@ -61,7 +61,7 @@ describe('IconBtnComponent — ariaHaspopup／ariaExpanded（打開選單的圖�
   standalone: true,
   imports: [IconBtnComponent],
   template: `
-    <app-icon-btn size="12" propClass="PrimaryFilled" ariaLabel="新增報價案件" [disabled]="disabled">
+    <app-icon-btn size="12" propClass="PrimaryFilled" ariaLabel="新增項目" [disabled]="disabled">
       <span class="glyph"></span>
     </app-icon-btn>
   `,
@@ -104,6 +104,6 @@ describe('IconBtnComponent — PrimaryFilled 與 size="12"', () => {
   });
 
   it('ariaLabel 落在內層按鈕', () => {
-    expect(btn().getAttribute('aria-label')).toBe('新增報價案件');
+    expect(btn().getAttribute('aria-label')).toBe('新增項目');
   });
 });
