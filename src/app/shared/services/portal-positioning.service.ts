@@ -22,9 +22,9 @@ export interface AttachOptions {
   /** 關閉時通知 caller 原因 */
   onClose?: (reason: CloseReason) => void;
   /**
-   * 預設 'nearest'；
-   * - 'nearest'：往上找最近 overflow scrollable parent，捲出容器外時隱藏 panel（tooltip / error-tooltip）
-   * - 'document'：document capture phase 全局監聽 scroll，任何 ancestor 捲動皆 reposition（action-menu / autocomplete / select）
+   * 預設 'nearest'；兩種策略都在 document capture phase 監聽 scroll，任何 ancestor（含整頁）捲動皆 reposition。
+   * - 'nearest'：錨點捲出任何一層 overflow scrollable 祖先、或捲出視窗時隱藏 panel（tooltip / error-tooltip）
+   * - 'document'：只 reposition、不隱藏（action-menu / autocomplete / select）
    */
   scrollContainerStrategy?: 'nearest' | 'document';
   /** GAP 間距，預設 4px */
@@ -76,7 +76,8 @@ class InternalOverlayRef implements PortalOverlayRef {
   private rafId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private intersectionObserver: IntersectionObserver | null = null;
-  private scrollParent: HTMLElement | null = null;
+  /** nearest 策略：錨點往上所有 overflow scrollable 祖先（判斷要不要隱藏用） */
+  private scrollParents: HTMLElement[] = [];
   private onScroll = () => this.scheduleReposition();
   private onResize = () => this.scheduleReposition();
   private detached = false;
@@ -157,10 +158,14 @@ class InternalOverlayRef implements PortalOverlayRef {
       }
       anchorRect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
 
-      // nearest 策略：捲出 scrollParent 邊界時隱藏（tooltip / error-tooltip）
-      if (this.options.scrollContainerStrategy === 'nearest' && this.scrollParent) {
-        const containerRect = this.scrollParent.getBoundingClientRect();
-        const visible = r.bottom > containerRect.top && r.top < containerRect.bottom;
+      // nearest 策略：錨點捲出任何一層可捲動祖先、或捲出視窗（visual 座標 [0, vh]）時隱藏（tooltip / error-tooltip）。
+      // 只看最近一層不夠：最近的外框可能自己不會捲（例如只設了 overflow:auto 的區塊），真正在捲的是外層或整頁，
+      // 錨點早已不在畫面上，面板卻被夾在視窗邊緣顯示（2026-11-06 Storybook 說明頁實測）。
+      if (this.options.scrollContainerStrategy === 'nearest' && this.options.trackScroll) {
+        const visible = r.bottom > 0 && r.top < vh && this.scrollParents.every((p) => {
+          const c = p.getBoundingClientRect();
+          return r.bottom > c.top && r.top < c.bottom;
+        });
         this.panelEl.style.display = visible ? '' : 'none';
         if (!visible) return;
       }
@@ -334,37 +339,30 @@ class InternalOverlayRef implements PortalOverlayRef {
   private attachScrollListeners(): void {
     if (!this.options.trackScroll) return;
 
-    if (this.options.scrollContainerStrategy === 'document') {
-      // 全局 capture phase：任何 ancestor 捲動都觸發 reposition
-      document.addEventListener('scroll', this.onScroll, { capture: true, passive: true });
-    } else {
-      // nearest：找最近 scroll parent
-      if (this.anchor.kind === 'element') {
-        this.scrollParent = this.findScrollParent(this.anchor.el);
-        this.scrollParent?.addEventListener('scroll', this.onScroll, { passive: true });
-      }
+    // 全局 capture phase：任何 ancestor（含整頁）捲動都觸發 reposition。
+    // nearest 以前只聽最近一層 scroll parent：外層或整頁捲動時收不到，面板停在原地。
+    document.addEventListener('scroll', this.onScroll, { capture: true, passive: true });
+    if (this.options.scrollContainerStrategy === 'nearest' && this.anchor.kind === 'element') {
+      this.scrollParents = this.findScrollParents(this.anchor.el);
     }
     window.addEventListener('resize', this.onResize, { passive: true });
   }
 
   private detachScrollListeners(): void {
-    if (this.options.scrollContainerStrategy === 'document') {
-      document.removeEventListener('scroll', this.onScroll, { capture: true });
-    } else if (this.scrollParent) {
-      this.scrollParent.removeEventListener('scroll', this.onScroll);
-      this.scrollParent = null;
-    }
+    document.removeEventListener('scroll', this.onScroll, { capture: true });
+    this.scrollParents = [];
     window.removeEventListener('resize', this.onResize);
   }
 
-  private findScrollParent(el: HTMLElement): HTMLElement | null {
+  private findScrollParents(el: HTMLElement): HTMLElement[] {
+    const found: HTMLElement[] = [];
     let parent = el.parentElement;
     while (parent && parent !== document.body) {
       const overflow = getComputedStyle(parent).overflowY;
-      if (overflow === 'auto' || overflow === 'scroll') return parent;
+      if (overflow === 'auto' || overflow === 'scroll') found.push(parent);
       parent = parent.parentElement;
     }
-    return null;
+    return found;
   }
 
   private scheduleReposition(): void {
