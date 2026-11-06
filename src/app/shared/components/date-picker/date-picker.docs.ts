@@ -154,7 +154,7 @@ export const datePickerDoc: ComponentApi = {
     },
     {
       type: 'info',
-      content: '鍵盤怎麼操作、焦點落在哪、報讀念什麼，都以本體規格的無障礙段為準，這裡不重抄。下面三條只補 Angular 才有的部分。',
+      content: '鍵盤怎麼操作、焦點落在哪、報讀念什麼，都以本體規格的無障礙段為準。接下來三條只補 Angular 才有的部分。',
     },
     {
       type: 'info',
@@ -162,7 +162,7 @@ export const datePickerDoc: ComponentApi = {
     },
     {
       type: 'info',
-      content: '本體說的「面板開著時又打開對話框，面板先關閉」，在 Angular 看的是 ModalStackService：只有打開時會登記進去的視窗算數，也就是 app-dialog、app-modal-shell、app-doc-preview。app-drawer-shell，以及沒有用這三個元件、自己做的視窗，打開時不會登記，面板不會跟著關。',
+      content: '本體說的「面板開著時又打開對話框，面板先關閉」，在 Angular 指打開時呼叫 ModalStackService.register 登記的視窗，自己做的視窗呼叫它也算。DS 內建會登記的是 app-dialog、app-modal-shell、app-doc-preview；app-drawer-shell 不登記，打開時面板不會跟著關。',
     },
     {
       type: 'info',
