@@ -22,9 +22,10 @@ export interface AttachOptions {
   /** 關閉時通知 caller 原因 */
   onClose?: (reason: CloseReason) => void;
   /**
-   * 預設 'nearest'；兩種策略都在 document capture phase 監聽 scroll，任何 ancestor（含整頁）捲動皆 reposition。
-   * - 'nearest'：錨點捲出任何一層 overflow scrollable 祖先、或捲出視窗時隱藏 panel（tooltip / error-tooltip）
-   * - 'document'：只 reposition、不隱藏（action-menu / autocomplete / select）
+   * 預設 'nearest'；兩種策略都在 document capture phase 監聽 scroll（NgZone 外）。
+   * - 'nearest'：只有錨點的祖先或整頁捲動才 reposition；錨點上下捲出任何一層 overflow scrollable 祖先
+   *   （往上找到 position:fixed 的祖先就停）、或上下捲出視窗時隱藏 panel（tooltip / error-tooltip）
+   * - 'document'：任何捲動都 reposition、不隱藏（action-menu / autocomplete / select）
    */
   scrollContainerStrategy?: 'nearest' | 'document';
   /** GAP 間距，預設 4px */
@@ -78,7 +79,17 @@ class InternalOverlayRef implements PortalOverlayRef {
   private intersectionObserver: IntersectionObserver | null = null;
   /** nearest 策略：錨點往上所有 overflow scrollable 祖先（判斷要不要隱藏用） */
   private scrollParents: HTMLElement[] = [];
-  private onScroll = () => this.scheduleReposition();
+  private onScroll = (e: Event) => {
+    // nearest：只有錨點的祖先（或整頁）捲動會移動錨點。捲別的元素（例如 body 底下的選單清單）不用重算，
+    // 不然表單上每個開著的錯誤提示都會被叫醒。
+    if (this.options.scrollContainerStrategy === 'nearest' && this.anchor.kind === 'element') {
+      const target = e.target;
+      const movesAnchor = target === document || target === document.documentElement || target === document.body
+        || (target instanceof Node && target.contains(this.anchor.el));
+      if (!movesAnchor) return;
+    }
+    this.scheduleReposition();
+  };
   private onResize = () => this.scheduleReposition();
   private detached = false;
   private lastEffectivePlacement: Placement | null = null;
@@ -158,7 +169,7 @@ class InternalOverlayRef implements PortalOverlayRef {
       }
       anchorRect = { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
 
-      // nearest 策略：錨點捲出任何一層可捲動祖先、或捲出視窗（visual 座標 [0, vh]）時隱藏（tooltip / error-tooltip）。
+      // nearest 策略：錨點上下捲出任何一層可捲動祖先、或上下捲出視窗（visual 座標 [0, vh]）時隱藏（tooltip / error-tooltip）。
       // 只看最近一層不夠：最近的外框可能自己不會捲（例如只設了 overflow:auto 的區塊），真正在捲的是外層或整頁，
       // 錨點早已不在畫面上，面板卻被夾在視窗邊緣顯示（2026-11-06 Storybook 說明頁實測）。
       if (this.options.scrollContainerStrategy === 'nearest' && this.options.trackScroll) {
@@ -330,6 +341,9 @@ class InternalOverlayRef implements PortalOverlayRef {
               this.close('trigger-removed');
             }
           }
+          // 錨點進出視窗不一定伴隨捲動（例如上方區塊收合，欄位被推進視窗）：排一次 reposition，
+          // nearest 策略藏起來的面板才會再出現，移出視窗的才會藏起來。已 close 時 scheduleReposition 不做事。
+          this.scheduleReposition();
         }
       });
       this.intersectionObserver.observe(target);
@@ -358,8 +372,10 @@ class InternalOverlayRef implements PortalOverlayRef {
     const found: HTMLElement[] = [];
     let parent = el.parentElement;
     while (parent && parent !== document.body) {
-      const overflow = getComputedStyle(parent).overflowY;
-      if (overflow === 'auto' || overflow === 'scroll') found.push(parent);
+      const style = getComputedStyle(parent);
+      if (style.overflowY === 'auto' || style.overflowY === 'scroll') found.push(parent);
+      // position:fixed 的祖先跳出外層容器的裁切（例如沒搬到 body 的 app-drawer-shell），再往外的容器不算
+      if (style.position === 'fixed') break;
       parent = parent.parentElement;
     }
     return found;
@@ -487,7 +503,9 @@ export class PortalPositioningService {
     };
     const placement: Placement = options?.placement ?? 'bottom';
 
-    const ref = new InternalOverlayRef(
+    // 在 NgZone 外建立：scroll／resize 監聽、requestAnimationFrame、Resize／IntersectionObserver 都不觸發變更偵測。
+    // 要通知 Angular 的 onClose／onPlacementChange 已在上面各自 zone.run。
+    const ref = this.zone.runOutsideAngular(() => new InternalOverlayRef(
       anchor,
       panelEl,
       placement,
@@ -495,7 +513,7 @@ export class PortalPositioningService {
       this.modalStack.stackSize(),
       this.zIndexCounter++,
       (r) => this.refs.delete(r),
-    );
+    ));
     this.refs.add(ref);
     return ref;
   }
