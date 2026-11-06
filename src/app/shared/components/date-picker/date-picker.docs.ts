@@ -154,7 +154,19 @@ export const datePickerDoc: ComponentApi = {
     },
     {
       type: 'info',
-      content: '鍵盤操作：在按鈕上按 Enter、空白鍵、↑ 或 ↓ 會打開面板。打開時焦點落在已選的格子；選年月日時落在值所在的月份；沒有值時，年份格落在今年，月份格、期別格落在第一個能選的格子。方向鍵在格子之間移動，不會停在停用的格子或空白格上，往那個方向已經沒有能選的格子時，焦點留在原地。在格子上按 Enter 或空白鍵選取，面板關閉、焦點回到按鈕；按 Esc 直接關閉，焦點一樣回到按鈕；面板開著時，這個 Esc 在 document 的捕獲階段就被接住、不再傳下去：外層用一般方式（冒泡階段，例如在 document 上聽 keydown.escape）寫的 Esc 處理收不到，視窗不會跟著關。按住 Esc 不放時，關掉面板之後的連發也擋下，放開之後再按才傳出去。面板關著時的 Esc 照常傳出去。面板開著時又打開對話框（app-dialog、app-modal-shell、app-doc-preview 這類打開時登記在 ModalStack 的視窗），面板先關閉、焦點回到按鈕，再由對話框接手，下一個 Esc 交給對話框。面板裡的 Enter、空白鍵不會往外傳給頁面的快捷鍵；按住不放的連發只在「上一年」「下一年」上有效，可以連續換年。Tab 依序經過面板上方的按鈕再到格子；在格子上再按 Tab 會關閉面板，焦點移到按鈕後面的下一個元素：可清除且有值時是清除鈕，否則是下一個欄位。在第一個按鈕上按 Shift+Tab 會關閉面板、焦點回到按鈕。焦點在「上一年」或「下一年」上、按到上下限讓它停用時，焦點移到「選擇年份」。用 Tab 或 Shift+Tab 離開面板時，表單控制項會標記為 touched，讓 Angular 表單驗證正確觸發。',
+      content: '鍵盤怎麼操作、焦點落在哪、報讀念什麼，都以本體規格的無障礙段為準，這裡不重抄。下面三條只補 Angular 才有的部分。',
+    },
+    {
+      type: 'info',
+      content: '面板開著時，Esc 由元件掛在 document 捕獲階段的監聽先接住，不再往外傳。外層在冒泡階段寫的 Esc 處理（例如在 document 上聽 keydown.escape）收不到，所以外層的視窗不會跟著關。',
+    },
+    {
+      type: 'info',
+      content: '本體說的「面板開著時又打開對話框，面板先關閉」，在 Angular 看的是 ModalStackService：只有打開時會登記進去的視窗算數，也就是 app-dialog、app-modal-shell、app-doc-preview。app-drawer-shell，以及沒有用這三個元件、自己做的視窗，打開時不會登記，面板不會跟著關。',
+    },
+    {
+      type: 'info',
+      content: '本體說的「標成已經碰過（touched）」，在 Angular 是呼叫 ControlValueAccessor 註冊的 onTouched，表單控制項因此變成 touched。',
     },
     {
       type: 'info',
