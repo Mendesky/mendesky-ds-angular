@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync } from '@angular/core/testing';
-import { ElementRef } from '@angular/core';
+import { ElementRef, NgZone } from '@angular/core';
 import {
   AttachOptions,
   CloseReason,
@@ -106,6 +106,9 @@ describe('PortalPositioningService', () => {
   const cleanupEls: HTMLElement[] = [];
   let capturedPointerdown: EventListener | null;
   let capturedKeydown: EventListener | null;
+  let openedRefs: PortalOverlayRef[] = [];
+  // 掛到 document 的 scroll 監聽，與掛上當下是否在 Angular zone 裡
+  let scrollListeners: { fn: EventListenerOrEventListenerObject; inAngularZone: boolean }[] = [];
 
   // Flush all pending requestAnimationFrame callbacks synchronously
   function flushRaf(): void {
@@ -140,6 +143,7 @@ describe('PortalPositioningService', () => {
     rafQueue = [];
     capturedPointerdown = null;
     capturedKeydown = null;
+    scrollListeners = [];
 
     (window as any).ResizeObserver = FakeResizeObserver;
     (window as any).IntersectionObserver = FakeIntersectionObserver;
@@ -158,6 +162,7 @@ describe('PortalPositioningService', () => {
       (type: string, fn: EventListenerOrEventListenerObject, opts?: AddEventListenerOptions | boolean) => {
         if (type === 'pointerdown') capturedPointerdown = fn as EventListener;
         if (type === 'keydown') capturedKeydown = fn as EventListener;
+        if (type === 'scroll') scrollListeners.push({ fn, inAngularZone: NgZone.isInAngularZone() });
         origAdd(type, fn, opts);
       },
     );
@@ -168,9 +173,27 @@ describe('PortalPositioningService', () => {
 
     service = TestBed.inject(PortalPositioningService);
     modalStack = TestBed.inject(ModalStackService);
+
+    // 記下每條測試開的浮層，afterEach 一律關掉。浮層的 scroll 監聽掛在 document 上、不隨 TestBed 重建消失；
+    // 沒關的浮層會在後面的測試被 scroll 叫醒、往當下的 rafQueue 塞東西（隨機順序才現形）。
+    openedRefs = [];
+    const realAttach = service.attach.bind(service);
+    const realAttachAtPoint = service.attachAtPoint.bind(service);
+    spyOn(service, 'attach').and.callFake((t, p, o) => {
+      const r = realAttach(t, p, o);
+      openedRefs.push(r);
+      return r;
+    });
+    spyOn(service, 'attachAtPoint').and.callFake((x, y, p, o) => {
+      const r = realAttachAtPoint(x, y, p, o);
+      openedRefs.push(r);
+      return r;
+    });
   });
 
   afterEach(() => {
+    openedRefs.forEach(r => r.detach());
+    openedRefs = [];
     window.ResizeObserver = REAL_RESIZE_OBSERVER;
     window.IntersectionObserver = REAL_INTERSECTION_OBSERVER;
     cleanupEls.forEach(el => el.parentElement?.removeChild(el));
@@ -683,6 +706,252 @@ describe('PortalPositioningService', () => {
       document.dispatchEvent(new Event('scroll'));
 
       expect(rafQueue.length).toBe(0);
+      ref.detach();
+    });
+  });
+
+  // ── trackScroll (nearest strategy：tooltip / error-tooltip) ─────────────────
+  // 2026-11-06 Storybook 說明頁實測：錯誤提示所在的最近外框（overflow:auto、自己不會捲）在頁面很下面，
+  // 整頁捲動時錯誤提示不跟著走、也不藏起來，被夾在視窗底邊。舊寫法只聽最近外框的 scroll、
+  // 只拿最近外框判斷要不要藏：外層（整頁或更外層的容器）捲動完全收不到，錨點在視窗外也照樣顯示。
+
+  describe('trackScroll — nearest', () => {
+    const rect = (top: number, bottom: number): DOMRect => ({
+      top, bottom, left: 50, right: 250, width: 200, height: bottom - top,
+      x: 0, y: 0, toJSON: () => ({}),
+    } as DOMRect);
+
+    // 外框：overflow:auto 的容器；getBoundingClientRect 用 spy 固定，不依賴 Karma 頁面的實際版面
+    function makeFrame(top: number, bottom: number, parent: HTMLElement = document.body): HTMLElement {
+      const div = document.createElement('div');
+      div.style.overflow = 'auto';
+      parent.appendChild(div);
+      spyOn(div, 'getBoundingClientRect').and.returnValue(rect(top, bottom));
+      return parent === document.body ? track(div) : div;
+    }
+
+    function triggerIn(parent: HTMLElement, top: number, bottom: number): HTMLElement {
+      const el = track(makeTriggerEl({ top, bottom }));
+      parent.appendChild(el);
+      return el;
+    }
+
+    function moveTrigger(el: HTMLElement, top: number, bottom: number): void {
+      (el.getBoundingClientRect as jasmine.Spy).and.returnValue(rect(top, bottom));
+    }
+
+    // 與 service 同一個來源（visualViewport 測試會把它設成 undefined）
+    const viewportHeight = (): number => window.visualViewport?.height ?? window.innerHeight;
+
+    it('沒有外框、整頁捲動：面板跟著錨點重新定位', () => {
+      const triggerEl = track(makeTriggerEl({ top: 100, bottom: 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+      expect(panelEl.style.top).toBe('124px');
+
+      moveTrigger(triggerEl, 60, 80);
+      document.dispatchEvent(new Event('scroll'));
+      flushRaf();
+
+      expect(panelEl.style.top).toBe('84px');
+      ref.detach();
+    });
+
+    it('最近的外框自己不捲、外層容器捲動：面板跟著錨點重新定位', () => {
+      const outer = makeFrame(0, 400);
+      const inner = makeFrame(50, 300, outer);
+      const triggerEl = triggerIn(inner, 100, 120);
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+      expect(panelEl.style.top).toBe('124px');
+
+      moveTrigger(triggerEl, 60, 80);
+      outer.dispatchEvent(new Event('scroll'));
+      flushRaf();
+
+      expect(panelEl.style.top).toBe('84px');
+      ref.detach();
+    });
+
+    it('沒有外框、錨點在視窗外：面板藏起來；捲回視窗內再出現', () => {
+      const vh = viewportHeight();
+      const triggerEl = track(makeTriggerEl({ top: vh + 100, bottom: vh + 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+      expect(panelEl.style.display).toBe('none');
+
+      moveTrigger(triggerEl, 100, 120);
+      document.dispatchEvent(new Event('scroll'));
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('');
+      expect(panelEl.style.top).toBe('124px');
+      ref.detach();
+    });
+
+    it('錨點在最近的外框裡、但外框整個在視窗外：面板藏起來（Storybook 說明頁的情況）', () => {
+      const vh = viewportHeight();
+      const frame = makeFrame(vh + 50, vh + 200);
+      const triggerEl = triggerIn(frame, vh + 100, vh + 120);
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('none');
+      ref.detach();
+    });
+
+    it('錨點在最近的外框裡、但被外層容器捲到可視範圍外：面板藏起來', () => {
+      const outer = makeFrame(200, 400);
+      const inner = makeFrame(100, 300, outer);
+      const triggerEl = triggerIn(inner, 150, 170);
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('none');
+      ref.detach();
+    });
+
+    it('錨點在最近的外框裡、也在視窗內：照常顯示', () => {
+      const frame = makeFrame(50, 300);
+      const triggerEl = triggerIn(frame, 100, 120);
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('');
+      expect(panelEl.style.top).toBe('124px');
+      ref.detach();
+    });
+
+    it('detach 之後，捲動不再重新定位，document 的 scroll 監聽也拿掉', () => {
+      const removeSpy = spyOn(document, 'removeEventListener').and.callThrough();
+      const triggerEl = track(makeTriggerEl({ top: 100, bottom: 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+      expect(panelEl.style.top).toBe('124px');
+      expect(scrollListeners.length).toBe(1);
+      ref.detach();
+      expect(removeSpy).toHaveBeenCalledWith('scroll', scrollListeners[0].fn, jasmine.objectContaining({ capture: true }));
+
+      moveTrigger(triggerEl, 60, 80);
+      document.dispatchEvent(new Event('scroll'));
+      flushRaf();
+
+      // 只看自己的面板：其他測試檔留下的浮層被叫醒不算數
+      expect(panelEl.style.top).toBe('124px');
+    });
+
+    it('顯示中、錨點往上捲出視窗：面板藏起來', () => {
+      const triggerEl = track(makeTriggerEl({ top: 100, bottom: 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+      expect(panelEl.style.display).toBe('');
+
+      moveTrigger(triggerEl, -60, -10);
+      document.dispatchEvent(new Event('scroll'));
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('none');
+      ref.detach();
+    });
+
+    it('錨點落在最近外框的下緣外（仍在視窗內）：面板藏起來', () => {
+      const frame = makeFrame(0, 200);
+      const triggerEl = triggerIn(frame, 250, 270);
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('none');
+      ref.detach();
+    });
+
+    it('nearest 但 trackScroll:false（date-picker 的用法）：錨點在視窗外也不藏', () => {
+      const vh = viewportHeight();
+      const triggerEl = track(makeTriggerEl({ top: vh + 100, bottom: vh + 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), {
+        placement: 'bottom', trackScroll: false,
+      });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('');
+      ref.detach();
+    });
+
+    it('藏著時錨點因版面變動（沒有捲動）回到視窗內：收到進入視窗的通知後面板再出現', () => {
+      const vh = viewportHeight();
+      const triggerEl = track(makeTriggerEl({ top: vh + 100, bottom: vh + 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+      expect(panelEl.style.display).toBe('none');
+
+      moveTrigger(triggerEl, 100, 120);
+      fireIntersection(triggerEl, { isIntersecting: true, ratio: 1, width: 200, height: 20 });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('');
+      expect(panelEl.style.top).toBe('124px');
+      ref.detach();
+    });
+
+    it('錨點在 position:fixed 的祖先裡：再往外的可捲容器不算，不會誤藏（例如沒搬到 body 的 app-drawer-shell）', () => {
+      const outer = makeFrame(0, 100);
+      const fixedBox = document.createElement('div');
+      fixedBox.style.position = 'fixed';
+      outer.appendChild(fixedBox);
+      const triggerEl = triggerIn(fixedBox, 300, 320);
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('');
+      expect(panelEl.style.top).toBe('324px');
+      ref.detach();
+    });
+
+    it('捲動跟錨點無關的元素（例如 body 底下的選單清單）：不重新定位', () => {
+      const triggerEl = track(makeTriggerEl({ top: 100, bottom: 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), { placement: 'bottom' });
+      flushRaf();
+      const unrelated = track(document.createElement('div'));
+      document.body.appendChild(unrelated);
+
+      moveTrigger(triggerEl, 60, 80);
+      unrelated.dispatchEvent(new Event('scroll'));
+      flushRaf();
+
+      expect(panelEl.style.top).toBe('124px');
+      ref.detach();
+    });
+
+    it('在 Angular zone 裡 attach，scroll 監聽仍掛在 zone 外：捲動不觸發變更偵測', () => {
+      const zone = TestBed.inject(NgZone);
+      const ref = zone.run(() => service.attach(tRef(), pRef(), { placement: 'bottom' }));
+
+      expect(scrollListeners.map(l => l.inAngularZone)).toEqual([false]);
+      ref.detach();
+    });
+
+    it('document 策略不因錨點在視窗外而藏起來（範圍只動 nearest）', () => {
+      const vh = viewportHeight();
+      const triggerEl = track(makeTriggerEl({ top: vh + 100, bottom: vh + 120 }));
+      const panelEl = track(makePanelEl());
+      const ref = service.attach(new ElementRef(triggerEl), new ElementRef(panelEl), {
+        placement: 'bottom', scrollContainerStrategy: 'document',
+      });
+      flushRaf();
+
+      expect(panelEl.style.display).toBe('');
       ref.detach();
     });
   });
