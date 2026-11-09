@@ -27,7 +27,8 @@ export class ModalOpenNotifier {
 
   /**
    * 由 ModalStackService.register 呼叫。包在 untracked 裡：register 可能在 effect 或 template 的
-   * 反應式環境裡被呼叫，listener 讀到的 signal 不該變成呼叫端的依賴，listener 寫 signal 也不該丟 NG0600。
+   * 反應式環境裡被呼叫，listener 讀到的 signal 不該變成呼叫端的依賴。
+   * （listener 能不能寫 signal 跟這裡無關：register 自己先寫 stackSize，不允許寫的環境在那裡就會出錯。）
    */
   notify(size: number): void {
     untracked(() => {

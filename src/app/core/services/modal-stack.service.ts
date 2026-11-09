@@ -8,6 +8,8 @@ import { ModalOpenNotifier } from './modal-open-notifier.service';
  * modal-shell 被 teleport 到 document.body 後，多個 shell 在 DOM 上是兄弟節點。
  * 各自掛 document:keydown listener 時，stopPropagation() 無法阻止兄弟 listener 被觸發。
  * 用 stack 追蹤，只有最上層（topmost）的 modal 才回應 Escape，其餘忽略。
+ *
+ * 由 Angular 注入建立（欄位用 inject() 取得 DS 內部的 ModalOpenNotifier）；在注入環境外直接 new 會丟 NG0203。
  */
 @Injectable({ providedIn: 'root' })
 export class ModalStackService {

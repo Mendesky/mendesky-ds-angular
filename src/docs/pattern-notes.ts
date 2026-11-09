@@ -10,7 +10,7 @@ import type { PatternNotes } from './component-doc';
 export const angularPatternNotes: PatternNotes = {
   'modal.dismissal': [
     '編輯型 modal 鎖 backdrop 的寫法：<app-modal-shell [canDismiss]="!isDirty()">。canDismiss 擋的是 backdrop；ESC 不受此 gate。',
-    'nested modal 防 tooltip 穿透的修法：modal 堆疊服務在 Angular 是 ModalStackService；tooltip portal 監聽 ModalStackService.stackSize，開啟時 snapshot 當下深度，stack 增層時主動 close portal。',
+    'nested modal 防 tooltip 穿透的修法：modal 堆疊服務在 Angular 是 ModalStackService。浮層用 PortalPositioningService 開啟並設 closeOnModalOpen: true，開啟時記下當下深度；有新的 modal 呼叫 ModalStackService.register 時，服務在 register 回傳前就關掉深度比它淺的浮層。不要自己用 effect 監聽 stackSize 來關：effect 比 app-dialog 第一次畫出來還晚，對話框會記住即將被移除的浮層元素，關掉後焦點落到 body。',
   ],
   'action.precondition-acknowledge': [
     'required 時鎖主按鈕的寫法：<app-button [disabled]="!confirmed()">，confirmed() 是父層記錄「已勾選確認」的狀態。',

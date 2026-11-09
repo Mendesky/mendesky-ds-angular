@@ -20,7 +20,11 @@ export interface AttachOptions {
   closeOnClickOutside?: boolean;
   /** 預設 true；error-tooltip 應傳 false（隨 errorMessage 狀態，非手動關閉） */
   closeOnEscape?: boolean;
-  /** 關閉時通知 caller 原因 */
+  /**
+   * 關閉時通知 caller 原因。
+   * reason 為 'modal-open' 時，在 ModalStackService.register 當下同步呼叫，常落在變更偵測途中
+   * （例如 app-dialog 的 ngOnChanges）。這時直接改模板綁定的一般欄位（非 signal），開發模式可能丟 NG0100。
+   */
   onClose?: (reason: CloseReason) => void;
   /**
    * 預設 'nearest'；兩種策略都在 document capture phase 監聽 scroll（NgZone 外）。
@@ -463,7 +467,7 @@ export class PortalPositioningService {
     // 不用 effect 讀 stackSize：effect 比 modal 第一次畫出來還晚，app-dialog 一畫出來就記下
     // 「關掉後焦點還給誰」，那時日期面板還開著、焦點在面板的格子上，dialog 會記到即將被移除的格子，
     // 關掉後焦點落到 body。登記當下就關，面板先把焦點還給觸發元素，dialog 記到的才是它。
-    // ModalOpenNotifier 在 untracked 裡呼叫 listener，onClose 裡寫 signal 不會丟 NG0600。
+    // 關閉不在 effect 裡執行，onClose 裡寫 signal 不會丟 NG0600（原本由 effect 關閉時會）。
     // 訂閱掛在 ModalOpenNotifier（DS 內部服務）而不是 ModalStackService：使用端測試常用假物件代替
     // ModalStackService，假物件沒有訂閱方法，浮層服務一建立就會壞。
     // 每個 ref 各自接住錯誤：一個使用端的 onClose 出錯，不能擋住後面的 ref，也不能讓 register（modal 打開）跟著出錯。
