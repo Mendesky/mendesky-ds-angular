@@ -76,3 +76,39 @@
   font-size: 1em;
   color: var(--input\/prompt, #939393);
 }
+
+/* ── 狀態標記：文字後面接紅色驚嘆號；選項變成藍底時跟著文字變淺色 ── */
+.panel-option__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-status {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 4px;
+  color: var(--label\/warning, #cc5252);
+}
+
+.panel-option:hover:not(:disabled) .panel-status,
+.panel-option--active:not(:disabled) .panel-status {
+  color: currentColor;
+}
+
+.panel-option:disabled .panel-status {
+  color: currentColor;
+}
+
+.panel-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

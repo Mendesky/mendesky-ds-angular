@@ -10,7 +10,16 @@
       [disabled]="opt.disabled"
       (mousedown)="$event.preventDefault()"
       (click)="select(opt)">
-      {{ opt.label }}
+      @if (opt.status) {
+        <span class="panel-option__label">{{ opt.label }}</span>
+        <span class="panel-status" aria-hidden="true" [appTooltip]="opt.status.label">
+          <app-icon name="Alert-Info" size="16"></app-icon>
+        </span>
+        <!-- 看不見，報讀軟體接在名稱後面念 -->
+        <span class="panel-sr">，{{ opt.status.label }}</span>
+      } @else {
+        {{ opt.label }}
+      }
     </button>
 
     <div class="panel-empty" *ngIf="options.length === 0">

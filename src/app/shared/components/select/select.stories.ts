@@ -137,3 +137,26 @@ export const ManyOptions: Story = {
     errorMessage: '',
   },
 };
+
+export const WithStatus: Story = {
+  name: '狀態標記',
+  render: () => ({
+    template: `
+      <div style="padding:16px; max-width:360px; display:grid; gap:16px;">
+        <app-select [options]="options" placeholder="請選擇一組" [(ngModel)]="picked"></app-select>
+        <app-select [options]="options" [searchable]="true" placeholder="搜尋或選擇一組" [(ngModel)]="pickedSearch"></app-select>
+      </div>
+    `,
+    props: {
+      options: [
+        { value: 'a', label: '第一組', status: { label: '需處理' } },
+        { value: 'b', label: '第二組' },
+        { value: 'c', label: '第三組', status: { label: '需處理' } },
+        { value: 'd', label: '第四組' },
+      ] as SelectOption[],
+      picked: 'a',
+      pickedSearch: 'c',
+    },
+    moduleMetadata: { imports: [SelectComponent, FormsModule, CommonModule] },
+  }),
+};

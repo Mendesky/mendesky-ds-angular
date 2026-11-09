@@ -26,15 +26,26 @@
         [attr.aria-expanded]="isOpen()"
         [attr.aria-disabled]="isDisabled() || null"
         [class.select-field--placeholder]="!hasValue()"
+        [class.select-field--with-status]="showStatus()"
+        [attr.aria-describedby]="showStatus() ? statusId : null"
         (focus)="onTriggerFocus()"
         (blur)="onTriggerBlur()"
         (keydown)="onKeydown($event)">
-        {{ hasValue() ? displayLabel() : placeholder }}
+        @if (showStatus()) {
+          <span class="select-field__text">{{ displayLabel() }}</span>
+          <span class="select-status" aria-hidden="true" [appTooltip]="selectedStatus()?.label ?? ''">
+            <app-icon name="Alert-Info" size="16"></app-icon>
+          </span>
+        } @else {
+          {{ hasValue() ? displayLabel() : placeholder }}
+        }
       </div>
     }
 
     <!-- 可輸入模式（需明確加 [searchable]="true"） -->
     @if (searchable) {
+      <!-- 有狀態標記時，外框依文字寬度縮起來，驚嘆號才會緊接在文字後面（::after 用同一段文字撐寬） -->
+      <span class="select-input-fit" [class.select-input-fit--on]="showStatus()" [attr.data-value]="inputDisplayValue()">
       <input
         #triggerInput
         class="select-field"
@@ -43,11 +54,23 @@
         [placeholder]="inputPlaceholder()"
         [value]="inputDisplayValue()"
         [disabled]="isDisabled()"
+        [attr.aria-describedby]="showStatus() ? statusId : null"
         (focus)="onTriggerFocus()"
         (blur)="onTriggerBlur()"
         (input)="onInput($event)"
         (keydown)="onKeydown($event)"
       />
+      </span>
+      @if (showStatus()) {
+        <span class="select-status select-status--after-input" aria-hidden="true" [appTooltip]="selectedStatus()?.label ?? ''">
+          <app-icon name="Alert-Info" size="16"></app-icon>
+        </span>
+      }
+    }
+
+    <!-- 狀態文字：看不見，選取框用 aria-describedby 指向它 -->
+    @if (showStatus()) {
+      <span class="select-sr" [id]="statusId">{{ selectedStatus()?.label }}</span>
     }
 
     <div class="select-suffix">
