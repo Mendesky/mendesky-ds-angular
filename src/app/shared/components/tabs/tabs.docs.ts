@@ -51,7 +51,9 @@ export const tabsDoc: ComponentApi = {
   { value: 'a', label: '第一組' },
   { value: 'b', label: '第二組', status: { label: '需處理' } },
   { value: 'c', label: '第三組', disabled: true },
-];`,
+];
+// (valueChange) 帶出的值是 string | number，接它的 signal 用同一個型別
+activeGroup = signal<string | number>('a');`,
     },
     {
       label: '尾端放按鈕：投影的內容在最後一個頁籤右邊、頁籤清單外面',
@@ -69,6 +71,6 @@ export const tabsDoc: ComponentApi = {
       type: 'warn',
       content: 'value 是單向輸入：元件發 (valueChange) 後不會自己改選中的頁籤，要使用端把新值傳回 [value]。沒傳回去的話，畫面上選中的頁籤不會變，但焦點已經移到新頁籤上。',
     },
-    '頁籤的 track 用 value，所以 value 不能重複；重複時 Angular 會報錯（NG0955）。',
+    'value 不能重複。重複的兩個頁籤會一起選中、一起取消；其中一個選中時，點另一個不會發 (valueChange)。Angular 17 不會報錯提醒，要使用端自己保證不重複。',
   ],
 };

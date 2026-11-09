@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ApplicationRef, Component } from '@angular/core';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 import { TabItem, TabsComponent } from './tabs.component';
 
 /**
@@ -57,7 +57,10 @@ describe('TabsComponent', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => el.remove());
+  afterEach(() => {
+    el.remove();
+    document.querySelectorAll('app-tooltip-portal').forEach(n => n.remove());
+  });
 
   it('頁籤列是 tablist，有名稱；每個頁籤是 role="tab" 的原生 button', () => {
     const list = el.querySelector('[role="tablist"]')!;
@@ -80,6 +83,20 @@ describe('TabsComponent', () => {
     expect(getComputedStyle(tabs()[1]).color).toBe('rgb(104, 104, 104)');
     expect(getComputedStyle(tabs()[0]).color).toBe('rgb(26, 100, 137)');
     expect(getComputedStyle(tabs()[0]).boxShadow).toContain('rgb(26, 100, 137)');
+  });
+
+  it('停用的頁籤帶狀態標記時，標記跟停用的文字一樣是灰色；沒停用的標記維持紅色', () => {
+    // 2026-11-09 定案：停用代表不能操作，不用紅色催人處理
+    host.items = [
+      { value: 'a', label: '第一組' },
+      { value: 'b', label: '第二組', status: { label: '需處理' } },
+      { value: 'c', label: '第三組', disabled: true, status: { label: '需處理' } },
+    ];
+    fixture.detectChanges();
+    const mark = (i: number) => getComputedStyle(tabs()[i].querySelector('.tabs__status') as HTMLElement).color;
+    expect(mark(2)).toBe(getComputedStyle(tabs()[2]).color);
+    expect(mark(2)).not.toBe('rgb(204, 82, 82)');
+    expect(mark(1)).toBe('rgb(204, 82, 82)');
   });
 
   it('roving tabindex：只有選中的頁籤在 Tab 順序裡', () => {
@@ -142,6 +159,33 @@ describe('TabsComponent', () => {
     expect(host.value).toBe('d');
   });
 
+  it('左方向鍵也跳過停用的頁籤', () => {
+    host.value = 'd';
+    fixture.detectChanges();
+    tabs()[3].focus();
+    key(tabs()[3], 'ArrowLeft');
+    expect(document.activeElement).toBe(tabs()[1]);
+    expect(host.value).toBe('b');
+  });
+
+  it('第一個、最後一個停用時，Home、End 停在最靠近頭尾的沒停用頁籤', () => {
+    host.items = [
+      { value: 'x', label: '停用的頭', disabled: true },
+      { value: 'a', label: '第一組' },
+      { value: 'b', label: '第二組' },
+      { value: 'y', label: '停用的尾', disabled: true },
+    ];
+    host.value = 'a';
+    fixture.detectChanges();
+    tabs()[1].focus();
+    key(tabs()[1], 'End');
+    expect(document.activeElement).toBe(tabs()[2]);
+    expect(host.value).toBe('b');
+    key(tabs()[2], 'Home');
+    expect(document.activeElement).toBe(tabs()[1]);
+    expect(host.value).toBe('a');
+  });
+
   it('其他按鍵不處理，也不擋預設行為', () => {
     const ev = key(tabs()[0], 'ArrowDown');
     expect(ev.defaultPrevented).toBeFalse();
@@ -164,6 +208,17 @@ describe('TabsComponent', () => {
     expect(name).toBe('第二組，需處理');
     expect(tabs()[0].querySelector('.tabs__status')).toBeNull();
   });
+
+  it('狀態標記：滑過圖示顯示 status 的 label', fakeAsync(() => {
+    const icon = tabs()[1].querySelector('.tabs__status') as HTMLElement;
+    icon.dispatchEvent(new Event('mouseenter'));
+    tick(300);
+    TestBed.inject(ApplicationRef).tick();
+    const tip = document.querySelector('app-tooltip-portal .tooltip__text') as HTMLElement | null;
+    expect(tip?.textContent?.trim()).toBe('需處理');
+    icon.dispatchEvent(new Event('mouseleave'));
+    flush();
+  }));
 
   it('panelId：每個頁籤 aria-controls 指向它；selectedTabId 是選中頁籤的 id', () => {
     tabs().forEach(t => expect(t.getAttribute('aria-controls')).toBe('panel'));
@@ -203,6 +258,29 @@ describe('TabsComponent', () => {
     const end = bare.nativeElement.querySelector('.tabs__end') as HTMLElement;
     expect(getComputedStyle(end).display).toBe('none');
     bare.nativeElement.remove();
+  });
+
+  it('尾端放比頁籤高的內容時，選中的深藍線還是貼在灰線上', () => {
+    // 尾端放 M、L 尺寸的按鈕時，頁籤列會比頁籤高；頁籤要撐滿整列，底線才會對齊
+    @Component({
+      standalone: true,
+      imports: [TabsComponent],
+      template: `<app-tabs ariaLabel="分組" [items]="items" value="a">
+        <button type="button" style="height: 48px">新增一組</button>
+      </app-tabs>`,
+    })
+    class TallHost { items: TabItem[] = [{ value: 'a', label: '第一組' }, { value: 'b', label: '第二組' }]; }
+    const tall = TestBed.createComponent(TallHost);
+    document.body.appendChild(tall.nativeElement);
+    tall.detectChanges();
+    const bar = (tall.nativeElement.querySelector('.tabs') as HTMLElement).getBoundingClientRect();
+    const selected = tall.nativeElement.querySelector('.tabs__tab--selected') as HTMLElement;
+    const label = (selected.querySelector('.tabs__label') as HTMLElement).getBoundingClientRect();
+    expect(bar.height).toBeGreaterThanOrEqual(48);
+    expect(Math.abs(bar.bottom - selected.getBoundingClientRect().bottom)).toBeLessThan(0.5);
+    // 文字仍在整列的垂直中間
+    expect(Math.abs((label.top + label.bottom) / 2 - (bar.top + bar.bottom) / 2)).toBeLessThan(1);
+    tall.nativeElement.remove();
   });
 
   it('放不下時頁籤列左右捲動、不換行；鍵盤移到的頁籤捲進看得到的範圍', () => {
