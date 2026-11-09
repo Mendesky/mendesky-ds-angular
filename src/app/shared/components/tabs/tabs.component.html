@@ -1,5 +1,5 @@
 <div class="tabs">
-  <div class="tabs__list" role="tablist" [attr.aria-label]="ariaLabel">
+  <div class="tabs__list" #list role="tablist" [attr.aria-label]="ariaLabel">
     @for (tab of items; track tab.value; let i = $index) {
       <button
         #tabBtn

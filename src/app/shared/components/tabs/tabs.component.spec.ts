@@ -299,4 +299,76 @@ describe('TabsComponent', () => {
     const box = list.getBoundingClientRect();
     expect(last.right).toBeLessThanOrEqual(box.right + 1);
   });
+
+  // 2026-11-09：選中的頁籤由使用端改 value（例如新增一組後選中它）時，原本不會捲進畫面，捲軸又藏起來，使用者看不到新選中的頁籤
+  describe('選中的頁籤改變時捲進看得到的範圍', () => {
+    const many = (n: number) => Array.from({ length: n }, (_, i) => ({ value: i, label: `第 ${i + 1} 組` }));
+    const list = (root: HTMLElement = el) => root.querySelector('.tabs__list') as HTMLElement;
+    const inView = (tab: HTMLElement, root: HTMLElement = el) => {
+      const r = tab.getBoundingClientRect();
+      const box = list(root).getBoundingClientRect();
+      return r.left >= box.left - 1 && r.right <= box.right + 1;
+    };
+    const narrow = (n: number, value: number) => {
+      host.items = many(n);
+      host.value = value;
+      el.style.width = '240px';
+      el.style.display = 'block';
+      fixture.detectChanges();
+    };
+
+    it('使用端加一個頁籤並選中它（例如「新增一組」）：頁籤列捲到看得見新頁籤', () => {
+      narrow(12, 0);
+      expect(list().scrollLeft).toBe(0);
+      host.items = many(13);
+      host.value = 12;
+      fixture.detectChanges();
+      expect(inView(tabs()[12])).withContext('新頁籤在看得到的範圍').toBeTrue();
+    });
+
+    it('使用端把 value 改回前面看不到的頁籤：頁籤列捲回去', () => {
+      narrow(12, 11);
+      expect(inView(tabs()[11])).toBeTrue();
+      host.value = 0;
+      fixture.detectChanges();
+      expect(inView(tabs()[0])).toBeTrue();
+    });
+
+    it('第一次畫出來時選中的就在後面：直接捲到看得見它', () => {
+      const f = TestBed.createComponent(HostComponent);
+      const root: HTMLElement = f.nativeElement;
+      root.style.width = '240px';
+      root.style.display = 'block';
+      document.body.appendChild(root);
+      f.componentInstance.items = many(12);
+      f.componentInstance.value = 10;
+      f.detectChanges();
+      const tab = root.querySelectorAll<HTMLElement>('[role="tab"]')[10];
+      expect(inView(tab, root)).toBeTrue();
+      root.remove();
+    });
+
+    it('選中的沒變、只換了 items（例如改名）：不把使用者自己捲的位置拉回去', () => {
+      narrow(12, 0);
+      list().scrollLeft = list().scrollWidth;
+      const scrolled = list().scrollLeft;
+      expect(scrolled).toBeGreaterThan(0);
+      host.items = host.items.map((t, i) => (i === 5 ? { ...t, label: '改過的名稱' } : t));
+      fixture.detectChanges();
+      expect(list().scrollLeft).toBe(scrolled);
+    });
+
+    it('點看得到一半的頁籤：捲到整個看得到', () => {
+      narrow(12, 0);
+      const partly = tabs().find(t => {
+        const r = t.getBoundingClientRect();
+        const box = list().getBoundingClientRect();
+        return r.left < box.right && r.right > box.right + 1;
+      })!;
+      expect(partly).withContext('有一個被右邊切到的頁籤').toBeDefined();
+      partly.click();
+      fixture.detectChanges();
+      expect(inView(partly)).toBeTrue();
+    });
+  });
 });
