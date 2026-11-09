@@ -88,6 +88,11 @@ departmentOptions: SelectOption[] = [
     'app-select 實作 CVA（ControlValueAccessor），可直接接 formControlName 或 [(ngModel)]。',
     '狀態標記的型別 StatusMark 從 @mendesky/ds-angular 匯出，跟 app-tabs 的狀態標記是同一個型別。',
     '可輸入模式（[searchable]="true"）打開下拉、正在打字時，選取框的驚嘆號先藏起來；關上後再顯示。選項上的驚嘆號照常顯示。',
+    '停用的選項或選取框，驚嘆號跟停用的文字一樣變灰。',
+    {
+      type: 'warn',
+      content: '標記的文字只有滑鼠滑過驚嘆號才看得到；下拉清單裡用方向鍵移動時，報讀軟體也念不到選項上的標記。用了標記，選中後的畫面一定要另外寫出原因。',
+    },
     'status 只有 label 改變時，選項也會重畫；內容完全相同的新陣列不會重畫。',
   ],
 };

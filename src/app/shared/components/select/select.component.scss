@@ -111,6 +111,14 @@
   }
 }
 
+/* 手機寬度：核心樣式（core.scss 的 iOS 放大防護）把輸入框強制成 16px；
+   量寬度的隱藏文字也要跟著 16px，欄寬才放得下輸入框的字，不會被切掉 */
+@media (max-width: 767px) {
+  .select-input-fit--on::after {
+    font-size: 16px;
+  }
+}
+
 .select-status--after-input {
   margin-left: 4px;
   margin-right: auto;
@@ -231,4 +239,9 @@
 
 .select-wrap--disabled .select-field--placeholder {
   color: var(--text\/disabled, #d3d3d3);
+}
+
+/* 停用時狀態標記跟停用的文字一樣變灰：不能操作的欄位，不用紅色催人處理 */
+.select-wrap--disabled .select-status {
+  color: currentColor;
 }

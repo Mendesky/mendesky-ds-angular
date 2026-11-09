@@ -1,5 +1,5 @@
 import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 import { SelectComponent, SelectOption } from './select.component';
 
 describe('SelectComponent — options equality（防 CD loop 回歸）', () => {
@@ -176,8 +176,27 @@ describe('SelectComponent — 狀態標記', () => {
   afterEach(() => {
     fixture.destroy();
     el.remove();
-    document.querySelectorAll('app-select-panel').forEach(p => p.remove());
+    document.querySelectorAll('app-select-panel, app-tooltip-portal').forEach(p => p.remove());
   });
+
+  const openPanel = () => {
+    (el.querySelector('.select-wrap') as HTMLElement).click();
+    fixture.detectChanges();
+    TestBed.inject(ApplicationRef).tick();   // 面板是動態元件，CD 走 ApplicationRef
+    return Array.from(document.querySelectorAll<HTMLButtonElement>('app-select-panel .panel-option'));
+  };
+
+  const hoverText = (icon: HTMLElement) => {
+    icon.dispatchEvent(new Event('mouseenter'));
+    tick(300);
+    TestBed.inject(ApplicationRef).tick();
+    const text = document.querySelector('app-tooltip-portal .tooltip__text')?.textContent?.trim();
+    icon.dispatchEvent(new Event('mouseleave'));
+    flush();
+    return text;
+  };
+
+  const LONG: SelectOption = { value: 'long', label: '這是一個非常非常長的分組名稱，用來看選取框放不下的時候', status: { label: '需處理' } };
 
   it('status 只改 label 也會更新 options；內容相同的新引用不會', () => {
     setup(false, null);
@@ -258,5 +277,144 @@ describe('SelectComponent — 狀態標記', () => {
     panel.changeDetectorRef.detectChanges();
     expect(marked.classList).toContain('panel-option--active');
     expect(getComputedStyle(icon).color).toBe(getComputedStyle(marked).color);
+  });
+
+  // 2026-11-09 定案：停用代表不能操作，標記跟停用的文字一樣變灰，不用紅色催人處理
+  it('停用的選取框：選中有標記的項目時，驚嘆號跟停用的文字一樣是灰色', () => {
+    setup(false, 'a');
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+    const trigger = el.querySelector('[role="combobox"]') as HTMLElement;
+    const icon = trigger.querySelector('.select-status') as HTMLElement;
+    const text = trigger.querySelector('.select-field__text') as HTMLElement;
+    expect(getComputedStyle(icon).color).toBe(getComputedStyle(text).color);
+    expect(getComputedStyle(icon).color).not.toBe('rgb(204, 82, 82)');
+  });
+
+  it('停用的下拉選項：驚嘆號跟停用的文字一樣是灰色', () => {
+    setup(false, null);
+    fixture.componentRef.setInput('options', [...OPTS, { value: 'c', label: '第三組', disabled: true, status: { label: '需處理' } }]);
+    fixture.detectChanges();
+    (el.querySelector('.select-wrap') as HTMLElement).click();
+    fixture.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
+    const options = Array.from(document.querySelectorAll<HTMLButtonElement>('app-select-panel .panel-option'));
+    const disabled = options[2];
+    const icon = disabled.querySelector('.panel-status') as HTMLElement;
+    expect(getComputedStyle(icon).color).toBe(getComputedStyle(disabled).color);
+    expect(getComputedStyle(icon).color).not.toBe('rgb(204, 82, 82)');
+  });
+
+  it('選取框的驚嘆號：滑過顯示狀態文字', fakeAsync(() => {
+    setup(false, 'a');
+    expect(hoverText(el.querySelector('.select-status') as HTMLElement)).toBe('需處理');
+  }));
+
+  it('下拉選項的驚嘆號：滑過顯示狀態文字', fakeAsync(() => {
+    setup(false, null);
+    const options = openPanel();
+    expect(hoverText(options[0].querySelector('.panel-status') as HTMLElement)).toBe('需處理');
+  }));
+
+  it('不可輸入模式：從沒選到點選有標記的項目，關上後選取框文字後面出現驚嘆號', () => {
+    setup(false, null);
+    expect(el.querySelector('.select-status')).toBeNull();
+    openPanel()[0].click();
+    fixture.detectChanges();
+    expect(component.isOpen()).toBeFalse();
+    const trigger = el.querySelector('[role="combobox"]') as HTMLElement;
+    expect(trigger.querySelector('.select-status')).not.toBeNull();
+    expect(trigger.getAttribute('aria-describedby')).toBeTruthy();
+  });
+
+  it('可輸入模式：從沒選到點選有標記的項目，關上後輸入框文字後面出現驚嘆號', () => {
+    setup(true, null);
+    expect(el.querySelector('.select-status')).toBeNull();
+    openPanel()[0].click();
+    fixture.detectChanges();
+    expect(component.isOpen()).toBeFalse();
+    const input = el.querySelector('input.select-field') as HTMLInputElement;
+    expect(input.value).toBe('第一組');
+    expect(el.querySelector('.select-status')).not.toBeNull();
+    expect(input.getAttribute('aria-describedby')).toBeTruthy();
+  });
+
+  it('可輸入模式：打開後按 Esc 關上，驚嘆號回來，輸入框再縮回文字寬度', () => {
+    setup(true, 'a');
+    openPanel();
+    expect(el.querySelector('.select-status')).toBeNull();
+    const input = el.querySelector('input.select-field') as HTMLInputElement;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(component.isOpen()).toBeFalse();
+    expect(el.querySelector('.select-status')).not.toBeNull();
+    expect(input.getBoundingClientRect().width).toBeLessThan(120);
+  });
+
+  it('不可輸入模式、名稱很長：文字用刪節號收起來，驚嘆號還在框內、在箭頭左邊', () => {
+    setup(false, null);
+    fixture.componentRef.setInput('options', [LONG]);
+    component.writeValue('long');
+    fixture.detectChanges();
+    const text = el.querySelector('.select-field__text') as HTMLElement;
+    const icon = (el.querySelector('.select-status') as HTMLElement).getBoundingClientRect();
+    const arrow = (el.querySelector('.select-arrow') as HTMLElement).getBoundingClientRect();
+    expect(text.scrollWidth).toBeGreaterThan(text.clientWidth);
+    expect(getComputedStyle(text).textOverflow).toBe('ellipsis');
+    expect(icon.width).toBeGreaterThan(0);
+    expect(icon.right).toBeLessThanOrEqual(arrow.left);
+  });
+
+  it('可輸入模式、名稱很長：驚嘆號還在框內、在箭頭左邊', () => {
+    setup(true, null);
+    fixture.componentRef.setInput('options', [LONG]);
+    component.writeValue('long');
+    fixture.detectChanges();
+    const icon = (el.querySelector('.select-status') as HTMLElement).getBoundingClientRect();
+    const arrow = (el.querySelector('.select-arrow') as HTMLElement).getBoundingClientRect();
+    expect(icon.width).toBeGreaterThan(0);
+    expect(icon.right).toBeLessThanOrEqual(arrow.left);
+  });
+
+  it('手機寬度：可輸入模式量寬度用的隱藏文字跟輸入框一樣是 16px，文字不會被切掉', async () => {
+    // 核心樣式在 767px 以下把輸入框強制成 16px（防 iOS 放大）；量寬度的隱藏文字也要跟著變，欄寬才夠
+    // 測試頁本身的寬度不固定，所以桌機、手機各開一個固定寬度的 iframe，把目前頁面的樣式規則抄進去再量
+    setup(true, 'a');
+    const label = '第一組資料需要補齊';
+    const css = Array.from(document.styleSheets).map(sheet => {
+      try { return Array.from(sheet.cssRules).map(r => r.cssText).join('\n'); } catch { return ''; }
+    }).join('\n');
+    const renderAt = (width: number) => {
+      const frame = document.createElement('iframe');
+      frame.style.width = `${width}px`;
+      frame.style.height = '120px';
+      document.body.appendChild(frame);
+      const doc = frame.contentDocument!;
+      const style = doc.createElement('style');
+      style.textContent = css;
+      doc.head.appendChild(style);
+      const copy = doc.importNode(el, true) as HTMLElement;
+      copy.style.fontSize = '14px';   // 使用端內文字級
+      doc.body.appendChild(copy);
+      const fit = copy.querySelector('.select-input-fit--on') as HTMLElement;
+      const input = copy.querySelector('input.select-field') as HTMLInputElement;
+      fit.setAttribute('data-value', label);
+      input.value = label;
+      const win = frame.contentWindow!;
+      const result = {
+        inputFont: win.getComputedStyle(input).fontSize,
+        shadowFont: win.getComputedStyle(fit, '::after').fontSize,
+        cut: input.scrollWidth - input.clientWidth,
+      };
+      frame.remove();
+      return result;
+    };
+    const desk = renderAt(1024);
+    const phone = renderAt(375);
+    expect(desk.inputFont).toBe('14px');
+    expect(phone.inputFont).toBe('16px');
+    expect(phone.shadowFont).toBe('16px');
+    // 手機寬度切掉的不能比桌機多
+    expect(phone.cut).toBeLessThanOrEqual(desk.cut);
   });
 });
