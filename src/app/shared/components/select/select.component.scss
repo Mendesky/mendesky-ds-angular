@@ -241,7 +241,8 @@
   color: var(--text\/disabled, #d3d3d3);
 }
 
-/* 停用時狀態標記跟停用的文字一樣變灰：不能操作的欄位，不用紅色催人處理 */
+/* 停用時狀態標記跟停用的文字一樣變灰：不能操作的欄位，不用紅色催人處理。
+   直接給停用的顏色，不用 currentColor：可輸入模式的驚嘆號在輸入框外面，繼承到的是使用端頁面的字色 */
 .select-wrap--disabled .select-status {
-  color: currentColor;
+  color: var(--text\/disabled, #d3d3d3);
 }

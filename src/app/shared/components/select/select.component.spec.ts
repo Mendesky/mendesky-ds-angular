@@ -291,6 +291,20 @@ describe('SelectComponent — 狀態標記', () => {
     expect(getComputedStyle(icon).color).not.toBe('rgb(204, 82, 82)');
   });
 
+  // 可輸入模式的驚嘆號在輸入框外面，不能靠繼承拿到停用的灰色；使用端頁面的字色是深色時最容易看出來
+  it('停用的可輸入模式：選中有標記的項目時，驚嘆號跟停用的輸入框文字一樣是灰色', () => {
+    setup(true, 'a');
+    el.style.color = 'rgb(51, 51, 51)';
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+    const input = el.querySelector('input.select-field') as HTMLInputElement;
+    const icon = el.querySelector('.select-status') as HTMLElement;
+    expect(input.disabled).toBeTrue();
+    expect(icon).not.toBeNull();
+    expect(getComputedStyle(icon).color).toBe(getComputedStyle(input).color);
+    expect(getComputedStyle(icon).color).not.toBe('rgb(204, 82, 82)');
+  });
+
   it('停用的下拉選項：驚嘆號跟停用的文字一樣是灰色', () => {
     setup(false, null);
     fixture.componentRef.setInput('options', [...OPTS, { value: 'c', label: '第三組', disabled: true, status: { label: '需處理' } }]);
