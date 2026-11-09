@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync } from '@angular/core/testing';
-import { ElementRef, NgZone } from '@angular/core';
+import { ElementRef, ErrorHandler, NgZone, signal } from '@angular/core';
 import {
   AttachOptions,
   CloseReason,
@@ -316,6 +316,48 @@ describe('PortalPositioningService', () => {
       stayRef.detach();
       modalStack.unregister('test-modal-c');
     }));
+
+    // 2026-11-09：改成視窗登記當下同步關閉。app-dialog 一畫出來就記下「關掉後焦點還給誰」，
+    // 浮層要在那之前關好、把焦點還給觸發元素，dialog 記到的才不是即將被移除的元素。
+    it('register() 回傳時就已關閉，不必等 effect', () => {
+      const onClose = jasmine.createSpy<(r: CloseReason) => void>();
+      attach({ closeOnModalOpen: true, onClose });
+
+      modalStack.register('test-modal-sync');
+
+      expect(onClose).withContext('register 一回傳就關了').toHaveBeenCalledOnceWith('modal-open');
+      modalStack.unregister('test-modal-sync');
+    });
+
+    it('關閉回呼裡寫 signal → 不丟 NG0600，值有寫進去', () => {
+      const errorHandler = TestBed.inject(ErrorHandler);
+      spyOn(errorHandler, 'handleError');
+      const closedBy = signal<CloseReason | null>(null);
+      attach({ closeOnModalOpen: true, onClose: (r) => closedBy.set(r) });
+
+      modalStack.register('test-modal-write');
+      TestBed.flushEffects();
+
+      expect(closedBy()).toBe('modal-open');
+      expect(errorHandler.handleError).not.toHaveBeenCalled();
+      modalStack.unregister('test-modal-write');
+    });
+
+    it('第一個浮層的關閉回呼出錯 → 後面的浮層照樣關、register 不丟錯、錯誤交給 ErrorHandler', () => {
+      const errorHandler = TestBed.inject(ErrorHandler);
+      spyOn(errorHandler, 'handleError');
+      const boom = new Error('關閉回呼出錯');
+      const second = jasmine.createSpy<(r: CloseReason) => void>();
+      attach({ closeOnModalOpen: true, onClose: () => { throw boom; } });
+      attach({ closeOnModalOpen: true, onClose: second });
+
+      expect(() => modalStack.register('test-modal-throw')).not.toThrow();
+      TestBed.flushEffects();
+
+      expect(second).withContext('後面的浮層照樣關').toHaveBeenCalledOnceWith('modal-open');
+      expect(errorHandler.handleError).toHaveBeenCalledWith(boom);
+      modalStack.unregister('test-modal-throw');
+    });
   });
 
   // ── closeOnClickOutside ──────────────────────────────────────────────────────

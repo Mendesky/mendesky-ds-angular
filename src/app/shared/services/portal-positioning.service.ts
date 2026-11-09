@@ -1,4 +1,4 @@
-import { ElementRef, Injectable, NgZone, effect, inject } from '@angular/core';
+import { ElementRef, ErrorHandler, Injectable, NgZone, inject } from '@angular/core';
 import { ModalStackService } from '../../core/services/modal-stack.service';
 
 export type Placement =
@@ -394,6 +394,7 @@ class InternalOverlayRef implements PortalOverlayRef {
 export class PortalPositioningService {
   private readonly modalStack = inject(ModalStackService);
   private readonly zone = inject(NgZone);
+  private readonly errorHandler = inject(ErrorHandler);
   private readonly refs = new Set<InternalOverlayRef>();
   private documentListenersAttached = false;
   private visualViewportListenersAttached = false;
@@ -456,12 +457,20 @@ export class PortalPositioningService {
   };
 
   constructor() {
-    // 訂閱 ModalStack：stackSize 增加時，通知 closeOnModalOpen 的 ref 比對是否要關閉
-    effect(() => {
-      const size = this.modalStack.stackSize();
+    // 有新的 modal 登記時，當場關掉 closeOnModalOpen 的 ref（比 ref 開啟時的層數多才關）。
+    // 不用 effect 讀 stackSize：effect 比 modal 第一次畫出來還晚，app-dialog 一畫出來就記下
+    // 「關掉後焦點還給誰」，那時日期面板還開著、焦點在面板的格子上，dialog 會記到即將被移除的格子，
+    // 關掉後焦點落到 body。登記當下就關，面板先把焦點還給觸發元素，dialog 記到的才是它。
+    // onOpen 已經在 untracked 裡呼叫，onClose 裡寫 signal 不會丟 NG0600。
+    // 每個 ref 各自接住錯誤：一個使用端的 onClose 出錯，不能擋住後面的 ref，也不能讓 register（modal 打開）跟著出錯。
+    this.modalStack.onOpen((size) => {
       for (const ref of Array.from(this.refs)) {
         if (ref.isCloseOnModalOpen && size > ref.openedAtStackSize) {
-          ref.closeWithReason('modal-open');
+          try {
+            ref.closeWithReason('modal-open');
+          } catch (error) {
+            this.errorHandler.handleError(error);
+          }
         }
       }
     });
