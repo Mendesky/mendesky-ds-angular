@@ -1299,3 +1299,18 @@ describe('PortalPositioningService', () => {
     });
   });
 });
+
+// 使用端的測試常用只有幾個方法的假物件代替 ModalStackService（mendesky-web 有 25 個測試檔這樣做）。
+// 浮層服務建立時不能依賴 ModalStackService 上額外的方法，否則那些測試一建立浮層服務就全部壞掉（2026-11-09）。
+describe('PortalPositioningService — 使用端用假的 ModalStackService', () => {
+  it('假物件只有 register、unregister、isTopmost → 浮層服務照樣建立得起來', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        PortalPositioningService,
+        { provide: ModalStackService, useValue: { register: () => {}, unregister: () => {}, isTopmost: () => true } },
+      ],
+    });
+
+    expect(() => TestBed.inject(PortalPositioningService)).not.toThrow();
+  });
+});
