@@ -1067,3 +1067,85 @@ describe('DatePickerComponent — Esc 不傳給外層', () => {
     expect(host.outerEsc).toBe(1);
   });
 });
+
+// ── 點外面關面板不捲動頁面（2026-11-09，mendesky-web #356 審查第 2 條）──────────
+// v0.9.0 起面板一打開，焦點就移進面板。點外面關面板時焦點還給按鈕；按鈕若已捲出畫面，
+// 照預設呼叫 focus() 會把頁面捲回按鈕，滑鼠放開時底下換成別的東西，這一下點擊就沒作用。
+// 跟 Action Menu 一樣：點外面關掉的不捲動；Esc 關掉的照預設捲到看得到按鈕，用鍵盤的人才看得到焦點在哪。
+
+@Component({
+  standalone: true,
+  imports: [DatePickerComponent],
+  template: `
+    <div style="height: 200px"></div>
+    <app-date-picker mode="month"></app-date-picker>
+    <div style="height: 4000px"></div>
+    <button type="button" class="far-away">很下面的按鈕</button>
+    <div style="height: 400px"></div>
+  `,
+})
+class TallPageHostComponent {}
+
+describe('DatePickerComponent — 點外面關面板不捲動頁面', () => {
+  let fixture: ComponentFixture<TallPageHostComponent>;
+  let appRef: ApplicationRef;
+
+  const root = () => fixture.nativeElement as HTMLElement;
+  const trigger = () => root().querySelector('.dp-trigger') as HTMLElement;
+  const farButton = () => root().querySelector('.far-away') as HTMLElement;
+  const panel = () => document.querySelector('app-date-panel');
+
+  async function settle(): Promise<void> {
+    fixture.detectChanges();
+    appRef.tick();
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+    appRef.tick();
+    await fixture.whenStable();
+  }
+
+  /** 從按鈕打開面板，再把頁面捲到很下面的按鈕；回傳捲完的位置 */
+  async function openThenScrollAway(): Promise<number> {
+    window.scrollTo(0, 0);
+    trigger().focus();
+    trigger().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await settle();
+    expect(panel()).withContext('面板有打開').not.toBeNull();
+    farButton().scrollIntoView({ block: 'center' });
+    await settle();
+    expect(trigger().getBoundingClientRect().bottom).withContext('前提：日期按鈕已捲出畫面').toBeLessThan(0);
+    return window.scrollY;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [TallPageHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(TallPageHostComponent);
+    appRef = TestBed.inject(ApplicationRef);
+    document.body.appendChild(fixture.nativeElement);
+    await settle();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    (fixture.nativeElement as HTMLElement).remove();
+    window.scrollTo(0, 0);
+  });
+
+  it('按下面板外的按鈕 → 面板關閉、焦點回到日期按鈕，頁面不捲動', async () => {
+    const scrolled = await openThenScrollAway();
+    farButton().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    await settle();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(window.scrollY).toBe(scrolled);
+  });
+
+  it('按 Esc 關面板 → 焦點回到日期按鈕，頁面照預設捲到看得到它', async () => {
+    const scrolled = await openThenScrollAway();
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await settle();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(window.scrollY).toBeLessThan(scrolled);
+  });
+});
