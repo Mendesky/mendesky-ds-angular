@@ -75,11 +75,11 @@ describe('TabsComponent', () => {
     expect(getComputedStyle(tabs()[0]).fontWeight).toBe('600');
   });
 
-  it('文字顏色在白底上都看得清楚：未選中灰、選中深藍、底線亮藍', () => {
-    // 2026-11-09 定案：字色對白底對比要到 4.5；底線不是字，亮藍 #3a9ccd 即可
+  it('文字顏色在白底上都看得清楚：未選中灰、選中深藍，底線跟選中的字同色', () => {
+    // 2026-11-09 定案：字色對白底對比要到 4.5；選中的字和底線用同一個深藍，不要一個頁籤兩種藍
     expect(getComputedStyle(tabs()[1]).color).toBe('rgb(104, 104, 104)');
     expect(getComputedStyle(tabs()[0]).color).toBe('rgb(26, 100, 137)');
-    expect(getComputedStyle(tabs()[0]).boxShadow).toContain('rgb(58, 156, 205)');
+    expect(getComputedStyle(tabs()[0]).boxShadow).toContain('rgb(26, 100, 137)');
   });
 
   it('roving tabindex：只有選中的頁籤在 Tab 順序裡', () => {
