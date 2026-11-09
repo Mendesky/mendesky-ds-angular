@@ -1116,6 +1116,8 @@ describe('DatePickerComponent — Esc 不傳給外層', () => {
 // v0.9.0 起面板一打開，焦點就移進面板。點外面關面板時焦點還給按鈕；按鈕若已捲出畫面，
 // 照預設呼叫 focus() 會把頁面捲回按鈕，滑鼠放開時底下換成別的東西，這一下點擊就沒作用。
 // 跟 Action Menu 一樣：點外面關掉的不捲動；Esc 關掉的照預設捲到看得到按鈕，用鍵盤的人才看得到焦點在哪。
+// 點外面時焦點最後落在哪，由瀏覽器決定：還給按鈕之後，瀏覽器照原生行為把焦點交給按下的地方（按到空白處落在 body）。
+// 這裡用合成事件，瀏覽器不會做那一步，所以測到的是「先還給按鈕」這個中間狀態。
 
 @Component({
   standalone: true,
@@ -1175,13 +1177,15 @@ describe('DatePickerComponent — 點外面關面板不捲動頁面', () => {
     window.scrollTo(0, 0);
   });
 
-  it('按下面板外的按鈕 → 面板關閉、焦點回到日期按鈕，頁面不捲動', async () => {
+  it('按下面板外的按鈕 → 面板關閉，頁面不捲動', async () => {
     const scrolled = await openThenScrollAway();
     farButton().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     await settle();
     expect(panel()).toBeNull();
-    expect(document.activeElement).toBe(trigger());
-    expect(window.scrollY).toBe(scrolled);
+    expect(document.activeElement)
+      .withContext('中間狀態：關面板時先把焦點還給按鈕；真的瀏覽器接著會交給按下的地方')
+      .toBe(trigger());
+    expect(window.scrollY).withContext('還焦點時沒有把頁面捲回按鈕').toBe(scrolled);
   });
 
   it('按 Esc 關面板 → 焦點回到日期按鈕，頁面照預設捲到看得到它', async () => {
