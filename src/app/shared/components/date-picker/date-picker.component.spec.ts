@@ -5,6 +5,7 @@ import { DatePickerComponent } from './date-picker.component';
 import { FieldComponent } from '../field/field.component';
 import { DialogComponent } from '../dialog/dialog.component';
 import { ModalShellComponent } from '../modal-shell/modal-shell.component';
+import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
 
 // ── 報讀名稱（2026-11-05）──────────────────────────────────────
 // 原本按鈕只念目前文字（值或提示文字），聽不出是哪個欄位；清除鈕寫死念「清除起始日」，用在結束日期也這樣念。
@@ -820,13 +821,14 @@ describe('DatePickerComponent — 期別模式', () => {
 
 @Component({
   standalone: true,
-  imports: [FieldComponent, DatePickerComponent, DialogComponent, ModalShellComponent, FormsModule],
+  imports: [FieldComponent, DatePickerComponent, DialogComponent, ModalShellComponent, FormsModule, ErrorTooltipDirective],
   template: `
     @if (show) {
       <app-field label="完成日期">
         <app-date-picker [mode]="mode" [(ngModel)]="value"></app-date-picker>
       </app-field>
     }
+    <span class="err-anchor" [appErrorTooltip]="errorMsg">另一個欄位</span>
     <app-dialog [isOpen]="dialogOpen" header="提示" content="內容" (cancel)="onDialogCancel()"></app-dialog>
     <app-modal-shell [isOpen]="shellOpen" ariaLabel="視窗" (escapePress)="shellOpen = false">
       <button type="button" class="in-shell">確定</button>
@@ -841,6 +843,7 @@ class OuterEscHostComponent {
   dialogOpen = false;
   dialogCancels = 0;
   shellOpen = false;
+  errorMsg = '';
   onDialogCancel(): void {
     this.dialogCancels++;
     this.dialogOpen = false;
@@ -1023,6 +1026,47 @@ describe('DatePickerComponent — Esc 不傳給外層', () => {
     await wait(500);
     await settle();
     expect(active()).withContext('視窗關掉後焦點回到日期按鈕').toBe(trigger());
+  });
+
+  // ── 以下 2026-11-09 mendesky-web #356 審查補 ──
+  // 浮層服務在 effect 裡通知「有視窗打開了」，日期元件在那裡關面板。關面板最後一步把 isOpen 設回 false，
+  // 原本在 effect 裡寫 signal 會丟 NG0600、沒寫進去：按鈕還標成展開，之後按一次只是把狀態歸零、面板沒打開，要按第二次。
+  for (const kind of ['app-dialog', 'app-modal-shell'] as const) {
+    it(`面板開著時蓋上 ${kind} → 按鈕不再標成展開；視窗關掉後按一次按鈕就打開面板`, async () => {
+      const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      const setOpen = (v: boolean) => {
+        if (kind === 'app-dialog') host.dialogOpen = v;
+        else host.shellOpen = v;
+      };
+      await open();
+      setOpen(true);
+      await settle();
+      expect(panel()).withContext('視窗打開時面板關閉').toBeNull();
+      expect(trigger().getAttribute('aria-expanded')).withContext('面板關了，按鈕不再標成展開').toBe('false');
+      setOpen(false);
+      await settle();
+      await wait(500); // 等視窗退場動畫跑完
+      await settle();
+      trigger().click();
+      await settle();
+      expect(panel()).withContext('按一次就打開面板').not.toBeNull();
+    });
+  }
+
+  // 浮層服務收到「有視窗打開了」時，依序關掉設了 closeOnModalOpen 的浮層。原本日期元件關面板時丟 NG0600，
+  // 迴圈在那裡中斷，排在面板後面打開的錯誤提示不會被關，留在對話框上面。
+  it('面板開著時又出現錯誤提示，再蓋上 app-dialog → 面板和錯誤提示都關閉', async () => {
+    const tooltips = () => document.querySelectorAll('app-form-error-portal').length;
+    await open();
+    host.errorMsg = '請填寫';
+    await settle();
+    expect(tooltips()).withContext('前提：錯誤提示在面板之後打開').toBe(1);
+    host.dialogOpen = true;
+    await settle();
+    expect(panel()).withContext('面板關閉').toBeNull();
+    expect(tooltips()).withContext('排在面板後面的錯誤提示也關閉').toBe(0);
+    host.errorMsg = '';
+    await settle();
   });
 
   it('開關面板幾次後，日期元件在 document、window 捕獲階段掛的按鍵監聽都有拿掉', async () => {

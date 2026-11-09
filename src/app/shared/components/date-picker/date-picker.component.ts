@@ -1,7 +1,7 @@
 import {
   Component, Input, OnDestroy, ElementRef, ApplicationRef, NgZone,
   EnvironmentInjector, ComponentRef, forwardRef, signal, createComponent, inject,
- ChangeDetectionStrategy, } from '@angular/core';
+ ChangeDetectionStrategy, untracked, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -286,7 +286,10 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
           if (reason === 'manual') return;
           // 點外面關掉的不捲動頁面：面板開著時頁面可能已經捲走，按鈕不在畫面上，
           // 照預設捲回按鈕的話，滑鼠放開時底下換成別的東西，這一下點擊就沒作用（跟 Action Menu 一樣）。
-          this.closePanel(true, reason === 'click-outside');
+          // 包在 untracked 裡：視窗打開時，浮層服務是在 effect 裡通知關閉（modal-open），
+          // closePanel 最後要把 isOpen 設回 false，在 effect 裡直接寫 signal 會丟 NG0600、沒寫進去，
+          // 按鈕會一直標成展開，之後要按兩次才打得開面板。
+          untracked(() => this.closePanel(true, reason === 'click-outside'));
         },
       }
     );
