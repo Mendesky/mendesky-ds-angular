@@ -5,6 +5,7 @@ import { DatePickerComponent } from './date-picker.component';
 import { FieldComponent } from '../field/field.component';
 import { DialogComponent } from '../dialog/dialog.component';
 import { ModalShellComponent } from '../modal-shell/modal-shell.component';
+import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
 
 // ── 報讀名稱（2026-11-05）──────────────────────────────────────
 // 原本按鈕只念目前文字（值或提示文字），聽不出是哪個欄位；清除鈕寫死念「清除起始日」，用在結束日期也這樣念。
@@ -820,13 +821,14 @@ describe('DatePickerComponent — 期別模式', () => {
 
 @Component({
   standalone: true,
-  imports: [FieldComponent, DatePickerComponent, DialogComponent, ModalShellComponent, FormsModule],
+  imports: [FieldComponent, DatePickerComponent, DialogComponent, ModalShellComponent, FormsModule, ErrorTooltipDirective],
   template: `
     @if (show) {
       <app-field label="完成日期">
         <app-date-picker [mode]="mode" [(ngModel)]="value"></app-date-picker>
       </app-field>
     }
+    <span class="err-anchor" [appErrorTooltip]="errorMsg">另一個欄位</span>
     <app-dialog [isOpen]="dialogOpen" header="提示" content="內容" (cancel)="onDialogCancel()"></app-dialog>
     <app-modal-shell [isOpen]="shellOpen" ariaLabel="視窗" (escapePress)="shellOpen = false">
       <button type="button" class="in-shell">確定</button>
@@ -841,6 +843,7 @@ class OuterEscHostComponent {
   dialogOpen = false;
   dialogCancels = 0;
   shellOpen = false;
+  errorMsg = '';
   onDialogCancel(): void {
     this.dialogCancels++;
     this.dialogOpen = false;
@@ -1025,6 +1028,47 @@ describe('DatePickerComponent — Esc 不傳給外層', () => {
     expect(active()).withContext('視窗關掉後焦點回到日期按鈕').toBe(trigger());
   });
 
+  // ── 以下 2026-11-09 mendesky-web #356 審查補 ──
+  // 浮層服務在 effect 裡通知「有視窗打開了」，日期元件在那裡關面板。關面板最後一步把 isOpen 設回 false，
+  // 原本在 effect 裡寫 signal 會丟 NG0600、沒寫進去：按鈕還標成展開，之後按一次只是把狀態歸零、面板沒打開，要按第二次。
+  for (const kind of ['app-dialog', 'app-modal-shell'] as const) {
+    it(`面板開著時蓋上 ${kind} → 按鈕不再標成展開；視窗關掉後按一次按鈕就打開面板`, async () => {
+      const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      const setOpen = (v: boolean) => {
+        if (kind === 'app-dialog') host.dialogOpen = v;
+        else host.shellOpen = v;
+      };
+      await open();
+      setOpen(true);
+      await settle();
+      expect(panel()).withContext('視窗打開時面板關閉').toBeNull();
+      expect(trigger().getAttribute('aria-expanded')).withContext('面板關了，按鈕不再標成展開').toBe('false');
+      setOpen(false);
+      await settle();
+      await wait(500); // 等視窗退場動畫跑完
+      await settle();
+      trigger().click();
+      await settle();
+      expect(panel()).withContext('按一次就打開面板').not.toBeNull();
+    });
+  }
+
+  // 浮層服務收到「有視窗打開了」時，依序關掉設了 closeOnModalOpen 的浮層。原本日期元件關面板時丟 NG0600，
+  // 迴圈在那裡中斷，排在面板後面打開的錯誤提示不會被關，留在對話框上面。
+  it('面板開著時又出現錯誤提示，再蓋上 app-dialog → 面板和錯誤提示都關閉', async () => {
+    const tooltips = () => document.querySelectorAll('app-form-error-portal').length;
+    await open();
+    host.errorMsg = '請填寫';
+    await settle();
+    expect(tooltips()).withContext('前提：錯誤提示在面板之後打開').toBe(1);
+    host.dialogOpen = true;
+    await settle();
+    expect(panel()).withContext('面板關閉').toBeNull();
+    expect(tooltips()).withContext('排在面板後面的錯誤提示也關閉').toBe(0);
+    host.errorMsg = '';
+    await settle();
+  });
+
   it('開關面板幾次後，日期元件在 document、window 捕獲階段掛的按鍵監聽都有拿掉', async () => {
     type Entry = { target: EventTarget; type: string; fn: unknown };
     const live: Entry[] = [];
@@ -1065,5 +1109,91 @@ describe('DatePickerComponent — Esc 不傳給外層', () => {
     expect(panel()).toBeNull();
     key(document.body, 'Escape');
     expect(host.outerEsc).toBe(1);
+  });
+});
+
+// ── 點外面關面板不捲動頁面（2026-11-09，mendesky-web #356 審查第 2 條）──────────
+// v0.9.0 起面板一打開，焦點就移進面板。點外面關面板時焦點還給按鈕；按鈕若已捲出畫面，
+// 照預設呼叫 focus() 會把頁面捲回按鈕，滑鼠放開時底下換成別的東西，這一下點擊就沒作用。
+// 跟 Action Menu 一樣：點外面關掉的不捲動；Esc 關掉的照預設捲到看得到按鈕，用鍵盤的人才看得到焦點在哪。
+// 點外面時焦點最後落在哪，由瀏覽器決定：還給按鈕之後，瀏覽器照原生行為把焦點交給按下的地方（按到空白處落在 body）。
+// 這裡用合成事件，瀏覽器不會做那一步，所以測到的是「先還給按鈕」這個中間狀態。
+
+@Component({
+  standalone: true,
+  imports: [DatePickerComponent],
+  template: `
+    <div style="height: 200px"></div>
+    <app-date-picker mode="month"></app-date-picker>
+    <div style="height: 4000px"></div>
+    <button type="button" class="far-away">很下面的按鈕</button>
+    <div style="height: 400px"></div>
+  `,
+})
+class TallPageHostComponent {}
+
+describe('DatePickerComponent — 點外面關面板不捲動頁面', () => {
+  let fixture: ComponentFixture<TallPageHostComponent>;
+  let appRef: ApplicationRef;
+
+  const root = () => fixture.nativeElement as HTMLElement;
+  const trigger = () => root().querySelector('.dp-trigger') as HTMLElement;
+  const farButton = () => root().querySelector('.far-away') as HTMLElement;
+  const panel = () => document.querySelector('app-date-panel');
+
+  async function settle(): Promise<void> {
+    fixture.detectChanges();
+    appRef.tick();
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+    appRef.tick();
+    await fixture.whenStable();
+  }
+
+  /** 從按鈕打開面板，再把頁面捲到很下面的按鈕；回傳捲完的位置 */
+  async function openThenScrollAway(): Promise<number> {
+    window.scrollTo(0, 0);
+    trigger().focus();
+    trigger().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await settle();
+    expect(panel()).withContext('面板有打開').not.toBeNull();
+    farButton().scrollIntoView({ block: 'center' });
+    await settle();
+    expect(trigger().getBoundingClientRect().bottom).withContext('前提：日期按鈕已捲出畫面').toBeLessThan(0);
+    return window.scrollY;
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [TallPageHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(TallPageHostComponent);
+    appRef = TestBed.inject(ApplicationRef);
+    document.body.appendChild(fixture.nativeElement);
+    await settle();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    (fixture.nativeElement as HTMLElement).remove();
+    window.scrollTo(0, 0);
+  });
+
+  it('按下面板外的按鈕 → 面板關閉，頁面不捲動', async () => {
+    const scrolled = await openThenScrollAway();
+    farButton().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    await settle();
+    expect(panel()).toBeNull();
+    expect(document.activeElement)
+      .withContext('中間狀態：關面板時先把焦點還給按鈕；真的瀏覽器接著會交給按下的地方')
+      .toBe(trigger());
+    expect(window.scrollY).withContext('還焦點時沒有把頁面捲回按鈕').toBe(scrolled);
+  });
+
+  it('按 Esc 關面板 → 焦點回到日期按鈕，頁面照預設捲到看得到它', async () => {
+    const scrolled = await openThenScrollAway();
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await settle();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(window.scrollY).toBeLessThan(scrolled);
   });
 });

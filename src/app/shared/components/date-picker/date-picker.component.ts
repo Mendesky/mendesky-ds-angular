@@ -1,7 +1,7 @@
 import {
   Component, Input, OnDestroy, ElementRef, ApplicationRef, NgZone,
   EnvironmentInjector, ComponentRef, forwardRef, signal, createComponent, inject,
- ChangeDetectionStrategy, } from '@angular/core';
+ ChangeDetectionStrategy, untracked, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
@@ -284,7 +284,13 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
         closeOnModalOpen: true,
         onClose: (reason) => {
           if (reason === 'manual') return;
-          this.closePanel(true);
+          // 點外面關掉的不捲動頁面：面板開著時頁面可能已經捲走，按鈕不在畫面上，
+          // 照預設捲回按鈕的話，滑鼠放開時底下換成別的東西，這一下點擊就沒作用（跟 Action Menu 一樣）。
+          // 焦點還給按鈕之後，瀏覽器照原生行為把焦點交給按下的地方（按到空白處落在 body）。
+          // 包在 untracked 裡：視窗打開時，浮層服務是在 effect 裡通知關閉（modal-open），
+          // closePanel 最後要把 isOpen 設回 false，在 effect 裡直接寫 signal 會丟 NG0600、沒寫進去，
+          // 按鈕會一直標成展開，之後要按兩次才打得開面板。
+          untracked(() => this.closePanel(true, reason === 'click-outside'));
         },
       }
     );
@@ -337,11 +343,16 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     this.stopSwallowingEscape = stop;
   }
 
-  closePanel(returnFocus = true): void {
+  /**
+   * 關閉面板。
+   * returnFocus：把焦點還給按鈕。
+   * preventScroll：還焦點時不捲動頁面（點外面關掉時用）；其他關法照預設捲到看得到按鈕，用鍵盤的人才看得到焦點在哪。
+   */
+  closePanel(returnFocus = true, preventScroll = false): void {
     if (returnFocus) {
       // Focus trigger BEFORE destroying the panel so focus never jumps to document.body
       const trigger = this.el.nativeElement.querySelector('.dp-trigger') as HTMLElement | null;
-      trigger?.focus();
+      trigger?.focus(preventScroll ? { preventScroll: true } : undefined);
     }
     document.removeEventListener('keydown', this.onEscape, true);
     const ref = this._overlayRef;
