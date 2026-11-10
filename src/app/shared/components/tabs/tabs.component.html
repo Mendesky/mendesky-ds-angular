@@ -1,0 +1,33 @@
+<div class="tabs">
+  <div class="tabs__list" #list role="tablist" [attr.aria-label]="ariaLabel">
+    @for (tab of items; track tab.value; let i = $index) {
+      <button
+        #tabBtn
+        type="button"
+        role="tab"
+        class="tabs__tab"
+        [class.tabs__tab--selected]="tab.value === value"
+        [class.tabs__tab--disabled]="!!tab.disabled"
+        [id]="tabId(i)"
+        [attr.aria-selected]="tab.value === value ? 'true' : 'false'"
+        [attr.aria-disabled]="tab.disabled ? 'true' : null"
+        [attr.aria-controls]="panelId || null"
+        [attr.tabindex]="i === focusableIndex ? 0 : -1"
+        (click)="select(i)"
+        (keydown)="onKeydown($event, i)"
+      >
+        <span class="tabs__label">{{ tab.label }}</span>
+        @if (tab.status) {
+          <!-- 圖示不念；文字放在下面看不見的 span，報讀軟體接在名稱後面念 -->
+          <span class="tabs__status" aria-hidden="true" [appTooltip]="tab.status.label">
+            <app-icon name="Alert-Info" size="16"></app-icon>
+          </span>
+          <span class="tabs__sr">，{{ tab.status.label }}</span>
+        }
+      </button>
+    }
+  </div>
+  <div class="tabs__end">
+    <ng-content></ng-content>
+  </div>
+</div>

@@ -1,0 +1,120 @@
+// 頁籤：底線樣式。灰色底線與選中的深藍線一樣粗（2px），都用 inset box-shadow 畫，頁籤列左右捲動時不會被裁掉。
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.tabs {
+  display: flex;
+  // 撐滿整列：尾端放 M、L 尺寸的按鈕時頁籤列比頁籤高，頁籤要撐到底，選中的深藍線才會貼在灰線上
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  // 灰色底線：從最左延伸到最右，尾端的自訂內容底下也有。2026-11-09 定案維持 2px：1px 的淺灰線放在淺藍漸層底上幾乎看不見
+  box-shadow: inset 0 -2px 0 var(--border\/primary, #e7e7e7);
+}
+
+.tabs__list {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  // 2026-11-09 定案維持藏起捲軸：一直顯示捲軸的電腦上，捲軸會佔 11px 把頁籤往上推、深藍線離開灰線。
+  // 代價是看不出後面還有頁籤；規格要求頁籤可能超過一排時改用 #select
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tabs__end {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.tabs__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  line-height: 1.5;
+  color: var(--text\/body, #686868);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms cubic-bezier(0, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0, 0, 0.2, 1);
+
+  &:hover:not(.tabs__tab--disabled):not(.tabs__tab--selected) {
+    color: var(--text\/secondary, #535353);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring-color, #3a9ccd);
+    outline-offset: -2px;
+  }
+
+  &--selected {
+    color: var(--color\/calmblue\/80, #1a6489);
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 var(--color\/calmblue\/80, #1a6489);
+  }
+
+  &--disabled {
+    color: var(--text\/disabled, #939393);
+    cursor: not-allowed;
+  }
+
+  @media (forced-colors: active) {
+    &--selected {
+      box-shadow: none;
+      border-bottom: 2px solid Highlight;
+    }
+
+    &--disabled {
+      color: GrayText;
+    }
+  }
+}
+
+.tabs__status {
+  display: inline-flex;
+  align-items: center;
+  color: var(--label\/warning, #cc5252);
+}
+
+// 停用時標記跟停用的文字一樣變灰：不能操作的頁籤，不用紅色催人處理
+.tabs__tab--disabled .tabs__status {
+  color: currentColor;
+}
+
+// 看不見、報讀軟體念得到
+.tabs__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabs__tab {
+    transition: none;
+  }
+}
