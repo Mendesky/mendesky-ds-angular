@@ -9,13 +9,19 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
 import { SelectPanelComponent } from './select-panel.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
+import { TooltipDirective } from '../../directives/tooltip/tooltip.directive';
+import type { StatusMark } from '../../types/status-mark';
 import { PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
 
 export interface SelectOption {
   value: any;
   label: string;
   disabled?: boolean;
+  /** 名稱後面的狀態標記（選填）：選項與選中後的選取框都在文字右邊顯示紅色驚嘆號 */
+  status?: StatusMark | null;
 }
+
+let nextId = 0;
 
 function optionsEqual(a: SelectOption[], b: SelectOption[]): boolean {
   if (a === b) return true;
@@ -24,7 +30,8 @@ function optionsEqual(a: SelectOption[], b: SelectOption[]): boolean {
     if (
       a[i].value !== b[i].value ||
       a[i].label !== b[i].label ||
-      a[i].disabled !== b[i].disabled
+      a[i].disabled !== b[i].disabled ||
+      (a[i].status?.label ?? null) !== (b[i].status?.label ?? null)
     ) {
       return false;
     }
@@ -35,7 +42,7 @@ function optionsEqual(a: SelectOption[], b: SelectOption[]): boolean {
 @Component({
   selector: 'app-select',
   standalone: true,
-  imports: [CommonModule, IconComponent, ErrorTooltipDirective],
+  imports: [CommonModule, IconComponent, ErrorTooltipDirective, TooltipDirective],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => SelectComponent),
@@ -72,6 +79,19 @@ export class SelectComponent implements ControlValueAccessor, OnDestroy {
   displayLabel = computed(() =>
     this._options().find(o => o.value === this.value())?.label ?? ''
   );
+
+  /** 選中項目的狀態標記；沒有就是 null */
+  selectedStatus = computed<StatusMark | null>(() =>
+    this._options().find(o => o.value === this.value())?.status ?? null
+  );
+
+  /**
+   * 選取框要不要顯示狀態標記：選中項目有標記才顯示。可輸入模式打開時框裡是使用者打的字，不是選中項目，所以不顯示
+   */
+  showStatus = computed(() => !!this.selectedStatus() && !(this.searchable && this.isOpen()));
+
+  /** 狀態文字的 id，給選取框的 aria-describedby 用 */
+  readonly statusId = `app-select-status-${++nextId}`;
 
   /** 是否有選中值（用於 --actived 狀態） */
   hasValue = computed(() => this.value() !== null && this.value() !== undefined);

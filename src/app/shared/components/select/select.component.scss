@@ -56,6 +56,87 @@
   text-overflow: ellipsis;
 }
 
+/* ── 狀態標記：選中項目有 status 時，文字後面接紅色驚嘆號 ── */
+.select-field--with-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.select-field__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.select-status {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--label\/warning, #cc5252);
+}
+
+/* 可輸入模式：平常佔滿；有狀態標記時依文字寬度縮起來，驚嘆號緊接在後，剩下的空間留在驚嘆號右邊 */
+.select-input-fit {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+
+  > .select-field {
+    width: 100%;
+  }
+}
+
+.select-input-fit--on {
+  display: inline-grid;
+  flex: 0 1 auto;
+
+  &::after {
+    content: attr(data-value);
+    grid-area: 1 / 1;
+    visibility: hidden;
+    overflow: hidden;
+    white-space: pre;
+    padding-right: 2px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 1em;
+    font-weight: 400;
+  }
+
+  > .select-field {
+    grid-area: 1 / 1;
+    /* 寬度 0＋min-width 100%：輸入框不撐寬，欄寬只由 ::after 的文字決定，再填滿那一欄 */
+    width: 0;
+    min-width: 100%;
+  }
+}
+
+/* 手機寬度：核心樣式（core.scss 的 iOS 放大防護）把輸入框強制成 16px；
+   量寬度的隱藏文字也要跟著 16px，欄寬才放得下輸入框的字，不會被切掉 */
+@media (max-width: 767px) {
+  .select-input-fit--on::after {
+    font-size: 16px;
+  }
+}
+
+.select-status--after-input {
+  margin-left: 4px;
+  margin-right: auto;
+}
+
+/* 看不見、報讀軟體念得到 */
+.select-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* div trigger placeholder 文字顏色（取代 ::placeholder） */
 .select-field--placeholder {
   color: var(--input\/prompt, #939393);
@@ -157,5 +238,11 @@
 }
 
 .select-wrap--disabled .select-field--placeholder {
+  color: var(--text\/disabled, #d3d3d3);
+}
+
+/* 停用時狀態標記跟停用的文字一樣變灰：不能操作的欄位，不用紅色催人處理。
+   直接給停用的顏色，不用 currentColor：可輸入模式的驚嘆號在輸入框外面，繼承到的是使用端頁面的字色 */
+.select-wrap--disabled .select-status {
   color: var(--text\/disabled, #d3d3d3);
 }

@@ -5,11 +5,13 @@ import {
  ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SelectOption } from './select.component';
+import { IconComponent } from '../icon/icon.component';
+import { TooltipDirective } from '../../directives/tooltip/tooltip.directive';
 
 @Component({
   selector: 'app-select-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent, TooltipDirective],
   templateUrl: './select-panel.component.html',
   styleUrls: ['./select-panel.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
