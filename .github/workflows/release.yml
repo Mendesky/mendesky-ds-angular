@@ -1,0 +1,33 @@
+name: Release notes
+
+# 推正式版 tag（vX.Y.Z，不含 -beta）時，在 GitHub Releases 建這一版的版本說明，內容照抄 tag 訊息。
+# 本體文件網站的「開始使用」與「版本與升級」頁連到 Releases。手動執行可以補建過去的版本，已經有的會略過。
+# 細節見 scripts/create-release.sh。
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要補建版本說明的正式版 tag，例如 v0.10.0
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: 版本說明 ${{ inputs.tag || github.ref_name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 建版本說明
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/create-release.sh "$TAG"
