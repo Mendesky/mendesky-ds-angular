@@ -10,6 +10,7 @@
 #   - 只有它是目前最新的正式版時才標成 Latest；補建舊版不會搶走最新版的標記。
 # 變數緊接全形標點時一律寫成 ${VAR}：macOS 內建的 bash 3.2 在 UTF-8 語系下會把全形字的位元組當成變數名稱的一部分。
 # 不用 EXIT trap：bash 3.2 會讓 trap 裡最後一個指令的結束碼蓋掉原本的錯誤，失敗會被回報成成功。
+# pipefail 不能拿掉：查 tag 清單失敗時，沒有它會算出空的「最新版」，把最新版建成非 Latest 還回報成功。
 set -euo pipefail
 TAG="${1:-}"
 : "${GH_REPO:?需要 GH_REPO，例如 Mendesky/mendesky-ds-angular}"
@@ -32,7 +33,9 @@ if [ "$TYPE" != tag ]; then
   exit 1
 fi
 
-NOTES="$(gh api "repos/${GH_REPO}/git/tags/${SHA}" --jq .message)"
+# 簽章過的 tag（git tag -s），API 回的訊息後面會接整段簽章；版本說明只留簽章之前的文字
+NOTES="$(gh api "repos/${GH_REPO}/git/tags/${SHA}" --jq .message \
+  | sed -E '/^-----BEGIN (PGP|SSH) SIGNATURE-----$/,$d')"
 
 NEWEST="$(gh api "repos/${GH_REPO}/git/matching-refs/tags/v" --paginate --jq '.[].ref | ltrimstr("refs/tags/")' \
   | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
