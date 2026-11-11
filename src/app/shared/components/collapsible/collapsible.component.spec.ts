@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { IconBtnComponent } from '../icon-btn/icon-btn.component';
+import { IconComponent } from '../icon/icon.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   CollapsibleAppearance, CollapsibleChevronPosition, CollapsibleComponent, CollapsibleHeadingLevel,
@@ -45,6 +47,22 @@ class HostComponent {
   disabled = false;
   level: CollapsibleHeadingLevel | null = null;
   changes: boolean[] = [];
+}
+
+/** 綠色外觀的尾端放 app-icon-btn：元件負責把圖示配成看得見的顏色 */
+@Component({
+  standalone: true,
+  imports: [CollapsibleComponent, IconBtnComponent, IconComponent],
+  template: `
+    <app-collapsible appearance="accent" title="段落一" [disabled]="disabled">
+      <app-icon-btn collapsibleTrailing size="16" propClass="SectionBtn" ariaLabel="更多操作">
+        <app-icon name="More" size="16"></app-icon>
+      </app-icon-btn>
+    </app-collapsible>
+  `,
+})
+class AccentActionsHostComponent {
+  disabled = false;
 }
 
 /** WCAG 相對亮度與對比 */
@@ -360,6 +378,35 @@ describe('CollapsibleComponent', () => {
       expect(heading.contains(trigger())).toBeTrue();
       expect(heading.contains(q('[data-testid="lead"]'))).toBeFalse();
       expect(heading.contains(q('[data-testid="trail"]'))).toBeFalse();
+    });
+  });
+
+  describe('綠色外觀尾端的 app-icon-btn', () => {
+    let f: ComponentFixture<AccentActionsHostComponent>;
+    const btn = () => f.nativeElement.querySelector('.icon-btn') as HTMLElement;
+    const hdr = () => f.nativeElement.querySelector('.collapsible__header') as HTMLElement;
+
+    beforeEach(() => {
+      f = TestBed.createComponent(AccentActionsHostComponent);
+      document.body.appendChild(f.nativeElement);
+      f.detectChanges();
+    });
+
+    afterEach(() => f.nativeElement.remove());
+
+    it('一般：白色圖示、透明底，對綠底至少 3:1', () => {
+      const s = getComputedStyle(btn());
+      expect(s.color).toBe('rgb(255, 255, 255)');
+      expect(s.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(contrast(s.color, getComputedStyle(hdr()).backgroundColor)).toBeGreaterThanOrEqual(3);
+    });
+
+    it('停用：底色變灰，圖示改成內文灰，對灰底至少 3:1（不留白色圖示在灰底上）', () => {
+      f.componentInstance.disabled = true;
+      f.detectChanges();
+      const s = getComputedStyle(btn());
+      expect(s.color).not.toBe('rgb(255, 255, 255)');
+      expect(contrast(s.color, getComputedStyle(hdr()).backgroundColor)).toBeGreaterThanOrEqual(3);
     });
   });
 });
