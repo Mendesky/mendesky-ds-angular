@@ -1,0 +1,31 @@
+<div class="collapsible__header">
+  <div class="collapsible__leading"><ng-content select="[collapsibleLeading]"></ng-content></div>
+  <div class="collapsible__heading"
+       [attr.role]="headingLevel ? 'heading' : null"
+       [attr.aria-level]="headingLevel">
+    <button type="button" class="collapsible__trigger"
+            [id]="triggerId"
+            [attr.aria-expanded]="isExpanded()"
+            [attr.aria-controls]="panelId"
+            [attr.aria-disabled]="disabled ? 'true' : null"
+            (click)="toggle()">
+      @if (chevronPosition !== 'end') {
+        <app-icon class="collapsible__chevron" name="DownArrow" size="16" aria-hidden="true"></app-icon>
+      }
+      <span class="collapsible__prefix"><ng-content select="[collapsiblePrefix]"></ng-content></span>
+      <span class="collapsible__title">{{ title }}</span>
+      <span class="collapsible__meta"><ng-content select="[collapsibleMeta]"></ng-content></span>
+      <span class="collapsible__spacer"></span>
+      <span class="collapsible__summary"><ng-content select="[collapsibleSummary]"></ng-content></span>
+      @if (chevronPosition === 'end') {
+        <app-icon class="collapsible__chevron" name="DownArrow" size="16" aria-hidden="true"></app-icon>
+      }
+    </button>
+  </div>
+  <div class="collapsible__trailing"><ng-content select="[collapsibleTrailing]"></ng-content></div>
+</div>
+<div class="collapsible__panel ds-collapse" [class.ds-collapse--expanded]="isExpanded()" [id]="panelId">
+  <div class="ds-collapse__inner" [attr.inert]="isExpanded() ? null : ''">
+    <ng-content></ng-content>
+  </div>
+</div>
