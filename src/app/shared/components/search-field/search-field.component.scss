@@ -1,0 +1,163 @@
+@use '../../../../styles/mixins' as mx;
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+/* ── outline：外框與顏色跟 app-input 一樣 ── */
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing\/xxs, 4px);
+  box-sizing: border-box;
+  height: 36px;
+  padding: 4px 4px 4px 12px;
+  background: var(--input\/background, #ffffff);
+  border: 1px solid var(--border\/primary, #e7e7e7);
+  border-radius: var(--radious\/md, 8px);
+  cursor: text;
+  transition: border-color 0.15s;
+}
+
+.search-field--s { height: 32px; }
+.search-field--l { height: 40px; }
+
+.search-field:not(.search-field--disabled):not(.search-field--focus):not(.search-field--embedded):hover {
+  border-color: var(--input\/prompt, #939393);
+}
+
+.search-field--filled {
+  border-color: var(--border\/primary-dark, #d3d3d3);
+}
+
+.search-field--focus {
+  border-color: var(--border\/primary-dark, #d3d3d3);
+  outline: 2px solid var(--focus-ring-color, #3a9ccd);
+  outline-offset: 0;
+}
+
+.search-field--disabled {
+  background: var(--input\/disabled, #f7f7f7);
+  border-color: var(--border\/primary-dark, #d3d3d3);
+  cursor: not-allowed;
+}
+
+/* ── 部位 ── */
+.search-field__icon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--text\/body, #686868);
+}
+
+.search-field__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text\/body, #686868);
+  /* Safari 的 type=search 自帶圓角底色，拿掉才跟外框一致 */
+  -webkit-appearance: none;
+  appearance: none;
+
+  &::placeholder {
+    color: var(--input\/prompt, #939393);
+  }
+
+  /* 瀏覽器自帶的 ✕ 與放大鏡：藏起來，只留元件自己的清除鈕 */
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
+
+  &:disabled {
+    color: var(--text\/disabled, #d3d3d3);
+    cursor: not-allowed;
+
+    &::placeholder {
+      color: var(--text\/disabled, #d3d3d3);
+    }
+  }
+}
+
+.search-field--disabled .search-field__icon {
+  color: var(--text\/disabled, #d3d3d3);
+}
+
+.search-field__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 4px;
+  border: none;
+  border-radius: var(--radious\/sm, 4px);
+  background: transparent;
+  color: var(--text\/body, #686868);
+  cursor: pointer;
+  outline: none;
+  // 內框：輸入框裡面的項目一律把焦點框畫在內側（同 app-input 的眼睛按鈕）
+  @include mx.focus-ring(-2px);
+
+  &:hover {
+    background: var(--color\/white\/20, #f1f3f5);
+  }
+}
+
+/* ── embedded：搜尋對話框最上面那一列。沒有外框，元件自己畫留白與底線，游標在輸入框時底線變藍 ── */
+.search-field--embedded {
+  height: auto;
+  gap: var(--spacing\/sm, 12px);
+  padding: var(--spacing\/md, 16px) var(--spacing\/lg, 24px);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border\/primary, #e7e7e7);
+  border-radius: 0;
+
+  &.search-field--focus {
+    outline: none;
+    border-bottom-color: var(--focus-ring-color, #3a9ccd);
+  }
+
+  &.search-field--filled,
+  &.search-field--disabled {
+    background: transparent;
+    border-bottom-color: var(--border\/primary, #e7e7e7);
+  }
+
+  .search-field__icon {
+    color: var(--text\/secondary, #535353);
+  }
+
+  .search-field__input {
+    font-size: 16px;
+    color: var(--text\/title, #1c1c2e);
+
+    &:disabled {
+      color: var(--text\/disabled, #d3d3d3);
+    }
+  }
+}
+
+.search-field__end {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing\/xs, 8px);
+  flex-shrink: 0;
+  cursor: auto;
+
+  &:empty {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-field { transition: none; }
+}
