@@ -43,7 +43,7 @@ export const searchFieldDoc: ComponentApi = {
     {
       name: '(valueChange)',
       type: 'EventEmitter<string>',
-      desc: '每次輸入、清除都送出目前的字。用輸入法選字時不送，選好字送一次。',
+      desc: '每次輸入、清除都送出目前的字。用輸入法選字時不送，選好字送一次。Android 例外：那邊的鍵盤打英文也算選字，所以每打一個字都送，選字中的注音、拼音也會送出去。',
       isOutput: true,
     },
     {
@@ -55,13 +55,14 @@ export const searchFieldDoc: ComponentApi = {
   ],
   usage: [
     {
-      label: '列表上方的工具列：打字就篩選，旁邊放篩選鈕',
+      label: '列表上方的工具列：篩選放左邊、搜尋放右邊，打字就篩選',
       code: `<app-ctrl-bar>
   <ng-container slot="left">
-    <app-search-field size="S" ariaLabel="搜尋人員" placeholder="搜尋姓名、編號"
-      style="flex: 0 1 240px; min-width: 140px"
-      [(value)]="keyword"></app-search-field>
     <app-button variant="outlined" color="neutral" size="S" text="部門" rightIcon="DownArrow"></app-button>
+  </ng-container>
+  <ng-container slot="right">
+    <app-search-field size="S" ariaLabel="搜尋人員" placeholder="搜尋姓名、編號"
+      style="width: 240px" [(value)]="keyword"></app-search-field>
   </ng-container>
 </app-ctrl-bar>`,
     },
@@ -71,20 +72,16 @@ export const searchFieldDoc: ComponentApi = {
   (searchSubmit)="load($event)"></app-search-field>`,
     },
     {
-      label: '搜尋對話框最上面那一列：embedded，右側位置放「搜尋」按鈕；打開時把焦點放進去',
+      label: '搜尋對話框最上面那一列：embedded，右側位置放「搜尋」按鈕',
       code: `<app-modal-shell [isOpen]="open" variant="search" ariaLabel="搜尋人員"
   (backdropClick)="open = false" (escapePress)="open = false">
-  <app-search-field #search appearance="embedded" ariaLabel="搜尋人員" [(value)]="keyword"
+  <app-search-field appearance="embedded" ariaLabel="搜尋人員" [(value)]="keyword"
     (searchSubmit)="load($event)">
     <app-button searchFieldEnd variant="outlined" color="primary" size="M" text="搜尋"
       (btnClick)="load(keyword)"></app-button>
   </app-search-field>
   <!-- 搜尋結果 -->
-</app-modal-shell>
-
-// 打開對話框之後
-@ViewChild('search') search?: SearchFieldComponent;
-afterOpen(): void { this.search?.focus(); }`,
+</app-modal-shell>`,
     },
   ],
   usageNotes: [
@@ -94,7 +91,12 @@ afterOpen(): void { this.search?.focus(); }`,
       content: '頁面會改值（例如換頁時清空）就用 [(value)]，不要只用 [value]。只綁單向時，使用者打字後頁面的值沒跟著變；頁面再設成同一個值，Angular 認為沒變，輸入框不會更新。',
     },
     '輸出叫 searchSubmit，不叫 search：type="search" 的原生 search 事件會冒泡到元件外層，同名輸出會觸發兩次。',
-    '放在 app-modal-shell 裡不用另外處理 Esc：有字時元件攔下 Esc 只清空，空了才讓 app-modal-shell 的 escapePress 收到。',
-    '寬度跟著外層走。放在 flex 列裡時，在 app-search-field 上給 flex 與 min-width，例如 flex: 0 1 240px、min-width: 140px。',
+    '放在 app-modal-shell 裡不用另外處理 Esc：游標在輸入框或清除鈕上、框裡有字時，元件攔下 Esc 只清空，空了才讓 app-modal-shell 的 escapePress 收到。焦點在右側位置的按鈕上時，元件不處理 Esc，對話框會直接關。',
+    {
+      type: 'warn',
+      content: '放在 app-modal-shell 裡不用自己放焦點：對話框打開約 0.45 秒後，會把焦點放到第一個能用 Tab 停的地方，搜尋框在最上面，就是它。不要在打開時呼叫 focus()：打開的同一輪輸入框還沒畫出來，沒有作用；畫出來之後、0.45 秒之前呼叫，對話框會把搜尋框當成打開前的焦點，關掉後焦點回不到原本的按鈕。',
+    },
+    '搜尋框下面掛跟著字篩選的下拉清單時，Esc 應該先關清單。元件目前沒辦法讓清單先處理：有字時第一下 Esc 會直接清空。要做這種搜尋框，先提出來，元件再加對應的做法。',
+    '寬度跟著外層走。放在 app-ctrl-bar 右邊時給固定寬度，例如 width: 240px；放在會伸縮的 flex 列裡時，在 app-search-field 上給 flex 與 min-width，例如 flex: 0 1 240px、min-width: 140px。',
   ],
 };

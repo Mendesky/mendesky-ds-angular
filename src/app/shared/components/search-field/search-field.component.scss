@@ -136,6 +136,11 @@
     color: var(--text\/secondary, #535353);
   }
 
+  // 停用：放大鏡也變淡。上面那條 embedded 放大鏡顏色會蓋掉通用的停用規則，這裡再寫一次
+  &.search-field--disabled .search-field__icon {
+    color: var(--text\/disabled, #d3d3d3);
+  }
+
   .search-field__input {
     font-size: 16px;
     color: var(--text\/title, #1c1c2e);
@@ -155,6 +160,14 @@
 
   &:empty {
     display: none;
+  }
+}
+
+// Windows 高對比這類強制色彩模式會把 border-color 換成系統色，有沒有焦點的底線變成同一個顏色；
+// 焦點時改用系統的醒目色（同 app-tabs 選中頁籤的做法）
+@media (forced-colors: active) {
+  .search-field--embedded.search-field--focus {
+    border-bottom-color: Highlight;
   }
 }
 

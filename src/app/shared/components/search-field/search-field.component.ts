@@ -4,6 +4,11 @@ import {
 import { IconComponent } from '../icon/icon.component';
 
 export type SearchFieldSize = 'S' | 'M' | 'L';
+
+/** 同 @angular/forms 的 _isAndroid：Android 上組字事件跟 iOS、桌機不同，不能等選字結束才送值 */
+function isAndroid(): boolean {
+  return typeof navigator !== 'undefined' && /android (\d+)/.test(navigator.userAgent.toLowerCase());
+}
 export type SearchFieldAppearance = 'outline' | 'embedded';
 
 /**
@@ -14,6 +19,11 @@ export type SearchFieldAppearance = 'outline' | 'embedded';
  * - Esc 有字：清空、preventDefault＋stopPropagation，並記下「吞連發」，放開（keyup）前的連發一律攔下。
  * - Esc 空的：不處理，事件照常冒泡給外層（例如 app-modal-shell 關閉）。
  * - Enter：送 searchSubmit，不攔；選字中、連發不送。
+ * - 右側位置投影進來的按鈕上按 Esc：不處理，照常交給外層。
+ *
+ * valueChange 選字中不送，選好字送一次；Android 例外，每次 input 都送。
+ * Android 的鍵盤（例如 Gboard）打英文也走組字，等選字結束才送的話，要打完整個字列表才會篩選。
+ * 做法同 Angular 表單的 DefaultValueAccessor（Android 上不緩衝組字）。
  *
  * 輸出叫 searchSubmit 不叫 search：type="search" 的原生 search 事件會冒泡到 host，
  * 若輸出也叫 search，Angular 會同時收到原生事件與輸出，觸發兩次。
@@ -47,7 +57,7 @@ export class SearchFieldComponent implements OnChanges {
   /** 框裡的字；跟 valueChange 一起可以寫成 [(value)] */
   @Input() value = '';
 
-  /** 每次輸入、清除都送；選字中不送，選好字送一次 */
+  /** 每次輸入、清除都送；選字中不送，選好字送一次（Android 例外：每次輸入都送） */
   @Output() valueChange = new EventEmitter<string>();
 
   /** 按 Enter 時送出目前的字；選字中、按住連發不送 */
@@ -81,7 +91,7 @@ export class SearchFieldComponent implements OnChanges {
     }
   }
 
-  /** 把焦點移進輸入框（例如打開搜尋對話框時） */
+  /** 把焦點移進輸入框。放在 app-modal-shell 裡不用呼叫：對話框打開約 0.45 秒後會自己把焦點放進第一個可 Tab 的元素 */
   focus(): void {
     this.inputRef.nativeElement.focus();
   }
@@ -96,7 +106,7 @@ export class SearchFieldComponent implements OnChanges {
 
   protected onInput(event: Event): void {
     this.current = (event.target as HTMLInputElement).value;
-    if ((event as InputEvent).isComposing || this.composing) return;
+    if (((event as InputEvent).isComposing || this.composing) && !isAndroid()) return;
     this.emit(this.current);
   }
 

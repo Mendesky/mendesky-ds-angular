@@ -59,6 +59,21 @@ class ModalHostComponent {
   escCount = 0;
 }
 
+/** embedded 右側位置：沒放東西、放不是按鈕的內容（快速鍵提示） */
+@Component({
+  standalone: true,
+  imports: [SearchFieldComponent],
+  template: `
+    <div style="width:360px">
+      <app-search-field appearance="embedded" ariaLabel="搜尋人員" data-testid="bare"></app-search-field>
+      <app-search-field appearance="embedded" ariaLabel="搜尋人員" data-testid="hint">
+        <span searchFieldEnd data-testid="hint-end">Ctrl K</span>
+      </app-search-field>
+    </div>
+  `,
+})
+class EndSlotHostComponent {}
+
 function key(type: 'keydown' | 'keyup', k: string, opts: { repeat?: boolean; isComposing?: boolean; keyCode?: number } = {}): KeyboardEvent {
   const ev = new KeyboardEvent(type, { key: k, bubbles: true, cancelable: true, repeat: !!opts.repeat, isComposing: !!opts.isComposing });
   if (opts.keyCode !== undefined) Object.defineProperty(ev, 'keyCode', { get: () => opts.keyCode });
@@ -143,6 +158,19 @@ describe('SearchFieldComponent', () => {
       input().dispatchEvent(new InputEvent('input', { bubbles: true }));
       fixture.detectChanges();
       expect(host.changes).toEqual(['王']);
+    });
+
+    it('Android：鍵盤打英文也走組字，每打一個字照樣送；選字結束不重送', () => {
+      spyOnProperty(navigator, 'userAgent').and.returnValue(
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36');
+      input().dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+      input().value = 'p';
+      input().dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+      input().value = 'p1';
+      input().dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }));
+      input().dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+      fixture.detectChanges();
+      expect(host.changes).toEqual(['p', 'p1']);
     });
 
     it('頁面改值會同步到輸入框，不回送 valueChange', () => {
@@ -277,6 +305,14 @@ describe('SearchFieldComponent', () => {
       expect(host.submits).toEqual(['']);
     });
 
+    it('焦點在清除鈕上按 Enter：不送 searchSubmit，交給按鈕自己清空', () => {
+      type('林');
+      const b = clearBtn() as HTMLButtonElement;
+      b.focus();
+      press(b, 'Enter');
+      expect(host.submits).toEqual([]);
+    });
+
     it('選字中、連發不送', () => {
       type('林');
       press(input(), 'Enter', { keyCode: 229 });
@@ -397,12 +433,79 @@ describe('SearchFieldComponent', () => {
       expect(document.activeElement).toBe(end);
     });
 
-    it('尺寸設定不影響高度（由留白決定）', () => {
+    it('高度由留白決定：輸入框、放大鏡、右側位置都在上下 16 px 留白與 2 px 底線之內；尺寸設定不影響', () => {
+      const inside = (): void => {
+        const b = box().getBoundingClientRect();
+        const parts = [input(), root().querySelector('.search-field__icon'), root().querySelector('.search-field__end')] as HTMLElement[];
+        for (const el of parts) {
+          const r = el.getBoundingClientRect();
+          expect(r.height).toBeGreaterThan(0);
+          expect(r.top).toBeGreaterThanOrEqual(b.top + 16 - 0.5);
+          expect(r.bottom).toBeLessThanOrEqual(b.bottom - 18 + 0.5);
+        }
+      };
+      inside();
       const h = box().getBoundingClientRect().height;
       host.size = 'S';
       fixture.detectChanges();
       expect(box().getBoundingClientRect().height).toBe(h);
+      inside();
     });
+
+    it('焦點在右側位置的按鈕上按 Esc：有字也不清空，照常交給外層', () => {
+      type('林');
+      const end = root().querySelector('[data-testid="end"]') as HTMLButtonElement;
+      end.focus();
+      const ev = press(end, 'Escape');
+      expect(input().value).toBe('林');
+      expect(ev.defaultPrevented).toBeFalse();
+      expect(docKeys).toEqual(['Escape']);
+    });
+
+    it('停用：字和放大鏡都變淡', () => {
+      const icon = root().querySelector('.search-field__icon') as HTMLElement;
+      const enabled = getComputedStyle(icon).color;
+      host.value = '林';
+      host.disabled = true;
+      fixture.detectChanges();
+      expect(getComputedStyle(icon).color).not.toBe(enabled);
+      expect(getComputedStyle(icon).color).toBe(getComputedStyle(input()).color);
+    });
+
+    // Karma 的 Chrome 開不了強制色彩模式，只能確認樣式表裡真的有焦點改用系統醒目色的規則
+    it('強制色彩模式：游標在輸入框時底線改用系統醒目色', () => {
+      const media = Array.from(document.styleSheets).flatMap(s => {
+        try { return Array.from(s.cssRules); } catch { return []; }
+      }).filter((r): r is CSSMediaRule => r instanceof CSSMediaRule && r.conditionText.includes('forced-colors'));
+      const rule = media.flatMap(m => Array.from(m.cssRules) as CSSStyleRule[]).find(r =>
+        r.selectorText?.includes('search-field--embedded') && r.selectorText.includes('search-field--focus'));
+      expect(rule?.style.borderBottomColor.toLowerCase()).toBe('highlight');
+    });
+  });
+});
+
+describe('SearchFieldComponent embedded 的右側位置', () => {
+  let fixture: ComponentFixture<EndSlotHostComponent>;
+  const field = (id: string): HTMLElement => fixture.nativeElement.querySelector(`[data-testid="${id}"]`);
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [EndSlotHostComponent] });
+    fixture = TestBed.createComponent(EndSlotHostComponent);
+    fixture.detectChanges();
+    document.body.appendChild(fixture.nativeElement);
+  });
+
+  afterEach(() => fixture.nativeElement.remove());
+
+  it('沒放東西時不佔空間：輸入框右緣貼著右邊 24 px 留白', () => {
+    const box = field('bare').firstElementChild as HTMLElement;
+    const inp = box.querySelector('input') as HTMLInputElement;
+    expect(Math.round(box.getBoundingClientRect().right - inp.getBoundingClientRect().right)).toBe(24);
+  });
+
+  it('點右側位置裡不是按鈕的內容，不會把焦點搶回輸入框', () => {
+    (field('hint-end')).click();
+    expect(document.activeElement).not.toBe(field('hint').querySelector('input'));
   });
 });
 

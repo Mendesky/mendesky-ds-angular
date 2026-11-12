@@ -103,13 +103,13 @@ export const Toolbar: Story = {
       <div style="max-width:640px">
         <app-ctrl-bar>
           <ng-container slot="left">
-            <app-search-field size="S" ariaLabel="搜尋人員" placeholder="搜尋姓名、編號、部門"
-              style="flex:0 1 240px;min-width:140px"
-              [(value)]="keyword" (searchSubmit)="submitted = $event"></app-search-field>
             <app-button variant="outlined" color="neutral" size="S" text="部門" rightIcon="DownArrow"></app-button>
+            <span style="${MUTED}">共 {{ filter(keyword).length }} 筆</span>
           </ng-container>
           <ng-container slot="right">
-            <span style="${MUTED}">共 {{ filter(keyword).length }} 筆</span>
+            <app-search-field size="S" ariaLabel="搜尋人員" placeholder="搜尋姓名、編號、部門"
+              style="width:240px"
+              [(value)]="keyword" (searchSubmit)="submitted = $event"></app-search-field>
           </ng-container>
         </app-ctrl-bar>
         <div>
