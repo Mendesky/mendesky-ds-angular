@@ -154,6 +154,8 @@
   /* Green */
   --color\/green\/100: #2b4810;
   --color\/green\/90: #426a1c;
+  /* 85：#collapsible 綠色外觀的底色。配白字對比 4.58:1，過 4.5:1；綠 80 配白字只有 4.02:1 */
+  --color\/green\/85: #538227;
   --color\/green\/80: #5a8c2c;
   --color\/green\/70: #74ae3e;
   --color\/green\/60: #8fd053;
@@ -773,6 +775,10 @@ button {
   /* 骨架屏：停在灰底佔位，不閃 */
   .sk-shimmer {
     animation: none !important;
+  }
+  /* 收合／展開：直接開合，不滑 */
+  .ds-collapse {
+    transition-duration: 0ms !important;
   }
 }
 /* ── 新增 CTA 按鈕（header + empty-state 共用） ──────────── */
