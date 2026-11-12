@@ -1,0 +1,354 @@
+// 收合區塊。視覺定稿見原型 https://claude.ai/artifact/J5BbpZKEeWVoQVqeaHCHf5（方案二），每條視覺都寫出它解決什麼問題。
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.collapsible__header {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 40px;
+  transition: background-color 150ms var(--ease-enter);
+}
+
+// 前置區、尾端區：在標題按鈕外面，點它們不會開合
+.collapsible__leading,
+.collapsible__trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing\/xxs, 4px);
+  flex-shrink: 0;
+}
+
+// 沒放東西的區塊不佔位，間距才不會多出來
+.collapsible__leading:empty,
+.collapsible__trailing:empty,
+.collapsible__prefix:empty,
+.collapsible__meta:empty,
+.collapsible__summary:empty,
+.collapsible__value:empty {
+  display: none;
+}
+
+.collapsible__heading {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+// 標題按鈕：原生按鈕，Tab 停得到、Enter 與空白鍵直接開合；整條都可以點
+.collapsible__trigger {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--spacing\/xs, 8px);
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
+  font-size: 14px;
+  line-height: normal;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  // 雙層焦點框：藍框往內縮 2px，內側再貼一圈白。藍對白 3.08:1，標頭不管灰底、白底都看得出焦點
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring-color, #3a9ccd);
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 4px var(--border\/white, #ffffff);
+  }
+}
+
+.collapsible__prefix,
+.collapsible__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+// 標題放不下時用刪節號截斷。摘要只拿剩下的空間，所以空間不夠時摘要先縮、標題後縮；數值不縮
+.collapsible__title {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text\/title, #333333);
+}
+
+// 靠右的摘要：收合時的一行預覽。只拿標題、數值用剩的空間（起始寬 0），不跟標題搶；
+// 固定一行，放不下用刪節號。投影進來的文字不會折成好幾行把標頭撐高
+.collapsible__summary {
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--text\/secondary, #535353);
+}
+
+// 數值：金額、小計這類截掉一截就會看錯的數字。不縮、不換行，空間不夠時讓標題先截
+.collapsible__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: var(--text\/secondary, #535353);
+}
+
+// 沒有摘要撐開時，數值、結尾的箭頭自己靠右
+.collapsible__summary:empty + .collapsible__value,
+.collapsible__summary:empty + .collapsible__value:empty + .collapsible__chevron {
+  margin-left: auto;
+}
+
+// 箭頭：收合時朝下、展開時朝上，跟內容一起 300ms 轉
+.collapsible__chevron {
+  flex-shrink: 0;
+  color: var(--text\/secondary, #535353);
+  transition: transform 300ms var(--ease-enter);
+}
+
+// 外觀、開合、停用的樣式一律從自己的 > .collapsible__header 往下找。
+// 只寫「host 底下的 .collapsible__xxx」的話，內容裡再放一個收合區塊（例：區段裡的卡片），
+// 外層的灰底、白字、停用灰、展開的箭頭都會套到內層的標頭
+:host(.collapsible--expanded) > .collapsible__header .collapsible__chevron {
+  transform: rotate(180deg);
+}
+
+// ── 外觀：區段（頁面上的大段落）──
+// 灰底整條：段落之間分得開，也看得出整條可以點。滑過變深：提示滑鼠下這條可以點
+:host(.collapsible--section) > .collapsible__header {
+  background: var(--color\/grey\/20, #e7e7e7);
+  border-bottom: 0.5px solid var(--border\/primary-dark, #d3d3d3);
+
+  &:hover {
+    background: var(--color\/grey\/30, #d3d3d3);
+  }
+
+  .collapsible__trigger {
+    padding: 0 16px;
+  }
+
+  .collapsible__title {
+    font-weight: 700;
+  }
+
+  .collapsible__leading:not(:empty) {
+    padding-left: 16px;
+  }
+
+  .collapsible__leading:not(:empty) + .collapsible__heading .collapsible__trigger {
+    padding-left: 8px;
+  }
+
+  .collapsible__trailing:not(:empty) {
+    padding-right: 12px;
+  }
+}
+
+// ── 外觀：卡片（卡片或清單項目的標頭）──
+// 沒有底色，卡片裡不再多一條色塊；滑過才出現淺灰，提示可以點
+:host(.collapsible--card) > .collapsible__header {
+  &:hover {
+    background: var(--color\/white\/20, #f1f3f5);
+  }
+
+  // 前置區、尾端區的 #icon-btn SectionBtn：預設滑過也是 --color/white/20，跟標頭滑過同色，看不出按鈕的範圍。
+  // 卡片裡改成深一階（--color/grey/20），按下去再深一階
+  .collapsible__leading ::ng-deep .icon-btn--section-btn,
+  .collapsible__trailing ::ng-deep .icon-btn--section-btn {
+    &:hover:not(:disabled) {
+      background: var(--color\/grey\/20, #e7e7e7);
+    }
+
+    &:active:not(:disabled) {
+      background: var(--color\/grey\/30, #d3d3d3);
+    }
+  }
+
+  .collapsible__trigger {
+    padding: 8px 12px;
+  }
+
+  .collapsible__title {
+    font-weight: 500;
+  }
+
+  .collapsible__leading:not(:empty) {
+    padding-left: 12px;
+  }
+
+  .collapsible__leading:not(:empty) + .collapsible__heading .collapsible__trigger {
+    padding-left: 8px;
+  }
+
+  .collapsible__trailing:not(:empty) {
+    padding-right: 8px;
+  }
+}
+
+// ── 外觀：綠色（可以拖曳排序的段落）──
+// 綠 85 配白字 4.58:1；滑過綠 90，6.34:1。焦點框改單層白：藍框放在綠 85 上只有 1.49:1
+:host(.collapsible--accent) > .collapsible__header {
+  background: var(--color\/green\/85, #538227);
+  color: var(--text\/body-lightest, #ffffff);
+
+  &:hover {
+    background: var(--color\/green\/90, #426a1c);
+  }
+
+  .collapsible__trigger {
+    padding: 0 12px;
+
+    &:focus-visible {
+      outline-color: var(--border\/white, #ffffff);
+      box-shadow: none;
+    }
+  }
+
+  .collapsible__title,
+  .collapsible__chevron,
+  .collapsible__summary,
+  .collapsible__value,
+  .collapsible__leading,
+  .collapsible__trailing {
+    color: var(--text\/body-lightest, #ffffff);
+  }
+
+  .collapsible__title {
+    font-weight: 500;
+  }
+
+  .collapsible__leading:not(:empty) {
+    padding-left: 12px;
+  }
+
+  .collapsible__leading:not(:empty) + .collapsible__heading .collapsible__trigger {
+    padding-left: 8px;
+  }
+
+  .collapsible__trailing:not(:empty) {
+    padding-right: 8px;
+  }
+
+  // 前置區、尾端區的 #icon-btn：圖示跟標頭文字同色、平時透明底；滑過用白色淡底，不用預設的淺灰或藍色方塊
+  .collapsible__leading ::ng-deep .icon-btn,
+  .collapsible__trailing ::ng-deep .icon-btn {
+    background: transparent;
+    color: var(--text\/body-lightest, #ffffff);
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      background: color-mix(in srgb, var(--text\/body-lightest, #ffffff) 16%, transparent);
+      color: var(--text\/body-lightest, #ffffff);
+    }
+
+    &:focus-visible {
+      outline-color: var(--border\/white, #ffffff);
+    }
+  }
+}
+
+// 卡片與綠色常放在圓角卡片裡：標頭和標題按鈕跟著卡片圓角（卡片 8px 減掉 1px 外框）。
+// 卡片沒有裁切超出的部分時，綠底、滑過的淺灰才不會從圓角凸出去；焦點框也順著轉角。
+// 展開時下面接著內容，只圓上面兩角。區段是整條直角，不用
+:host(.collapsible--card) > .collapsible__header,
+:host(.collapsible--accent) > .collapsible__header {
+  border-radius: calc(var(--radious\/md, 8px) - 1px);
+
+  .collapsible__trigger {
+    border-radius: calc(var(--radious\/md, 8px) - 1px);
+  }
+}
+
+:host(.collapsible--card.collapsible--expanded) > .collapsible__header,
+:host(.collapsible--accent.collapsible--expanded) > .collapsible__header {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+// ── 停用 ──
+// 游標一般、標題與箭頭變灰、滑過不變色：看得出這段不能開合。
+// 綠色外觀的底色也換成區段的灰，跟 #button 停用時一樣，不留綠底配灰字
+:host(.collapsible--disabled) > .collapsible__header {
+  .collapsible__trigger {
+    cursor: default;
+  }
+
+  .collapsible__title,
+  .collapsible__chevron {
+    color: var(--text\/disabled, #939393);
+  }
+}
+
+:host(.collapsible--disabled.collapsible--section) > .collapsible__header:hover {
+  background: var(--color\/grey\/20, #e7e7e7);
+}
+
+:host(.collapsible--disabled.collapsible--card) > .collapsible__header:hover {
+  background: none;
+}
+
+:host(.collapsible--disabled.collapsible--accent) > .collapsible__header {
+  &,
+  &:hover {
+    background: var(--color\/grey\/20, #e7e7e7);
+    color: var(--text\/body, #686868);
+  }
+
+  .collapsible__summary,
+  .collapsible__value,
+  .collapsible__leading,
+  .collapsible__trailing {
+    color: var(--text\/body, #686868);
+  }
+
+  // 灰底上不能留白框：標題按鈕的焦點框回到區段的藍白雙層（白框對灰底只有 1.24:1）
+  .collapsible__trigger:focus-visible {
+    outline-color: var(--focus-ring-color, #3a9ccd);
+    box-shadow: inset 0 0 0 4px var(--border\/white, #ffffff);
+  }
+
+  // 灰底上不能留白色圖示：前置、尾端的 #icon-btn 改回內文灰，滑過用深一點的灰、焦點框回到藍色
+  .collapsible__leading ::ng-deep .icon-btn,
+  .collapsible__trailing ::ng-deep .icon-btn {
+    color: var(--icon\/body, #686868);
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      background: var(--color\/grey\/30, #d3d3d3);
+      color: var(--icon\/body, #686868);
+    }
+
+    &:focus-visible {
+      outline-color: var(--focus-ring-color, #3a9ccd);
+    }
+  }
+}
+
+// 減少動態：箭頭不轉。內容區的 .ds-collapse 由本體的全域樣式處理
+@media (prefers-reduced-motion: reduce) {
+  .collapsible__header,
+  .collapsible__chevron {
+    transition: none;
+  }
+}
+
+// 強制色彩模式：背景色會被換掉，停用改用系統的停用字色
+@media (forced-colors: active) {
+  :host(.collapsible--disabled) > .collapsible__header {
+    .collapsible__title,
+    .collapsible__chevron {
+      color: GrayText;
+    }
+  }
+}
