@@ -1,0 +1,42 @@
+<div class="search-field" [class]="boxClasses" (click)="onBoxClick($event)">
+  <span class="search-field__icon" aria-hidden="true">
+    <app-icon name="Search" [size]="embedded ? '20' : '16'"></app-icon>
+  </span>
+
+  <input
+    #input
+    class="search-field__input"
+    type="search"
+    enterkeyhint="search"
+    autocomplete="off"
+    spellcheck="false"
+    [attr.aria-label]="ariaLabel"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    [value]="current"
+    (input)="onInput($event)"
+    (compositionstart)="onCompositionStart()"
+    (compositionend)="onCompositionEnd()"
+    (focus)="focused = true"
+    (blur)="focused = false"
+    (keydown)="onKeydown($event)"
+    (keyup)="onKeyup($event)"
+  />
+
+  @if (current && !disabled) {
+    <button
+      type="button"
+      class="search-field__clear"
+      aria-label="清除搜尋"
+      (click)="onClearClick()"
+      (keydown)="onKeydown($event)"
+      (keyup)="onKeyup($event)"
+    >
+      <app-icon name="No-X-Cancel" size="16"></app-icon>
+    </button>
+  }
+
+  @if (embedded) {
+    <span class="search-field__end"><ng-content select="[searchFieldEnd]"></ng-content></span>
+  }
+</div>
