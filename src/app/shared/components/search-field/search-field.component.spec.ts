@@ -6,11 +6,11 @@ import { SearchFieldAppearance, SearchFieldComponent, SearchFieldSize } from './
 /**
  * app-search-field 契約（2026-11-11，原型 https://claude.ai/artifact/NbQwYY3W5xjTKB3esBsQw5 版本二＋嵌入外觀自帶標頭列）：
  * - 原生 input type="search"、enterkeyhint="search"；ariaLabel 落在 input 的 aria-label；放大鏡 aria-hidden。
- * - 每次輸入送 valueChange；選字中不送，選完送一次，同一個值不重送。
+ * - 每次輸入送 valueChange；選字中不送，選完送一次，同一個值不重送。Android 例外：選字中也每次都送。
  * - 有字就有清除鈕（不管有沒有焦點）；停用、空字串沒有。清除鈕是 type="button"、aria-label「清除搜尋」，在 Tab 順序裡。
  * - 清除後送空字串，焦點回輸入框。
  * - Esc：有字 → 清空並攔下（preventDefault＋stopPropagation），按住連發也攔到放開；空的 → 不攔；
- *   選字中 → 只攔不清。焦點在清除鈕上按 Esc 也一樣清空，焦點回輸入框。
+ *   選字中 → 只攔不清。焦點在清除鈕上按 Esc 也一樣清空，焦點回輸入框。焦點在右側位置的按鈕上 → 不處理。
  * - Enter：送 searchSubmit，事件照常往外傳；選字中、連發不送。
  * - 外觀 outline：S／M／L 高 32／36／40，有焦點時外圍藍框。外觀 embedded：整列，上下 16、左右 24 留白，
  *   底下 2px 線，游標在輸入框時線變藍；字 16px、放大鏡 20px；右側位置放投影進來的 [searchFieldEnd]。
