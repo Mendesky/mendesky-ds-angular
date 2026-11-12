@@ -18,7 +18,8 @@ let nextId = 0;
  *
  * 標頭分三區：前置區 | 標題按鈕 | 尾端區。只有標題按鈕（原生 button）會開合；
  * 前置區、尾端區放勾選框、拖曳把手、選單這些自己會動作的東西，在按鈕外面，點了不會開合。
- * 按鈕裡只放不能點的東西：前綴、標題、標題後資訊、摘要。
+ * 按鈕裡只放不能點的東西：前綴、標題、標題後資訊、摘要、數值。
+ * 空間不夠時先縮摘要、再截標題，數值不縮：一行預覽放摘要，金額放數值。
  *
  * 內容區用全域的 .ds-collapse 做開合轉場；收合時內層加 inert，鍵盤進不去、報讀軟體不念，但內容還在 DOM 裡。
  * 開合可以 [(expanded)] 雙向綁定，也可以不綁、元件自己記。
@@ -91,8 +92,9 @@ export class CollapsibleComponent implements CollapsibleGroupMember, OnDestroy {
     if (this.disabled) return;
     const next = !this.state();
     this.state.set(next);
-    this.expandedChange.emit(next);
+    // 先讓群組收起其他段，它們各自發 false；這段的 true 最後發，頁面用一個值記「開著哪一段」時才會記到這段
     if (next) this.group?.memberOpened(this);
+    this.expandedChange.emit(next);
   }
 
   collapseFromGroup(): void {

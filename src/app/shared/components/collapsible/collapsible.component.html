@@ -15,8 +15,8 @@
       <span class="collapsible__prefix"><ng-content select="[collapsiblePrefix]"></ng-content></span>
       <span class="collapsible__title">{{ title }}</span>
       <span class="collapsible__meta"><ng-content select="[collapsibleMeta]"></ng-content></span>
-      <span class="collapsible__spacer"></span>
       <span class="collapsible__summary"><ng-content select="[collapsibleSummary]"></ng-content></span>
+      <span class="collapsible__value"><ng-content select="[collapsibleValue]"></ng-content></span>
       @if (chevronPosition === 'end') {
         <app-icon class="collapsible__chevron" name="DownArrow" size="16" aria-hidden="true"></app-icon>
       }

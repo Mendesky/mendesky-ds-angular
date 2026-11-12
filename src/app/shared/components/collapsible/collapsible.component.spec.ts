@@ -17,6 +17,9 @@ import {
  * - headingLevel 有值時，按鈕外面一層 role="heading" aria-level；沒值不包。
  * - expanded 可以 [(expanded)] 雙向綁定，也可以不綁、元件自己記。
  * - host 不留原生 title 屬性，免得整個區塊滑過都跳瀏覽器提示。
+ * - 審查修正（2026-11-12，原型「審查修正」分頁）：摘要固定一行加刪節號、空間不夠時最先縮；
+ *   金額放數值（collapsibleValue），不縮不換行，標題先截；綠色停用時焦點框回到藍白雙層；
+ *   卡片、綠色的標頭跟著卡片圓角；卡片裡的 SectionBtn 滑過比標頭深一階。
  * 全部從真的 DOM 查，不看元件內部狀態。
  */
 @Component({
@@ -31,6 +34,7 @@ import {
         <span collapsiblePrefix data-testid="prefix">01</span>
         <span collapsibleMeta data-testid="meta">3 項</span>
         <span collapsibleSummary data-testid="summary">摘要文字</span>
+        <span collapsibleValue data-testid="value">NT$ 1,234,567</span>
         <button collapsibleTrailing type="button" data-testid="trail">更多</button>
         <button type="button" data-testid="inside">內容裡的按鈕</button>
       </app-collapsible>
@@ -49,12 +53,12 @@ class HostComponent {
   changes: boolean[] = [];
 }
 
-/** 綠色外觀的尾端放 app-icon-btn：元件負責把圖示配成看得見的顏色 */
+/** 尾端放 app-icon-btn：綠色外觀要把圖示配成看得見的顏色；卡片外觀滑過要跟標頭分得開 */
 @Component({
   standalone: true,
   imports: [CollapsibleComponent, IconBtnComponent, IconComponent],
   template: `
-    <app-collapsible appearance="accent" title="段落一" [disabled]="disabled">
+    <app-collapsible [appearance]="appearance" title="段落一" [disabled]="disabled">
       <app-icon-btn collapsibleTrailing size="16" propClass="SectionBtn" ariaLabel="更多操作">
         <app-icon name="More" size="16"></app-icon>
       </app-icon-btn>
@@ -62,7 +66,88 @@ class HostComponent {
   `,
 })
 class AccentActionsHostComponent {
+  appearance: CollapsibleAppearance = 'accent';
   disabled = false;
+}
+
+/** 空間不夠時：摘要、數值、標題誰先讓 */
+@Component({
+  standalone: true,
+  imports: [CollapsibleComponent],
+  template: `
+    <div [style.width.px]="width">
+      <app-collapsible data-testid="fit" appearance="card" [title]="title" [chevronPosition]="chevron">
+        @if (labels) {
+          <span collapsibleMeta>主</span>
+        }
+        @if (labels) {
+          <span collapsibleMeta>未成交</span>
+        }
+        @if (preview) {
+          <span collapsibleSummary data-testid="fit-summary">{{ preview }}</span>
+        }
+        @if (amount) {
+          <span collapsibleValue data-testid="fit-value">{{ amount }}</span>
+        }
+      </app-collapsible>
+    </div>
+  `,
+})
+class FitHostComponent {
+  width = 240;
+  title = '範例國際投資控股股份有限公司';
+  labels = true;
+  preview = '';
+  amount = 'NT$ 1,284,000';
+  chevron: CollapsibleChevronPosition = 'start';
+}
+
+/**
+ * 讀樣式表裡的規則：Karma 沒辦法真的滑過、也切不了系統的「減少動態」與強制色彩，
+ * 所以找出「拿掉 :hover 後選得到這個元素」或「在這個 @media 裡選得到這個元素」的規則。
+ * 同一個元素中了好幾條時，取選擇器最具體的那條（id、class、屬性、偽類各算一分）。
+ */
+function specificity(selector: string): number {
+  const ids = (selector.match(/#[\w-]+/g) ?? []).length;
+  const classes = (selector.match(/\.[\w-]+|\[[^\]]+\]|:(?!:)[\w-]+/g) ?? []).length;
+  return ids * 100 + classes;
+}
+function matchingRules(target: Element, opts: { hover?: boolean; media?: string }): CSSStyleRule[] {
+  const hits: { rule: CSSStyleRule; score: number }[] = [];
+  const visit = (rules: CSSRuleList, inMedia: boolean) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSMediaRule) {
+        if (opts.media && rule.media.mediaText.includes(opts.media)) visit(rule.cssRules, true);
+        continue;
+      }
+      if (!(rule instanceof CSSStyleRule) || inMedia !== !!opts.media) continue;
+      for (const sel of rule.selectorText.split(',')) {
+        if (!!opts.hover !== sel.includes(':hover')) continue;
+        const plain = sel.replace(/:hover/g, '').trim();
+        try {
+          if (target.matches(plain)) hits.push({ rule, score: specificity(plain) });
+        } catch { /* 瀏覽器不認得的選擇器 */ }
+      }
+    }
+  };
+  for (const sheet of Array.from(document.styleSheets)) {
+    try { visit(sheet.cssRules, false); } catch { /* 跨來源的樣式表讀不到 */ }
+  }
+  return hits.sort((a, b) => a.score - b.score).map(h => h.rule);
+}
+/** 這個元素在條件下會拿到的某個屬性（最具體、宣告了這個屬性的那條） */
+function declared(target: Element, prop: string, opts: { hover?: boolean; media?: string }): string {
+  const rules = matchingRules(target, opts).filter(r => r.style.getPropertyValue(prop) !== '');
+  return rules.length ? rules[rules.length - 1].style.getPropertyValue(prop).trim() : '';
+}
+/** 把宣告的底色（可能是 var(--x, #fff) 或 none）換成瀏覽器算出的顏色 */
+function resolveBackground(target: Element, value: string): string {
+  const probe = document.createElement('span');
+  probe.style.background = value || 'none';
+  target.parentElement!.appendChild(probe);
+  const color = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return color;
 }
 
 /** 收合區塊裡再放收合區塊（例：區段裡的一張張卡片）：外層的外觀、開合、停用都不能套到內層 */
@@ -228,6 +313,8 @@ describe('CollapsibleComponent', () => {
       expect(btn.contains(q('[data-testid="prefix"]'))).toBeTrue();
       expect(btn.contains(q('[data-testid="meta"]'))).toBeTrue();
       expect(btn.contains(q('[data-testid="summary"]'))).toBeTrue();
+      expect(btn.contains(q('[data-testid="value"]'))).withContext('數值在按鈕裡').toBeTrue();
+      expect(q('[data-testid="value"]').parentElement!.classList).toContain('collapsible__value');
     });
 
     it('順序：前置 → 按鈕 → 尾端；按鈕裡 前綴 → 標題 → 標題後資訊 → 摘要', () => {
@@ -239,6 +326,7 @@ describe('CollapsibleComponent', () => {
       expect(order(q('[data-testid="prefix"]'), title)).toBeTrue();
       expect(order(title, q('[data-testid="meta"]'))).toBeTrue();
       expect(order(q('[data-testid="meta"]'), q('[data-testid="summary"]'))).toBeTrue();
+      expect(order(q('[data-testid="summary"]'), q('[data-testid="value"]'))).withContext('摘要 → 數值').toBeTrue();
     });
 
     it('點前置、尾端不開合、不發事件', () => {
@@ -251,7 +339,7 @@ describe('CollapsibleComponent', () => {
 
     it('沒放東西的區塊不佔位（display: none）', () => {
       const c2 = comp('c2');
-      for (const cls of ['leading', 'trailing', 'prefix', 'meta', 'summary']) {
+      for (const cls of ['leading', 'trailing', 'prefix', 'meta', 'summary', 'value']) {
         const part = c2.querySelector<HTMLElement>(`.collapsible__${cls}`)!;
         expect(getComputedStyle(part).display).withContext(cls).toBe('none');
       }
@@ -315,6 +403,22 @@ describe('CollapsibleComponent', () => {
       expect(chevron).toBe('rgb(255, 255, 255)');
       expect(contrast(title, bg)).toBeGreaterThanOrEqual(4.5);
       expect(getComputedStyle(trigger()).borderTopLeftRadius).toBe('7px');
+    });
+
+    // 卡片沒有裁切超出的部分時，直角的底色（綠色、滑過的淺灰）會從卡片圓角凸出去
+    it('card、accent：標頭跟著卡片圓角，收起來四角 7px，展開時上面 7px、下面直角；section 直角', () => {
+      const radii = () => {
+        const s = getComputedStyle(header());
+        return [s.borderTopLeftRadius, s.borderTopRightRadius, s.borderBottomRightRadius, s.borderBottomLeftRadius];
+      };
+      for (const appearance of ['card', 'accent'] as const) {
+        set({ appearance, open: false });
+        expect(radii()).withContext(`${appearance} 收起來`).toEqual(['7px', '7px', '7px', '7px']);
+        set({ open: true });
+        expect(radii()).withContext(`${appearance} 展開`).toEqual(['7px', '7px', '0px', '0px']);
+      }
+      set({ appearance: 'section', open: false });
+      expect(radii()).withContext('section').toEqual(['0px', '0px', '0px', '0px']);
     });
   });
 
@@ -383,6 +487,18 @@ describe('CollapsibleComponent', () => {
       expect(getComputedStyle(header()).backgroundColor).toBe('rgb(231, 231, 231)');
       expect(getComputedStyle(trigger().querySelector('.collapsible__title')!).color).toBe('rgb(147, 147, 147)');
     });
+
+    // 白框放在灰底上只有 1.24:1，看不出停在哪
+    it('accent 停用時焦點框改回藍白雙層，不留白框在灰底上', () => {
+      set({ appearance: 'accent' });
+      trigger().focus();
+      expect(trigger().matches(':focus-visible')).toBeTrue();
+      const s = getComputedStyle(trigger());
+      expect(s.outlineColor).toBe('rgb(58, 156, 205)');
+      expect(s.boxShadow).toContain('rgb(255, 255, 255)');
+      expect(s.boxShadow).toContain('inset');
+      expect(contrast(s.outlineColor, 'rgb(255, 255, 255)')).toBeGreaterThanOrEqual(3);
+    });
   });
 
   describe('標題層級', () => {
@@ -427,6 +543,125 @@ describe('CollapsibleComponent', () => {
       const s = getComputedStyle(btn());
       expect(s.color).not.toBe('rgb(255, 255, 255)');
       expect(contrast(s.color, getComputedStyle(hdr()).backgroundColor)).toBeGreaterThanOrEqual(3);
+    });
+
+    it('停用：圖示按鈕的焦點框回到藍色，不留白框在灰底上', () => {
+      f.componentInstance.disabled = true;
+      f.detectChanges();
+      btn().focus();
+      expect(btn().matches(':focus-visible')).toBeTrue();
+      expect(getComputedStyle(btn()).outlineColor).toBe('rgb(58, 156, 205)');
+    });
+
+    // 卡片標頭滑過是淺灰；SectionBtn 預設滑過也是同一個淺灰，滑到按鈕上就看不出按鈕的範圍
+    it('卡片：滑到 SectionBtn 上時，按鈕底色比標頭滑過深一階', () => {
+      f.componentInstance.appearance = 'card';
+      f.detectChanges();
+      const headerHover = resolveBackground(hdr(), declared(hdr(), 'background', { hover: true }));
+      const btnHover = resolveBackground(btn(), declared(btn(), 'background', { hover: true }));
+      expect(headerHover).withContext('標頭有滑過的底色').not.toBe('rgba(0, 0, 0, 0)');
+      expect(btnHover).not.toBe(headerHover);
+      expect(luminance(btnHover)).toBeLessThan(luminance(headerHover));
+    });
+  });
+
+  describe('滑過', () => {
+    const hoverBg = () => resolveBackground(header(), declared(header(), 'background', { hover: true }));
+    // 換外觀時底色有 150ms 轉場；關掉轉場才讀得到最後的顏色
+    const restBg = () => {
+      header().style.transition = 'none';
+      return getComputedStyle(header()).backgroundColor;
+    };
+
+    it('section 滑過變深；card 從無底色變淺灰；accent 變深綠', () => {
+      set({ appearance: 'section' });
+      expect(luminance(hoverBg())).withContext('section').toBeLessThan(luminance(restBg()));
+      set({ appearance: 'card' });
+      expect(restBg()).toBe('rgba(0, 0, 0, 0)');
+      expect(hoverBg()).withContext('card').not.toBe('rgba(0, 0, 0, 0)');
+      set({ appearance: 'accent' });
+      expect(luminance(hoverBg())).withContext('accent').toBeLessThan(luminance(restBg()));
+    });
+
+    it('停用時滑過不變色（三種外觀都是）', () => {
+      for (const appearance of ['section', 'card', 'accent'] as const) {
+        set({ appearance, disabled: true });
+        expect(hoverBg()).withContext(appearance).toBe(restBg());
+      }
+    });
+  });
+
+  describe('減少動態與強制色彩', () => {
+    it('減少動態：箭頭與標頭底色不轉場', () => {
+      const chevron = trigger().querySelector('.collapsible__chevron')!;
+      for (const [name, part] of [['標頭', header()], ['箭頭', chevron]] as const) {
+        expect(declared(part, 'transition-property', { media: 'prefers-reduced-motion: reduce' }))
+          .withContext(name).toBe('none');
+      }
+    });
+
+    it('強制色彩：停用的標題與箭頭用系統的停用字色 GrayText', () => {
+      set({ disabled: true });
+      for (const cls of ['.collapsible__title', '.collapsible__chevron']) {
+        const part = trigger().querySelector(cls)!;
+        expect(declared(part, 'color', { media: 'forced-colors: active' }).toLowerCase()).withContext(cls).toBe('graytext');
+      }
+    });
+  });
+
+  describe('空間不夠時：摘要、數值、標題誰先讓', () => {
+    let f: ComponentFixture<FitHostComponent>;
+    const root = () => f.nativeElement as HTMLElement;
+    const part = (cls: string) => root().querySelector<HTMLElement>(`[data-testid="fit"] > .collapsible__header ${cls}`)!;
+    const setFit = (patch: Partial<FitHostComponent>) => {
+      Object.assign(f.componentInstance, patch);
+      f.detectChanges();
+    };
+    const truncated = (e: HTMLElement) => e.scrollWidth > e.clientWidth + 1;
+    const oneLine = (e: HTMLElement) =>
+      e.getBoundingClientRect().height < parseFloat(getComputedStyle(e).fontSize) * 2;
+
+    beforeEach(() => {
+      f = TestBed.createComponent(FitHostComponent);
+      document.body.appendChild(f.nativeElement);
+      f.detectChanges();
+    });
+
+    afterEach(() => f.nativeElement.remove());
+
+    it('數值放金額：窄到放不下時金額完整、一行，標題用刪節號截', () => {
+      const value = root().querySelector<HTMLElement>('[data-testid="fit-value"]')!;
+      expect(part('.collapsible__trigger').contains(value)).withContext('金額在標題按鈕裡').toBeTrue();
+      expect(truncated(part('.collapsible__value'))).withContext('金額沒被截').toBeFalse();
+      expect(oneLine(value)).withContext('金額一行').toBeTrue();
+      expect(truncated(part('.collapsible__title'))).withContext('標題被截').toBeTrue();
+      expect(getComputedStyle(part('.collapsible__title')).textOverflow).toBe('ellipsis');
+    });
+
+    it('摘要放一行預覽：一行、放不下用刪節號，短標題完整', () => {
+      setFit({ width: 360, title: '記帳服務', labels: false, amount: '', preview: '每月記帳、營業稅申報、年度結算申報、暫繳與扣繳申報' });
+      const summary = part('.collapsible__summary');
+      expect(getComputedStyle(summary).whiteSpace).toBe('nowrap');
+      expect(getComputedStyle(summary).textOverflow).toBe('ellipsis');
+      expect(truncated(summary)).withContext('預覽被截').toBeTrue();
+      expect(oneLine(summary)).withContext('預覽一行').toBeTrue();
+      expect(truncated(part('.collapsible__title'))).withContext('標題沒被截').toBeFalse();
+    });
+
+    it('預覽和金額都放：預覽先縮，金額與短標題都完整', () => {
+      setFit({ width: 360, title: '記帳服務', labels: false, amount: 'NT$ 36,000', preview: '每月記帳、營業稅申報、年度結算申報' });
+      expect(truncated(part('.collapsible__summary'))).withContext('預覽被截').toBeTrue();
+      expect(truncated(part('.collapsible__value'))).withContext('金額沒被截').toBeFalse();
+      expect(truncated(part('.collapsible__title'))).withContext('標題沒被截').toBeFalse();
+    });
+
+    it('寬度夠、只放數值：數值靠右；什麼都沒放、箭頭在右時，箭頭靠右', () => {
+      setFit({ width: 480, title: '記帳服務', labels: false, preview: '' });
+      const trig = part('.collapsible__trigger');
+      const contentRight = () => trig.getBoundingClientRect().right - parseFloat(getComputedStyle(trig).paddingRight);
+      expect(part('.collapsible__value').getBoundingClientRect().right).toBeCloseTo(contentRight(), 0);
+      setFit({ amount: '', chevron: 'end' });
+      expect(part('.collapsible__chevron').getBoundingClientRect().right).toBeCloseTo(contentRight(), 0);
     });
   });
 

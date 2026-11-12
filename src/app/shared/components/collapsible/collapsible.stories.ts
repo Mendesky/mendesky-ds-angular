@@ -34,7 +34,7 @@ type Story = StoryObj<CollapsibleComponent>;
 
 /** 範例用的內容區：頁面自己決定內距 */
 const BODY = `<div style="padding:12px 16px;color:#686868">這一段的內容。收起來時鍵盤進不去、報讀軟體不念。</div>`;
-/** 卡片外框：8px 圓角、1px 外框；卡片外觀的標題按鈕是 7px 圓角，焦點框順著轉角 */
+/** 卡片外框：8px 圓角、1px 外框，不裁切超出的部分。卡片、綠色的標頭自己是 7px 圓角，底色和焦點框順著轉角 */
 const CARD = 'border:1px solid #e7e7e7;border-radius:8px;background:#fff';
 
 // ── 一般：頁面上的大段落 ─────────────────────────────────
@@ -91,6 +91,7 @@ export const WithActions: Story = {
               (checkedChange)="picked = $event"></app-checkbox>
             <app-label collapsibleMeta size="S" text="3 項"></app-label>
             <span collapsibleSummary>收合時的一行摘要</span>
+            <span collapsibleValue>$ 1,200</span>
             <app-icon-btn collapsibleTrailing size="16" propClass="SectionBtn" ariaLabel="更多操作">
               <app-icon name="More" size="16"></app-icon>
             </app-icon-btn>

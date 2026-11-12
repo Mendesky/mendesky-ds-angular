@@ -11,6 +11,8 @@ import { CollapsibleGroupComponent } from './collapsible-group.component';
  * - 包在其他元素裡（例如卡片）的段落也算同一組。
  * - 段落內容裡巢狀的收合區塊不算這一組：打開它不會收掉外層。
  * - 停用的段落不會被收掉（停用時維持原來的開合）。
+ * - 頁面自己改 expanded 打開某段時不收其他段；使用者收起一段時也不收其他段。
+ * - 被收起來的段落先發 false，使用者打開的那段最後發 true（頁面用一個值記開著哪一段時才會對）。
  */
 @Component({
   standalone: true,
@@ -34,6 +36,25 @@ class HostComponent {
   bInner = false;
   c = false;
   cDisabled = false;
+}
+
+/** 頁面用一個值記「現在開著哪一段」 */
+@Component({
+  standalone: true,
+  imports: [CollapsibleComponent, CollapsibleGroupComponent],
+  template: `
+    <app-collapsible-group single>
+      @for (id of ids; track id) {
+        <app-collapsible [attr.data-testid]="id" [title]="id" [expanded]="openId === id"
+          (expandedChange)="log.push(id + ':' + $event); openId = $event ? id : null"></app-collapsible>
+      }
+    </app-collapsible-group>
+  `,
+})
+class OpenIdHostComponent {
+  ids = ['A', 'B'];
+  openId: string | null = null;
+  log: string[] = [];
 }
 
 describe('CollapsibleGroupComponent', () => {
@@ -98,6 +119,24 @@ describe('CollapsibleGroupComponent', () => {
     expect(expanded('c')).toBeTrue();
   });
 
+  it('single：頁面自己打開 B 時，不收掉 A', () => {
+    click('a');
+    host.b = true;
+    fixture.detectChanges();
+    expect(expanded('a')).toBeTrue();
+    expect(expanded('b')).toBeTrue();
+  });
+
+  it('single：使用者收起 B 時，不收掉開著的 A', () => {
+    click('a');
+    host.b = true;
+    fixture.detectChanges();
+    click('b');
+    expect(expanded('b')).toBeFalse();
+    expect(expanded('a')).toBeTrue();
+    expect(host.a).toBeTrue();
+  });
+
   it('沒設 single：各段各自開合', () => {
     host.single = false;
     fixture.detectChanges();
@@ -105,5 +144,26 @@ describe('CollapsibleGroupComponent', () => {
     click('b');
     expect(expanded('a')).toBeTrue();
     expect(expanded('b')).toBeTrue();
+  });
+});
+
+describe('CollapsibleGroupComponent：頁面用一個值記開著哪一段', () => {
+  it('打開 B：先發 A 的 false、再發 B 的 true，頁面最後記到 B', () => {
+    const fixture = TestBed.createComponent(OpenIdHostComponent);
+    const el = fixture.nativeElement as HTMLElement;
+    document.body.appendChild(el);
+    fixture.detectChanges();
+    const btn = (id: string) => el.querySelector(`[data-testid="${id}"] .collapsible__trigger`) as HTMLButtonElement;
+
+    btn('A').click();
+    fixture.detectChanges();
+    btn('B').click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.log).toEqual(['A:true', 'A:false', 'B:true']);
+    expect(fixture.componentInstance.openId).toBe('B');
+    expect(btn('B').getAttribute('aria-expanded')).toBe('true');
+    expect(btn('A').getAttribute('aria-expanded')).toBe('false');
+    el.remove();
   });
 });

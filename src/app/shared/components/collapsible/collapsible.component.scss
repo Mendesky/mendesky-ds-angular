@@ -26,7 +26,8 @@
 .collapsible__trailing:empty,
 .collapsible__prefix:empty,
 .collapsible__meta:empty,
-.collapsible__summary:empty {
+.collapsible__summary:empty,
+.collapsible__value:empty {
   display: none;
 }
 
@@ -70,7 +71,7 @@
   flex-shrink: 0;
 }
 
-// 標題放不下時用刪節號截斷；摘要先縮，標題最後才縮
+// 標題放不下時用刪節號截斷。摘要只拿剩下的空間，所以空間不夠時摘要先縮、標題後縮；數值不縮
 .collapsible__title {
   flex-shrink: 1;
   min-width: 0;
@@ -80,20 +81,33 @@
   color: var(--text\/title, #333333);
 }
 
-.collapsible__spacer {
-  flex: 1;
+// 靠右的摘要：收合時的一行預覽。只拿標題、數值用剩的空間（起始寬 0），不跟標題搶；
+// 固定一行，放不下用刪節號。投影進來的文字不會折成好幾行把標頭撐高
+.collapsible__summary {
+  display: block;
+  flex: 1 1 0;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--text\/secondary, #535353);
 }
 
-// 靠右的摘要：金額、收合時的一行預覽
-.collapsible__summary {
+// 數值：金額、小計這類截掉一截就會看錯的數字。不縮、不換行，空間不夠時讓標題先截
+.collapsible__value {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 100;
-  min-width: 0;
-  overflow: hidden;
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--text\/secondary, #535353);
+}
+
+// 沒有摘要撐開時，數值、結尾的箭頭自己靠右
+.collapsible__summary:empty + .collapsible__value,
+.collapsible__summary:empty + .collapsible__value:empty + .collapsible__chevron {
+  margin-left: auto;
 }
 
 // 箭頭：收合時朝下、展開時朝上，跟內容一起 300ms 轉
@@ -144,10 +158,21 @@
 // ── 外觀：卡片（卡片或清單項目的標頭）──
 // 沒有底色，卡片裡不再多一條色塊；滑過才出現淺灰，提示可以點
 :host(.collapsible--card) > .collapsible__header {
-  border-radius: inherit;
-
   &:hover {
     background: var(--color\/white\/20, #f1f3f5);
+  }
+
+  // 前置區、尾端區的 #icon-btn SectionBtn：預設滑過也是 --color/white/20，跟標頭滑過同色，看不出按鈕的範圍。
+  // 卡片裡改成深一階（--color/grey/20），按下去再深一階
+  .collapsible__leading ::ng-deep .icon-btn--section-btn,
+  .collapsible__trailing ::ng-deep .icon-btn--section-btn {
+    &:hover:not(:disabled) {
+      background: var(--color\/grey\/20, #e7e7e7);
+    }
+
+    &:active:not(:disabled) {
+      background: var(--color\/grey\/30, #d3d3d3);
+    }
   }
 
   .collapsible__trigger {
@@ -172,7 +197,7 @@
 }
 
 // ── 外觀：綠色（可以拖曳排序的段落）──
-// 綠 85 配白字 4.58:1；滑過綠 90，6.34:1。焦點框改單層白：藍框放在綠底上只有 1.15:1
+// 綠 85 配白字 4.58:1；滑過綠 90，6.34:1。焦點框改單層白：藍框放在綠 85 上只有 1.49:1
 :host(.collapsible--accent) > .collapsible__header {
   background: var(--color\/green\/85, #538227);
   color: var(--text\/body-lightest, #ffffff);
@@ -193,6 +218,7 @@
   .collapsible__title,
   .collapsible__chevron,
   .collapsible__summary,
+  .collapsible__value,
   .collapsible__leading,
   .collapsible__trailing {
     color: var(--text\/body-lightest, #ffffff);
@@ -232,13 +258,22 @@
   }
 }
 
-// 卡片與綠色常放在圓角卡片裡：標題按鈕跟著卡片圓角（卡片 8px 減掉 1px 外框），
-// 焦點框才會順著卡片轉角，不會被卡片的圓角切掉。區段是整條直角，不用
+// 卡片與綠色常放在圓角卡片裡：標頭和標題按鈕跟著卡片圓角（卡片 8px 減掉 1px 外框）。
+// 卡片沒有裁切超出的部分時，綠底、滑過的淺灰才不會從圓角凸出去；焦點框也順著轉角。
+// 展開時下面接著內容，只圓上面兩角。區段是整條直角，不用
 :host(.collapsible--card) > .collapsible__header,
 :host(.collapsible--accent) > .collapsible__header {
+  border-radius: calc(var(--radious\/md, 8px) - 1px);
+
   .collapsible__trigger {
     border-radius: calc(var(--radious\/md, 8px) - 1px);
   }
+}
+
+:host(.collapsible--card.collapsible--expanded) > .collapsible__header,
+:host(.collapsible--accent.collapsible--expanded) > .collapsible__header {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 // ── 停用 ──
@@ -271,9 +306,16 @@
   }
 
   .collapsible__summary,
+  .collapsible__value,
   .collapsible__leading,
   .collapsible__trailing {
     color: var(--text\/body, #686868);
+  }
+
+  // 灰底上不能留白框：標題按鈕的焦點框回到區段的藍白雙層（白框對灰底只有 1.24:1）
+  .collapsible__trigger:focus-visible {
+    outline-color: var(--focus-ring-color, #3a9ccd);
+    box-shadow: inset 0 0 0 4px var(--border\/white, #ffffff);
   }
 
   // 灰底上不能留白色圖示：前置、尾端的 #icon-btn 改回內文灰，滑過用深一點的灰、焦點框回到藍色
