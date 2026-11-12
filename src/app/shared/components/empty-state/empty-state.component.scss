@@ -86,7 +86,8 @@
   gap: var(--spacing\/xs, 8px);
   text-align: center;
 
-  // tabindex="-1" 只為了重試中能接住焦點；不畫焦點框（它不是可操作的元素）
+  // tabindex="-1" 只為了重試中能接住焦點；不畫焦點框（它不是可操作的元素）。
+  // 重試結束、按鈕恢復時，元件會把焦點還給重試鈕，焦點不會一直停在看不見的地方
   &:focus {
     outline: none;
   }
@@ -101,7 +102,8 @@
 }
 
 .es-description {
-  color: var(--text\/body-light, #939393);
+  // 說明是這塊唯一的下一步指示：用 --text/body，白底對比 5.57:1（body-light 只有 3.07:1）
+  color: var(--text\/body, #686868);
 }
 
 .es-retry {

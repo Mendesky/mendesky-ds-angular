@@ -82,6 +82,13 @@ export const AllVariants: Story = {
           <p style="font-size:12px;color:#999;margin:0 0 8px;text-align:center;">不顯示文字</p>
           <app-empty-state message=""></app-empty-state>
         </div>
+        <div style="flex:1;min-width:200px;">
+          <p style="font-size:12px;color:#999;margin:0 0 8px;text-align:center;">錯誤版本（讀取失敗）</p>
+          <div style="background:#fff;border:1px solid #e7e7e7;border-radius:8px;--es-padding:24px;">
+            <app-empty-state variant="error" title="附件清單載入失敗"
+              description="請重試。如果一直失敗，請聯絡系統管理員。"></app-empty-state>
+          </div>
+        </div>
       </div>
     `,
     moduleMetadata: { imports: [EmptyStateComponent] },

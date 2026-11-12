@@ -1,6 +1,6 @@
 import {
   Component, Input, Output, EventEmitter, ChangeDetectionStrategy,
-  ElementRef, OnChanges, SimpleChanges, ViewChild,
+  AfterViewChecked, ElementRef, OnChanges, SimpleChanges, ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../button/button.component';
@@ -23,7 +23,7 @@ export type EmptyStateVariant = 'empty' | 'error';
     '[attr.title]': 'null',
   },
 })
-export class EmptyStateComponent implements OnChanges {
+export class EmptyStateComponent implements OnChanges, AfterViewChecked {
   /** empty（預設）顯示插圖與 message；error 改顯示紅色圖示、標題、說明與重試鈕 */
   @Input() variant: EmptyStateVariant = 'empty';
   /** 插圖下方的說明文字；空字串時不顯示。只有 empty 版本顯示 */
@@ -41,6 +41,9 @@ export class EmptyStateComponent implements OnChanges {
 
   @ViewChild('wrapper', { static: true }) private wrapperRef!: ElementRef<HTMLElement>;
   @ViewChild('retryArea') private retryAreaRef?: ElementRef<HTMLElement>;
+
+  /** 重試剛結束（retrying 改回 false），畫面更新後要檢查焦點是否該還給重試鈕 */
+  private returnFocusToRetry = false;
 
   get isError(): boolean {
     return this.variant === 'error';
@@ -61,6 +64,19 @@ export class EmptyStateComponent implements OnChanges {
         this.wrapperRef.nativeElement.focus();
       }
     }
+    // 重試仍失敗：按鈕要等這一輪模板更新才解除停用，所以在 ngAfterViewChecked 再把焦點還回去
+    if (!r?.currentValue && r?.previousValue && this.isError) {
+      this.returnFocusToRetry = true;
+    }
+  }
+
+  ngAfterViewChecked(): void {
+    if (!this.returnFocusToRetry) return;
+    this.returnFocusToRetry = false;
+    // 焦點還停在錯誤區塊本身（重試中移過來的）才還；使用者已經移到別處就不搶
+    if (document.activeElement !== this.wrapperRef.nativeElement) return;
+    const btn = this.retryAreaRef?.nativeElement.querySelector('button');
+    if (btn && !btn.disabled) btn.focus();
   }
 
   onRetryClick(): void {

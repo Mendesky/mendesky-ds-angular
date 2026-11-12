@@ -208,6 +208,33 @@ describe('EmptyStateComponent', () => {
       outside.remove();
     });
 
+    it('重試仍失敗（retrying 改回 false）時焦點還在錯誤區塊上 → 移回重試鈕，再按 Enter 就能再試', () => {
+      const nativeBtn = retryButton().nativeElement.querySelector('button') as HTMLButtonElement;
+      nativeBtn.focus();
+      host.retrying = true;
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(wrapper());
+      host.retrying = false;
+      fixture.detectChanges();
+      const btnAfter = retryButton().nativeElement.querySelector('button') as HTMLButtonElement;
+      expect(btnAfter.disabled).toBeFalse();
+      expect(document.activeElement).toBe(btnAfter);
+    });
+
+    it('重試仍失敗時焦點已經離開錯誤區塊 → 不搶焦點', () => {
+      const nativeBtn = retryButton().nativeElement.querySelector('button') as HTMLButtonElement;
+      nativeBtn.focus();
+      host.retrying = true;
+      fixture.detectChanges();
+      const outside = document.createElement('button');
+      document.body.appendChild(outside);
+      outside.focus();
+      host.retrying = false;
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(outside);
+      outside.remove();
+    });
+
     it('預設版本（不帶 variant）即使接了 retry 也不出現重試鈕、沒有 role 與 tabindex', () => {
       const f = TestBed.createComponent(EmptyWithRetryHost);
       f.detectChanges();
