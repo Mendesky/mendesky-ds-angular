@@ -73,3 +73,39 @@
   color: #939393;
   text-align: center;
 }
+
+// ── 錯誤版本：區塊內容讀取失敗 ─────────────────────────────────
+// 外框由使用端照被取代的正常內容加；高度用 --es-min-height 對齊正常內容，內容上下置中，
+// 重試成功換回正常內容時版面不跳。只套在錯誤版本，預設版本的版面不變。
+:host(.es-host--error) {
+  align-items: center;
+  min-height: var(--es-min-height, 0px);
+}
+
+.es-wrapper--error {
+  gap: var(--spacing\/xs, 8px);
+  text-align: center;
+
+  // tabindex="-1" 只為了重試中能接住焦點；不畫焦點框（它不是可操作的元素）。
+  // 重試結束、按鈕恢復時，元件會把焦點還給重試鈕，焦點不會一直停在看不見的地方
+  &:focus {
+    outline: none;
+  }
+}
+
+.es-error-icon {
+  color: var(--icon\/warning, #cc5252);
+}
+
+.es-title {
+  color: var(--text\/title, #1c1c2e);
+}
+
+.es-description {
+  // 說明是這塊唯一的下一步指示：用 --text/body，白底對比 5.57:1（body-light 只有 3.07:1）
+  color: var(--text\/body, #686868);
+}
+
+.es-retry {
+  margin-top: var(--spacing\/xs, 8px);
+}

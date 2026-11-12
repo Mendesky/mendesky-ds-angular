@@ -1,5 +1,20 @@
-<div class="es-wrapper">
+<div #wrapper class="es-wrapper"
+  [class.es-wrapper--error]="isError"
+  [attr.role]="isError ? 'status' : null"
+  [attr.tabindex]="isError ? -1 : null">
 
+  <ng-container *ngIf="isError; else emptyScene">
+    <app-icon class="es-error-icon" name="Alert-Info" size="24" aria-hidden="true"></app-icon>
+    <span class="es-title noto-14-medium">{{ title }}</span>
+    <span *ngIf="description" class="es-description noto-12-regular">{{ description }}</span>
+    <div #retryArea *ngIf="showRetry" class="es-retry">
+      <app-button variant="outlined" color="neutral" size="S" leftIcon="Refresh"
+        [text]="retryText" [loading]="retrying" loadingText="重試中"
+        (btnClick)="onRetryClick()"></app-button>
+    </div>
+  </ng-container>
+
+  <ng-template #emptyScene>
   <div class="es-scene">
 
     <!-- 靜態：人物身體（右，在文件後面） -->
@@ -58,6 +73,7 @@
   </div>
 
   <p *ngIf="message" class="es-message">{{ message }}</p>
+  </ng-template>
 
   <ng-content></ng-content>
 
