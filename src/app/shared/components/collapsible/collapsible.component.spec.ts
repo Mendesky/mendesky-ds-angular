@@ -65,6 +65,26 @@ class AccentActionsHostComponent {
   disabled = false;
 }
 
+/** 收合區塊裡再放收合區塊（例：區段裡的一張張卡片）：外層的外觀、開合、停用都不能套到內層 */
+@Component({
+  standalone: true,
+  imports: [CollapsibleComponent],
+  template: `
+    <div style="width:480px">
+      <app-collapsible data-testid="outer" title="外層" [appearance]="outerAppearance"
+        [disabled]="outerDisabled" [expanded]="true">
+        <app-collapsible data-testid="inner" appearance="card" title="內層" [expanded]="false">
+          <p>內層的內容</p>
+        </app-collapsible>
+      </app-collapsible>
+    </div>
+  `,
+})
+class NestedHostComponent {
+  outerAppearance: CollapsibleAppearance = 'section';
+  outerDisabled = false;
+}
+
 /** WCAG 相對亮度與對比 */
 function luminance(rgb: string): number {
   const [r, g, b] = (rgb.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number).map(v => {
@@ -407,6 +427,61 @@ describe('CollapsibleComponent', () => {
       const s = getComputedStyle(btn());
       expect(s.color).not.toBe('rgb(255, 255, 255)');
       expect(contrast(s.color, getComputedStyle(hdr()).backgroundColor)).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  // 樣式只能管到自己的標頭。寫成「外層 host 底下的所有標頭」的話，裡面那個收合區塊的標頭也會中
+  describe('巢狀：收合區塊裡再放收合區塊', () => {
+    let f: ComponentFixture<NestedHostComponent>;
+    const own = (id: string, cls: string) =>
+      (f.nativeElement as HTMLElement).querySelector(`[data-testid="${id}"]`)!
+        .querySelector<HTMLElement>(`:scope > .collapsible__header ${cls}`)!;
+    const innerHeader = () =>
+      (f.nativeElement as HTMLElement).querySelector('[data-testid="inner"] > .collapsible__header') as HTMLElement;
+    const setOuter = (patch: Partial<NestedHostComponent>) => {
+      Object.assign(f.componentInstance, patch);
+      f.detectChanges();
+    };
+
+    beforeEach(() => {
+      f = TestBed.createComponent(NestedHostComponent);
+      document.body.appendChild(f.nativeElement);
+      f.detectChanges();
+    });
+
+    afterEach(() => f.nativeElement.remove());
+
+    it('外層是區段：內層卡片的標頭沒有灰底、沒有底線，標題中等粗、按鈕留卡片的內距', () => {
+      const s = getComputedStyle(innerHeader());
+      expect(s.backgroundColor).withContext('不吃外層的灰底').toBe('rgba(0, 0, 0, 0)');
+      expect(s.borderBottomWidth).withContext('不吃外層的底線').toBe('0px');
+      expect(getComputedStyle(own('inner', '.collapsible__title')).fontWeight).toBe('500');
+      expect(getComputedStyle(own('inner', '.collapsible__trigger')).paddingTop).toBe('8px');
+    });
+
+    it('外層展開、內層收起：內層箭頭朝下，不跟著外層轉', () => {
+      own('outer', '.collapsible__chevron').style.transition = 'none';
+      own('inner', '.collapsible__chevron').style.transition = 'none';
+      expect(getComputedStyle(own('outer', '.collapsible__chevron')).transform).not.toBe('none');
+      expect(getComputedStyle(own('inner', '.collapsible__chevron')).transform).toBe('none');
+    });
+
+    // 顏色跟「外層還是一般區段時的內層」比：色票有沒有載入，預設值會不同，不寫死色碼
+    it('外層是綠色：內層標題、箭頭不變白字', () => {
+      const title = getComputedStyle(own('inner', '.collapsible__title')).color;
+      const chevron = getComputedStyle(own('inner', '.collapsible__chevron')).color;
+      setOuter({ outerAppearance: 'accent' });
+      expect(getComputedStyle(own('outer', '.collapsible__title')).color).withContext('外層確實變白字').toBe('rgb(255, 255, 255)');
+      expect(getComputedStyle(own('inner', '.collapsible__title')).color).toBe(title);
+      expect(getComputedStyle(own('inner', '.collapsible__chevron')).color).toBe(chevron);
+    });
+
+    it('外層停用：內層標題不變停用灰，游標仍是可以點的手指', () => {
+      const title = getComputedStyle(own('inner', '.collapsible__title')).color;
+      setOuter({ outerDisabled: true });
+      expect(getComputedStyle(own('outer', '.collapsible__title')).color).withContext('外層確實變停用灰').not.toBe(title);
+      expect(getComputedStyle(own('inner', '.collapsible__title')).color).toBe(title);
+      expect(getComputedStyle(own('inner', '.collapsible__trigger')).cursor).toBe('pointer');
     });
   });
 });

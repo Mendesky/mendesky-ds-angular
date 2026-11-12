@@ -103,19 +103,20 @@
   transition: transform 300ms var(--ease-enter);
 }
 
-:host(.collapsible--expanded) .collapsible__chevron {
+// 外觀、開合、停用的樣式一律從自己的 > .collapsible__header 往下找。
+// 只寫「host 底下的 .collapsible__xxx」的話，內容裡再放一個收合區塊（例：區段裡的卡片），
+// 外層的灰底、白字、停用灰、展開的箭頭都會套到內層的標頭
+:host(.collapsible--expanded) > .collapsible__header .collapsible__chevron {
   transform: rotate(180deg);
 }
 
 // ── 外觀：區段（頁面上的大段落）──
 // 灰底整條：段落之間分得開，也看得出整條可以點。滑過變深：提示滑鼠下這條可以點
-:host(.collapsible--section) {
-  .collapsible__header {
-    background: var(--color\/grey\/20, #e7e7e7);
-    border-bottom: 0.5px solid var(--border\/primary-dark, #d3d3d3);
-  }
+:host(.collapsible--section) > .collapsible__header {
+  background: var(--color\/grey\/20, #e7e7e7);
+  border-bottom: 0.5px solid var(--border\/primary-dark, #d3d3d3);
 
-  .collapsible__header:hover {
+  &:hover {
     background: var(--color\/grey\/30, #d3d3d3);
   }
 
@@ -142,12 +143,10 @@
 
 // ── 外觀：卡片（卡片或清單項目的標頭）──
 // 沒有底色，卡片裡不再多一條色塊；滑過才出現淺灰，提示可以點
-:host(.collapsible--card) {
-  .collapsible__header {
-    border-radius: inherit;
-  }
+:host(.collapsible--card) > .collapsible__header {
+  border-radius: inherit;
 
-  .collapsible__header:hover {
+  &:hover {
     background: var(--color\/white\/20, #f1f3f5);
   }
 
@@ -174,13 +173,11 @@
 
 // ── 外觀：綠色（可以拖曳排序的段落）──
 // 綠 85 配白字 4.58:1；滑過綠 90，6.34:1。焦點框改單層白：藍框放在綠底上只有 1.15:1
-:host(.collapsible--accent) {
-  .collapsible__header {
-    background: var(--color\/green\/85, #538227);
-    color: var(--text\/body-lightest, #ffffff);
-  }
+:host(.collapsible--accent) > .collapsible__header {
+  background: var(--color\/green\/85, #538227);
+  color: var(--text\/body-lightest, #ffffff);
 
-  .collapsible__header:hover {
+  &:hover {
     background: var(--color\/green\/90, #426a1c);
   }
 
@@ -237,8 +234,8 @@
 
 // 卡片與綠色常放在圓角卡片裡：標題按鈕跟著卡片圓角（卡片 8px 減掉 1px 外框），
 // 焦點框才會順著卡片轉角，不會被卡片的圓角切掉。區段是整條直角，不用
-:host(.collapsible--card),
-:host(.collapsible--accent) {
+:host(.collapsible--card) > .collapsible__header,
+:host(.collapsible--accent) > .collapsible__header {
   .collapsible__trigger {
     border-radius: calc(var(--radious\/md, 8px) - 1px);
   }
@@ -247,7 +244,7 @@
 // ── 停用 ──
 // 游標一般、標題與箭頭變灰、滑過不變色：看得出這段不能開合。
 // 綠色外觀的底色也換成區段的灰，跟 #button 停用時一樣，不留綠底配灰字
-:host(.collapsible--disabled) {
+:host(.collapsible--disabled) > .collapsible__header {
   .collapsible__trigger {
     cursor: default;
   }
@@ -258,17 +255,17 @@
   }
 }
 
-:host(.collapsible--disabled.collapsible--section) .collapsible__header:hover {
+:host(.collapsible--disabled.collapsible--section) > .collapsible__header:hover {
   background: var(--color\/grey\/20, #e7e7e7);
 }
 
-:host(.collapsible--disabled.collapsible--card) .collapsible__header:hover {
+:host(.collapsible--disabled.collapsible--card) > .collapsible__header:hover {
   background: none;
 }
 
-:host(.collapsible--disabled.collapsible--accent) {
-  .collapsible__header,
-  .collapsible__header:hover {
+:host(.collapsible--disabled.collapsible--accent) > .collapsible__header {
+  &,
+  &:hover {
     background: var(--color\/grey\/20, #e7e7e7);
     color: var(--text\/body, #686868);
   }
@@ -306,7 +303,7 @@
 
 // 強制色彩模式：背景色會被換掉，停用改用系統的停用字色
 @media (forced-colors: active) {
-  :host(.collapsible--disabled) {
+  :host(.collapsible--disabled) > .collapsible__header {
     .collapsible__title,
     .collapsible__chevron {
       color: GrayText;
