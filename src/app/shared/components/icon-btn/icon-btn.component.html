@@ -1,5 +1,6 @@
 <div class="icon-btn-wrap"
      [class.icon-btn-wrap--icon-text]="propClass === 'Icon+Text'"
+     [class.icon-btn-wrap--loading]="busy"
      [appTooltip]="displayTooltip"
      [appTooltipDirection]="resolvedTooltipDir">
   <button
@@ -7,6 +8,8 @@
     [ngClass]="hostClasses"
     [disabled]="disabled"
     [attr.aria-label]="ariaLabel || null"
+    [attr.aria-busy]="busy ? 'true' : null"
+    [attr.aria-disabled]="busy ? 'true' : null"
     [attr.aria-pressed]="toggle ? (active ? 'true' : 'false') : null"
     [attr.aria-haspopup]="ariaHaspopup"
     [attr.aria-expanded]="ariaExpanded"
@@ -14,7 +17,10 @@
     (click)="onClick()"
   >
     <span class="icon-btn__icon-wrap">
-      <ng-content></ng-content>
+      <span class="icon-btn__content" [class.icon-btn__content--hidden]="busy"><ng-content></ng-content></span>
+      @if (busy) {
+        <app-spinner class="icon-btn__spinner" [size]="spinnerSize" [decorative]="true"></app-spinner>
+      }
     </span>
     <span *ngIf="label" class="icon-btn__label">{{ label }}</span>
   </button>

@@ -1,12 +1,13 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SpinnerComponent } from '../spinner/spinner.component';
 
 export type PoProcessStatus = 'Running' | 'Success' | 'Error' | 'Congratulation';
 
 @Component({
   selector: 'app-po-process',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SpinnerComponent],
   templateUrl: './po-process.component.html',
   styleUrls: ['./po-process.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

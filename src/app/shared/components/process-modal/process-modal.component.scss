@@ -71,16 +71,6 @@
 .process-modal__text--light  { color: #ffffff; flex: 1; }
 .process-modal__text--center { text-align: center; font-size: 1.1em; font-weight: 500; }
 
-/* ── Spinner ── */
-.spinner {
-  animation: modal-spin 1s linear infinite;
-}
-
-@keyframes modal-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
 /* ── Confetti ── */
 .confetti {
   position: absolute;

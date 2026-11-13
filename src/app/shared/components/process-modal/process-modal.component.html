@@ -11,13 +11,9 @@
     <!-- Running -->
     <ng-container *ngIf="type === 'running'">
       <span class="process-modal__icon">
-        <svg class="spinner" width="36" height="36" viewBox="0 0 36 36" fill="none">
-          <circle cx="18" cy="18" r="14" stroke="#e7e7e7" stroke-width="2.5"/>
-          <path d="M18 4 A14 14 0 0 1 32 18"
-                stroke="var(--text\/body, #686868)" stroke-width="2.5" stroke-linecap="round"/>
-        </svg>
+        <app-spinner size="36" [decorative]="true"></app-spinner>
       </span>
-      <span class="process-modal__text process-modal__text--dark">
+      <span class="process-modal__text process-modal__text--dark" role="status">
         {{ message || '執行中請稍候' }}
       </span>
     </ng-container>

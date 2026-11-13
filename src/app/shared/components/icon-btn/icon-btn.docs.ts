@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const iconBtnDoc: ComponentApi = {
   id: 'icon-btn',
   selector: 'app-icon-btn',
-  summary: 'size: 12|16-|16|24|32|36|48 · propClass: Normal|Warning|CardBtn|CardBtnPdSmall|Modal|SectionBtn|Drag|Block|Block-Transparent|Icon+Text|PrimaryFilled · label · [active] [toggle] [disabled] tooltip tooltipPos · ariaLabel · ariaHaspopup [ariaExpanded] · (btnClick)',
+  summary: 'size: 12|16-|16|24|32|36|48 · propClass: Normal|Warning|CardBtn|CardBtnPdSmall|Modal|SectionBtn|Drag|Block|Block-Transparent|Icon+Text|PrimaryFilled · label · [active] [toggle] [disabled] [loading] loadingSize tooltip tooltipPos · ariaLabel · ariaHaspopup [ariaExpanded] · (btnClick)',
   props: [
     {
       name: 'size',
@@ -30,7 +30,19 @@ export const iconBtnDoc: ComponentApi = {
     {
       name: 'disabled',
       type: 'boolean',
-      desc: '禁用狀態（opacity 0.5，cursor not-allowed）',
+      desc: '禁用狀態（opacity 0.5，cursor not-allowed）。同時設了 loading 時以 disabled 為準',
+    },
+    {
+      name: 'loading',
+      type: 'boolean',
+      default: 'false',
+      desc: '載入中：轉圈取代圖示，點了不送出。不加原生 disabled（焦點留在按鈕上），改輸出 aria-busy 與 aria-disabled；不淡化',
+    },
+    {
+      name: 'loadingSize',
+      type: "'12' | '16' | '24' | '36' | null",
+      default: 'null',
+      desc: '轉圈大小；null＝跟 size 走（12→12、16-／16→16、24／32→24、36／48→36）。投影的圖示比 size 小時，指定成圖示的大小',
     },
     {
       name: 'label',
@@ -75,7 +87,7 @@ export const iconBtnDoc: ComponentApi = {
     {
       name: '(btnClick)',
       type: 'EventEmitter<void>',
-      desc: '點擊事件（disabled 時不觸發）',
+      desc: '點擊事件（disabled 或 loading 時不觸發）',
       isOutput: true,
     },
   ],

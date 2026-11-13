@@ -58,20 +58,9 @@
   color: #686868;
 }
 
-/* 進行中 spinner（比照 cvmod-print-spinner；currentColor 繼承 loading 灰字） */
+/* 進行中轉圈是 app-spinner（DS-12），大小跟成功、失敗圖示一樣（S 24、M 36）；顏色繼承 loading 的灰字 */
 .toast__spinner {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  opacity: 0.85;
-  animation: toastSpin 0.7s linear infinite;
-}
-
-@keyframes toastSpin {
-  to { transform: rotate(360deg); }
 }
 
 /* 內容包裹層：update() 轉場時整組（icon + 訊息）舊內容往右淡出、新內容從左淡入（方向一致） */
