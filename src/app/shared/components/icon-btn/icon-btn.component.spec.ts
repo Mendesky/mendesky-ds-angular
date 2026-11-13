@@ -117,7 +117,8 @@ describe('IconBtnComponent — PrimaryFilled 與 size="12"', () => {
   imports: [IconBtnComponent],
   template: `
     <app-icon-btn class="lb" [size]="size" [propClass]="propClass" [loading]="loading" [loadingSize]="loadingSize"
-      [disabled]="disabled" ariaLabel="列印" label="列印" (btnClick)="clicks = clicks + 1">
+      [loadingLabel]="loadingLabel" [disabled]="disabled" ariaLabel="列印" label="列印"
+      (btnClick)="clicks = clicks + 1" (click)="hostClicks = hostClicks + 1">
       <span class="proj">P</span>
     </app-icon-btn>
   `,
@@ -127,8 +128,11 @@ class LoadingHostComponent {
   propClass: 'Normal' | 'Modal' | 'Icon+Text' | 'PrimaryFilled' = 'Normal';
   loading = false;
   loadingSize: '12' | '16' | '24' | '36' | null = null;
+  loadingLabel = '';
   disabled = false;
   clicks = 0;
+  /** 外層自己綁的 (click)：載入中不該收到 */
+  hostClicks = 0;
 }
 
 describe('IconBtnComponent — loading（DS-12）', () => {
@@ -225,5 +229,56 @@ describe('IconBtnComponent — loading（DS-12）', () => {
   it('loadingSize 指定轉圈大小（圖示比按鈕的圖示位置小時用）', () => {
     set({ size: '24', loadingSize: '16', loading: true });
     expect(spinner()!.querySelector('svg')!.getAttribute('width')).toBe('16');
+  });
+
+  // ── 第一輪審查：click 不外傳 ──
+  // 載入中按鈕 pointer-events: none，滑鼠實際點到的是外框 div；鍵盤 Enter／空白鍵在按鈕上也會發出原生 click。兩條都要擋。
+  it('loading：點按鈕（含鍵盤觸發的 click），外層綁的 (click) 收不到', () => {
+    set({ loading: true });
+    button().click();
+    expect(host().hostClicks).toBe(0);
+  });
+
+  it('loading：點外框（滑鼠實際點到的地方），外層綁的 (click) 收不到', () => {
+    set({ loading: true });
+    (fixture.nativeElement.querySelector('.icon-btn-wrap') as HTMLElement).click();
+    expect(host().hostClicks).toBe(0);
+  });
+
+  it('沒有 loading：外層綁的 (click) 照常收到', () => {
+    button().click();
+    expect(host().hostClicks).toBe(1);
+  });
+
+  // ── 第一輪審查：loadingLabel（報讀軟體念出在等什麼） ──
+  const statusEl = () => fixture.nativeElement.querySelector('app-icon-btn [role="status"]') as HTMLElement | null;
+
+  it('沒設 loadingLabel：沒有 role="status"', () => {
+    set({ loading: true });
+    expect(statusEl()).toBeNull();
+  });
+
+  it('設了 loadingLabel、還沒載入：已經有一個空的 role="status"，在按鈕外面', () => {
+    set({ loadingLabel: '產生 PDF 中…' });
+    expect(statusEl()).not.toBeNull();
+    expect(statusEl()!.textContent?.trim()).toBe('');
+    expect(button().contains(statusEl())).toBeFalse();
+  });
+
+  it('載入中：同一個 status 填入 loadingLabel；結束後清空', () => {
+    set({ loadingLabel: '產生 PDF 中…' });
+    const before = statusEl();
+    set({ loading: true });
+    expect(statusEl()).toBe(before);
+    expect(statusEl()!.textContent?.trim()).toBe('產生 PDF 中…');
+    set({ loading: false });
+    expect(statusEl()!.textContent?.trim()).toBe('');
+  });
+
+  it('status 視覺上隱藏（不佔版面）', () => {
+    set({ loadingLabel: '產生 PDF 中…', loading: true });
+    const rect = statusEl()!.getBoundingClientRect();
+    expect(rect.width).toBeLessThanOrEqual(1);
+    expect(rect.height).toBeLessThanOrEqual(1);
   });
 });

@@ -55,7 +55,7 @@ export const buttonDoc: ComponentApi = {
       name: 'loading',
       type: 'boolean',
       default: 'false',
-      desc: '載入中狀態；底色不變，app-spinner 取代 icon（XXS、XS、S 12px；M 16px；L 24px），點擊無效',
+      desc: '載入中狀態；按鈕換成停用的灰底，app-spinner 取代 icon（XXS、XS、S 12px；M 16px；L 24px），點擊無效',
     },
     {
       name: 'loadingText',

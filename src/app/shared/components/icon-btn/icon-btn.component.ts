@@ -69,6 +69,12 @@ export class IconBtnComponent {
   /** 轉圈大小；null＝跟 size 走（12→12、16-／16→16、24／32→24、36／48→36）。投影的圖示比 size 小時（例：size 24 放 16px 圖示）指定成圖示的大小 */
   @Input() loadingSize: SpinnerSize | null = null;
 
+  /**
+   * 載入中要念給報讀軟體聽的話（例：「產生 PDF 中…」）。設了就在按鈕外面放一個一直存在、視覺上隱藏的 role="status"，
+   * 載入中填入這段文字，結束後清空。空字串＝不放。tooltip 換字報讀軟體不會念，要念就設這個。
+   */
+  @Input() loadingLabel = '';
+
   /** 無障礙標籤（建議每個 icon-btn 都設定） */
   @Input() ariaLabel = '';
 
@@ -160,5 +166,13 @@ export class IconBtnComponent {
 
   onClick(): void {
     if (!this.disabled && !this.loading) this.btnClick.emit();
+  }
+
+  /**
+   * 載入中擋下 click，不讓它傳到外層（使用端直接綁在 app-icon-btn 上的 (click)）。
+   * 載入中按鈕 pointer-events: none，滑鼠實際點到的是這個外框；鍵盤 Enter／空白鍵的 click 從按鈕冒上來，也在這裡擋。
+   */
+  onWrapClick(event: Event): void {
+    if (this.busy) event.stopPropagation();
   }
 }

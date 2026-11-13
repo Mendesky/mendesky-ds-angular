@@ -41,6 +41,11 @@ const meta: Meta<IconBtnComponent> = {
       description: '載入中：轉圈取代圖示，點了不送出；不淡化，焦點留在按鈕上',
       table: { defaultValue: { summary: 'false' } },
     },
+    loadingLabel: {
+      control: 'text',
+      description: '載入中念給報讀軟體聽的話；空字串＝不放 status',
+      table: { defaultValue: { summary: "''" } },
+    },
     loadingSize: {
       control: 'select',
       options: [null, '12', '16', '24', '36'],
@@ -88,6 +93,7 @@ export const Default: Story = {
         [active]="active"
         [disabled]="disabled"
         [loading]="loading"
+        [loadingLabel]="loadingLabel"
         [label]="label"
         [tooltip]="tooltip"
         [tooltipPos]="tooltipPos"
@@ -298,7 +304,7 @@ export const Loading: Story = {
           <div style="font-size:11px;color:#686868;margin-top:4px;">PrimaryFilled</div>
         </div>
         <div style="text-align:center;">
-          <app-icon-btn propClass="Normal" size="24" loadingSize="16" ariaLabel="列印" [loading]="true">
+          <app-icon-btn propClass="Normal" size="24" loadingSize="16" ariaLabel="列印" tooltip="產生 PDF 中…" loadingLabel="產生 PDF 中…" [loading]="true">
             <app-icon name="Print-Fax" size="16"></app-icon>
           </app-icon-btn>
           <div style="font-size:11px;color:#686868;margin-top:4px;">loadingSize 16</div>

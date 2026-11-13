@@ -2,7 +2,8 @@
      [class.icon-btn-wrap--icon-text]="propClass === 'Icon+Text'"
      [class.icon-btn-wrap--loading]="busy"
      [appTooltip]="displayTooltip"
-     [appTooltipDirection]="resolvedTooltipDir">
+     [appTooltipDirection]="resolvedTooltipDir"
+     (click)="onWrapClick($event)">
   <button
     class="icon-btn"
     [ngClass]="hostClasses"
@@ -24,4 +25,8 @@
     </span>
     <span *ngIf="label" class="icon-btn__label">{{ label }}</span>
   </button>
+  <!-- 報讀用：放在按鈕外面（按鈕裡的內容只會被當成按鈕名稱），一直存在，載入中才填字 -->
+  @if (loadingLabel) {
+    <span class="icon-btn__sr" role="status">{{ busy ? loadingLabel : '' }}</span>
+  }
 </div>

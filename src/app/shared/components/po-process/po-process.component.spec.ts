@@ -16,4 +16,16 @@ describe('PoProcessComponent — Running 轉圈（DS-12）', () => {
     expect(spinner.getAttribute('aria-hidden')).toBe('true');
     expect(spinner.querySelector('svg')!.getAttribute('width')).toBe('36');
   });
+
+  /** 第一輪審查：轉圈顏色固定是 --text/body #686868（跟「執行中請稍候」一樣），不跟著頁面的文字色走 */
+  it('轉圈是 #686868，不跟著頁面的文字色', () => {
+    fixture = TestBed.createComponent(PoProcessComponent);
+    document.body.appendChild(fixture.nativeElement);
+    (fixture.nativeElement as HTMLElement).style.color = 'rgb(28, 28, 46)';
+    fixture.componentRef.setInput('status', 'Running');
+    fixture.detectChanges();
+    const spinner = fixture.nativeElement.querySelector('app-spinner') as HTMLElement;
+    expect(getComputedStyle(spinner).color).toBe('rgb(104, 104, 104)');
+    fixture.nativeElement.remove();
+  });
 });

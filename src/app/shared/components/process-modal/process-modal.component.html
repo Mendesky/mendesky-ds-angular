@@ -1,3 +1,6 @@
+<!-- 報讀用：一直存在，處理中才填訊息。區域跟視窗一起出現時，有些報讀軟體不會念 -->
+<span class="process-modal__sr" role="status">{{ isOpen && type === 'running' ? (message || '執行中請稍候') : '' }}</span>
+
 <div class="process-modal-overlay"
      *ngIf="visible()"
      [class.process-modal-overlay--leaving]="isClosing()"
@@ -13,7 +16,8 @@
       <span class="process-modal__icon">
         <app-spinner size="36" [decorative]="true"></app-spinner>
       </span>
-      <span class="process-modal__text process-modal__text--dark" role="status">
+      <!-- 報讀用的是下面一直存在的 status；這份只給眼睛看，不重複念 -->
+      <span class="process-modal__text process-modal__text--dark" aria-hidden="true">
         {{ message || '執行中請稍候' }}
       </span>
     </ng-container>

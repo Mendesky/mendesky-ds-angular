@@ -1,5 +1,5 @@
 import {
-  Directive, Input, HostListener, AfterViewInit,
+  Directive, Input, HostListener, AfterViewInit, OnChanges, SimpleChanges,
   ElementRef, ApplicationRef, EnvironmentInjector, DestroyRef,
   createComponent, ComponentRef,
   inject,
@@ -28,7 +28,7 @@ import { Placement, PortalOverlayRef, PortalPositioningService } from '../../ser
   selector: '[appTooltip]',
   standalone: true,
 })
-export class TooltipDirective implements AfterViewInit {
+export class TooltipDirective implements AfterViewInit, OnChanges {
   /** Tooltip 文字；空字串 = 停用 */
   @Input('appTooltip') text = '';
 
@@ -62,6 +62,17 @@ export class TooltipDirective implements AfterViewInit {
 
   constructor() {
     this.destroyRef.onDestroy(() => this._hide());
+  }
+
+  /** 打開中換字（例：列印鈕按下去後換成「產生 PDF 中…」）：畫面上的 tooltip 跟著換；換成空字串就關掉 */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['text'] || !this._portalRef) return;
+    if (!this.text) {
+      this._hide();
+      return;
+    }
+    this._portalRef.setInput('text', this.text);
+    this._portalRef.changeDetectorRef.detectChanges();
   }
 
   ngAfterViewInit(): void {

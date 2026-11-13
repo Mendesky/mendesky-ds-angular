@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const iconBtnDoc: ComponentApi = {
   id: 'icon-btn',
   selector: 'app-icon-btn',
-  summary: 'size: 12|16-|16|24|32|36|48 · propClass: Normal|Warning|CardBtn|CardBtnPdSmall|Modal|SectionBtn|Drag|Block|Block-Transparent|Icon+Text|PrimaryFilled · label · [active] [toggle] [disabled] [loading] loadingSize tooltip tooltipPos · ariaLabel · ariaHaspopup [ariaExpanded] · (btnClick)',
+  summary: 'size: 12|16-|16|24|32|36|48 · propClass: Normal|Warning|CardBtn|CardBtnPdSmall|Modal|SectionBtn|Drag|Block|Block-Transparent|Icon+Text|PrimaryFilled · label · [active] [toggle] [disabled] [loading] loadingSize loadingLabel tooltip tooltipPos · ariaLabel · ariaHaspopup [ariaExpanded] · (btnClick)',
   props: [
     {
       name: 'size',
@@ -36,13 +36,19 @@ export const iconBtnDoc: ComponentApi = {
       name: 'loading',
       type: 'boolean',
       default: 'false',
-      desc: '載入中：轉圈取代圖示，點了不送出。不加原生 disabled（焦點留在按鈕上），改輸出 aria-busy 與 aria-disabled；不淡化',
+      desc: '載入中：轉圈取代圖示，點了不送出，click 也不會傳到外層。不加原生 disabled（焦點留在按鈕上），改輸出 aria-busy 與 aria-disabled；不淡化',
     },
     {
       name: 'loadingSize',
       type: "'12' | '16' | '24' | '36' | null",
       default: 'null',
       desc: '轉圈大小；null＝跟 size 走（12→12、16-／16→16、24／32→24、36／48→36）。投影的圖示比 size 小時，指定成圖示的大小',
+    },
+    {
+      name: 'loadingLabel',
+      type: 'string',
+      default: "''",
+      desc: '載入中念給報讀軟體聽的話（例：「產生 PDF 中…」）。設了就在按鈕外面放一個一直存在、看不見的 role="status"，載入中填字、結束清空。只換 tooltip 報讀軟體不會念',
     },
     {
       name: 'label',

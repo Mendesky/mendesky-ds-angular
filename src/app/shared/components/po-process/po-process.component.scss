@@ -41,6 +41,8 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
+  /* Running 的轉圈跟「執行中請稍候」同色（--text/body），不跟著頁面的文字色走；Success／Error 的圖示自帶白色 */
+  color: var(--text\/body, #686868);
 }
 
 /* ── Text ── */
