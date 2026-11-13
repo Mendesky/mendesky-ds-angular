@@ -11,6 +11,23 @@ import { InjectionToken } from '@angular/core';
 export interface MenuContext {
   register(item: object): void;
   unregister(item: object): void;
+  /**
+   * 滑過、或用鍵盤移到某一項時呼叫：details 有值就在選單旁邊顯示它的補充說明面板，
+   * null（這一項沒有說明）就收起來。選填：使用端自己實作這個介面時不用跟著加
+   */
+  showDetails?(item: object, details: MenuItemDetails | null): void;
+  /** 某一項的說明內容或標題改了：那一項正在顯示時，面板跟著換；不是那一項就不理 */
+  updateDetails?(item: object, details: MenuItemDetails | null): void;
+}
+
+/** 補充說明面板要顯示的內容，以及要對齊的那一列 */
+export interface MenuItemDetails {
+  /** 面板標題，用那一項的 label */
+  label: string;
+  /** 每一個字串是一條 */
+  items: readonly string[];
+  /** 那一項的元素，面板頂端對齊它 */
+  row: HTMLElement;
 }
 
 export const MENU_CONTEXT = new InjectionToken<MenuContext>('MENU_CONTEXT');

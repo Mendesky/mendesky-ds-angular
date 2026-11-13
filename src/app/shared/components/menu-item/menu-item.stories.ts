@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { ActionMenuComponent, DividerComponent, ICON_REGISTRY, LabelComponent, MenuItemComponent } from '../../../../index';
+import {
+  ActionMenuComponent, ButtonComponent, DividerComponent, ICON_REGISTRY, LabelComponent, MenuItemComponent,
+} from '../../../../index';
 
 const iconNames = ['', ...Object.keys(ICON_REGISTRY)];
 
@@ -66,6 +68,11 @@ const meta: Meta<MenuItemComponent> = {
       control: 'boolean',
       description: '旁邊的面板開著沒；設了 opensPanel 才有作用',
       table: { defaultValue: { summary: 'false' } },
+    },
+    details: {
+      control: 'object',
+      description: '補充說明，每一個字串是一條；滑過或用鍵盤移到這一項時，選單旁邊出現面板。只在選單裡、沒設 opensPanel 時有作用',
+      table: { defaultValue: { summary: 'null' } },
     },
     itemClick: { action: 'itemClick' },
   },
@@ -176,6 +183,38 @@ export const OpensPanel: Story = {
     `),
     props: { open: true },
     moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, DividerComponent] },
+  }),
+};
+
+// ── 補充說明：滑過或用鍵盤移到選項時，選單右邊出現面板，標題是 label、條列是 details ─────────
+//    按「匯出」打開選單。滑鼠移出選單時面板留著，選單關掉才消失。用滑鼠點開時不會自己出現，用鍵盤打開時第一項的說明會先出現
+const EXPORT_FORMATS = [
+  { label: '匯出成 CSV', details: ['只有文字與數字，沒有格式', '用任何試算表或文字編輯器都打得開', '適合再匯入其他系統'] },
+  { label: '匯出成試算表', details: ['保留欄寬、顏色與公式', '適合直接列印或分享給別人'] },
+  { label: '匯出成 PDF', details: ['版面固定，不能再編輯', '適合寄出或存檔'] },
+];
+
+export const Details: Story = {
+  name: '補充說明',
+  render: () => ({
+    template: `
+      <div style="padding-bottom:160px;">
+        <!-- 選單對齊包住它的外層，所以按鈕和選單包在同一個 span 裡，選單才會出現在按鈕正下方 -->
+        <span style="display:inline-block;">
+          <app-button variant="ghost" color="neutral" size="S" text="匯出"
+            ariaHaspopup="menu" [ariaExpanded]="open" (btnClick)="open = !open"></app-button>
+          @if (open) {
+            <app-action-menu ariaLabel="匯出" (closeMenu)="open = false">
+              @for (f of formats; track f.label) {
+                <app-menu-item [label]="f.label" [details]="f.details" (itemClick)="open = false"></app-menu-item>
+              }
+            </app-action-menu>
+          }
+        </span>
+      </div>
+    `,
+    props: { formats: EXPORT_FORMATS, open: false },
+    moduleMetadata: { imports: [ActionMenuComponent, MenuItemComponent, ButtonComponent] },
   }),
 };
 

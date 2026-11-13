@@ -11,10 +11,12 @@
   [attr.aria-checked]="inMenu && isRadio ? selected : null"
   [attr.aria-pressed]="!inMenu && isRadio ? selected : null"
   [attr.aria-disabled]="disabled ? 'true' : null"
-  [attr.aria-describedby]="description ? descriptionId : null"
+  [attr.aria-describedby]="describedBy"
   [attr.aria-haspopup]="opensPanel || null"
   [attr.aria-expanded]="opensPanel ? (panelOpen ? 'true' : 'false') : null"
   (click)="onClick($event)"
+  (mouseenter)="onPointerEnter()"
+  (focus)="onFocus()"
 >
   @if (icon) {
     <app-icon class="mi__icon" [name]="icon" size="16"></app-icon>
@@ -24,6 +26,10 @@
     <!-- 說明不算進名稱：aria-hidden 讓它不進按鈕的名稱，aria-describedby 照樣讀得到 -->
     @if (description) {
       <span class="mi__desc" [id]="descriptionId" aria-hidden="true">{{ description }}</span>
+    }
+    <!-- 補充說明的條列：畫面上由動作選單的面板顯示，這裡只給 aria-describedby 念，所以藏起來、也不算進名稱 -->
+    @if (hasDetails) {
+      <span class="mi__sr" [id]="detailsId" aria-hidden="true">@for (d of detailsSpoken; track $index) {<span>{{ d }}</span>}</span>
     }
   </span>
   <ng-content></ng-content>

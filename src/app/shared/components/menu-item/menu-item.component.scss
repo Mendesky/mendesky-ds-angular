@@ -52,6 +52,19 @@
   min-width: 0;
 }
 
+// 補充說明的條列：畫面上由動作選單的面板顯示，這裡看不見、只給報讀軟體念
+.mi__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .mi__label {
   min-width: 0;
   overflow: hidden;

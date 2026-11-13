@@ -1,1 +1,14 @@
 <ng-content></ng-content>
+<!-- 補充說明面板：選項設了 details 才有。搬到 body（不放在選單裡），選單的 backdrop-filter 才不會讓它的模糊失效、
+     position: fixed 也才以視窗為準。只用來看：aria-hidden（報讀軟體由選項的 aria-describedby 念），點不到 -->
+@if (detailsPanel(); as d) {
+  <div #detailsEl appPortalTeleport class="am-details" aria-hidden="true"
+    [style.top.px]="d.top" [style.left.px]="d.left">
+    <p class="am-details__title">{{ d.label }}</p>
+    <ul class="am-details__list">
+      @for (t of d.items; track $index) {
+        <li>{{ t }}</li>
+      }
+    </ul>
+  </div>
+}

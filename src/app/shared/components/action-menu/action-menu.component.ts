@@ -1,18 +1,19 @@
 import {
   Component, Input, Output, EventEmitter,
   HostListener, ElementRef, AfterViewInit, OnChanges, OnDestroy,
-  NgZone, inject, forwardRef,
+  NgZone, inject, forwardRef, signal, ViewChild,
  ChangeDetectionStrategy, } from '@angular/core';
+import { PortalTeleportDirective } from '../../directives/portal-teleport.directive';
 import { CloseReason, Placement, PortalOverlayRef, PortalPositioningService } from '../../services/portal-positioning.service';
 import {
-  MENU_CONTEXT, MenuContext, WIDGET_ROLES, expandedMenuTrigger, initialMenuItem, isFormFieldTarget, isInteractiveTarget,
+  MENU_CONTEXT, MenuContext, MenuItemDetails, WIDGET_ROLES, expandedMenuTrigger, initialMenuItem, isFormFieldTarget, isInteractiveTarget,
   menuItemsIn,
 } from './menu-context';
 
 @Component({
   selector: 'app-action-menu',
   standalone: true,
-  imports: [],
+  imports: [PortalTeleportDirective],
   templateUrl: './action-menu.component.html',
   styleUrls: ['./action-menu.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -113,6 +114,18 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   private _focusedIndex = -1;
   private _destroyed = false;
 
+  /** 補充說明面板目前顯示的內容與座標；null＝沒有面板 */
+  readonly detailsPanel = signal<DetailsPanelState | null>(null);
+  @ViewChild('detailsEl') private _detailsEl?: ElementRef<HTMLElement>;
+  /** 面板目前是哪一項的說明，以及那一項給的內容（位置要重算時用） */
+  private _detailsOwner: object | null = null;
+  private _details: MenuItemDetails | null = null;
+  /** 等下一幀量面板高度、重算位置的 requestAnimationFrame */
+  private _detailsFrame: number | null = null;
+  private _detailsListening = false;
+  /** 頁面或選單捲動、視窗大小改變：選單或那一列可能移動了，下一幀重算面板位置 */
+  private readonly _onDetailsViewportChange = (): void => this._scheduleDetailsLayout();
+
   private readonly _onWindowPointerDown = (event: PointerEvent): void => {
     const host = this.el.nativeElement as HTMLElement;
     this._lastPointerTarget = event.target instanceof Element ? event.target : null;
@@ -140,6 +153,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /** MenuContext：app-menu-item 銷毀時取消登記 */
   unregister(item: object): void {
     this._menuItems.delete(item);
+    if (item === this._detailsOwner) this._hideDetails();
     this._syncMenuAttrs();
     // 焦點所在的項目被拿掉時，焦點會掉回 body，方向鍵和 Esc 都收不到；等這一輪畫面更新完再補回選單裡
     if (this._focusedItem) queueMicrotask(() => this._refocusAfterItemRemoved());
@@ -147,6 +161,43 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 
   ngOnChanges(): void {
     this._syncMenuAttrs();
+  }
+
+  /** MenuContext：滑過、或用鍵盤移到某一項時，顯示它的補充說明；那一項沒有說明（null）就收起來 */
+  showDetails(item: object, details: MenuItemDetails | null): void {
+    if (this._destroyed) return;
+    if (!details) {
+      this._hideDetails();
+      return;
+    }
+    this._detailsOwner = item;
+    this._details = details;
+    if (!this._detailsListening) {
+      this._detailsListening = true;
+      this.zone.runOutsideAngular(() => {
+        window.addEventListener('scroll', this._onDetailsViewportChange, { capture: true, passive: true });
+        window.addEventListener('resize', this._onDetailsViewportChange, { passive: true });
+      });
+    }
+    // 先用面板現在的高度放一次（換選項時是上一項的高度，第一次出現時不管高度），下一幀量到新內容的高度再修正
+    this._layoutDetails();
+    this._scheduleDetailsLayout();
+  }
+
+  /**
+   * 選單打開時有 150ms 的縮放動畫（actionMenuIn），動畫期間量到的列位置是縮放中的。
+   * 鍵盤打開時第一項的說明在動畫中就出現，滑得快的也會在動畫中滑過；動畫結束再對齊一次，面板才貼齊那一列
+   */
+  @HostListener('animationend', ['$event'])
+  onHostAnimationEnd(event: AnimationEvent): void {
+    if (event.target !== this.el.nativeElement || !this._details) return;
+    this._scheduleDetailsLayout();
+  }
+
+  /** MenuContext：某一項的說明改了。正在顯示的就是那一項時才跟著換 */
+  updateDetails(item: object, details: MenuItemDetails | null): void {
+    if (item !== this._detailsOwner) return;
+    this.showDetails(item, details);
   }
 
   ngAfterViewInit(): void {
@@ -191,6 +242,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 
   ngOnDestroy(): void {
     this._destroyed = true;
+    this._hideDetails();
     sidePanels.delete(this);
     const host = this.el.nativeElement as HTMLElement;
     window.removeEventListener('pointerdown', this._onWindowPointerDown, true);
@@ -585,6 +637,71 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     this._focusObserver = null;
   }
 
+  /**
+   * 算面板位置：選單右邊隔 8px，頂端對齊那一列（列頂減去選單上內距，面板頂端才跟選單的外框齊）。
+   * 右邊放不下改放左邊，兩邊都放不下就放空間大的那邊、夾在視窗裡。下面放不下往上移，上面至少留 8px
+   */
+  private _layoutDetails(): void {
+    const d = this._details;
+    if (!d) return;
+    const host = this.el.nativeElement as HTMLElement;
+    const menu = host.getBoundingClientRect();
+    const row = d.row.getBoundingClientRect();
+    const padTop = parseFloat(getComputedStyle(host).paddingTop) || 0;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const right = menu.right + DETAILS_GAP;
+    const leftSide = menu.left - DETAILS_GAP - DETAILS_WIDTH;
+    let left = right;
+    if (right + DETAILS_WIDTH > vw - DETAILS_MARGIN) {
+      if (leftSide >= DETAILS_MARGIN) left = leftSide;
+      else {
+        const roomRight = vw - menu.right;
+        const roomLeft = menu.left;
+        left = roomRight >= roomLeft
+          ? Math.max(DETAILS_MARGIN, vw - DETAILS_MARGIN - DETAILS_WIDTH)
+          : DETAILS_MARGIN;
+      }
+    }
+
+    let top = row.top - padTop;
+    const height = this._detailsEl?.nativeElement.offsetHeight ?? 0;
+    if (height > 0) top = Math.min(top, vh - DETAILS_MARGIN - height);
+    top = Math.max(DETAILS_MARGIN, top);
+
+    const prev = this.detailsPanel();
+    if (prev && prev.top === top && prev.left === left && prev.label === d.label && prev.items === d.items) return;
+    // 捲動、視窗大小的監聽在 Angular 外面跑，改面板要回到 Angular 裡面，畫面才會更新
+    this.zone.run(() => this.detailsPanel.set({ label: d.label, items: d.items, top, left }));
+  }
+
+  /** 下一幀再算一次位置：那時面板已經畫出新內容，量得到高度 */
+  private _scheduleDetailsLayout(): void {
+    if (this._detailsFrame !== null) return;
+    this.zone.runOutsideAngular(() => {
+      this._detailsFrame = requestAnimationFrame(() => {
+        this._detailsFrame = null;
+        this._layoutDetails();
+      });
+    });
+  }
+
+  private _hideDetails(): void {
+    this._detailsOwner = null;
+    this._details = null;
+    if (this._detailsFrame !== null) {
+      cancelAnimationFrame(this._detailsFrame);
+      this._detailsFrame = null;
+    }
+    if (this._detailsListening) {
+      this._detailsListening = false;
+      window.removeEventListener('scroll', this._onDetailsViewportChange, { capture: true });
+      window.removeEventListener('resize', this._onDetailsViewportChange);
+    }
+    if (this.detailsPanel() !== null) this.detailsPanel.set(null);
+  }
+
   private _hasLegacyCoords(): boolean {
     return this.fixedTop !== null || this.fixedBottom !== null ||
            this.fixedLeft !== null || this.fixedRight !== null;
@@ -627,6 +744,18 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     });
     if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
   }
+}
+
+/** 補充說明面板：寬度、跟選單的距離、離視窗邊緣至少留多少 */
+const DETAILS_WIDTH = 320;
+const DETAILS_GAP = 8;
+const DETAILS_MARGIN = 8;
+
+interface DetailsPanelState {
+  label: string;
+  items: readonly string[];
+  top: number;
+  left: number;
 }
 
 /**
