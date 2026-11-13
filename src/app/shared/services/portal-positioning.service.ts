@@ -46,6 +46,12 @@ export interface AttachOptions {
    */
   ancestorAnchorEl?: HTMLElement;
   /**
+   * 跟這個浮層算在一起的其他元素（opt-in）。浮層自己畫在 body 底下的附屬面板（例如 action-menu 的補充說明面板）
+   * 不在浮層裡面，按它會被當成點外面；列在這裡的元素，按下時跟按浮層裡面一樣，不會關掉浮層。
+   * 用函式取：附屬面板常常是之後才出現、會被換掉的元素，每次按下時才問現在是哪些
+   */
+  companionEls?: () => ReadonlyArray<Element | null | undefined>;
+  /**
    * 翻轉方向判斷用的「穩定高度」（opt-in）。有值時，上下翻轉決策改用此固定高度而非
    * 即時 panel 高度 → panel 內容筆數變化時不再反覆翻面跳動（autocomplete 手機打字時）。
    */
@@ -107,7 +113,7 @@ class InternalOverlayRef implements PortalOverlayRef {
     private readonly panelEl: HTMLElement,
     private placement: Placement,
     private readonly options: Required<Pick<AttachOptions,
-      'trackScroll' | 'closeOnModalOpen' | 'closeOnClickOutside' | 'closeOnEscape' | 'scrollContainerStrategy' | 'gap'>> & { onClose?: (reason: CloseReason) => void; onPlacementChange?: (placement: Placement) => void; ancestorAnchorEl?: HTMLElement; stableFlipHeight?: number; boundMaxHeight?: number; disableFlip?: boolean },
+      'trackScroll' | 'closeOnModalOpen' | 'closeOnClickOutside' | 'closeOnEscape' | 'scrollContainerStrategy' | 'gap'>> & { onClose?: (reason: CloseReason) => void; onPlacementChange?: (placement: Placement) => void; ancestorAnchorEl?: HTMLElement; companionEls?: () => ReadonlyArray<Element | null | undefined>; stableFlipHeight?: number; boundMaxHeight?: number; disableFlip?: boolean },
     private readonly modalStackSize: number,
     private readonly zIndex: number,
     private readonly removeFromService: (ref: InternalOverlayRef) => void,
@@ -134,7 +140,8 @@ class InternalOverlayRef implements PortalOverlayRef {
 
   panelContains(target: EventTarget | null): boolean {
     if (!(target instanceof Node)) return false;
-    return this.panelEl.contains(target);
+    if (this.panelEl.contains(target)) return true;
+    return (this.options.companionEls?.() ?? []).some((el) => !!el && el.contains(target));
   }
 
   triggerContains(target: EventTarget | null): boolean {
@@ -500,7 +507,7 @@ export class PortalPositioningService {
   private create(anchor: Anchor, panelEl: HTMLElement, options?: AttachOptions): PortalOverlayRef {
     this.ensureDocumentListeners();
     const merged: Required<Pick<AttachOptions,
-      'trackScroll' | 'closeOnModalOpen' | 'closeOnClickOutside' | 'closeOnEscape' | 'scrollContainerStrategy' | 'gap'>> & { onClose?: (reason: CloseReason) => void; onPlacementChange?: (placement: Placement) => void; ancestorAnchorEl?: HTMLElement; stableFlipHeight?: number; boundMaxHeight?: number; disableFlip?: boolean } = {
+      'trackScroll' | 'closeOnModalOpen' | 'closeOnClickOutside' | 'closeOnEscape' | 'scrollContainerStrategy' | 'gap'>> & { onClose?: (reason: CloseReason) => void; onPlacementChange?: (placement: Placement) => void; ancestorAnchorEl?: HTMLElement; companionEls?: () => ReadonlyArray<Element | null | undefined>; stableFlipHeight?: number; boundMaxHeight?: number; disableFlip?: boolean } = {
       trackScroll: options?.trackScroll ?? true,
       closeOnModalOpen: options?.closeOnModalOpen ?? false,
       closeOnClickOutside: options?.closeOnClickOutside ?? false,
@@ -514,6 +521,7 @@ export class PortalPositioningService {
         ? (placement: Placement) => this.zone.run(() => options.onPlacementChange!(placement))
         : undefined,
       ancestorAnchorEl: options?.ancestorAnchorEl,
+      companionEls: options?.companionEls,
       stableFlipHeight: options?.stableFlipHeight,
       boundMaxHeight: options?.boundMaxHeight,
       disableFlip: options?.disableFlip,

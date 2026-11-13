@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const menuItemDoc: ComponentApi = {
   id: 'menu-item',
   selector: 'app-menu-item',
-  summary: "label（必填）· description · icon · tone: neutral|danger · [disabled] · [selected]: boolean|null（null＝一般動作）· opensPanel: 'dialog'|null · [panelOpen] · (itemClick) · 文字後面可投影 app-label",
+  summary: "label（必填）· description · icon · tone: neutral|danger · [disabled] · [selected]: boolean|null（null＝一般動作）· opensPanel: 'dialog'|null · [panelOpen] · [details]: string[]（補充說明面板） · (itemClick) · 文字後面可投影 app-label",
   props: [
     {
       name: 'label',
@@ -51,6 +51,12 @@ export const menuItemDoc: ComponentApi = {
       type: 'boolean',
       default: 'false',
       desc: '旁邊的面板開著沒。設了 opensPanel 才有作用：輸出成 aria-expanded，true 時跟滑過一樣亮著（危險項目是淺紅底）。面板開關由使用端自己管。',
+    },
+    {
+      name: 'details',
+      type: 'readonly string[] | null',
+      default: 'null',
+      desc: '補充說明，每一個字串是一條，只能是純文字。滑過這一項，或用鍵盤移到這一項時，選單右邊出現一塊面板，標題是 label，下面列出每一條；用滑鼠點開選單時不會自己出現。滑鼠移出選單時面板留著，滑過沒有 details 的項目才收起來，選單關掉就消失。內層按鈕的 aria-describedby 另外指向藏起來的條列文字，接在 description 後面念。只在 app-action-menu 裡有作用；設了 opensPanel 時不生效。null 或空陣列不顯示。',
     },
     {
       name: '(itemClick)',
@@ -108,6 +114,15 @@ export const menuItemDoc: ComponentApi = {
 }`,
     },
     {
+      label: '補充說明：名稱很像的幾個選項，用 details 分幾點寫出差異',
+      code: `<app-action-menu ariaLabel="匯出" (closeMenu)="exportOpen.set(false)">
+  <app-menu-item label="匯出成 CSV" (itemClick)="exportAs('csv')"
+    [details]="['只有文字與數字，沒有格式', '適合再匯入其他系統']"></app-menu-item>
+  <app-menu-item label="匯出成 PDF" (itemClick)="exportAs('pdf')"
+    [details]="['版面固定，不能再編輯', '適合寄出或存檔']"></app-menu-item>
+</app-action-menu>`,
+    },
+    {
       label: '文字後面放標籤（自訂內容）',
       code: `<app-menu-item [label]="item.name" (itemClick)="open(item.id)">
   <app-label color="Grey70" size="XXS" [text]="item.typeLabel"></app-label>
@@ -134,6 +149,7 @@ export const menuItemDoc: ComponentApi = {
     },
     '投影進來的 app-label 用 LightWhite 時，字色來自 CSS 變數 --text/body-light。滑過、按下、選中、面板開著時元件會把這個變數改成淺色，所以標籤字會跟著變白；停用時改成灰 50，跟標題一樣。其他寫死顏色的自訂內容不會變。',
     'ancestorAnchorEl 要的是元素，不是元件。用 viewChild(\'exportItem\', { read: ElementRef }) 取到 ElementRef，傳它的 nativeElement（app-menu-item 的元素）；不傳的話，點面板裡面會把外面的選單當成點外面關掉，再按一次「匯出」也會先關掉面板、放開時又打開。',
+    '補充說明面板由外層的 app-action-menu 畫，搬到 body 底下，所以一個選單同時只有一塊。面板寬 320px，放在選單右邊隔 8px、頂端對齊那一列；右邊放不下改放左邊，下面放不下往上移。左右都放不下 320px 時放在空間大的那邊、縮窄到放得下，不到 200px 就不顯示；面板不蓋住選單，疊放層級跟選單一樣。頁面捲動、選單移動或視窗大小改變時跟著重新對齊。點面板算點在選單裡：選單不關，底下的東西也不會被點到，焦點留在選單的那一項。觸控裝置上不顯示（條件是 (hover: none) and (pointer: coarse)），所以一定要知道的事不要只寫在 details。',
     '文字後面的自訂內容放在內層按鈕裡、沒有 aria-hidden，報讀軟體會把它接在 label 後面一起念進名稱，例如「項目 C 圖片 已封存」。',
   ],
 };

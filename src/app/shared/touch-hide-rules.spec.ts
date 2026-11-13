@@ -2,6 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { TooltipsComponent } from './components/tooltips/tooltips.component';
 import { TooltipPortalComponent } from './directives/tooltip/tooltip-portal.component';
 import { NumberListComponent } from './components/number-list/number-list.component';
+import { ActionMenuComponent } from './components/action-menu/action-menu.component';
+import { MenuItemComponent } from './components/menu-item/menu-item.component';
+import { Component } from '@angular/core';
 
 // 提示框只在觸控裝置（沒有滑鼠）隱藏，不看視窗寬度（2026-11-04 使用者拍板）。
 // 原本用寬度小於 1024px 判斷：電腦視窗拉窄就看不到提示，iPad 橫放（寬度超過 1024）反而沒藏。
@@ -42,6 +45,17 @@ function encapsulationAttr(el: Element, prefix: '_nghost' | '_ngcontent'): strin
   return attr.name;
 }
 
+@Component({
+  standalone: true,
+  imports: [ActionMenuComponent, MenuItemComponent],
+  template: `
+    <app-action-menu ariaLabel="選單" [autoFocusFirst]="false">
+      <app-menu-item label="項目" [details]="['說明']"></app-menu-item>
+    </app-action-menu>
+  `,
+})
+class MenuDetailsHostComponent {}
+
 describe('觸控裝置的隱藏與換行規則', () => {
   it('Tooltips 元件只在觸控裝置隱藏，不看視窗寬度', async () => {
     await TestBed.configureTestingModule({ imports: [TooltipsComponent] }).compileComponents();
@@ -66,6 +80,20 @@ describe('觸控裝置的隱藏與換行規則', () => {
 
     const hiding = mediaTextsOf((r) => r.selectorText === `[${attr}]` && r.style.display === 'none');
     expect(hiding).toEqual([TOUCH]);
+  });
+
+  it('選單選項的補充說明面板（details）只在觸控裝置隱藏，不看視窗寬度', async () => {
+    await TestBed.configureTestingModule({ imports: [MenuDetailsHostComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(MenuDetailsHostComponent);
+    fixture.detectChanges();
+    document.querySelector('app-action-menu app-menu-item button')!.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+    const panel = document.body.querySelector('.am-details')!;
+    const attr = encapsulationAttr(panel, '_ngcontent');
+
+    const hiding = mediaTextsOf((r) => r.selectorText === `.am-details[${attr}]` && r.style.display === 'none');
+    expect(hiding).toEqual([TOUCH]);
+    fixture.destroy();
   });
 
   it('Number List 在窄畫面和觸控裝置都換行，不截斷', async () => {
