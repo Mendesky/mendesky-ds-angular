@@ -123,6 +123,11 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
   /** 等下一幀量面板高度、重算位置的 requestAnimationFrame */
   private _detailsFrame: number | null = null;
   private _detailsListening = false;
+  /**
+   * 選單被定位服務移動時（改外框的 style），面板跟著重算。只聽捲動不夠：捲動事件先到面板、後到定位服務，
+   * 面板在同一幀先量會量到選單移動前的位置
+   */
+  private _detailsMoveObserver: MutationObserver | null = null;
   /** 頁面或選單捲動、視窗大小改變：選單或那一列可能移動了，下一幀重算面板位置 */
   private readonly _onDetailsViewportChange = (): void => this._scheduleDetailsLayout();
 
@@ -130,8 +135,13 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     const host = this.el.nativeElement as HTMLElement;
     this._lastPointerTarget = event.target instanceof Element ? event.target : null;
     this._focusInMenuAtPress = host.contains(document.activeElement);
-    this._pressedInMenu = host.contains(this._lastPointerTarget);
+    // 補充說明面板畫在 body 底下，但按它算按在選單裡（見 _detailsCompanions）
+    this._pressedInMenu = host.contains(this._lastPointerTarget)
+      || !!this._detailsEl?.nativeElement.contains(this._lastPointerTarget);
   };
+
+  /** 跟選單算在一起的元素：補充說明面板。按它不算點外面，選單不關（定位服務的 companionEls） */
+  private readonly _detailsCompanions = (): ReadonlyArray<Element | null | undefined> => [this._detailsEl?.nativeElement];
 
   private readonly _onHostClickCapture = (event: MouseEvent): void => {
     const item = this._menuItemAt(event.target);
@@ -177,6 +187,8 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       this.zone.runOutsideAngular(() => {
         window.addEventListener('scroll', this._onDetailsViewportChange, { capture: true, passive: true });
         window.addEventListener('resize', this._onDetailsViewportChange, { passive: true });
+        this._detailsMoveObserver = new MutationObserver(() => this._scheduleDetailsLayout());
+        this._detailsMoveObserver.observe(this.el.nativeElement as HTMLElement, { attributes: true, attributeFilter: ['style'] });
       });
     }
     // 先用面板現在的高度放一次（換選項時是上一項的高度，第一次出現時不管高度），下一幀量到新內容的高度再修正
@@ -234,6 +246,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
         scrollContainerStrategy: 'document',
         closeOnClickOutside: true,
         closeOnEscape: false,
+        companionEls: this._detailsCompanions,
         onClose: (reason) => this._onOverlayClose(reason),
       },
     );
@@ -639,7 +652,8 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 
   /**
    * 算面板位置：選單右邊隔 8px，頂端對齊那一列（列頂減去選單上內距，面板頂端才跟選單的外框齊）。
-   * 右邊放不下改放左邊，兩邊都放不下就放空間大的那邊、夾在視窗裡。下面放不下往上移，上面至少留 8px
+   * 右邊放不下 320px 改放左邊；兩邊都放不下就放空間大的那邊、縮窄到放得下，不到 200px 不顯示（面板不蓋住選單）。
+   * 下面放不下往上移，上面至少留 8px。疊放層級跟選單一樣：選單在其他浮層上時，面板也在
    */
   private _layoutDetails(): void {
     const d = this._details;
@@ -647,33 +661,41 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
     const host = this.el.nativeElement as HTMLElement;
     const menu = host.getBoundingClientRect();
     const row = d.row.getBoundingClientRect();
-    const padTop = parseFloat(getComputedStyle(host).paddingTop) || 0;
+    const hostStyle = getComputedStyle(host);
+    const padTop = parseFloat(hostStyle.paddingTop) || 0;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    const right = menu.right + DETAILS_GAP;
-    const leftSide = menu.left - DETAILS_GAP - DETAILS_WIDTH;
-    let left = right;
-    if (right + DETAILS_WIDTH > vw - DETAILS_MARGIN) {
-      if (leftSide >= DETAILS_MARGIN) left = leftSide;
-      else {
-        const roomRight = vw - menu.right;
-        const roomLeft = menu.left;
-        left = roomRight >= roomLeft
-          ? Math.max(DETAILS_MARGIN, vw - DETAILS_MARGIN - DETAILS_WIDTH)
-          : DETAILS_MARGIN;
-      }
+    const roomRight = vw - DETAILS_MARGIN - (menu.right + DETAILS_GAP);
+    const roomLeft = menu.left - DETAILS_GAP - DETAILS_MARGIN;
+    let side: 'right' | 'left';
+    let width = DETAILS_WIDTH;
+    if (roomRight >= DETAILS_WIDTH) side = 'right';
+    else if (roomLeft >= DETAILS_WIDTH) side = 'left';
+    else {
+      side = roomRight >= roomLeft ? 'right' : 'left';
+      width = Math.floor(Math.max(roomRight, roomLeft));
     }
+    if (width < DETAILS_MIN_WIDTH) {
+      // 太窄讀不下去：不顯示，但記著這一項，視窗變寬時（resize 重算）再出現
+      if (this.detailsPanel() !== null) this.zone.run(() => this.detailsPanel.set(null));
+      return;
+    }
+    const left = side === 'right' ? menu.right + DETAILS_GAP : menu.left - DETAILS_GAP - width;
 
     let top = row.top - padTop;
     const height = this._detailsEl?.nativeElement.offsetHeight ?? 0;
     if (height > 0) top = Math.min(top, vh - DETAILS_MARGIN - height);
     top = Math.max(DETAILS_MARGIN, top);
 
+    const zParsed = parseInt(hostStyle.zIndex, 10);
+    const z = Number.isNaN(zParsed) ? null : zParsed;
+
     const prev = this.detailsPanel();
-    if (prev && prev.top === top && prev.left === left && prev.label === d.label && prev.items === d.items) return;
+    if (prev && prev.top === top && prev.left === left && prev.width === width && prev.z === z
+      && prev.label === d.label && prev.items === d.items) return;
     // 捲動、視窗大小的監聽在 Angular 外面跑，改面板要回到 Angular 裡面，畫面才會更新
-    this.zone.run(() => this.detailsPanel.set({ label: d.label, items: d.items, top, left }));
+    this.zone.run(() => this.detailsPanel.set({ label: d.label, items: d.items, top, left, width, z }));
   }
 
   /** 下一幀再算一次位置：那時面板已經畫出新內容，量得到高度 */
@@ -698,6 +720,8 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       this._detailsListening = false;
       window.removeEventListener('scroll', this._onDetailsViewportChange, { capture: true });
       window.removeEventListener('resize', this._onDetailsViewportChange);
+      this._detailsMoveObserver?.disconnect();
+      this._detailsMoveObserver = null;
     }
     if (this.detailsPanel() !== null) this.detailsPanel.set(null);
   }
@@ -740,6 +764,7 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
       closeOnClickOutside: true,
       closeOnEscape: false,
       ancestorAnchorEl: this.ancestorAnchorEl ?? undefined,
+      companionEls: this._detailsCompanions,
       onClose: (reason) => this._onOverlayClose(reason),
     });
     if (this.autoFocusFirst) requestAnimationFrame(() => this._focusFirstWhenReady());
@@ -750,12 +775,18 @@ export class ActionMenuComponent implements AfterViewInit, OnChanges, OnDestroy,
 const DETAILS_WIDTH = 320;
 const DETAILS_GAP = 8;
 const DETAILS_MARGIN = 8;
+/** 兩邊都放不下 320px 時面板會縮窄；比這個窄就不顯示，一行只剩幾個字讀不下去 */
+const DETAILS_MIN_WIDTH = 200;
 
 interface DetailsPanelState {
   label: string;
   items: readonly string[];
   top: number;
   left: number;
+  /** 面板寬：平常 320px，兩邊都放不下時縮窄 */
+  width: number;
+  /** 跟選單一樣的疊放層級（定位服務寫在選單上的 z-index）；選單沒有時用樣式裡的預設值 */
+  z: number | null;
 }
 
 /**

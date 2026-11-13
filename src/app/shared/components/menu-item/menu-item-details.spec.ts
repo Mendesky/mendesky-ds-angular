@@ -10,7 +10,9 @@ import { MenuItemComponent } from './menu-item.component';
  *   標題是 label，條列是 details；換項目時同一塊面板換內容與位置（不重建，所以不重播淡入）。
  * - 滑鼠離開項目、離開選單 → 面板留著；滑過沒有 details 的項目 → 收起來；選單關閉 → 從 DOM 移除。
  * - 位置：選單右邊隔 8px，頂端對齊這一列（列頂減去選單上內距）；右邊放不下改放左邊；下面放不下往上移。
- * - 面板 aria-hidden、點不到；按鈕的 aria-describedby 另外指向藏起來的條列文字（有說明時說明在前）。
+ * - 左右都放不下 320px：放空間大的那邊、縮窄；不到 200px 不顯示。疊放層級跟選單一樣。
+ * - 面板 aria-hidden；點面板算點在選單裡（選單不關、底下點不到、焦點不被搶）。
+ *   按鈕的 aria-describedby 另外指向藏起來的條列文字（有說明時說明在前）。
  * 面板搬到 body，從 document 查。
  */
 
@@ -44,8 +46,9 @@ function nextFrame(): Promise<void> {
   template: `
     <div class="anchor" style="position: fixed; top: 40px; left: 40px; width: 10px; height: 10px">
       @if (open) {
-        <app-action-menu ariaLabel="新增" [autoFocusFirst]="false"
-          [fixedMode]="fixed" [fixedTop]="fixedTop" [fixedLeft]="fixedLeft">
+        <app-action-menu ariaLabel="新增" [autoFocusFirst]="autoFocus"
+          [fixedMode]="fixed" [fixedTop]="fixedTop" [fixedLeft]="fixedLeft" [fixedWidth]="fixedWidth"
+          (closeMenu)="open = false">
           <app-menu-item data-testid="a" label="項目 A" [details]="detailsA"></app-menu-item>
           @if (showB) {
             <app-menu-item data-testid="b" label="項目 B" [details]="['另一條說明']"></app-menu-item>
@@ -68,6 +71,8 @@ class DetailsHostComponent {
   fixed = false;
   fixedTop: number | null = null;
   fixedLeft: number | null = null;
+  fixedWidth: number | null = null;
+  autoFocus = false;
   detailsA: string[] = ['第一條說明', '第二條說明'];
 }
 
@@ -110,13 +115,100 @@ describe('MenuItemComponent 補充說明面板（details）', () => {
     expect(items).toEqual(['第一條說明', '第二條說明']);
   });
 
-  it('面板 aria-hidden="true"、點不到（pointer-events: none），寬 320px', async () => {
+  it('面板 aria-hidden="true"，寬 320px', async () => {
     await create();
     hover(fixture, 'a');
     const p = panel()!;
     expect(p.getAttribute('aria-hidden')).toBe('true');
-    expect(getComputedStyle(p).pointerEvents).toBe('none');
     expect(p.getBoundingClientRect().width).toBe(320);
+  });
+
+  describe('點面板算點在選單裡', () => {
+    /** 面板正中間那一點；真的點下去時，瀏覽器把點擊交給這一點最上面的元素 */
+    function panelCenter(): { x: number; y: number } {
+      const r = panel()!.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+
+    it('面板底下有按鈕：點下去落在面板上，不會點到底下的按鈕', async () => {
+      await create();
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      const { x, y } = panelCenter();
+      const under = document.createElement('button');
+      under.style.cssText = `position: fixed; left: ${x - 20}px; top: ${y - 10}px; width: 40px; height: 20px; z-index: 1`;
+      document.body.appendChild(under);
+      try {
+        expect(panel()!.contains(document.elementFromPoint(x, y))).withContext('點擊要落在面板上').toBeTrue();
+      } finally {
+        under.remove();
+      }
+    });
+
+    it('在面板上按下：選單不關（定位服務不當成點外面）', async () => {
+      await create((host) => { host.fixed = true; host.fixedTop = 40; host.fixedLeft = 40; });
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      const { x, y } = panelCenter();
+      const target = document.elementFromPoint(x, y)!;
+      target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y }));
+      fixture.detectChanges();
+      expect(fixture.componentInstance.open).toBeTrue();
+      expect(document.querySelector('app-action-menu')).not.toBeNull();
+      expect(panel()).not.toBeNull();
+    });
+
+    it('對照：在面板外面按下，選單會關（確認上一條真的走到點外面的判斷）', async () => {
+      await create((host) => { host.fixed = true; host.fixedTop = 40; host.fixedLeft = 40; });
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      fixture.detectChanges();
+      expect(fixture.componentInstance.open).toBeFalse();
+    });
+
+    it('元素錨點模式也一樣：在面板上按下，選單不關', async () => {
+      await create();
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      const { x, y } = panelCenter();
+      document.elementFromPoint(x, y)!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y }));
+      fixture.detectChanges();
+      expect(fixture.componentInstance.open).toBeTrue();
+    });
+
+    it('在面板上按下滑鼠不搶焦點：焦點留在選單的那一項，方向鍵還能用', async () => {
+      await create();
+      hover(fixture, 'a');
+      button(fixture, 'a').focus();
+      const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+      panel()!.querySelector('li')!.dispatchEvent(down);
+      expect(down.defaultPrevented).toBeTrue();
+    });
+  });
+
+  it('疊放層級跟選單一樣：選單在 z-index 2000 的浮層上時，面板也在浮層上面', async () => {
+    const cover = document.createElement('div');
+    cover.style.cssText = 'position: fixed; inset: 0; z-index: 2000';
+    document.body.appendChild(cover);
+    try {
+      await create();
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      const menu = document.querySelector<HTMLElement>('app-action-menu')!;
+      // 前提：定位服務把選單放到浮層上面
+      expect(parseInt(getComputedStyle(menu).zIndex, 10)).toBeGreaterThan(2000);
+      expect(getComputedStyle(panel()!).zIndex).toBe(getComputedStyle(menu).zIndex);
+      const r = panel()!.getBoundingClientRect();
+      expect(panel()!.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2))).toBeTrue();
+    } finally {
+      cover.remove();
+    }
   });
 
   it('位置：選單右邊隔 8px，頂端對齊滑過的那一列（列頂減去選單上內距）', async () => {
@@ -231,14 +323,15 @@ describe('MenuItemComponent 補充說明面板（details）', () => {
     function pressKey(): void {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     }
-    /** 模擬使用者剛用滑鼠按下（例如點觸發鈕打開選單） */
+    /** 模擬使用者剛用滑鼠按下（例如點觸發鈕打開選單）。要在選單打開前按：選單開著時按 document 算點外面，選單會關 */
     function pressPointer(): void {
       document.dispatchEvent(new PointerEvent('pointerdown'));
     }
 
     it('用鍵盤打開（焦點被放到第一項）：面板出現', async () => {
-      await create();
+      pressPointer();
       pressKey();
+      await create();
       button(fixture, 'a').focus();
       fixture.detectChanges();
       expect(panel()).not.toBeNull();
@@ -246,28 +339,32 @@ describe('MenuItemComponent 補充說明面板（details）', () => {
     });
 
     it('用滑鼠點開（焦點被放到第一項）：面板不出現', async () => {
-      await create();
+      // 先按一下鍵盤當起點：不管前一條測試留下什麼，要記到這次的滑鼠按下才會不出現
+      pressKey();
       pressPointer();
+      await create();
       button(fixture, 'a').focus();
       fixture.detectChanges();
       expect(panel()).toBeNull();
     });
 
     it('用滑鼠點開，就算瀏覽器畫了焦點框（Safari）：面板也不出現', async () => {
+      pressKey();
+      pressPointer();
       await create();
       const original = Element.prototype.matches;
       spyOn(Element.prototype, 'matches').and.callFake(function (this: Element, selector: string) {
         return selector === ':focus-visible' ? true : original.call(this, selector);
       });
-      pressPointer();
       button(fixture, 'a').focus();
       fixture.detectChanges();
       expect(panel()).toBeNull();
     });
 
     it('用滑鼠點開後按方向鍵往下：出現下一項的說明', async () => {
-      await create();
+      pressKey();
       pressPointer();
+      await create();
       button(fixture, 'a').focus();
       fixture.detectChanges();
       button(fixture, 'a').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
@@ -276,9 +373,34 @@ describe('MenuItemComponent 補充說明面板（details）', () => {
       expect(panel()!.querySelector('.am-details__title')!.textContent!.trim()).toBe('項目 B');
     });
 
-    it('用鍵盤移到沒有 details 的項目：面板收起來', async () => {
-      await create();
+    it('真實路徑：先按鍵盤、再打開選單（autoFocusFirst 把焦點放到第一項）→ 第一項的說明出現', async () => {
+      // 打開選單的那一下按鍵發生時，選項還不存在；要在選項建立之前就記得最後一次是鍵盤（11-12 修過）
+      pressPointer();
       pressKey();
+      await create((host) => { host.autoFocus = true; });
+      await nextFrame();
+      await nextFrame();
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(button(fixture, 'a'));
+      expect(panel()).not.toBeNull();
+      expect(panel()!.querySelector('.am-details__title')!.textContent!.trim()).toBe('項目 A');
+    });
+
+    it('真實路徑：先按滑鼠、再打開選單（autoFocusFirst）→ 不出現', async () => {
+      pressKey();
+      pressPointer();
+      await create((host) => { host.autoFocus = true; });
+      await nextFrame();
+      await nextFrame();
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(button(fixture, 'a'));
+      expect(panel()).toBeNull();
+    });
+
+    it('用鍵盤移到沒有 details 的項目：面板收起來', async () => {
+      pressPointer();
+      pressKey();
+      await create();
       button(fixture, 'b').focus();
       fixture.detectChanges();
       button(fixture, 'c').focus();
@@ -390,6 +512,78 @@ describe('MenuItemComponent 補充說明面板（details）', () => {
       expect(row.top + p.height).toBeGreaterThan(window.innerHeight - 8);
       expect(p.bottom).toBeCloseTo(window.innerHeight - 8, 0);
       expect(p.top).toBeGreaterThanOrEqual(8);
+    });
+
+    /**
+     * 用選單寬度控制左右剩多少空間：選單左緣在 8（視窗邊）＋8（間距）＋left，右邊剩 right。
+     * 視窗太窄做不出來時讓測試失敗，不要默默跳過
+     */
+    function roomsSetup(left: number, right: number) {
+      const vw = window.innerWidth;
+      const menuLeft = 8 + 8 + left;
+      const width = vw - menuLeft - 8 - 8 - right;
+      expect(width).withContext('Karma 視窗太窄，做不出這個空間組合').toBeGreaterThan(120);
+      return (host: DetailsHostComponent) => {
+        host.fixed = true;
+        host.fixedTop = 40;
+        host.fixedLeft = menuLeft;
+        host.fixedWidth = width;
+      };
+    }
+
+    it('左右都放不下 320px、右邊比較大：放右邊，縮窄到右邊放得下（不超出視窗、不蓋選單）', async () => {
+      await create(roomsSetup(100, 250));
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      const menuRect = document.querySelector('app-action-menu')!.getBoundingClientRect();
+      const p = panel()!.getBoundingClientRect();
+      expect(p.left).toBeCloseTo(menuRect.right + 8, 0);
+      expect(p.width).toBeLessThanOrEqual(250);
+      expect(p.width).toBeGreaterThan(240);
+      expect(p.right).toBeLessThanOrEqual(window.innerWidth - 8 + 0.5);
+    });
+
+    it('左右都放不下 320px、左邊比較大：放左邊，縮窄到左邊放得下', async () => {
+      await create(roomsSetup(260, 90));
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      const menuRect = document.querySelector('app-action-menu')!.getBoundingClientRect();
+      const p = panel()!.getBoundingClientRect();
+      expect(p.right).toBeCloseTo(menuRect.left - 8, 0);
+      expect(p.left).toBeGreaterThanOrEqual(8 - 0.5);
+      expect(p.width).toBeLessThanOrEqual(260);
+      expect(p.width).toBeGreaterThan(250);
+    });
+
+    it('兩邊都不到 200px：不顯示面板，報讀照樣念得到條列', async () => {
+      await create(roomsSetup(150, 180));
+      hover(fixture, 'a');
+      await nextFrame();
+      fixture.detectChanges();
+      expect(panel()).toBeNull();
+      const id = button(fixture, 'a').getAttribute('aria-describedby')!;
+      expect(document.getElementById(id)!.textContent).toContain('第一條說明');
+    });
+
+    it('元素錨點模式：頁面捲動讓選單移動後，面板跟著重新對齊那一列', async () => {
+      await create();
+      hover(fixture, 'b');
+      await nextFrame();
+      fixture.detectChanges();
+      const menu = document.querySelector<HTMLElement>('app-action-menu')!;
+      const before = menu.getBoundingClientRect().top;
+      // 錨點移動＋捲動事件：定位服務在 document 上聽捲動、之後才移選單；面板在 window 上聽，會先量
+      document.querySelector<HTMLElement>('.anchor')!.style.top = '140px';
+      document.dispatchEvent(new Event('scroll'));
+      for (let i = 0; i < 4; i++) await nextFrame();
+      fixture.detectChanges();
+      // 前提：選單真的跟著錨點移動了
+      expect(menu.getBoundingClientRect().top).toBeGreaterThan(before + 50);
+      const padTop = parseFloat(getComputedStyle(menu).paddingTop);
+      const row = document.querySelector('[data-testid="b"]')!.getBoundingClientRect();
+      expect(panel()!.getBoundingClientRect().top).toBeCloseTo(row.top - padTop, 0);
     });
 
     it('頁面捲動或選單移動後：面板跟著重新對齊那一列', async () => {

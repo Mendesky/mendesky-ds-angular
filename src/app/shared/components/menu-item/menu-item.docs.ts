@@ -149,7 +149,7 @@ export const menuItemDoc: ComponentApi = {
     },
     '投影進來的 app-label 用 LightWhite 時，字色來自 CSS 變數 --text/body-light。滑過、按下、選中、面板開著時元件會把這個變數改成淺色，所以標籤字會跟著變白；停用時改成灰 50，跟標題一樣。其他寫死顏色的自訂內容不會變。',
     'ancestorAnchorEl 要的是元素，不是元件。用 viewChild(\'exportItem\', { read: ElementRef }) 取到 ElementRef，傳它的 nativeElement（app-menu-item 的元素）；不傳的話，點面板裡面會把外面的選單當成點外面關掉，再按一次「匯出」也會先關掉面板、放開時又打開。',
-    '補充說明面板由外層的 app-action-menu 畫，搬到 body 底下，所以一個選單同時只有一塊。面板寬 320px，放在選單右邊隔 8px、頂端對齊那一列；右邊放不下改放左邊，下面放不下往上移。頁面捲動或視窗大小改變時跟著重新對齊。觸控裝置上不顯示（條件是 (hover: none) and (pointer: coarse)），所以一定要知道的事不要只寫在 details。',
+    '補充說明面板由外層的 app-action-menu 畫，搬到 body 底下，所以一個選單同時只有一塊。面板寬 320px，放在選單右邊隔 8px、頂端對齊那一列；右邊放不下改放左邊，下面放不下往上移。左右都放不下 320px 時放在空間大的那邊、縮窄到放得下，不到 200px 就不顯示；面板不蓋住選單，疊放層級跟選單一樣。頁面捲動、選單移動或視窗大小改變時跟著重新對齊。點面板算點在選單裡：選單不關，底下的東西也不會被點到，焦點留在選單的那一項。觸控裝置上不顯示（條件是 (hover: none) and (pointer: coarse)），所以一定要知道的事不要只寫在 details。',
     '文字後面的自訂內容放在內層按鈕裡、沒有 aria-hidden，報讀軟體會把它接在 label 後面一起念進名稱，例如「項目 C 圖片 已封存」。',
   ],
 };
