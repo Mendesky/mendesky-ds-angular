@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from 
 import { CommonModule } from '@angular/common';
 import { TooltipDirective } from '../../directives/tooltip/tooltip.directive';
 import { TooltipPortalDirection } from '../../directives/tooltip/tooltip-portal.component';
+import { SpinnerComponent, SpinnerSize } from '../spinner/spinner.component';
 
 /** 圖示尺寸 — 對應 Figma IconBtn size 參數 */
 export type IconBtnSize = '12' | '16-' | '16' | '24' | '32' | '36' | '48';
@@ -32,7 +33,7 @@ export type IconBtnAriaHaspopup = 'menu';
 @Component({
   selector: 'app-icon-btn',
   standalone: true,
-  imports: [CommonModule, TooltipDirective],
+  imports: [CommonModule, TooltipDirective, SpinnerComponent],
   templateUrl: './icon-btn.component.html',
   styleUrls: ['./icon-btn.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +58,22 @@ export class IconBtnComponent {
 
   /** 停用狀態 */
   @Input() disabled = false;
+
+  /**
+   * 載入中：app-spinner 取代圖示，點了不送出。
+   * 不加原生 disabled（焦點所在的按鈕一停用，焦點就掉到頁面最上面），改用 aria-busy＋aria-disabled；
+   * 也不淡化（停用的 50% 會讓轉圈對比掉到 3:1 以下）。同時設了 disabled 時以 disabled 為準。
+   */
+  @Input() loading = false;
+
+  /** 轉圈大小；null＝跟 size 走（12→12、16-／16→16、24／32→24、36／48→36）。投影的圖示比 size 小時（例：size 24 放 16px 圖示）指定成圖示的大小 */
+  @Input() loadingSize: SpinnerSize | null = null;
+
+  /**
+   * 載入中要念給報讀軟體聽的話（例：「產生 PDF 中…」）。設了就在按鈕外面放一個一直存在、視覺上隱藏的 role="status"，
+   * 載入中填入這段文字，結束後清空。空字串＝不放。tooltip 換字報讀軟體不會念，要念就設這個。
+   */
+  @Input() loadingLabel = '';
 
   /** 無障礙標籤（建議每個 icon-btn 都設定） */
   @Input() ariaLabel = '';
@@ -108,11 +125,25 @@ export class IconBtnComponent {
     'PrimaryFilled':     'icon-btn--primary-filled',
   };
 
+  private readonly SPINNER_SIZE: Record<IconBtnSize, SpinnerSize> = {
+    '12': '12', '16-': '16', '16': '16', '24': '24', '32': '24', '36': '36', '48': '36',
+  };
+
+  /** 載入中且沒有停用（停用時以停用為準） */
+  get busy(): boolean {
+    return this.loading && !this.disabled;
+  }
+
+  get spinnerSize(): SpinnerSize {
+    return this.loadingSize ?? this.SPINNER_SIZE[this.size] ?? '16';
+  }
+
   get hostClasses(): Record<string, boolean> {
     return {
       [this.SIZE_CSS[this.size]]: true,
       [this.CLASS_CSS[this.propClass]]: true,
       'icon-btn--active': this.active,
+      'icon-btn--loading': this.busy,
     };
   }
 
@@ -134,6 +165,14 @@ export class IconBtnComponent {
   }
 
   onClick(): void {
-    if (!this.disabled) this.btnClick.emit();
+    if (!this.disabled && !this.loading) this.btnClick.emit();
+  }
+
+  /**
+   * 載入中擋下 click，不讓它傳到外層（使用端直接綁在 app-icon-btn 上的 (click)）。
+   * 載入中按鈕 pointer-events: none，滑鼠實際點到的是這個外框；鍵盤 Enter／空白鍵的 click 從按鈕冒上來，也在這裡擋。
+   */
+  onWrapClick(event: Event): void {
+    if (this.busy) event.stopPropagation();
   }
 }

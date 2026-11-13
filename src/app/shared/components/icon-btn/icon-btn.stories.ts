@@ -36,6 +36,22 @@ const meta: Meta<IconBtnComponent> = {
       control: 'boolean',
       table: { defaultValue: { summary: 'false' } },
     },
+    loading: {
+      control: 'boolean',
+      description: '載入中：轉圈取代圖示，點了不送出；不淡化，焦點留在按鈕上',
+      table: { defaultValue: { summary: 'false' } },
+    },
+    loadingLabel: {
+      control: 'text',
+      description: '載入中念給報讀軟體聽的話；空字串＝不放 status',
+      table: { defaultValue: { summary: "''" } },
+    },
+    loadingSize: {
+      control: 'select',
+      options: [null, '12', '16', '24', '36'],
+      description: '轉圈大小；null＝跟 size 走',
+      table: { defaultValue: { summary: 'null' } },
+    },
     tooltip: {
       control: 'text',
       description: 'Tooltip 文字（空字串則不顯示）',
@@ -76,6 +92,9 @@ export const Default: Story = {
         [size]="size"
         [active]="active"
         [disabled]="disabled"
+        [loading]="loading"
+        [loadingLabel]="loadingLabel"
+        [label]="label"
         [tooltip]="tooltip"
         [tooltipPos]="tooltipPos"
         [ariaLabel]="ariaLabel"
@@ -227,6 +246,68 @@ export const PrimaryFilled: Story = {
             <app-icon name="Plus" size="12"></app-icon>
           </app-icon-btn>
           <div style="font-size:11px;color:#686868;margin-top:4px;">停用</div>
+        </div>
+      </div>
+    `,
+    moduleMetadata: { imports: [IconBtnComponent, IconComponent] },
+  }),
+};
+
+// ── 載入中（loading）─────────────────────────────────
+// 轉圈取代圖示；不淡化、滑過不變色、點了不送出。焦點留在按鈕上（不加原生 disabled）。
+// tooltip 照常顯示，可以改成「處理中…」這類說明。
+export const Loading: Story = {
+  name: '載入中（loading）',
+  render: () => ({
+    template: `
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:16px;background:#f8f9fa;">
+        <div style="text-align:center;">
+          <app-icon-btn propClass="Normal" size="24" ariaLabel="處理" tooltip="處理中…" [loading]="true">
+            <app-icon name="More" size="24"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">Normal</div>
+        </div>
+        <div style="text-align:center;">
+          <app-icon-btn propClass="Warning" size="24" ariaLabel="刪除" tooltip="刪除中…" [loading]="true">
+            <app-icon name="Trash" size="24"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">Warning</div>
+        </div>
+        <div style="text-align:center;">
+          <app-icon-btn propClass="CardBtn" size="24" ariaLabel="處理" tooltip="處理中…" [loading]="true">
+            <app-icon name="More" size="24"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">CardBtn</div>
+        </div>
+        <div style="text-align:center;">
+          <app-icon-btn propClass="SectionBtn" size="24" ariaLabel="新增" tooltip="新增中…" [loading]="true">
+            <app-icon name="Plus" size="24"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">SectionBtn</div>
+        </div>
+        <div style="text-align:center;background:#1c1c2e;padding:8px;border-radius:6px;color:#ffffff;">
+          <app-icon-btn propClass="Modal" size="24" ariaLabel="關閉" tooltip="關閉中…" [loading]="true">
+            <app-icon name="No-X-Cancel" size="24"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#939393;margin-top:4px;">Modal</div>
+        </div>
+        <div style="text-align:center;">
+          <app-icon-btn propClass="Block" size="24" ariaLabel="篩選" tooltip="篩選中…" [loading]="true">
+            <app-icon name="Filter" size="24"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">Block</div>
+        </div>
+        <div style="text-align:center;">
+          <app-icon-btn propClass="PrimaryFilled" size="12" ariaLabel="新增" tooltip="新增中…" [loading]="true">
+            <app-icon name="Plus" size="12"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">PrimaryFilled</div>
+        </div>
+        <div style="text-align:center;">
+          <app-icon-btn propClass="Normal" size="24" loadingSize="16" ariaLabel="列印" tooltip="產生 PDF 中…" loadingLabel="產生 PDF 中…" [loading]="true">
+            <app-icon name="Print-Fax" size="16"></app-icon>
+          </app-icon-btn>
+          <div style="font-size:11px;color:#686868;margin-top:4px;">loadingSize 16</div>
         </div>
       </div>
     `,

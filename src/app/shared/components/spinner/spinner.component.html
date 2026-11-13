@@ -1,0 +1,30 @@
+<svg
+  class="ds-spinner__svg"
+  [attr.width]="px"
+  [attr.height]="px"
+  [attr.viewBox]="'0 0 ' + px + ' ' + px"
+  fill="none"
+  aria-hidden="true"
+  focusable="false"
+>
+  <circle
+    class="ds-spinner__track"
+    [attr.cx]="center"
+    [attr.cy]="center"
+    [attr.r]="radius"
+    [attr.stroke-width]="stroke"
+  ></circle>
+  <circle
+    class="ds-spinner__arc"
+    [attr.cx]="center"
+    [attr.cy]="center"
+    [attr.r]="radius"
+    [attr.stroke-width]="stroke"
+    [attr.stroke-dasharray]="arcDash"
+    [attr.transform]="arcTransform"
+    stroke-linecap="round"
+  ></circle>
+</svg>
+@if (!decorative) {
+  <span class="ds-spinner__label">{{ label }}</span>
+}

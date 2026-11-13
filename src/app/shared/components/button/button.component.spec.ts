@@ -173,3 +173,30 @@ describe('ButtonComponent — 報讀名稱與狀態', () => {
     });
   });
 });
+
+/** DS-12：載入轉圈改用 app-spinner，大小跟按鈕內建圖示一樣；保留 .btn__spinner 給使用端測試找 */
+@Component({
+  standalone: true,
+  imports: [ButtonComponent],
+  template: `<app-button [size]="size" [loading]="true" loadingText="儲存中…"></app-button>`,
+})
+class LoadingSizeHostComponent {
+  size: 'XXS' | 'XS' | 'S' | 'M' | 'L' = 'M';
+}
+
+describe('ButtonComponent — 載入轉圈（DS-12）', () => {
+  const cases: Array<['XXS' | 'XS' | 'S' | 'M' | 'L', number]> = [['XXS', 12], ['XS', 12], ['S', 12], ['M', 16], ['L', 24]];
+  for (const [size, px] of cases) {
+    it(`size=${size}：轉圈是 app-spinner、裝飾用、${px}px`, () => {
+      const fixture = TestBed.createComponent(LoadingSizeHostComponent);
+      fixture.componentInstance.size = size;
+      fixture.detectChanges();
+      const spinner = fixture.nativeElement.querySelector('.btn__spinner') as HTMLElement;
+      expect(spinner).not.toBeNull();
+      expect(spinner.tagName).toBe('APP-SPINNER');
+      expect(spinner.getAttribute('aria-hidden')).toBe('true');
+      expect(spinner.querySelector('svg')!.getAttribute('width')).toBe(String(px));
+      fixture.destroy();
+    });
+  }
+});
