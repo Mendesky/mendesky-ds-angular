@@ -73,6 +73,8 @@ export class TooltipDirective implements AfterViewInit, OnChanges {
     }
     this._portalRef.setInput('text', this.text);
     this._portalRef.changeDetectorRef.detectChanges();
+    // 字數變了 tooltip 寬度就變；定位服務只觀察觸發元素的尺寸，要自己叫它重算，否則會偏一邊
+    this._overlayRef?.reposition();
   }
 
   ngAfterViewInit(): void {

@@ -177,6 +177,22 @@ describe('TooltipDirective — 打開時換字', () => {
     (fixture.nativeElement.querySelector('.host') as HTMLElement).dispatchEvent(new Event('mouseleave'));
   }));
 
+  // 第二輪審查 nit：換成比較長的字後要重新對齊，否則 tooltip 偏一邊、不在按鈕正上方
+  it('打開中換成比較長的字：tooltip 重新對齊，仍在按鈕正上方', fakeAsync(() => {
+    const hostEl = fixture.nativeElement.querySelector('.host') as HTMLElement;
+    hostEl.style.marginLeft = '300px';
+    open();
+    // 先讓打開時排的那一次定位（下一個畫格）跑完，才換字；否則那次定位會順便把換字後的位置算好，測不出問題
+    tick(50);
+    fixture.componentInstance.text = '產生 PDF 中，請稍候，檔案比較大時會久一點';
+    fixture.detectChanges();
+    const portal = document.querySelector('app-tooltip-portal') as HTMLElement;
+    const p = portal.getBoundingClientRect();
+    const h = hostEl.getBoundingClientRect();
+    expect(Math.abs((p.left + p.width / 2) - (h.left + h.width / 2))).toBeLessThanOrEqual(1);
+    hostEl.dispatchEvent(new Event('mouseleave'));
+  }));
+
   it('打開中文字變成空字串：tooltip 關掉', fakeAsync(() => {
     open();
     fixture.componentInstance.text = '';
