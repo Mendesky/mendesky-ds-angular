@@ -546,6 +546,26 @@ describe('InlineEditComponent（使用端指定寬度）', () => {
   });
 });
 
+@Component({
+  standalone: true,
+  imports: [InlineEditComponent],
+  template: `<div style="display:flex;width:100px"><app-inline-edit ariaLabel="標題" value="合約" [editing]="true"></app-inline-edit></div>`,
+})
+class NarrowHostComponent {}
+
+describe('InlineEditComponent（外層比 160px 窄）', () => {
+  it('輸入框跟著外層縮，不凸出去', () => {
+    TestBed.configureTestingModule({ imports: [NarrowHostComponent] });
+    const fixture = TestBed.createComponent(NarrowHostComponent);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const outer = (root.querySelector('div') as HTMLElement).getBoundingClientRect();
+    const box = (root.querySelector('.input-box') as HTMLElement).getBoundingClientRect();
+    expect(Math.round(box.right)).toBeLessThanOrEqual(Math.round(outer.right));
+    expect(Math.round(box.width)).toBeLessThanOrEqual(100);
+  });
+});
+
 // ── 事件順序：先 commit／cancel，最後才 editingChange ──────────────
 
 @Component({

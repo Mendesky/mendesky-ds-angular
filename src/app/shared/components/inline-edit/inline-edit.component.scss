@@ -84,7 +84,8 @@
 .inline-edit__input {
   display: inline-block;
   flex: 1 1 auto;
-  min-width: 160px;
+  /* 最窄 160px；外層比 160px 還窄時跟著縮，不凸出去壓到旁邊的東西 */
+  min-width: min(160px, 100%);
   max-width: 100%;
 }
 

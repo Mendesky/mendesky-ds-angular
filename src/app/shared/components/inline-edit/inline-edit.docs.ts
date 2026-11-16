@@ -139,7 +139,8 @@ readonly error = computed(() => this.draft().trim() ? '' : '名稱不能空白')
   usageNotes: [
     '顯示文字沿用外層的字型、字重和顏色。要粗體標題的樣子，就把字級 class 加在 app-inline-edit 或它的外層上。',
     '寬度由外層決定：給 app-inline-edit 一個 max-width，長文字會用刪節號截斷，旁邊的按鈕不會被擠掉。',
-    '輸入框的寬度：給了 app-inline-edit 寬度（width）就填滿它；沒給就用輸入框自己的寬度，最窄 160px。',
+    '輸入框的寬度：給了 app-inline-edit 寬度（width）就填滿它；沒給就用輸入框自己的寬度，最窄 160px；外層比 160px 還窄時跟著外層縮。',
+    'saving 是給「送出之後」用的。編輯中把 saving 設為 true，輸入框不會自己收起；要鎖住就同時把 editing 設為 false。',
     '值是空的又沒給 placeholder 時，顯示文字仍留 40px 寬可以點。能給 placeholder 就給，使用者才知道這裡有東西可以填。',
     '使用端只在編輯時才放這個元件的寫法（上面最後一個範例），收起後顯示文字不在畫面上，焦點要由使用端自己放回入口。只在焦點掉到 body 時才放（按 Enter、Esc 收起）；使用者點到別處收起時，焦點已經在他點的地方，不要搶。',
     '輸入框裡的 Enter、Esc 與用來進入編輯的那一下 Enter、空白鍵都不往外傳。',
