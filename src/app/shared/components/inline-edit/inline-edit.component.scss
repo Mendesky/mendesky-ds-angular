@@ -25,7 +25,8 @@
   cursor: pointer;
   transition: border-color 150ms ease, background 150ms ease;
 
-  &:hover:not(:disabled):not(.inline-edit__display--saving) {
+  /* :where 不加權重：滑過的規則不能壓過下面的鍵盤焦點（滑鼠停在上面、焦點也在上面時要看得到焦點邊框） */
+  &:hover:where(:not(:disabled):not(.inline-edit__display--saving)) {
     border-color: var(--border\/primary, #e7e7e7);
     background: var(--label\/secondary, #fff);
   }

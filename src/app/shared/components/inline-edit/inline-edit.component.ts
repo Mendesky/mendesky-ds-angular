@@ -16,6 +16,9 @@ import {
 import { InputComponent } from '../input/input.component';
 import { SpinnerComponent } from '../spinner/spinner.component';
 
+/** 編輯是怎麼收起的：key＝按 Enter 或 Esc；blur＝焦點離開輸入框（點到別處、按 Tab） */
+export type InlineEditCloseReason = 'key' | 'blur';
+
 /**
  * 原地編輯：畫面上的一段單行文字，點了就地變成輸入框。
  *
@@ -61,6 +64,11 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
   @Output() cancel = new EventEmitter<void>();
   /** 輸入框內容每次變動；使用端據此算 errorMessage */
   @Output() draftChange = new EventEmitter<string>();
+  /**
+   * 編輯收起時發出收起的原因。只在編輯時才放這個元件的使用端靠它決定要不要把焦點放回入口：
+   * key 才放（輸入框被拿掉，焦點沒有地方去）；blur 不放（焦點已經在使用者點的地方）。
+   */
+  @Output() closed = new EventEmitter<InlineEditCloseReason>();
   @Output() editingChange = new EventEmitter<boolean>();
 
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -70,7 +78,15 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
   readonly isEditing = signal(false);
   /** 最後一次送出的文字，saving 時顯示它 */
   protected pendingText: string | null = null;
+  /** 送出被錯誤訊息擋下時，給報讀軟體念的那段訊息；改字或收起就清掉 */
+  protected blockedMessage = '';
   private draft = '';
+
+  /** 報讀區的文字：存檔中念「<ariaLabel>儲存中」；送出被擋下時念錯誤訊息；其他時候是空的 */
+  get statusText(): string {
+    if (this.saving) return `${this.ariaLabel}儲存中`;
+    return this.blockedMessage;
+  }
 
   /** 目前該顯示的值：存檔中顯示剛送出的；這次存檔不是從這裡送出的（沒有剛送出的文字）就顯示 value */
   private get currentText(): string {
@@ -94,6 +110,8 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
   ngOnChanges(changes: SimpleChanges): void {
     // 存檔結束就忘掉剛送出的文字；不然下一次別的原因進入 saving 會顯示到舊的
     if (changes['saving'] && !this.saving) this.pendingText = null;
+    // 不在存檔中而 value 換了（使用端先換值、或換成另一筆資料）：剛送出的文字已經沒有用，留著會在下次 saving 時顯示錯
+    if (changes['value'] && !this.saving) this.pendingText = null;
     // 編輯中 value 被使用端換掉：輸入框會改顯示新值，草稿跟著換，送出的字才會跟畫面一樣
     if (changes['value'] && !changes['value'].firstChange && this.isEditing()) this.draft = this.value;
     const editing = changes['editing'];
@@ -110,6 +128,7 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
     } else if (!this.editing && this.isEditing()) {
       // 使用端直接關掉：當作放棄，不送出
       this.isEditing.set(false);
+      this.blockedMessage = '';
     }
   }
 
@@ -138,6 +157,7 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
    */
   onDisplayKeydown(event: KeyboardEvent): void {
     if (event.repeat) {
+      // 收起後的連發已經在 document 上吃掉（swallowRepeats）；這裡再擋一次，連發從別的路徑落到這顆按鈕也不會動作
       if (event.key === 'Enter' || event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
@@ -151,6 +171,7 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
 
   onValueChange(value: string): void {
     this.draft = value;
+    this.blockedMessage = '';
     this.draftChange.emit(value);
   }
 
@@ -164,35 +185,76 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
     // 按住不放會連發，只認第一下
     if (event.repeat) return;
     if (event.key === 'Enter') {
-      if (this.submit()) this.focusDisplay();
+      if (!this.submit('key')) return;
     } else {
       this.isEditing.set(false);
-      // 先發 cancel 再發 editingChange：使用端在 editingChange 把元件拿掉時，前一個事件已經處理完
+      this.blockedMessage = '';
+      // 先發 cancel，再發 closed 與 editingChange：使用端在 editingChange 把元件拿掉時，前面的事件已經處理完
       this.cancel.emit();
+      this.closed.emit('key');
       this.editingChange.emit(false);
-      this.focusDisplay();
     }
+    this.swallowRepeats(event.key);
+    this.focusDisplay();
   }
 
   /** 離開輸入框就送出；焦點已經被使用者移走，不拉回來 */
   onBlur(): void {
     // Enter／Esc 收起時輸入框被拆掉，瀏覽器可能再發一次 blur；已經收起就不重複送
     if (!this.isEditing()) return;
-    this.submit();
+    // 整個視窗失去焦點（切到別的視窗或分頁）不算離開輸入框：留在編輯中、不送出。
+    // 回來時瀏覽器會把焦點還給輸入框，打到一半的字還在
+    if (!document.hasFocus()) return;
+    this.submit('blur');
   }
 
   /** 送出並收起。有錯誤訊息時不送、留在編輯中，回傳 false */
-  private submit(): boolean {
-    if (this.errorMessage) return false;
+  private submit(reason: InlineEditCloseReason): boolean {
+    if (this.errorMessage) {
+      // 畫面上輸入框變紅並顯示訊息；報讀軟體靠報讀區才聽得到「為什麼沒送出」
+      this.blockedMessage = this.errorMessage;
+      return false;
+    }
     const next = this.draft.trim();
     this.isEditing.set(false);
+    this.blockedMessage = '';
     if (next !== this.value.trim()) {
       this.pendingText = next;
       this.commit.emit(next);
+      // 使用端沒有在 (commit) 裡進入 saving（先換值的用法）：剛送出的文字用不到，清掉。
+      // 等一個 macrotask：saving 是輸入，要等外層重繪後才看得到新值
+      setTimeout(() => {
+        if (!this.saving) this.pendingText = null;
+      });
     }
-    // 最後才發 editingChange（內容沒變時只會發它）：使用端可以在這裡統一收尾
+    this.closed.emit(reason);
+    // 最後才發 editingChange（內容沒變時只會發 closed 與它）：使用端可以在這裡統一收尾
     this.editingChange.emit(false);
     return true;
+  }
+
+  /**
+   * 按 Enter／Esc 收起之後，同一個鍵按住不放的連發一律吃掉，直到放開為止。
+   * 連發落在哪裡不一定：顯示文字上（Enter 會把輸入框再打開、Esc 會傳到外層把視窗關掉），
+   * 或使用端把元件拿掉後的 body 上。所以掛在 document 的捕捉階段，不靠元件自己還在不在。
+   */
+  private swallowRepeats(key: string): void {
+    const onKeydown = (e: KeyboardEvent): void => {
+      if (e.key !== key) return;
+      // 不是連發＝重新按了一次，上一次按住已經結束（放開的事件可能發生在別的視窗而沒收到）：收掉，不擋這一下
+      if (!e.repeat) return stop();
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const stop = (e?: Event): void => {
+      if (e instanceof KeyboardEvent && e.key !== key) return;
+      document.removeEventListener('keydown', onKeydown, true);
+      document.removeEventListener('keyup', stop, true);
+      window.removeEventListener('blur', stop);
+    };
+    document.addEventListener('keydown', onKeydown, true);
+    document.addEventListener('keyup', stop, true);
+    window.addEventListener('blur', stop);
   }
 
   private canEdit(): boolean {

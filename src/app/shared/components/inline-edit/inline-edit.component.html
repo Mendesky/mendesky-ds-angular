@@ -30,5 +30,5 @@
     }
   </button>
 }
-<!-- 一直存在的報讀區：存檔開始才填字。跟轉圈一起出現的區域，報讀軟體常常不念 -->
-<span class="inline-edit__status" role="status">{{ saving ? ariaLabel + '儲存中' : '' }}</span>
+<!-- 一直存在的報讀區：存檔開始、或送出被錯誤訊息擋下時才填字。跟內容一起出現的區域，報讀軟體常常不念 -->
+<span class="inline-edit__status" role="status">{{ statusText }}</span>

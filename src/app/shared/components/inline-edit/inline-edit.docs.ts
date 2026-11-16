@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const inlineEditDoc: ComponentApi = {
   id: 'inline-edit',
   selector: 'app-inline-edit',
-  summary: '[value] [ariaLabel] [placeholder] [size:S|M] [errorMessage] [saving] [disabled] [(editing)] · (commit: string) (cancel) (draftChange: string) — 點文字原地變輸入框，Enter 或離開就送出，Esc 放棄',
+  summary: '[value] [ariaLabel] [placeholder] [size:S|M] [errorMessage] [saving] [disabled] [(editing)] · (commit: string) (cancel) (closed: key|blur) (draftChange: string) — 點文字原地變輸入框，Enter 或離開就送出，Esc 放棄',
   props: [
     {
       name: 'value',
@@ -33,7 +33,7 @@ export const inlineEditDoc: ComponentApi = {
       name: 'errorMessage',
       type: 'string',
       default: "''",
-      desc: '有值就擋住送出：按 Enter 或離開輸入框都不發 (commit)，輸入框留著並顯示這段訊息。Esc 照樣可以放棄。通常由 (draftChange) 算出來',
+      desc: '有值就擋住送出：按 Enter 或離開輸入框都不發 (commit)，輸入框留著並顯示這段訊息，報讀軟體也會念出這段訊息。Esc 照樣可以放棄。通常由 (draftChange) 算出來',
     },
     {
       name: 'saving',
@@ -72,9 +72,15 @@ export const inlineEditDoc: ComponentApi = {
       isOutput: true,
     },
     {
+      name: '(closed)',
+      type: "EventEmitter<'key' | 'blur'>",
+      desc: '編輯收起時發出收起的原因：key 是按 Enter 或 Esc，blur 是焦點離開輸入框（點到別處、按 Tab）。內容沒變也會發。排在 (commit)、(cancel) 之後、(editingChange) 之前',
+      isOutput: true,
+    },
+    {
       name: '(editingChange)',
       type: 'EventEmitter<boolean>',
-      desc: '進入或離開編輯時發出。離開時排在 (commit)、(cancel) 之後；內容沒變就收起時只會發它',
+      desc: '進入或離開編輯時發出。離開時排在 (commit)、(cancel)、(closed) 之後，是最後一個',
       isOutput: true,
     },
   ],
@@ -128,11 +134,18 @@ readonly error = computed(() => this.draft().trim() ? '' : '名稱不能空白')
       label: '從選單進入：只在編輯時才放上畫面',
       code: `@if (renamingId() === item.id) {
   <app-inline-edit ariaLabel="標題" [value]="item.title" [editing]="true"
-    (editingChange)="$event || renamingId.set(null)"
-    (commit)="rename(item.id, $event)">
+    (commit)="rename(item.id, $event)"
+    (closed)="onRenameClosed(item.id, $event)">
   </app-inline-edit>
 } @else {
   <span>{{ item.title }}</span>
+}
+
+onRenameClosed(id: string, reason: 'key' | 'blur') {
+  this.renamingId.set(null);
+  // 按 Enter／Esc 收起：輸入框被拿掉，焦點沒有地方去，放回入口（等畫面換回一般的樣子再放）。
+  // 點到別處收起：焦點已經在使用者點的地方，不要搶
+  if (reason === 'key') requestAnimationFrame(() => this.focusMenuButton(id));
 }`,
     },
   ],
@@ -142,9 +155,10 @@ readonly error = computed(() => this.draft().trim() ? '' : '名稱不能空白')
     '輸入框的寬度：給了 app-inline-edit 寬度（width）就填滿它；沒給就用輸入框自己的寬度，最窄 160px；外層比 160px 還窄時跟著外層縮。',
     'saving 是給「送出之後」用的。編輯中把 saving 設為 true，輸入框不會自己收起；要鎖住就同時把 editing 設為 false。',
     '值是空的又沒給 placeholder 時，顯示文字仍留 40px 寬可以點。能給 placeholder 就給，使用者才知道這裡有東西可以填。',
-    '使用端只在編輯時才放這個元件的寫法（上面最後一個範例），收起後顯示文字不在畫面上，焦點要由使用端自己放回入口。只在焦點掉到 body 時才放（按 Enter、Esc 收起）；使用者點到別處收起時，焦點已經在他點的地方，不要搶。',
+    '使用端只在編輯時才放這個元件的寫法（上面最後一個範例），收起後顯示文字不在畫面上，焦點要由使用端自己放回入口。看 (closed) 的原因：key 才放，blur 不放。不要用「焦點是不是在 body」來判斷：使用者點空白處、或在 Safari 點按鈕時，焦點也在 body，照這個判斷會把焦點搶走。',
     '輸入框裡的 Enter、Esc 與用來進入編輯的那一下 Enter、空白鍵都不往外傳。',
-    '放在會聽 Esc 關閉的視窗裡不用另外處理：輸入框裡的 Enter、Esc 已經 stopPropagation 並 preventDefault。',
+    '放在會聽 Esc 關閉的視窗裡不用另外處理：輸入框裡的 Enter、Esc 已經 stopPropagation 並 preventDefault；收起之後同一個鍵按住不放的連發，元件會在 document 上吃掉，直到放開為止。使用端把元件拿掉之後也一樣。',
+    '切到別的視窗或分頁不算離開輸入框：不送出，留在編輯中，回來時焦點還在輸入框。',
     '編輯中 value 被使用端換掉（例如別人改了同一筆）時，輸入框改顯示新值，使用者打到一半的字會被換掉。',
   ],
 };

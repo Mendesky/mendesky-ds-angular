@@ -3,6 +3,16 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { InlineEditComponent } from './inline-edit.component';
 
 /**
+ * 按 Enter／Esc 收起後，元件會在 document 上吃掉同一個鍵的連發，直到放開。測試裡沒有真的放開按鍵，
+ * 每條測試結束時補一次放開，免得影響到後面別的元件的測試。
+ */
+const releaseKeys = (): void => {
+  for (const key of ['Enter', 'Escape']) {
+    document.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+  }
+};
+
+/**
  * app-inline-edit — 顯示文字 ↔ 輸入框
  * 行為：Enter 或離開輸入框送出（去頭尾空白、跟原值不同才發）；Esc 放棄；Enter／Esc 不往外傳。
  */
@@ -23,7 +33,8 @@ import { InlineEditComponent } from './inline-edit.component';
         (editingChange)="editing.set($event)"
         (draftChange)="drafts.push($event)"
         (commit)="commits.push($event)"
-        (cancel)="cancels = cancels + 1">
+        (cancel)="cancels = cancels + 1"
+        (closed)="closes.push($event)">
       </app-inline-edit>
       <button type="button" class="elsewhere">別處</button>
     </div>
@@ -40,6 +51,7 @@ class HostComponent {
   commits: string[] = [];
   drafts: string[] = [];
   outerKeys: string[] = [];
+  closes: string[] = [];
   cancels = 0;
 }
 
@@ -48,6 +60,7 @@ describe('InlineEditComponent', () => {
   let host: HostComponent;
   let windowKeys: string[];
   let onWindowKey: (e: KeyboardEvent) => void;
+  let hasFocus: jasmine.Spy;
 
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const display = (): HTMLButtonElement | null => el().querySelector('.inline-edit__display');
@@ -80,6 +93,19 @@ describe('InlineEditComponent', () => {
     fixture.detectChanges();
   };
 
+  /**
+   * 把焦點移到別處＝離開輸入框。瀏覽器視窗本身沒有焦點時（CI 的 Headless Chrome），focus() 會換掉
+   * activeElement 但不發 blur 事件，所以輸入框還在就補發一次；已經發過的話輸入框已被拆掉，不會重複。
+   */
+  const leaveInput = (): HTMLButtonElement => {
+    const field = input()!;
+    const elsewhere = el().querySelector('.elsewhere') as HTMLButtonElement;
+    elsewhere.focus();
+    if (field.isConnected) field.dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+    return elsewhere;
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [HostComponent] });
     fixture = TestBed.createComponent(HostComponent);
@@ -87,11 +113,14 @@ describe('InlineEditComponent', () => {
     windowKeys = [];
     onWindowKey = (e: KeyboardEvent) => windowKeys.push(e.key);
     window.addEventListener('keydown', onWindowKey);
+    // 元件用 document.hasFocus() 分辨「離開輸入框」與「整個視窗失去焦點」。測試視窗有沒有焦點不一定，固定成有
+    hasFocus = spyOn(document, 'hasFocus').and.returnValue(true);
     fixture.detectChanges();
   });
 
   afterEach(() => {
     window.removeEventListener('keydown', onWindowKey);
+    releaseKeys();
   });
 
   // ── 顯示 ──────────────────────────────────────────────────────
@@ -290,12 +319,39 @@ describe('InlineEditComponent', () => {
   it('離開輸入框（焦點移到別處）→ 送出一次，收起，焦點不被拉回', () => {
     startEditing();
     type('第二季');
-    const elsewhere = el().querySelector('.elsewhere') as HTMLButtonElement;
-    elsewhere.focus();
-    fixture.detectChanges();
+    const elsewhere = leaveInput();
     expect(host.commits).toEqual(['第二季']);
+    expect(host.closes).toEqual(['blur']);
     expect(input()).toBeNull();
     expect(document.activeElement).toBe(elsewhere);
+  });
+
+  it('整個視窗失去焦點（切到別的視窗或分頁）→ 不送出，留在編輯中，打到一半的字還在', () => {
+    startEditing();
+    type('打到一半');
+    hasFocus.and.returnValue(false);
+    input()!.dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+    expect(host.commits).toEqual([]);
+    expect(host.closes).toEqual([]);
+    expect(input()!.value).toBe('打到一半');
+    expect(host.editing()).toBeTrue();
+    // 回來之後照常：這時離開輸入框才送出
+    hasFocus.and.returnValue(true);
+    leaveInput();
+    expect(host.commits).toEqual(['打到一半']);
+  });
+
+  it('收起的原因：Enter 與 Esc 是 key，離開輸入框是 blur；內容沒變也會發', () => {
+    startEditing();
+    press(input()!, 'Enter'); // 沒改
+    startEditing();
+    type('第二季');
+    press(input()!, 'Escape');
+    startEditing();
+    leaveInput(); // 沒改
+    expect(host.closes).toEqual(['key', 'key', 'blur']);
+    expect(host.commits).toEqual([]);
   });
 
   it('Enter 送出後輸入框被拆掉，不會因為失焦再送一次', () => {
@@ -332,10 +388,24 @@ describe('InlineEditComponent', () => {
     type('');
     host.error.set('名稱不能空白');
     fixture.detectChanges();
-    (el().querySelector('.elsewhere') as HTMLButtonElement).focus();
-    fixture.detectChanges();
+    leaveInput();
     expect(host.commits).toEqual([]);
+    expect(host.closes).toEqual([]);
     expect(input()).not.toBeNull();
+  });
+
+  it('送出被錯誤訊息擋下 → 報讀區念出錯誤訊息；改字就清掉；平常是空的', () => {
+    const status = el().querySelector('app-inline-edit [role="status"]') as HTMLElement;
+    startEditing();
+    type('');
+    host.error.set('名稱不能空白');
+    fixture.detectChanges();
+    expect(status.textContent!.trim()).withContext('還沒按 Enter：不念').toBe('');
+    press(input()!, 'Enter');
+    expect(status.textContent!.trim()).toBe('名稱不能空白');
+    host.error.set('');
+    type('第二季');
+    expect(status.textContent!.trim()).toBe('');
   });
 
   it('有 errorMessage 時按 Esc → 照樣可以放棄', () => {
@@ -499,6 +569,28 @@ describe('InlineEditComponent', () => {
     expect(host.commits).toEqual([]);
   });
 
+  it('送出後使用端沒有進入 saving → 忘掉剛送出的文字；之後別的原因進入 saving 顯示的是 value', async () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter'); // 使用端不設 saving，也還沒換 value
+    await new Promise(r => setTimeout(r, 0));
+    host.saving.set(true);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('第一季');
+    expect(display()!.getAttribute('aria-label')).toBe('編輯名稱，目前是第一季');
+  });
+
+  it('不在存檔中而 value 換了 → 忘掉剛送出的文字', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter');
+    host.value.set('另一筆資料的名稱'); // 同一個元件改顯示另一筆
+    fixture.detectChanges();
+    host.saving.set(true);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('另一筆資料的名稱');
+  });
+
   it('再次進入編輯 → 帶入最新的 value，不是上次打到一半的字', () => {
     startEditing();
     type('打到一半');
@@ -566,6 +658,78 @@ describe('InlineEditComponent（外層比 160px 窄）', () => {
   });
 });
 
+// ── 按住不放的連發：元件被使用端拿掉之後也要吃掉 ──────────────────
+
+describe('InlineEditComponent（收起後按住不放的連發）', () => {
+  let windowKeys: string[];
+  let onKey: (e: KeyboardEvent) => void;
+
+  const setup = async (): Promise<{ root: HTMLElement; field: HTMLInputElement; fixture: ComponentFixture<EditOnlyHostComponent> }> => {
+    TestBed.configureTestingModule({ imports: [EditOnlyHostComponent] });
+    const fixture = TestBed.createComponent(EditOnlyHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await Promise.resolve();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    return { root, field: root.querySelector('input') as HTMLInputElement, fixture };
+  };
+  const send = (target: EventTarget, type: string, key: string, repeat = false): KeyboardEvent => {
+    const event = new KeyboardEvent(type, { key, repeat, bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    return event;
+  };
+
+  beforeEach(() => {
+    windowKeys = [];
+    onKey = (e: KeyboardEvent) => windowKeys.push(e.key + (e.repeat ? ':repeat' : ''));
+    window.addEventListener('keydown', onKey);
+  });
+  afterEach(() => {
+    window.removeEventListener('keydown', onKey);
+    releaseKeys();
+  });
+
+  it('沒收到放開（發生在別的視窗）也不會一直擋：重新按一次同一個鍵就收掉', async () => {
+    const { field, fixture } = await setup();
+    send(field, 'keydown', 'Escape');
+    fixture.detectChanges();
+    expect(send(document.body, 'keydown', 'Escape', true).defaultPrevented).toBeTrue();
+    const fresh = send(document.body, 'keydown', 'Escape'); // 重新按一次
+    expect(fresh.defaultPrevented).toBeFalse();
+    send(document.body, 'keydown', 'Escape', true);
+    expect(windowKeys).toEqual(['Escape', 'Escape:repeat']);
+  });
+
+  it('Esc 收起、元件被拿掉後，落在 body 的 Esc 連發不往外傳；放開之後的 Esc 照常', async () => {
+    const { root, field, fixture } = await setup();
+    send(field, 'keydown', 'Escape');
+    fixture.detectChanges();
+    expect(root.querySelector('app-inline-edit')).withContext('使用端已把元件拿掉').toBeNull();
+
+    const held = send(document.body, 'keydown', 'Escape', true);
+    expect(held.defaultPrevented).toBeTrue();
+    expect(windowKeys).toEqual([]);
+
+    send(document.body, 'keyup', 'Escape');
+    send(document.body, 'keydown', 'Escape', true); // 另一次按住（理論上先有非連發的一下，這裡只驗監聽已經拿掉）
+    expect(windowKeys).toEqual(['Escape:repeat']);
+  });
+
+  it('Enter 收起後，Enter 連發被吃掉；別的鍵不受影響', async () => {
+    const { field, fixture } = await setup();
+    field.value = '合約書';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    send(field, 'keydown', 'Enter');
+    fixture.detectChanges();
+
+    expect(send(document.body, 'keydown', 'Enter', true).defaultPrevented).toBeTrue();
+    send(document.body, 'keydown', 'a', true);
+    expect(windowKeys).toEqual(['a:repeat']);
+  });
+});
+
 // ── 事件順序：先 commit／cancel，最後才 editingChange ──────────────
 
 @Component({
@@ -596,6 +760,8 @@ describe('InlineEditComponent（事件順序）', () => {
     field.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
     fixture.detectChanges();
   };
+
+  afterEach(releaseKeys);
 
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [OrderHostComponent] });
@@ -645,6 +811,8 @@ describe('InlineEditComponent（一建立就是 editing 但停用）', () => {
 });
 
 describe('InlineEditComponent（一出現就是編輯狀態）', () => {
+  afterEach(releaseKeys);
+
   it('直接畫輸入框，帶入值、聚焦並全選；送出後使用端把它拿掉', async () => {
     TestBed.configureTestingModule({ imports: [EditOnlyHostComponent] });
     const fixture = TestBed.createComponent(EditOnlyHostComponent);
