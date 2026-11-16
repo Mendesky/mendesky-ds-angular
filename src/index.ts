@@ -29,6 +29,7 @@ export * from './app/shared/components/icon-btn/icon-btn.component';
 export * from './app/shared/components/icon/icon.component';
 export * from './app/shared/components/inline-add/inline-add.component';
 export * from './app/shared/components/inline-confirm/inline-confirm.component';
+export * from './app/shared/components/inline-edit/inline-edit.component';
 export * from './app/shared/components/input/input.component';
 export * from './app/shared/components/kanban-minimap/kanban-minimap.component';
 export * from './app/shared/components/keyboard-help/keyboard-help.component';

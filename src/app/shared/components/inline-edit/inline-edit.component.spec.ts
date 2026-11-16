@@ -1,0 +1,518 @@
+import { Component, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { InlineEditComponent } from './inline-edit.component';
+
+/**
+ * app-inline-edit — 顯示文字 ↔ 輸入框
+ * 行為：Enter 或離開輸入框送出（去頭尾空白、跟原值不同才發）；Esc 放棄；Enter／Esc 不往外傳。
+ */
+@Component({
+  standalone: true,
+  imports: [InlineEditComponent],
+  template: `
+    <div class="outer" (keydown)="outerKeys.push($event.key)">
+      <app-inline-edit
+        ariaLabel="名稱"
+        [value]="value()"
+        [placeholder]="placeholder()"
+        [size]="size()"
+        [errorMessage]="error()"
+        [saving]="saving()"
+        [disabled]="disabled()"
+        [editing]="editing()"
+        (editingChange)="editing.set($event)"
+        (draftChange)="drafts.push($event)"
+        (commit)="commits.push($event)"
+        (cancel)="cancels = cancels + 1">
+      </app-inline-edit>
+      <button type="button" class="elsewhere">別處</button>
+    </div>
+  `,
+})
+class HostComponent {
+  readonly value = signal('第一季');
+  readonly placeholder = signal('');
+  readonly size = signal<'S' | 'M'>('S');
+  readonly error = signal('');
+  readonly saving = signal(false);
+  readonly disabled = signal(false);
+  readonly editing = signal(false);
+  commits: string[] = [];
+  drafts: string[] = [];
+  outerKeys: string[] = [];
+  cancels = 0;
+}
+
+describe('InlineEditComponent', () => {
+  let fixture: ComponentFixture<HostComponent>;
+  let host: HostComponent;
+  let windowKeys: string[];
+  let onWindowKey: (e: KeyboardEvent) => void;
+
+  const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const display = (): HTMLButtonElement | null => el().querySelector('.inline-edit__display');
+  const input = (): HTMLInputElement | null => el().querySelector('app-inline-edit input');
+
+  /** 等 queueMicrotask 排的聚焦跑完 */
+  const settle = async (): Promise<void> => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await Promise.resolve();
+    fixture.detectChanges();
+  };
+
+  const type = (text: string): void => {
+    const field = input()!;
+    field.value = text;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+  };
+
+  const press = (target: HTMLElement, key: string, init: KeyboardEventInit = {}): KeyboardEvent => {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+    target.dispatchEvent(event);
+    fixture.detectChanges();
+    return event;
+  };
+
+  const startEditing = (): void => {
+    display()!.click();
+    fixture.detectChanges();
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [HostComponent] });
+    fixture = TestBed.createComponent(HostComponent);
+    host = fixture.componentInstance;
+    windowKeys = [];
+    onWindowKey = (e: KeyboardEvent) => windowKeys.push(e.key);
+    window.addEventListener('keydown', onWindowKey);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    window.removeEventListener('keydown', onWindowKey);
+  });
+
+  // ── 顯示 ──────────────────────────────────────────────────────
+
+  it('顯示態是可聚焦的 button，名稱含 ariaLabel 與目前的值', () => {
+    const button = display()!;
+    expect(button.tagName).toBe('BUTTON');
+    expect(button.getAttribute('type')).toBe('button');
+    expect(button.tabIndex).toBe(0);
+    expect(button.textContent!.trim()).toBe('第一季');
+    expect(button.getAttribute('aria-label')).toBe('編輯名稱，目前是第一季');
+    expect(input()).toBeNull();
+  });
+
+  it('值為空 → 顯示 placeholder；名稱念「目前是空的」', () => {
+    host.value.set('');
+    host.placeholder.set('未命名');
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('未命名');
+    expect(el().querySelector('.inline-edit__text--placeholder')).not.toBeNull();
+    expect(display()!.getAttribute('aria-label')).toBe('編輯名稱，目前是空的');
+  });
+
+  it('文字固定一行、放不下用刪節號', () => {
+    const text = el().querySelector('.inline-edit__text') as HTMLElement;
+    const style = getComputedStyle(text);
+    expect(style.whiteSpace).toBe('nowrap');
+    expect(style.textOverflow).toBe('ellipsis');
+    expect(style.overflow).toBe('hidden');
+  });
+
+  it('顯示文字的最小高度對齊同尺寸輸入框（S 32px、M 36px）', () => {
+    expect(getComputedStyle(display()!).minHeight).toBe('32px');
+    host.size.set('M');
+    fixture.detectChanges();
+    expect(getComputedStyle(display()!).minHeight).toBe('36px');
+  });
+
+  // ── 進入編輯 ──────────────────────────────────────────────────
+
+  it('點文字 → 出現輸入框，帶入目前的值、已聚焦、已全選，名稱是 ariaLabel', () => {
+    startEditing();
+    const field = input()!;
+    expect(field.value).toBe('第一季');
+    expect(document.activeElement).toBe(field);
+    expect(field.selectionStart).toBe(0);
+    expect(field.selectionEnd).toBe('第一季'.length);
+    expect(field.getAttribute('aria-label')).toBe('名稱');
+    expect(display()).toBeNull();
+    expect(host.editing()).toBeTrue();
+  });
+
+  it('外部把 editing 設為 true → 進入編輯並聚焦全選', async () => {
+    host.editing.set(true);
+    await settle();
+    const field = input()!;
+    expect(document.activeElement).toBe(field);
+    expect(field.selectionEnd).toBe('第一季'.length);
+  });
+
+  it('外部把 editing 設回 false → 收起，不送出', async () => {
+    host.editing.set(true);
+    await settle();
+    type('第二季');
+    host.editing.set(false);
+    await settle();
+    expect(input()).toBeNull();
+    expect(host.commits).toEqual([]);
+  });
+
+  it('disabled → 按鈕停用，點了進不了編輯', () => {
+    host.disabled.set(true);
+    fixture.detectChanges();
+    expect(display()!.disabled).toBeTrue();
+    display()!.click();
+    fixture.detectChanges();
+    expect(input()).toBeNull();
+  });
+
+  it('disabled 時外部把 editing 設為 true → 不開，並把 editing 改回 false', async () => {
+    host.disabled.set(true);
+    fixture.detectChanges();
+    host.editing.set(true);
+    await settle();
+    expect(input()).toBeNull();
+    expect(host.editing()).toBeFalse();
+  });
+
+  // ── Enter ─────────────────────────────────────────────────────
+
+  it('改字後按 Enter → 送出去頭尾空白的字串一次，收起，焦點回到顯示文字', () => {
+    startEditing();
+    type('  第二季  ');
+    press(input()!, 'Enter');
+    expect(host.commits).toEqual(['第二季']);
+    expect(input()).toBeNull();
+    expect(document.activeElement).toBe(display());
+    expect(host.editing()).toBeFalse();
+  });
+
+  it('Enter 不往外傳（外層與 window 都收不到），且已 preventDefault', () => {
+    startEditing();
+    type('第二季');
+    const event = press(input()!, 'Enter');
+    expect(event.defaultPrevented).toBeTrue();
+    expect(host.outerKeys).toEqual([]);
+    expect(windowKeys).toEqual([]);
+  });
+
+  it('按住 Enter → 只送出一次；落在顯示文字上的連發不會再打開輸入框', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter');
+    const repeat = press(display()!, 'Enter', { repeat: true });
+    expect(repeat.defaultPrevented).toBeTrue();
+    expect(host.commits).toEqual(['第二季']);
+    expect(input()).toBeNull();
+  });
+
+  it('輸入框裡的 Enter 連發（repeat）不送出', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter', { repeat: true });
+    expect(host.commits).toEqual([]);
+    expect(input()).not.toBeNull();
+  });
+
+  it('內容沒變（含只差頭尾空白）→ 收起，不送出', () => {
+    startEditing();
+    type('  第一季 ');
+    press(input()!, 'Enter');
+    expect(host.commits).toEqual([]);
+    expect(input()).toBeNull();
+  });
+
+  // ── Esc ───────────────────────────────────────────────────────
+
+  it('按 Esc → 不送出，收起，焦點回到顯示文字，發 cancel', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Escape');
+    expect(host.commits).toEqual([]);
+    expect(host.cancels).toBe(1);
+    expect(input()).toBeNull();
+    expect(document.activeElement).toBe(display());
+    expect(display()!.textContent!.trim()).toBe('第一季');
+  });
+
+  it('Esc 不往外傳（外層與 window 都收不到），且已 preventDefault', () => {
+    startEditing();
+    const event = press(input()!, 'Escape');
+    expect(event.defaultPrevented).toBeTrue();
+    expect(host.outerKeys).toEqual([]);
+    expect(windowKeys).toEqual([]);
+  });
+
+  it('收起後落在顯示文字上的 Esc 連發不往外傳；單獨按一下的 Esc 照常往外傳', () => {
+    startEditing();
+    press(input()!, 'Escape');
+    press(display()!, 'Escape', { repeat: true });
+    expect(windowKeys).toEqual([]);
+    press(display()!, 'Escape');
+    expect(windowKeys).toEqual(['Escape']);
+  });
+
+  // ── 輸入法 ────────────────────────────────────────────────────
+
+  it('輸入法選字中的 Enter（isComposing）→ 不送出、不收起、不往外傳', () => {
+    startEditing();
+    type('第二');
+    press(input()!, 'Enter', { isComposing: true });
+    expect(host.commits).toEqual([]);
+    expect(input()).not.toBeNull();
+    expect(windowKeys).toEqual([]);
+  });
+
+  it('輸入法選字中的 Enter（keyCode 229，Safari）→ 不送出、不收起', () => {
+    startEditing();
+    type('第二');
+    press(input()!, 'Enter', { keyCode: 229 });
+    expect(host.commits).toEqual([]);
+    expect(input()).not.toBeNull();
+  });
+
+  it('輸入法選字中的 Esc → 不收起、不發 cancel、不往外傳', () => {
+    startEditing();
+    type('第二');
+    press(input()!, 'Escape', { isComposing: true });
+    expect(input()).not.toBeNull();
+    expect(host.cancels).toBe(0);
+    expect(windowKeys).toEqual([]);
+  });
+
+  // ── 失焦 ──────────────────────────────────────────────────────
+
+  it('離開輸入框（焦點移到別處）→ 送出一次，收起，焦點不被拉回', () => {
+    startEditing();
+    type('第二季');
+    const elsewhere = el().querySelector('.elsewhere') as HTMLButtonElement;
+    elsewhere.focus();
+    fixture.detectChanges();
+    expect(host.commits).toEqual(['第二季']);
+    expect(input()).toBeNull();
+    expect(document.activeElement).toBe(elsewhere);
+  });
+
+  it('Enter 送出後輸入框被拆掉，不會因為失焦再送一次', () => {
+    startEditing();
+    type('第二季');
+    const field = input()!;
+    press(field, 'Enter');
+    field.dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+    expect(host.commits).toEqual(['第二季']);
+  });
+
+  // ── 錯誤訊息 ──────────────────────────────────────────────────
+
+  it('draftChange 每次輸入都發，使用端據此給 errorMessage', () => {
+    startEditing();
+    type('');
+    expect(host.drafts).toEqual(['']);
+  });
+
+  it('有 errorMessage 時按 Enter → 不送出，留在編輯中，輸入框是錯誤狀態', () => {
+    startEditing();
+    type('');
+    host.error.set('名稱不能空白');
+    fixture.detectChanges();
+    press(input()!, 'Enter');
+    expect(host.commits).toEqual([]);
+    expect(input()).not.toBeNull();
+    expect(el().querySelector('.input-wrap--error')).not.toBeNull();
+  });
+
+  it('有 errorMessage 時離開輸入框 → 不送出，留在編輯中', () => {
+    startEditing();
+    type('');
+    host.error.set('名稱不能空白');
+    fixture.detectChanges();
+    (el().querySelector('.elsewhere') as HTMLButtonElement).focus();
+    fixture.detectChanges();
+    expect(host.commits).toEqual([]);
+    expect(input()).not.toBeNull();
+  });
+
+  it('有 errorMessage 時按 Esc → 照樣可以放棄', () => {
+    startEditing();
+    type('');
+    host.error.set('名稱不能空白');
+    fixture.detectChanges();
+    press(input()!, 'Escape');
+    expect(input()).toBeNull();
+    expect(host.cancels).toBe(1);
+  });
+
+  // ── 儲存中 ────────────────────────────────────────────────────
+
+  it('saving → 顯示剛送出的文字與轉圈，aria-busy，進不了編輯', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter');
+    host.saving.set(true); // 使用端在 commit 後開始存檔；value 還是舊的
+    fixture.detectChanges();
+
+    const button = display()!;
+    expect(button.textContent!.trim()).toBe('第二季');
+    expect(el().querySelector('app-spinner')).not.toBeNull();
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(button.getAttribute('aria-label')).toBe('編輯名稱，目前是第二季');
+
+    button.click();
+    fixture.detectChanges();
+    expect(input()).toBeNull();
+  });
+
+  it('報讀區一直存在：平常是空的，saving 才填「名稱儲存中」，結束後清空；編輯中也在', () => {
+    const status = (): HTMLElement => el().querySelector('app-inline-edit [role="status"]') as HTMLElement;
+    const region = status();
+    expect(region).not.toBeNull();
+    expect(region.textContent!.trim()).toBe('');
+
+    startEditing();
+    expect(status()).toBe(region); // 進入編輯不會重建它
+    type('第二季');
+    press(input()!, 'Enter');
+    host.saving.set(true);
+    fixture.detectChanges();
+    expect(status()).toBe(region);
+    expect(region.textContent!.trim()).toBe('名稱儲存中');
+
+    host.saving.set(false);
+    fixture.detectChanges();
+    expect(region.textContent!.trim()).toBe('');
+  });
+
+  it('saving 結束且存檔失敗（value 沒變）→ 顯示原值，轉圈消失', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter');
+    host.saving.set(true);
+    fixture.detectChanges();
+    host.saving.set(false);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('第一季');
+    expect(el().querySelector('app-spinner')).toBeNull();
+    expect(display()!.hasAttribute('aria-busy')).toBeFalse();
+  });
+
+  it('saving 結束且存檔成功（value 換新）→ 顯示新值', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter');
+    host.saving.set(true);
+    fixture.detectChanges();
+    host.value.set('第二季');
+    host.saving.set(false);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('第二季');
+  });
+
+  it('沒有 saving 的使用端（先換值）→ commit 後直接顯示新的 value', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter');
+    host.value.set(host.commits[0]);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('第二季');
+    expect(el().querySelector('app-spinner')).toBeNull();
+  });
+
+  it('saving 不是從這裡送出的（之前沒有 commit）→ 顯示 value 加轉圈', () => {
+    host.saving.set(true);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('第一季');
+    expect(el().querySelector('app-spinner')).not.toBeNull();
+  });
+
+  it('存檔結束後忘掉剛送出的文字：之後別的原因再進入 saving，顯示的是 value', () => {
+    startEditing();
+    type('第二季');
+    press(input()!, 'Enter');
+    host.saving.set(true);
+    fixture.detectChanges();
+    host.saving.set(false); // 失敗，value 還是「第一季」
+    fixture.detectChanges();
+    host.saving.set(true);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('第一季');
+  });
+
+  it('送出空字串後存檔中 → 顯示提示文字，不顯示舊值', () => {
+    host.placeholder.set('未命名');
+    fixture.detectChanges();
+    startEditing();
+    type('');
+    press(input()!, 'Enter');
+    expect(host.commits).toEqual(['']);
+    host.saving.set(true);
+    fixture.detectChanges();
+    expect(display()!.textContent!.trim()).toBe('未命名');
+  });
+
+  it('沒有值也沒有提示文字 → 按鈕還留有 40px 寬可以點', () => {
+    host.value.set('');
+    fixture.detectChanges();
+    expect(display()!.getBoundingClientRect().width).toBeGreaterThanOrEqual(40);
+  });
+
+  it('再次進入編輯 → 帶入最新的 value，不是上次打到一半的字', () => {
+    startEditing();
+    type('打到一半');
+    press(input()!, 'Escape');
+    startEditing();
+    expect(input()!.value).toBe('第一季');
+  });
+});
+
+// ── 元件一出現就是編輯狀態（使用端只在編輯時才放它）──────────────
+
+@Component({
+  standalone: true,
+  imports: [InlineEditComponent],
+  template: `
+    @if (show()) {
+      <app-inline-edit ariaLabel="標題" value="合約" [editing]="true"
+        (editingChange)="$event ? null : show.set(false)"
+        (commit)="commits.push($event)">
+      </app-inline-edit>
+    }
+  `,
+})
+class EditOnlyHostComponent {
+  readonly show = signal(true);
+  commits: string[] = [];
+}
+
+describe('InlineEditComponent（一出現就是編輯狀態）', () => {
+  it('直接畫輸入框，帶入值、聚焦並全選；送出後使用端把它拿掉', async () => {
+    TestBed.configureTestingModule({ imports: [EditOnlyHostComponent] });
+    const fixture = TestBed.createComponent(EditOnlyHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const field = root.querySelector('input') as HTMLInputElement;
+    expect(field.value).toBe('合約');
+    expect(document.activeElement).toBe(field);
+    expect(field.selectionEnd).toBe(2);
+    expect(root.querySelector('.inline-edit__display')).toBeNull();
+
+    field.value = '合約書';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.commits).toEqual(['合約書']);
+    expect(root.querySelector('app-inline-edit')).toBeNull();
+  });
+});
