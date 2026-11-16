@@ -462,6 +462,43 @@ describe('InlineEditComponent', () => {
     expect(display()!.getBoundingClientRect().width).toBeGreaterThanOrEqual(40);
   });
 
+  it('saving 時外部把 editing 設為 true → 不開，並把 editing 改回 false', async () => {
+    host.saving.set(true);
+    fixture.detectChanges();
+    host.editing.set(true);
+    await settle();
+    expect(input()).toBeNull();
+    expect(host.editing()).toBeFalse();
+  });
+
+  it('saving 時在顯示文字上按 Enter／空白鍵 → 進不了編輯，按鍵照常往外傳', () => {
+    host.saving.set(true);
+    fixture.detectChanges();
+    press(display()!, 'Enter');
+    press(display()!, ' ');
+    expect(input()).toBeNull();
+    expect(windowKeys).toEqual(['Enter', ' ']);
+  });
+
+  it('用來進入編輯的 Enter／空白鍵不往外傳，也不擋預設動作（原生按鈕靠它觸發 click）', () => {
+    const enter = press(display()!, 'Enter');
+    const space = press(display()!, ' ');
+    expect(windowKeys).toEqual([]);
+    expect(host.outerKeys).toEqual([]);
+    expect(enter.defaultPrevented).toBeFalse();
+    expect(space.defaultPrevented).toBeFalse();
+  });
+
+  it('編輯中 value 被使用端換掉 → 輸入框顯示新值，不改就按 Enter 不送出', () => {
+    startEditing();
+    type('打到一半');
+    host.value.set('別人改的名稱');
+    fixture.detectChanges();
+    expect(input()!.value).toBe('別人改的名稱');
+    press(input()!, 'Enter');
+    expect(host.commits).toEqual([]);
+  });
+
   it('再次進入編輯 → 帶入最新的 value，不是上次打到一半的字', () => {
     startEditing();
     type('打到一半');
@@ -562,6 +599,28 @@ describe('InlineEditComponent（事件順序）', () => {
   it('內容沒變：只發 editingChange', () => {
     key(open(), 'Enter');
     expect(fixture.componentInstance.log).toEqual(['editing:false']);
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [InlineEditComponent],
+  template: `<app-inline-edit ariaLabel="標題" value="合約" [disabled]="true" [(editing)]="editing"></app-inline-edit>`,
+})
+class DisabledEditOnInitHostComponent {
+  editing = true;
+}
+
+describe('InlineEditComponent（一建立就是 editing 但停用）', () => {
+  it('不開，並把 editing 改回 false', async () => {
+    TestBed.configureTestingModule({ imports: [DisabledEditOnInitHostComponent] });
+    const fixture = TestBed.createComponent(DisabledEditOnInitHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('input')).toBeNull();
+    expect(fixture.componentInstance.editing).toBeFalse();
   });
 });
 

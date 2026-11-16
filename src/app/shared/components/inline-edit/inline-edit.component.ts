@@ -94,6 +94,8 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
   ngOnChanges(changes: SimpleChanges): void {
     // 存檔結束就忘掉剛送出的文字；不然下一次別的原因進入 saving 會顯示到舊的
     if (changes['saving'] && !this.saving) this.pendingText = null;
+    // 編輯中 value 被使用端換掉：輸入框會改顯示新值，草稿跟著換，送出的字才會跟畫面一樣
+    if (changes['value'] && !changes['value'].firstChange && this.isEditing()) this.draft = this.value;
     const editing = changes['editing'];
     if (!editing || editing.firstChange) return;
     if (this.editing && !this.isEditing()) {
@@ -113,7 +115,10 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
 
   ngOnInit(): void {
     // 元件一出現就是編輯狀態（使用端只在編輯時才放它）：第一次畫就直接畫輸入框
-    if (this.editing && this.canEdit()) this.open();
+    if (!this.editing) return;
+    if (this.canEdit()) this.open();
+    // 存檔中或停用時不開；把使用端的雙向綁定改回來（跟之後才設 true 的情況一致）
+    else queueMicrotask(() => this.editingChange.emit(false));
   }
 
   ngAfterViewInit(): void {
@@ -132,11 +137,16 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
    * Enter 連發會再打開輸入框，一開一關地閃；Esc 連發會傳到外層把視窗關掉。兩個都擋掉。
    */
   onDisplayKeydown(event: KeyboardEvent): void {
-    if (!event.repeat) return;
-    if (event.key === 'Enter' || event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
+    if (event.repeat) {
+      if (event.key === 'Enter' || event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
     }
+    // 用來進入編輯的那一下 Enter／空白鍵已經有用途，不往外傳（外層表單的 Enter、頁面的快捷鍵）。
+    // 不擋預設動作：原生按鈕靠它觸發 click。進不了編輯時這個鍵沒被用掉，照常往外傳
+    if ((event.key === 'Enter' || event.key === ' ') && this.canEdit()) event.stopPropagation();
   }
 
   onValueChange(value: string): void {

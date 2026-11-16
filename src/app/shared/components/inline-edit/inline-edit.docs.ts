@@ -51,7 +51,7 @@ export const inlineEditDoc: ComponentApi = {
       name: 'editing',
       type: 'boolean',
       default: 'false',
-      desc: '是否在編輯中，可以用 [(editing)] 雙向綁定。入口不在文字上（例如從選單的「重新命名」進入）時設為 true。存檔中或停用時設 true 不會打開，元件會發 (editingChange) false 把它改回來',
+      desc: '是否在編輯中，可以用 [(editing)] 雙向綁定。入口不在文字上（例如從選單的「重新命名」進入）時設為 true。存檔中或停用時設 true 不會打開，元件會發 (editingChange) false 把它改回來（一建立就是 true 也一樣）',
     },
     {
       name: '(commit)',
@@ -115,11 +115,13 @@ async rename(next: string) {
       code: `<app-inline-edit ariaLabel="名稱" [value]="name()"
   [errorMessage]="error()"
   (draftChange)="draft.set($event)"
-  (cancel)="draft.set(name())"
+  (editingChange)="draft.set(name())"
   (commit)="rename($event)">
 </app-inline-edit>
 
-readonly draft = signal('');
+// 進入編輯時元件不會發 draftChange，所以進入與離開時都把草稿設回目前的值；
+// 不然一打開就帶著上一次的錯誤，或還沒打字就顯示「不能空白」
+readonly draft = signal(this.name());
 readonly error = computed(() => this.draft().trim() ? '' : '名稱不能空白');`,
     },
     {
@@ -137,7 +139,11 @@ readonly error = computed(() => this.draft().trim() ? '' : '名稱不能空白')
   usageNotes: [
     '顯示文字沿用外層的字型、字重和顏色。要粗體標題的樣子，就把字級 class 加在 app-inline-edit 或它的外層上。',
     '寬度由外層決定：給 app-inline-edit 一個 max-width，長文字會用刪節號截斷，旁邊的按鈕不會被擠掉。',
-    '使用端只在編輯時才放這個元件的寫法（上面最後一個範例），收起後顯示文字不在畫面上，焦點要由使用端自己放回入口。',
+    '輸入框的寬度：給了 app-inline-edit 寬度（width）就填滿它；沒給就用輸入框自己的寬度，最窄 160px。',
+    '值是空的又沒給 placeholder 時，顯示文字仍留 40px 寬可以點。能給 placeholder 就給，使用者才知道這裡有東西可以填。',
+    '使用端只在編輯時才放這個元件的寫法（上面最後一個範例），收起後顯示文字不在畫面上，焦點要由使用端自己放回入口。只在焦點掉到 body 時才放（按 Enter、Esc 收起）；使用者點到別處收起時，焦點已經在他點的地方，不要搶。',
+    '輸入框裡的 Enter、Esc 與用來進入編輯的那一下 Enter、空白鍵都不往外傳。',
     '放在會聽 Esc 關閉的視窗裡不用另外處理：輸入框裡的 Enter、Esc 已經 stopPropagation 並 preventDefault。',
+    '編輯中 value 被使用端換掉（例如別人改了同一筆）時，輸入框改顯示新值，使用者打到一半的字會被換掉。',
   ],
 };
