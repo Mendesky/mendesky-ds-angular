@@ -80,11 +80,14 @@
   border: 0;
 }
 
+/* 使用端給了寬度就填滿它；沒給就用輸入框自己的寬度 */
 .inline-edit__input {
   display: inline-block;
+  flex: 1 1 auto;
   min-width: 160px;
   max-width: 100%;
 }
+
 
 /* 強制色彩：透明邊框會被換成系統色而一直看得到，焦點改用系統的醒目色外框才分得出來 */
 @media (forced-colors: active) {

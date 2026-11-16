@@ -490,6 +490,25 @@ class EditOnlyHostComponent {
   commits: string[] = [];
 }
 
+// ── 寬度：使用端給了寬度，輸入框填滿它 ──────────────────────────
+
+@Component({
+  standalone: true,
+  imports: [InlineEditComponent],
+  template: `<app-inline-edit style="width: 320px" ariaLabel="標題" value="合約" [editing]="true"></app-inline-edit>`,
+})
+class FixedWidthHostComponent {}
+
+describe('InlineEditComponent（使用端指定寬度）', () => {
+  it('輸入框寬度等於使用端給的 320px', () => {
+    TestBed.configureTestingModule({ imports: [FixedWidthHostComponent] });
+    const fixture = TestBed.createComponent(FixedWidthHostComponent);
+    fixture.detectChanges();
+    const box = (fixture.nativeElement as HTMLElement).querySelector('.input-box') as HTMLElement;
+    expect(Math.round(box.getBoundingClientRect().width)).toBe(320);
+  });
+});
+
 // ── 事件順序：先 commit／cancel，最後才 editingChange ──────────────
 
 @Component({
