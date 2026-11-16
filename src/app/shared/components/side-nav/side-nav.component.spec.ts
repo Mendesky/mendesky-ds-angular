@@ -178,4 +178,86 @@ describe('SideNavComponent', () => {
     link('home').focus();
     expect(document.activeElement).toBe(link('home'));
   });
+
+  it('9. 名稱太長：只顯示一行、用刪節號截斷，項目不撐寬側欄', () => {
+    const long = '這是一個非常非常長的功能入口名稱超過十一個字';
+    render({
+      mode: 'expanded',
+      groups: [{ id: 'g', items: [{ id: 'long', label: long, icon: 'Dashboard', href: '/long' }] }],
+    });
+    const a = link('long');
+    const label = a.querySelector('.side-nav__label') as HTMLElement;
+    expect(label.textContent).toBe(long);
+    expect(getComputedStyle(label).textOverflow).toBe('ellipsis');
+    expect(getComputedStyle(a).whiteSpace).toBe('nowrap');
+    expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
+    expect(a.getBoundingClientRect().width).toBeLessThanOrEqual(host().getBoundingClientRect().width);
+    expect(host().getBoundingClientRect().width).toBe(200);
+  });
+
+  // Karma 不能真的把滑鼠移上去，也不能切換使用者的「減少動態」「強制色彩」設定，
+  // 所以直接讀元件樣式表裡的規則（做法同 progress-bar.component.spec.ts「減少動態」）。
+  // Angular 會在 selector 加上 _ngcontent／_nghost 屬性，所以比對「選擇器含這些片段」。
+  describe('樣式表規則', () => {
+    const rulesIn = (media: string | null): CSSStyleRule[] => {
+      const out: CSSStyleRule[] = [];
+      for (const sheet of Array.from(document.styleSheets)) {
+        let rules: CSSRule[];
+        try { rules = Array.from(sheet.cssRules); } catch { continue; }
+        for (const rule of rules) {
+          if (media === null && rule instanceof CSSStyleRule) out.push(rule);
+          if (media !== null && rule instanceof CSSMediaRule && rule.media.mediaText.includes(media)) {
+            for (const inner of Array.from(rule.cssRules)) if (inner instanceof CSSStyleRule) out.push(inner);
+          }
+        }
+      }
+      return out;
+    };
+    const find = (media: string | null, has: string[], hasNot: string[] = []): CSSStyleDeclaration => {
+      const hit = rulesIn(media).find(r =>
+        has.every(p => r.selectorText.includes(p)) && hasNot.every(p => !r.selectorText.includes(p)));
+      if (!hit) throw new Error(`找不到規則：含 ${has.join(' ')}${hasNot.length ? `，不含 ${hasNot.join(' ')}` : ''}（${media ?? '一般'}）`);
+      return hit.style;
+    };
+
+    beforeEach(() => render({ mode: 'expanded', currentId: 'home' }));
+
+    it('滑過：展開的項目疊 5% 深色；選中的項目加深成綠 90', () => {
+      const plain = find(null, ['side-nav--expanded', 'side-nav__item', ':hover'], ['--current']);
+      expect(plain.backgroundColor || plain.background).toContain('rgba(28, 28, 46, 0.05)');
+      const current = find(null, ['side-nav--expanded', 'side-nav__item--current', ':hover']);
+      expect(current.getPropertyValue('background')).toMatch(/green\\?\/90/);
+    });
+
+    it('滑過：窄欄未選中的項目換藍底白圖示；選中的項目不受影響', () => {
+      const rail = find(null, ['side-nav--rail', 'side-nav__item', ':hover']);
+      expect(rail.getPropertyValue('background')).toMatch(/button\\?\/action/);
+      expect(rail.getPropertyValue('color')).toMatch(/icon\\?\/white/);
+      // 選中的項目被排除在這條滑過規則之外，也沒有別條窄欄選中的滑過規則
+      expect(rulesIn(null).find(r => r.selectorText.includes('side-nav--rail') && r.selectorText.includes(':hover')
+        && !r.selectorText.includes(':not(.side-nav__item--current'))).toBeUndefined();
+    });
+
+    it('換寬度：寬度用 450ms、ease-enter 轉場', () => {
+      const cs = getComputedStyle(host());
+      expect(cs.transitionProperty).toBe('width');
+      expect(cs.transitionDuration).toBe('0.45s');
+      const hostRule = find(null, ['_nghost'], ['side-nav--', 'side-nav__']);
+      expect(hostRule.getPropertyValue('transition')).toContain('--ease-enter');
+    });
+
+    it('減少動態：側欄寬度與項目顏色都不轉場', () => {
+      const style = find('prefers-reduced-motion: reduce', ['_nghost', 'side-nav__item']);
+      expect(style.transitionProperty).toBe('none');
+    });
+
+    it('強制色彩：選中的項目用系統的 Highlight 外框標示', () => {
+      const style = find('forced-colors: active', ['side-nav__item--current']);
+      expect(style.outlineColor.toLowerCase()).toBe('highlight');
+      // 平常這條外框是透明的，不影響一般畫面
+      const base = find(null, ['side-nav__item--current'], ['side-nav--', ':hover', ':focus']);
+      expect(base.outlineStyle).toBe('solid');
+      expect(base.outlineColor).toBe('transparent');
+    });
+  });
 });
