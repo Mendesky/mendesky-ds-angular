@@ -1,0 +1,106 @@
+:host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* 顯示文字：沒有底色的文字按鈕。字型、字重、顏色都沿用外層，元件不自己定 */
+.inline-edit__display {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radious\/sm, 4px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+
+  /* :where 不加權重：滑過的規則不能壓過下面的鍵盤焦點（滑鼠停在上面、焦點也在上面時要看得到焦點邊框） */
+  &:hover:where(:not(:disabled):not(.inline-edit__display--saving)) {
+    border-color: var(--border\/primary, #e7e7e7);
+    background: var(--label\/secondary, #fff);
+  }
+
+  &:focus-visible {
+    border-color: var(--button\/action, #3a9ccd);
+    background: var(--label\/secondary, #fff);
+    outline: none;
+  }
+
+  &:disabled,
+  &--saving {
+    cursor: default;
+  }
+}
+
+/* 最小高度對齊同尺寸的輸入框，顯示與編輯切換時那一列不會跳 */
+.inline-edit__display--s { min-height: 32px; }
+.inline-edit__display--m { min-height: 36px; }
+
+/* 沒有值也沒有提示文字時，留一塊點得到的寬度 */
+.inline-edit__display--empty { min-width: 40px; }
+
+/* 固定一行，放不下用刪節號；寬度由外層決定 */
+.inline-edit__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inline-edit__text--placeholder {
+  color: var(--text\/body, #686868);
+  font-weight: 400;
+}
+
+.inline-edit__spinner {
+  flex: none;
+}
+
+/* 只給報讀軟體：畫面上看不到，也不佔位置 */
+.inline-edit__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 使用端給了寬度就填滿它；沒給就用輸入框自己的寬度 */
+.inline-edit__input {
+  display: inline-block;
+  flex: 1 1 auto;
+  /* 最窄 160px；外層比 160px 還窄時跟著縮，不凸出去壓到旁邊的東西 */
+  min-width: min(160px, 100%);
+  max-width: 100%;
+}
+
+
+/* 強制色彩：透明邊框會被換成系統色而一直看得到，焦點改用系統的醒目色外框才分得出來 */
+@media (forced-colors: active) {
+  .inline-edit__display:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inline-edit__display {
+    transition: none;
+  }
+}

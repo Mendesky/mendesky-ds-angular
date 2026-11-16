@@ -1,0 +1,34 @@
+@if (isEditing()) {
+  <app-input
+    class="inline-edit__input"
+    [size]="size"
+    [placeholder]="placeholder"
+    [ariaLabel]="ariaLabel"
+    [initialValue]="value"
+    [errorMessage]="errorMessage"
+    (valueChange)="onValueChange($event)"
+    (blur)="onBlur()"
+    (keydown)="onInputKeydown($event)">
+  </app-input>
+} @else {
+  <button
+    type="button"
+    class="inline-edit__display"
+    [class.inline-edit__display--s]="size === 'S'"
+    [class.inline-edit__display--m]="size === 'M'"
+    [class.inline-edit__display--saving]="saving"
+    [class.inline-edit__display--empty]="!displayText"
+    [disabled]="disabled"
+    [attr.aria-label]="buttonLabel"
+    [attr.aria-busy]="saving ? 'true' : null"
+    [attr.aria-disabled]="saving ? 'true' : null"
+    (click)="onDisplayClick()"
+    (keydown)="onDisplayKeydown($event)">
+    <span class="inline-edit__text" [class.inline-edit__text--placeholder]="isPlaceholderShown">{{ displayText }}</span>
+    @if (saving) {
+      <app-spinner class="inline-edit__spinner" size="12" [decorative]="true"></app-spinner>
+    }
+  </button>
+}
+<!-- 一直存在的報讀區：存檔開始、或送出被錯誤訊息擋下時才填字。跟內容一起出現的區域，報讀軟體常常不念 -->
+<span class="inline-edit__status" role="status">{{ statusText }}</span>
