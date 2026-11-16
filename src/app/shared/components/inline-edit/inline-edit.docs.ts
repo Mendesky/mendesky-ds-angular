@@ -74,7 +74,7 @@ export const inlineEditDoc: ComponentApi = {
     {
       name: '(editingChange)',
       type: 'EventEmitter<boolean>',
-      desc: '進入或離開編輯時發出',
+      desc: '進入或離開編輯時發出。離開時排在 (commit)、(cancel) 之後；內容沒變就收起時只會發它',
       isOutput: true,
     },
   ],

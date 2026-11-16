@@ -490,6 +490,62 @@ class EditOnlyHostComponent {
   commits: string[] = [];
 }
 
+// ── 事件順序：先 commit／cancel，最後才 editingChange ──────────────
+
+@Component({
+  standalone: true,
+  imports: [InlineEditComponent],
+  template: `
+    <app-inline-edit ariaLabel="名稱" value="第一季"
+      (commit)="log.push('commit:' + $event)"
+      (cancel)="log.push('cancel')"
+      (editingChange)="log.push('editing:' + $event)">
+    </app-inline-edit>
+  `,
+})
+class OrderHostComponent {
+  log: string[] = [];
+}
+
+describe('InlineEditComponent（事件順序）', () => {
+  let fixture: ComponentFixture<OrderHostComponent>;
+  const root = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const open = (): HTMLInputElement => {
+    (root().querySelector('.inline-edit__display') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    fixture.componentInstance.log = [];
+    return root().querySelector('input') as HTMLInputElement;
+  };
+  const key = (field: HTMLInputElement, k: string): void => {
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [OrderHostComponent] });
+    fixture = TestBed.createComponent(OrderHostComponent);
+    fixture.detectChanges();
+  });
+
+  it('送出：commit 在 editingChange 之前', () => {
+    const field = open();
+    field.value = '第二季';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    key(field, 'Enter');
+    expect(fixture.componentInstance.log).toEqual(['commit:第二季', 'editing:false']);
+  });
+
+  it('放棄：cancel 在 editingChange 之前', () => {
+    key(open(), 'Escape');
+    expect(fixture.componentInstance.log).toEqual(['cancel', 'editing:false']);
+  });
+
+  it('內容沒變：只發 editingChange', () => {
+    key(open(), 'Enter');
+    expect(fixture.componentInstance.log).toEqual(['editing:false']);
+  });
+});
+
 describe('InlineEditComponent（一出現就是編輯狀態）', () => {
   it('直接畫輸入框，帶入值、聚焦並全選；送出後使用端把它拿掉', async () => {
     TestBed.configureTestingModule({ imports: [EditOnlyHostComponent] });

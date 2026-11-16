@@ -157,8 +157,9 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
       if (this.submit()) this.focusDisplay();
     } else {
       this.isEditing.set(false);
-      this.editingChange.emit(false);
+      // 先發 cancel 再發 editingChange：使用端在 editingChange 把元件拿掉時，前一個事件已經處理完
       this.cancel.emit();
+      this.editingChange.emit(false);
       this.focusDisplay();
     }
   }
@@ -175,11 +176,12 @@ export class InlineEditComponent implements OnChanges, OnInit, AfterViewInit {
     if (this.errorMessage) return false;
     const next = this.draft.trim();
     this.isEditing.set(false);
-    this.editingChange.emit(false);
     if (next !== this.value.trim()) {
       this.pendingText = next;
       this.commit.emit(next);
     }
+    // 最後才發 editingChange（內容沒變時只會發它）：使用端可以在這裡統一收尾
+    this.editingChange.emit(false);
     return true;
   }
 
