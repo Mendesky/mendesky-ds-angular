@@ -132,3 +132,72 @@ describe('TooltipDirective — appTooltipWrap', () => {
     expect(rect.width).toBeGreaterThan(520);
   }));
 });
+
+@Component({
+  standalone: true,
+  imports: [TooltipDirective],
+  template: `<button class="host" type="button" [appTooltip]="text">列印</button>`,
+})
+class LiveTextHostComponent {
+  text = '列印';
+}
+
+/**
+ * 第一輪審查：tooltip 打開時換字（例：列印鈕按下去後 tooltip 從「列印」換成「產生 PDF 中…」），
+ * 畫面上那個 tooltip 要跟著換；原本只在打開那一刻讀一次文字。
+ */
+describe('TooltipDirective — 打開時換字', () => {
+  let fixture: ComponentFixture<LiveTextHostComponent>;
+  const portalText = () => document.querySelector('app-tooltip-portal .tooltip__text')?.textContent?.trim() ?? null;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [LiveTextHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(LiveTextHostComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    (fixture.nativeElement as HTMLElement).remove();
+    document.querySelectorAll('app-tooltip-portal').forEach((n) => n.remove());
+  });
+
+  function open(): void {
+    (fixture.nativeElement.querySelector('.host') as HTMLElement).dispatchEvent(new Event('mouseenter'));
+    tick(300);
+    TestBed.inject(ApplicationRef).tick();
+  }
+
+  it('打開中換字：畫面上的 tooltip 跟著換', fakeAsync(() => {
+    open();
+    expect(portalText()).toBe('列印');
+    fixture.componentInstance.text = '產生 PDF 中…';
+    fixture.detectChanges();
+    expect(portalText()).toBe('產生 PDF 中…');
+    (fixture.nativeElement.querySelector('.host') as HTMLElement).dispatchEvent(new Event('mouseleave'));
+  }));
+
+  // 第二輪審查 nit：換成比較長的字後要重新對齊，否則 tooltip 偏一邊、不在按鈕正上方
+  it('打開中換成比較長的字：tooltip 重新對齊，仍在按鈕正上方', fakeAsync(() => {
+    const hostEl = fixture.nativeElement.querySelector('.host') as HTMLElement;
+    hostEl.style.marginLeft = '300px';
+    open();
+    // 先讓打開時排的那一次定位（下一個畫格）跑完，才換字；否則那次定位會順便把換字後的位置算好，測不出問題
+    tick(50);
+    fixture.componentInstance.text = '產生 PDF 中，請稍候，檔案比較大時會久一點';
+    fixture.detectChanges();
+    const portal = document.querySelector('app-tooltip-portal') as HTMLElement;
+    const p = portal.getBoundingClientRect();
+    const h = hostEl.getBoundingClientRect();
+    expect(Math.abs((p.left + p.width / 2) - (h.left + h.width / 2))).toBeLessThanOrEqual(1);
+    hostEl.dispatchEvent(new Event('mouseleave'));
+  }));
+
+  it('打開中文字變成空字串：tooltip 關掉', fakeAsync(() => {
+    open();
+    fixture.componentInstance.text = '';
+    fixture.detectChanges();
+    tick(300);
+    expect(document.querySelector('app-tooltip-portal')).toBeNull();
+  }));
+});

@@ -41,6 +41,8 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
+  /* Running 的轉圈跟「執行中請稍候」同色（--text/body），不跟著頁面的文字色走；Success／Error 的圖示自帶白色 */
+  color: var(--text\/body, #686868);
 }
 
 /* ── Text ── */
@@ -54,16 +56,6 @@
 .po-process__text--dark  { color: var(--text\/body, #686868); }
 .po-process__text--light { color: var(--text\/body-lightest, #ffffff); flex: 1; }
 .po-process__text--center { text-align: center; }
-
-/* ── Spinner animation ── */
-.spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
 
 /* ── Confetti (CSS approximation) ── */
 .confetti {

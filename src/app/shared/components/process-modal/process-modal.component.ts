@@ -1,12 +1,13 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SpinnerComponent } from '../spinner/spinner.component';
 
 export type ProcessModalType = 'running' | 'congratulation';
 
 @Component({
   selector: 'app-process-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SpinnerComponent],
   templateUrl: './process-modal.component.html',
   styleUrls: ['./process-modal.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

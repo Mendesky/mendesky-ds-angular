@@ -50,6 +50,7 @@
 }
 
 /* ── Icon ── */
+/* 轉圈跟訊息文字同色（--text/body），不跟著頁面的文字色走 */
 .process-modal__icon {
   display: flex;
   align-items: center;
@@ -57,6 +58,21 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
+  color: var(--text\/body, #686868);
+}
+
+/* 只給報讀軟體：看不見、不佔版面 */
+.process-modal__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ── Text ── */
@@ -70,16 +86,6 @@
 .process-modal__text--dark   { color: var(--text\/body, #686868); }
 .process-modal__text--light  { color: #ffffff; flex: 1; }
 .process-modal__text--center { text-align: center; font-size: 1.1em; font-weight: 500; }
-
-/* ── Spinner ── */
-.spinner {
-  animation: modal-spin 1s linear infinite;
-}
-
-@keyframes modal-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
 
 /* ── Confetti ── */
 .confetti {

@@ -1,0 +1,48 @@
+:host {
+  /* 放在文字行裡時跟文字垂直置中；line-height 歸零避免多出行高 */
+  display: inline-flex;
+  flex-shrink: 0;
+  position: relative;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.ds-spinner__svg {
+  display: block;
+  animation: ds-spinner-rotate 0.8s linear infinite;
+}
+
+/* 兩個圓都畫文字色：軌道 20% 當底，弧是全色。強制色彩模式下 currentColor 會換成系統文字色。 */
+.ds-spinner__track,
+.ds-spinner__arc {
+  stroke: currentColor;
+}
+
+.ds-spinner__track {
+  opacity: 0.2;
+}
+
+/* 只給報讀軟體：看不見、不佔版面 */
+.ds-spinner__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes ds-spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* 減少動態：慢轉，不完全停下來。轉圈的用途就是告訴使用者「還在進行」，停住就看不出來了。 */
+@media (prefers-reduced-motion: reduce) {
+  .ds-spinner__svg {
+    animation-duration: 2.4s;
+  }
+}

@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, OnDestroy, SimpleChanges, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
+import { SpinnerComponent } from '../spinner/spinner.component';
 
 export type ToastType = 'success' | 'error' | 'loading';
 export type ToastSize = 'S' | 'M';
@@ -13,7 +14,7 @@ export interface ToastAction {
 @Component({
   selector: 'app-process-toast',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, SpinnerComponent],
   templateUrl: './process-toast.component.html',
   styleUrls: ['./process-toast.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

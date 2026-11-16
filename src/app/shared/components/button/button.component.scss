@@ -183,18 +183,9 @@
   opacity: 0.85;
 }
 
+/* 轉圈本身是 app-spinner（DS-12），這裡只管它在按鈕裡的排版 */
 .btn__spinner {
-  width: 1em;
-  height: 1em;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: btn-spin 0.6s linear infinite;
   flex-shrink: 0;
-}
-
-@keyframes btn-spin {
-  to { transform: rotate(360deg); }
 }
 
 /* 快速鍵提示 badge（用於 action-menu 選項右側） */

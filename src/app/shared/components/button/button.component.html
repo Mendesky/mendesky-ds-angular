@@ -14,7 +14,7 @@
   type="button"
   (click)="onClick()"
 >
-  <span      *ngIf="loading"                class="btn__spinner"></span>
+  <app-spinner *ngIf="loading"              class="btn__spinner" [size]="spinnerSize" [decorative]="true"></app-spinner>
   <app-icon  *ngIf="!loading && leftIcon"   [name]="leftIcon"    [size]="iconSizeStr" style="color:currentColor;flex-shrink:0"></app-icon>
   <app-label *ngIf="!loading && leftLabel"  [text]="leftLabel.text"   [color]="leftLabel.color"   [size]="leftLabel.size   || labelSize"></app-label>
   <app-label *ngIf="!loading && centerLabel" [text]="centerLabel.text" [color]="centerLabel.color" [size]="centerLabel.size || labelSize"></app-label>

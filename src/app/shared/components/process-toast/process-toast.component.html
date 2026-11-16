@@ -9,7 +9,7 @@
         [class.toast__content--out]="swapPhase() === 'out'"
         [class.toast__content--in]="swapPhase() === 'in'">
     @if (isLoading) {
-      <span class="toast__spinner" data-testid="process-toast-spinner" aria-hidden="true"></span>
+      <app-spinner class="toast__spinner" data-testid="process-toast-spinner" [size]="iconSize" [decorative]="true"></app-spinner>
     } @else {
       <app-icon [name]="iconName" [size]="iconSize" style="color:currentColor;flex-shrink:0"></app-icon>
     }

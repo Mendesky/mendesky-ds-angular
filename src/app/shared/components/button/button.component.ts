@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { LabelComponent, LabelColor, LabelSize } from '../label/label.component';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
+import { SpinnerComponent, SpinnerSize } from '../spinner/spinner.component';
 
 export type ButtonVariant = 'filled' | 'tonal' | 'outlined' | 'ghost' | 'elevated';
 export type ButtonColor = 'primary' | 'success' | 'danger' | 'neutral';
@@ -22,7 +23,7 @@ export interface BtnLabelConfig {
 @Component({
   selector: 'app-button',
   standalone: true,
-  imports: [CommonModule, IconComponent, LabelComponent, ErrorTooltipDirective],
+  imports: [CommonModule, IconComponent, LabelComponent, ErrorTooltipDirective, SpinnerComponent],
   templateUrl: './button.component.html',
   styleUrls: ['./button.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -83,6 +84,12 @@ export class ButtonComponent implements OnChanges, AfterViewInit {
       XXS: 12, XS: 12, S: 14, M: 16, L: 24,
     };
     return map[this.size];
+  }
+
+  /** 載入轉圈的大小：跟按鈕內建圖示一樣（XXS、XS、S 12；M 16；L 24） */
+  get spinnerSize(): SpinnerSize {
+    const size = this.iconSizeStr;
+    return size === '12' || size === '16' || size === '24' ? size : '24';
   }
 
   get iconSizeStr(): '12' | '16' | '24' | '32' | '36' | '48' {
