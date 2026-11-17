@@ -67,6 +67,7 @@ onSort(key: string) { this.sort.set(nextSort(this.sort(), key)); }`,
   ],
   usageNotes: [
     '外層是不是表格列（祖先有 role="row"）只在元件建立時判斷一次。之後才把 role="row" 加上去的話，元件不會跟著變。',
+    '[sort] 每次改變都要傳新的物件（nextSort 回的就是新物件）。原地改同一個物件的 key 或 dir，元件收不到變更，不會念、也不會清掉上一句。',
     '點了之後要念出「已依〈欄名〉升冪排序」，需要呼叫端在 (sortChange) 之後一秒內把新的 [sort] 傳回來。先打後端再回來的列表也一樣：超過一秒才傳回來就不念。',
   ],
 };

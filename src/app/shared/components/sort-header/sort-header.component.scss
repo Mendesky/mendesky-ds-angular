@@ -83,6 +83,9 @@
 /* 只給報讀軟體：畫面上看不到，也不佔位置 */
 .ds-sort-header__sr {
   position: absolute;
+  /* 固定在元件的左上角：不跟著靠右、置中的排版跑到元件外面，貼著捲動容器邊緣時不會多出 1px 捲動 */
+  top: 0;
+  inset-inline-start: 0;
   width: 1px;
   height: 1px;
   margin: -1px;

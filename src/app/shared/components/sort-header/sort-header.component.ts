@@ -133,7 +133,11 @@ export class SortHeaderComponent implements OnInit, OnChanges, OnDestroy {
       this.clearAnnounce();
       return;
     }
-    if (!changes['sort']) return;
+    if (!changes['sort']) {
+      // 還在排序，但欄名或 key 被換掉了：上一句寫的是舊欄名，清掉
+      this.statusText = '';
+      return;
+    }
     if (this.announceNext) {
       this.statusText = `已依${this.label}${this.dirText}`;
       this.clearAnnounce();

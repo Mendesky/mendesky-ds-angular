@@ -145,6 +145,18 @@ describe('SortHeaderComponent', () => {
       expect(status().textContent).toBe('');
     });
 
+    it('念過之後欄名被換掉（例如切語系）：清空，不留著舊欄名', () => {
+      fixture.detectChanges();
+      button().click();
+      fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+      fixture.detectChanges();
+      expect(status().textContent).toBe('已依姓名升冪排序');
+      fixture.componentRef.setInput('label', '名稱');
+      fixture.detectChanges();
+      expect(name()).toBe('名稱，升冪排序');
+      expect(status().textContent).toBe('');
+    });
+
     it('排序被清掉（sort 變回 null）：清空', () => {
       fixture.detectChanges();
       button().click();
