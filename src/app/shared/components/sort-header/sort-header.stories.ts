@@ -182,7 +182,7 @@ export const HeaderRow: Story = {
   name: '互動測試（整列表頭 + nextSort）',
   render: () => ({
     template: `
-      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:0 16px;">
         <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;font-size:13px;">
           <app-sort-header label="編號及名稱" key="name" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="狀態" key="status" align="center" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
