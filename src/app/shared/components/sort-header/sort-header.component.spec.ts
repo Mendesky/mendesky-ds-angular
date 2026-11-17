@@ -355,13 +355,13 @@ describe('SortHeaderComponent', () => {
     button().blur();
   });
 
-  it('align="center" 時 host 置中，按鈕不往外拉', () => {
+  it('align="center" 時 host 置中，按鈕左右對稱（各往外 16px）', () => {
     fixture.componentRef.setInput('align', 'center');
     fixture.detectChanges();
     expect(host.classList).toContain('ds-sort-header--center');
     expect(getComputedStyle(host).justifyContent).toBe('center');
-    expect(getComputedStyle(button()).marginLeft).toBe('0px');
-    expect(getComputedStyle(button()).marginRight).toBe('0px');
+    expect(getComputedStyle(button()).marginLeft).toBe('-16px');
+    expect(getComputedStyle(button()).marginRight).toBe('-16px');
   });
 
   describe('align="center"：欄名本身在這一格的正中間', () => {
@@ -399,6 +399,42 @@ describe('SortHeaderComponent', () => {
       const label = (host.querySelector('.ds-sort-header__label') as HTMLElement).getBoundingClientRect();
       const icon = (host.querySelector('.ds-sort-header__icon') as HTMLElement).getBoundingClientRect();
       expect(icon.left).toBeGreaterThanOrEqual(label.right);
+    });
+
+    it('留給圖示的空位不佔欄寬：120px 的欄、14px 的字、六個字的欄名不會被截成刪節號', () => {
+      host.style.width = '120px';
+      host.style.fontSize = '14px';
+      fixture.componentRef.setInput('label', '六個字的欄名');
+      fixture.detectChanges();
+      const label = host.querySelector('.ds-sort-header__label') as HTMLElement;
+      // 欄名大約 84px；左右空位算進欄寬的話要 130px，會被壓成刪節號
+      expect(label.getBoundingClientRect().width).toBeGreaterThan(70);
+      expect(label.scrollWidth).withContext('欄名沒有被截斷').toBeLessThanOrEqual(label.clientWidth);
+      // 佔的版面只有欄名加左右各 6px，放得進 120px
+      const slot = button().getBoundingClientRect().width - 32;
+      expect(slot).toBeLessThanOrEqual(120);
+      expect(Math.abs(offset())).toBeLessThan(0.6);
+      host.style.fontSize = '';
+    });
+
+    it('正在排序時（半粗、圖示出現）一樣不截', () => {
+      host.style.width = '120px';
+      host.style.fontSize = '14px';
+      fixture.componentRef.setInput('label', '六個字的欄名');
+      fixture.componentRef.setInput('sort', { key: 'name', dir: 'desc' });
+      fixture.detectChanges();
+      const label = host.querySelector('.ds-sort-header__label') as HTMLElement;
+      expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
+      host.style.fontSize = '';
+    });
+
+    it('真的太長還是會用刪節號，不會無限往外凸', () => {
+      host.style.width = '80px';
+      fixture.componentRef.setInput('label', '這是一個非常非常長的欄位名稱');
+      fixture.detectChanges();
+      const label = host.querySelector('.ds-sort-header__label') as HTMLElement;
+      expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
+      expect(button().getBoundingClientRect().width).toBeLessThanOrEqual(80 + 32 + 0.5);
     });
 
     it('靠左、靠右不補這塊空位', () => {
