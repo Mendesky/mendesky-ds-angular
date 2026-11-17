@@ -3,6 +3,8 @@
  * 往外凸 6px 的按鈕會被裁掉，滑過時一側的底色就不見了。表頭本身不需要裁切，這裡強制不裁。
  */
 :host {
+  /* 給報讀專用文字（position: absolute）一個定位基準，不讓它跑到捲動容器外面撐出捲軸 */
+  position: relative;
   display: flex;
   align-items: center;
   min-width: 0;
@@ -11,6 +13,10 @@
 
 :host(.ds-sort-header--end) {
   justify-content: flex-end;
+}
+
+:host(.ds-sort-header--center) {
+  justify-content: center;
 }
 
 /* class 前綴用 .ds-sort-header，與 .ds-progress 同理：避免跟消費端既有的 .lt-hd--sortable 撞名 */
@@ -48,6 +54,12 @@
   margin: 0 -6px 0 0;
 }
 
+/* 置中的欄不往外拉：左右內距一樣，文字才會在欄的正中間 */
+:host(.ds-sort-header--center) .ds-sort-header {
+  max-width: 100%;
+  margin: 0;
+}
+
 /* 正在排序的欄：動作色 + 半粗（hover 時仍維持動作色） */
 .ds-sort-header--active,
 .ds-sort-header--active:hover {
@@ -60,6 +72,26 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 欄名前面的圖示：一直顯示，跟著文字色 */
+.ds-sort-header__left-icon {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* 只給報讀軟體：畫面上看不到，也不佔位置 */
+.ds-sort-header__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* 圖示跟著文字色；沒在排序時先藏起來，滑過或鍵盤聚焦才出現 */

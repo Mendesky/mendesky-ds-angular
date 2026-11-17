@@ -22,14 +22,19 @@ const meta: Meta<SortHeaderComponent> = {
     },
     sort: {
       control: 'object',
-      description: '列表目前的排序狀態 { key, dir }；null 表示沒有排序。key 與本欄相同時顯示方向箭頭',
+      description: '列表目前的排序狀態 { key, dir }；null 表示沒有排序。key 與本欄相同時顯示方向圖示',
       table: { defaultValue: { summary: 'null' } },
     },
     align: {
       control: 'inline-radio',
-      options: ['start', 'end'],
-      description: '文字靠左（預設）或靠右（數字欄）',
+      options: ['start', 'center', 'end'],
+      description: '文字靠左（預設）、置中或靠右（數字欄）',
       table: { defaultValue: { summary: "'start'" } },
+    },
+    leftIcon: {
+      control: 'text',
+      description: '欄名前面的圖示名稱；空字串＝不放',
+      table: { defaultValue: { summary: "''" } },
     },
     sortChange: { action: 'sortChange' },
   },
@@ -88,6 +93,90 @@ export const AlignEnd: Story = {
   },
 };
 
+// ── 置中 ──────────────────────────────────────────────
+export const AlignCenter: Story = {
+  name: '置中（align="center"）',
+  render: (args) => ({
+    props: args,
+    template: `
+      <div style="width:160px;border:1px dashed #d9d9d9;padding:4px 8px;">
+        <app-sort-header [label]="label" [key]="key" [sort]="sort" [align]="align" (sortChange)="sortChange($event)"></app-sort-header>
+      </div>
+    `,
+  }),
+  args: {
+    label: '狀態',
+    key: 'status',
+    sort: { key: 'status', dir: 'asc' },
+    align: 'center',
+  },
+};
+
+// ── 欄名前面放圖示 ────────────────────────────────────
+export const WithLeftIcon: Story = {
+  name: '欄名前面放圖示（leftIcon）',
+  render: (args) => ({
+    props: args,
+    template: `
+      <div style="width:160px;border:1px dashed #d9d9d9;padding:4px 8px;">
+        <app-sort-header [label]="label" [key]="key" [sort]="sort" [align]="align" [leftIcon]="leftIcon" (sortChange)="sortChange($event)"></app-sort-header>
+      </div>
+    `,
+  }),
+  args: {
+    label: '金額',
+    key: 'amount',
+    sort: null,
+    align: 'end',
+    leftIcon: 'Money',
+  },
+};
+
+// ── 欄名太長 ──────────────────────────────────────────
+export const LongLabel: Story = {
+  name: '欄名太長（尾端刪節號）',
+  render: (args) => ({
+    props: args,
+    template: `
+      <div style="width:120px;border:1px dashed #d9d9d9;padding:4px 8px;">
+        <app-sort-header [label]="label" [key]="key" [sort]="sort" [leftIcon]="leftIcon" (sortChange)="sortChange($event)"></app-sort-header>
+      </div>
+    `,
+  }),
+  args: {
+    label: '這是一個很長很長的欄位名稱',
+    key: 'long',
+    sort: { key: 'long', dir: 'desc' },
+    leftIcon: 'Date',
+  },
+};
+
+// ── 放在有表格結構的列表裡 ────────────────────────────
+export const InTableRow: Story = {
+  name: '放在表格列裡（role="row"）',
+  render: () => ({
+    template: `
+      <div role="table" aria-label="人員" style="font-size:13px;">
+        <div role="row" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;">
+          <app-sort-header label="姓名" key="name" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="部門" key="dept" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+        </div>
+        <div role="row" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding-top:8px;">
+          <span role="cell">範例人員</span><span role="cell">範例部門</span>
+        </div>
+      </div>
+    `,
+    props: {
+      sort: { key: 'name', dir: 'asc' } as SortState | null,
+      onSort(key: string) {
+        const self = this as { sort: SortState | null };
+        self.sort = nextSort(self.sort, key);
+      },
+    },
+    moduleMetadata: { imports: [SortHeaderComponent] },
+  }),
+};
+
 // ── 互動：整列表頭搭配 nextSort 切換 ─────────────────────
 export const HeaderRow: Story = {
   name: '互動測試（整列表頭 + nextSort）',
@@ -96,11 +185,11 @@ export const HeaderRow: Story = {
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;font-size:13px;">
           <app-sort-header label="編號及名稱" key="name" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="狀態" key="status" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="持續性費用" key="recurring" align="end" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="一次性費用" key="onetime" align="end" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="承辦人員" key="person" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="最後修改時間" key="time" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="狀態" key="status" align="center" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="持續性費用" key="recurring" align="end" leftIcon="Money" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="一次性費用" key="onetime" align="end" leftIcon="Money" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="承辦人員" key="person" align="center" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="最後修改時間" key="time" align="center" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
         </div>
         <span style="font-size:12px;color:#686868;">
           目前排序：{{ sort ? labels[sort.key] + '（' + (sort.dir === 'asc' ? '升冪' : '降冪') + '）' : '無' }}
