@@ -91,10 +91,10 @@ export const Rail: Story = {
       <div style="${FRAME};flex-direction:column;gap:12px">
         <app-button variant="outlined" color="neutral" leftIcon="Menu"
                     [text]="hidden ? '打開側欄' : '藏起側欄'"
-                    aria-controls="story-rail-nav" [attr.aria-expanded]="!hidden"
+                    [ariaExpanded]="!hidden"
                     (btnClick)="hidden = !hidden"></app-button>
         <div style="display:flex;gap:8px;flex:1;min-height:0">
-          <app-side-nav id="story-rail-nav" [groups]="groups" [mode]="hidden ? 'hidden' : 'rail'" [currentId]="current"
+          <app-side-nav [groups]="groups" [mode]="hidden ? 'hidden' : 'rail'" [currentId]="current"
                         (navigate)="current = $event.id"></app-side-nav>
           <div style="${CONTENT}">滑過或用鍵盤停在項目上，右邊會出現名稱。藏起來後按 Tab，焦點不會進到側欄。</div>
         </div>

@@ -35,7 +35,11 @@ let nextUid = 0;
  *   <app-side-nav [groups]="groups" [mode]="mode" [currentId]="current" (navigate)="go($event)"></app-side-nav>
  *
  * 項目是原生連結：左鍵單擊（沒按修飾鍵）時擋掉瀏覽器換頁、改送 `navigate` 給使用端用路由換頁；
+ * 使用端沒接 `navigate` 時不擋，照連結換頁。
  * 按住 Ctrl／⌘／Shift／Alt 點擊照瀏覽器原本的做法（開新分頁、新視窗、下載）。
+ *
+ * 放進抽屜時，使用端要在外層對元件設 `width: 100%; height: auto;`：元件不知道自己在抽屜裡，
+ * 不設就停在展開的 200px，捲動也留在元件自己身上。
  *
  * 藏起來時 host 加 `inert`，Tab 進不去、報讀軟體不念。
  * 藏起來沿用上一個看得到的版面，寬度轉場時內容不會先跳成另一種排法；一開始就藏起來時用窄欄的版面。
@@ -81,7 +85,7 @@ export class SideNavComponent {
   /** 導覽地標的名稱 */
   @Input() ariaLabel = '主要導覽';
 
-  /** 左鍵單擊項目（沒按修飾鍵）時送出，使用端用路由換頁 */
+  /** 左鍵單擊項目（沒按修飾鍵）時送出，使用端用路由換頁。沒接時照連結換頁 */
   @Output() navigate = new EventEmitter<SideNavItem>();
 
   /** 畫面用的版面：藏起來時沿用上一個看得到的版面 */
@@ -98,6 +102,8 @@ export class SideNavComponent {
 
   onItemClick(event: MouseEvent, item: SideNavItem): void {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    // 使用端沒接 navigate 時照連結換頁，不然點了沒反應
+    if (!this.navigate.observed) return;
     event.preventDefault();
     this.navigate.emit(item);
   }

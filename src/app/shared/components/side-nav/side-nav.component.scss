@@ -1,6 +1,8 @@
 // 側欄導覽。顏色 11-16 定案（DS-14）：
 //   展開：名稱 --text/body 4.92:1（背景 #EEF1F5）、圖示 --text/body-light（旁邊有名稱）、
+//         滑過疊 5% 深色＋名稱 --text/secondary 6.16:1（11-17 改）、
 //         選中綠 85 底白字 4.58:1、選中滑過綠 90 6.34:1、選中焦點白框（藍框放在綠 85 上只有 1.49:1）
+//   觸控（pointer: coarse）：展開的項目至少 44px 高
 //   窄欄：未選中圖示 --icon/body 5.57:1（白底）、滑過 --button/action 底白圖示 3.08:1、選中綠 85 底白圖示 4.58:1
 // 寬度轉場 450ms（Panel 等級）；減少動態時直接到位
 
@@ -91,9 +93,15 @@
       color: var(--text\/body-light, #939393);
     }
 
-    // 疊一層深色，底色跟著外面（頁面背景或抽屜）
+    // 疊一層深色，底色跟著外面（頁面背景或抽屜）。
+    // 名稱同時加深一階：--text/body 疊在 #EEF1F5＋5% 深色上只有 4.46:1，--text/secondary 是 6.16:1
     &:hover {
       background: rgba(28, 28, 46, 0.05);
+      color: var(--text\/secondary, #535353);
+
+      app-icon {
+        color: var(--icon\/body, #686868);
+      }
     }
 
     &:focus-visible {
@@ -106,14 +114,19 @@
     background: var(--color\/green\/85, #538227);
     font-weight: 500;
 
-    &:hover {
-      background: var(--color\/green\/90, #426a1c);
-    }
-
     color: var(--text\/body-lightest, #ffffff);
 
     app-icon {
       color: var(--icon\/white, #ffffff);
+    }
+
+    &:hover {
+      background: var(--color\/green\/90, #426a1c);
+      color: var(--text\/body-lightest, #ffffff);
+
+      app-icon {
+        color: var(--icon\/white, #ffffff);
+      }
     }
 
     &:focus-visible {
@@ -171,6 +184,13 @@
   .side-nav__item--current {
     background: var(--color\/green\/85, #538227);
     color: var(--icon\/white, #ffffff);
+  }
+}
+
+// 觸控裝置：展開的項目加高到 44px，手指點得準（桌面維持 36px；11-17 使用者決定）
+@media (pointer: coarse) {
+  :host(.side-nav--expanded) .side-nav__item {
+    min-height: 44px;
   }
 }
 

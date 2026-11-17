@@ -24,6 +24,59 @@ const GROUPS: SideNavGroup[] = [
 const cleanups: Array<() => void> = [];
 const onTestDone = (fn: () => void) => cleanups.push(fn);
 
+/**
+ * 在 document 上記下「元件處理完之後」點擊有沒有被擋（document 的冒泡監聽比連結上的晚跑），
+ * 記完再自己擋掉，瀏覽器才不會真的換頁或開新分頁。
+ */
+const recordPreventedAfterComponent = (): boolean[] => {
+  const seen: boolean[] = [];
+  const listener = (e: Event) => { seen.push(e.defaultPrevented); e.preventDefault(); };
+  document.addEventListener('click', listener);
+  onTestDone(() => document.removeEventListener('click', listener));
+  return seen;
+};
+
+/** 關掉轉場：換版面或滑過時顏色有 150ms 轉場，量到的會是起點 */
+const disableTransitions = () => {
+  const style = document.createElement('style');
+  style.textContent = '.side-nav, .side-nav * { transition: none !important; }';
+  document.head.appendChild(style);
+  onTestDone(() => style.remove());
+};
+
+/** 元件樣式表裡所有 side-nav 的規則（含 @media 裡的），照原本的順序 */
+const sideNavRules = (): Array<{ rule: CSSStyleRule; media: string | null }> => {
+  const out: Array<{ rule: CSSStyleRule; media: string | null }> = [];
+  for (const sheet of Array.from(document.styleSheets)) {
+    let rules: CSSRule[];
+    try { rules = Array.from(sheet.cssRules); } catch { continue; }
+    for (const rule of rules) {
+      if (rule instanceof CSSStyleRule && rule.selectorText.includes('side-nav')) out.push({ rule, media: null });
+      if (rule instanceof CSSMediaRule) {
+        for (const inner of Array.from(rule.cssRules)) {
+          if (inner instanceof CSSStyleRule && inner.selectorText.includes('side-nav')) out.push({ rule: inner, media: rule.media.mediaText });
+        }
+      }
+    }
+  }
+  return out;
+};
+
+/**
+ * Karma 不能真的把滑鼠移上去、也不能換成觸控裝置。把元件的規則照原順序複製一份接在後面：
+ * `:hover` 換成 `.sn-hover` class；`media` 給的那組 @media 規則拆掉外殼直接生效。
+ * 這樣量到的是規則疊起來之後真正的顏色與高度，疊放順序錯了也抓得到。
+ */
+const applySimulated = (opts: { hover?: boolean; media?: string }) => {
+  const css = sideNavRules()
+    .filter(r => r.media === null || (opts.media !== undefined && r.media === opts.media))
+    .map(r => opts.hover ? r.rule.cssText.replace(/:hover/g, '.sn-hover') : r.rule.cssText);
+  const style = document.createElement('style');
+  style.textContent = css.join('\n');
+  document.head.appendChild(style);
+  onTestDone(() => style.remove());
+};
+
 describe('SideNavComponent', () => {
   let fixture: ComponentFixture<SideNavComponent>;
   const host = () => fixture.nativeElement as HTMLElement;
@@ -104,15 +157,38 @@ describe('SideNavComponent', () => {
     expect(plain.defaultPrevented).toBeTrue();
     expect(got.map(i => i.id)).toEqual(['reports']);
 
+    const seen = recordPreventedAfterComponent();
     for (const mod of ['ctrlKey', 'metaKey', 'shiftKey', 'altKey'] as const) {
-      const ev = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, [mod]: true });
-      // 讓瀏覽器不要真的開新分頁：等元件處理完再自己擋
-      link('settings').addEventListener('click', e => e.preventDefault(), { once: true });
-      const preventedBefore = ev.defaultPrevented;
-      link('settings').dispatchEvent(ev);
-      expect(preventedBefore).toBeFalse();
+      link('settings').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, [mod]: true }));
     }
+    expect(seen).toEqual([false, false, false, false]);
     expect(got.map(i => i.id)).toEqual(['reports']);
+  });
+
+  it('5b. 使用端沒接 navigate：左鍵單擊不擋預設，照連結換頁', () => {
+    render({ mode: 'expanded' });
+    const seen = recordPreventedAfterComponent();
+    link('reports').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    expect(seen).toEqual([false]);
+  });
+
+  it('5c. 藏起來沿用上一個看得到的版面；一開始就藏起來用窄欄的版面', () => {
+    const layoutOf = () => ({
+      expanded: host().classList.contains('side-nav--expanded'),
+      rail: host().classList.contains('side-nav--rail'),
+      labels: host().querySelectorAll('.side-nav__label').length,
+    });
+
+    render({ mode: 'hidden' });
+    expect(layoutOf()).toEqual({ expanded: false, rail: true, labels: 0 });
+
+    render({ mode: 'expanded' });
+    render({ mode: 'hidden' });
+    expect(layoutOf()).toEqual({ expanded: true, rail: false, labels: 3 });
+
+    render({ mode: 'rail' });
+    render({ mode: 'hidden' });
+    expect(layoutOf()).toEqual({ expanded: false, rail: true, labels: 0 });
   });
 
   it('6. 窄欄提示開著時切到藏起來，提示從畫面移除', fakeAsync(() => {
@@ -142,11 +218,7 @@ describe('SideNavComponent', () => {
   }));
 
   it('7. 顏色：選中底色綠 85、白字白圖示；展開選中的鍵盤焦點框是白色、窄欄是藍色', () => {
-    // 換版面時底色有 150ms 轉場，量到的會是轉場起點；量最終顏色前先關掉轉場
-    const noTransition = document.createElement('style');
-    noTransition.textContent = '.side-nav, .side-nav * { transition: none !important; }';
-    document.head.appendChild(noTransition);
-    onTestDone(() => noTransition.remove());
+    disableTransitions();
     render({ mode: 'expanded', currentId: 'home' });
     const cur = link('home');
     const cs = getComputedStyle(cur);
@@ -222,20 +294,51 @@ describe('SideNavComponent', () => {
 
     beforeEach(() => render({ mode: 'expanded', currentId: 'home' }));
 
-    it('滑過：展開的項目疊 5% 深色；選中的項目加深成綠 90', () => {
-      const plain = find(null, ['side-nav--expanded', 'side-nav__item', ':hover'], ['--current']);
-      expect(plain.backgroundColor || plain.background).toContain('rgba(28, 28, 46, 0.05)');
-      const current = find(null, ['side-nav--expanded', 'side-nav__item--current', ':hover']);
-      expect(current.getPropertyValue('background')).toMatch(/green\\?\/90/);
+    it('滑過（展開）：一般項目疊 5% 深色、名稱與圖示加深一階；選中的項目換綠 90、仍是白字白圖示', () => {
+      disableTransitions();
+      applySimulated({ hover: true });
+      const plain = link('reports');
+      const cur = link('home');
+      plain.classList.add('sn-hover');
+      cur.classList.add('sn-hover');
+
+      expect(getComputedStyle(plain).backgroundColor).toBe('rgba(28, 28, 46, 0.05)');
+      expect(getComputedStyle(plain).color).toBe('rgb(83, 83, 83)');
+      expect(getComputedStyle(plain.querySelector('app-icon')!).color).toBe('rgb(104, 104, 104)');
+      // 一般項目的滑過規則也會套到選中的項目上，選中的滑過規則要蓋得過它
+      expect(getComputedStyle(cur).backgroundColor).toBe('rgb(66, 106, 28)');
+      expect(getComputedStyle(cur).color).toBe('rgb(255, 255, 255)');
+      expect(getComputedStyle(cur.querySelector('app-icon')!).color).toBe('rgb(255, 255, 255)');
     });
 
-    it('滑過：窄欄未選中的項目換藍底白圖示；選中的項目不受影響', () => {
-      const rail = find(null, ['side-nav--rail', 'side-nav__item', ':hover']);
-      expect(rail.getPropertyValue('background')).toMatch(/button\\?\/action/);
-      expect(rail.getPropertyValue('color')).toMatch(/icon\\?\/white/);
-      // 選中的項目被排除在這條滑過規則之外，也沒有別條窄欄選中的滑過規則
-      expect(rulesIn(null).find(r => r.selectorText.includes('side-nav--rail') && r.selectorText.includes(':hover')
-        && !r.selectorText.includes(':not(.side-nav__item--current'))).toBeUndefined();
+    it('滑過（窄欄）：未選中的項目換藍底白圖示；選中的項目不變', () => {
+      disableTransitions();
+      render({ mode: 'rail', currentId: 'home' });
+      applySimulated({ hover: true });
+      const plain = link('reports');
+      const cur = link('home');
+      plain.classList.add('sn-hover');
+      cur.classList.add('sn-hover');
+
+      expect(getComputedStyle(plain).backgroundColor).toBe('rgb(58, 156, 205)');
+      expect(getComputedStyle(plain).color).toBe('rgb(255, 255, 255)');
+      expect(getComputedStyle(cur).backgroundColor).toBe('rgb(83, 130, 39)');
+      expect(getComputedStyle(cur).color).toBe('rgb(255, 255, 255)');
+    });
+
+    it('觸控：滑鼠操作時展開的項目 36px 高；觸控裝置 44px；窄欄兩種都是 44px', () => {
+      disableTransitions();
+      // Karma 的瀏覽器是滑鼠操作，觸控的 @media 規則不生效
+      expect(matchMedia('(pointer: coarse)').matches).toBeFalse();
+      expect(link('reports').getBoundingClientRect().height).toBe(36);
+      expect(sideNavRules().some(r => r.media === '(pointer: coarse)')).toBeTrue();
+
+      applySimulated({ media: '(pointer: coarse)' });
+      expect(link('reports').getBoundingClientRect().height).toBe(44);
+      expect(link('home').getBoundingClientRect().height).toBe(44);
+
+      render({ mode: 'rail' });
+      expect(link('reports').getBoundingClientRect().height).toBe(44);
     });
 
     it('換寬度：寬度用 450ms、ease-enter 轉場', () => {
