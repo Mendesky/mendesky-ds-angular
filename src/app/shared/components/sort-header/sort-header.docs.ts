@@ -27,7 +27,7 @@ export const sortHeaderDoc: ComponentApi = {
       name: 'align',
       type: "'start' | 'center' | 'end'",
       default: "'start'",
-      desc: '文字靠左（預設）、置中或靠右（數字欄）。靠左、靠右時按鈕往外拉 6px，跟下方內容的邊緣對齊；置中不拉',
+      desc: '文字靠左（預設）、置中或靠右（數字欄）。靠左、靠右時按鈕往外拉 6px，跟下方內容的邊緣對齊；置中不拉，欄名固定在這一格的正中間（排序圖示出現在欄名右邊，不會把欄名往左推）',
     },
     {
       name: 'leftIcon',

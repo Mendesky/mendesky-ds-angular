@@ -364,6 +364,53 @@ describe('SortHeaderComponent', () => {
     expect(getComputedStyle(button()).marginRight).toBe('0px');
   });
 
+  describe('align="center"：欄名本身在這一格的正中間', () => {
+    const offset = () => {
+      const label = host.querySelector('.ds-sort-header__label') as HTMLElement;
+      const l = label.getBoundingClientRect();
+      const h = host.getBoundingClientRect();
+      return l.left + l.width / 2 - (h.left + h.width / 2);
+    };
+    beforeEach(() => {
+      host.style.width = '200px';
+      fixture.componentRef.setInput('align', 'center');
+    });
+    afterEach(() => (host.style.width = ''));
+
+    it('沒在排序（排序圖示看不到）：欄名的中心對齊這一格的中心', () => {
+      fixture.detectChanges();
+      expect(Math.abs(offset())).toBeLessThan(0.6);
+    });
+
+    it('正在排序（排序圖示出現）：欄名不動，還是在正中間', () => {
+      fixture.detectChanges();
+      const before = (host.querySelector('.ds-sort-header__label') as HTMLElement).getBoundingClientRect().left;
+      fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+      fixture.detectChanges();
+      // 作用中變半粗，欄名會寬一點點；看的是中心，不是左緣
+      expect(Math.abs(offset())).toBeLessThan(0.6);
+      const after = (host.querySelector('.ds-sort-header__label') as HTMLElement).getBoundingClientRect().left;
+      expect(Math.abs(after - before)).toBeLessThan(2);
+    });
+
+    it('排序圖示在欄名右邊', () => {
+      fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+      fixture.detectChanges();
+      const label = (host.querySelector('.ds-sort-header__label') as HTMLElement).getBoundingClientRect();
+      const icon = (host.querySelector('.ds-sort-header__icon') as HTMLElement).getBoundingClientRect();
+      expect(icon.left).toBeGreaterThanOrEqual(label.right);
+    });
+
+    it('靠左、靠右不補這塊空位', () => {
+      fixture.componentRef.setInput('align', 'start');
+      fixture.detectChanges();
+      expect(getComputedStyle(button()).paddingLeft).toBe('6px');
+      fixture.componentRef.setInput('align', 'end');
+      fixture.detectChanges();
+      expect(getComputedStyle(button()).paddingLeft).toBe('6px');
+    });
+  });
+
   it('靠左時按鈕往左拉 6px、靠右時往右拉 6px（文字跟下方內容的邊緣對齊）', () => {
     fixture.detectChanges();
     expect(getComputedStyle(button()).marginLeft).toBe('-6px');
