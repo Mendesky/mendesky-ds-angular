@@ -7,7 +7,6 @@ import {
   HostBinding,
   Input,
   OnChanges,
-  OnDestroy,
   OnInit,
   Output,
   SimpleChanges,
@@ -36,8 +35,9 @@ import { SortState } from './sort-header.model';
  *   單靠 columnheader＋aria-sort 念不出來。
  * - 外層是表格列（任何一層祖先帶 role="row" 屬性；原生 <tr> 不算）時，host 才帶 role="columnheader" 與 aria-sort，
  *   這時按鈕名稱不再重複寫排序狀態。只在元件建立時判斷一次。
- * - 點了這一欄、排序狀態傳回來之後，role="status" 區域念「已依姓名升冪排序」。區域一直都在、平常是空的：
- *   焦點還在同一顆按鈕上，名稱變了報讀軟體多半不會重念。
+ * - 點了這一欄、排序狀態在一秒內傳回來，role="status" 區域念「已依姓名升冪排序」。區域一直都在、平常是空的：
+ *   焦點還在同一顆按鈕上，名稱變了報讀軟體多半不會重念。使用者離開這一欄（焦點移走或滑鼠移開）就清空。
+ * - 表格列裡 host 另外帶 aria-label＝欄名，欄標頭的名稱才不會把上面那一句也算進去。
  */
 @Component({
   selector: 'app-sort-header',
@@ -47,7 +47,7 @@ import { SortState } from './sort-header.model';
   styleUrls: ['./sort-header.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SortHeaderComponent implements OnInit, OnChanges, OnDestroy {
+export class SortHeaderComponent implements OnInit, OnChanges {
   /** 表頭文字 */
   @Input() label = '';
 
@@ -72,9 +72,14 @@ export class SortHeaderComponent implements OnInit, OnChanges, OnDestroy {
   /** role="status" 區域的文字；平常是空的 */
   statusText = '';
 
-  /** 這一欄剛被點過，等排序狀態傳回來就念一句 */
-  private announceNext = false;
-  private announceTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * 這一欄最後一次被點的時間（Date.now()）；null＝沒有等著要念的點擊。
+   * 用時間戳比對，不用計時器：使用端在 fakeAsync 裡點表頭的測試不會因此多出一顆沒清的計時器。
+   */
+  private clickedAt: number | null = null;
+
+  /** 點了之後多久內排序狀態傳回來才念（毫秒）。超過就當成這一下沒有改到排序 */
+  static readonly ANNOUNCE_WINDOW_MS = 1000;
 
   constructor(
     private readonly host: ElementRef<HTMLElement>,
@@ -83,6 +88,14 @@ export class SortHeaderComponent implements OnInit, OnChanges, OnDestroy {
 
   @HostBinding('attr.role') get role(): 'columnheader' | null {
     return this.inRow ? 'columnheader' : null;
+  }
+
+  /**
+   * 表格列裡 host 是 columnheader，名稱預設由內容算，會把 role="status" 區域的那一句也算進去
+   * （「姓名已依姓名升冪排序」）。直接給名稱，欄標頭就只念欄名。
+   */
+  @HostBinding('attr.aria-label') get hostLabel(): string | null {
+    return this.inRow ? this.label : null;
   }
 
   @HostBinding('attr.aria-sort') get ariaSort(): 'ascending' | 'descending' | 'none' | null {
@@ -130,7 +143,7 @@ export class SortHeaderComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.active) {
       // 換成別欄排序，或排序被清掉：這一欄不該留著上一句
       this.statusText = '';
-      this.clearAnnounce();
+      this.clickedAt = null;
       return;
     }
     if (!changes['sort']) {
@@ -138,36 +151,30 @@ export class SortHeaderComponent implements OnInit, OnChanges, OnDestroy {
       this.statusText = '';
       return;
     }
-    if (this.announceNext) {
+    const clickedAt = this.clickedAt;
+    this.clickedAt = null;
+    if (clickedAt !== null && Date.now() - clickedAt <= SortHeaderComponent.ANNOUNCE_WINDOW_MS) {
       this.statusText = `已依${this.label}${this.dirText}`;
-      this.clearAnnounce();
     } else {
-      // 不是點這一欄造成的改變（例如從別的入口反轉方向）：上一句已經不對了，清掉
+      // 不是點這一欄造成的改變（從別的入口反轉方向），或點了很久之後才變：上一句已經不對了，清掉
       this.statusText = '';
     }
   }
 
-  ngOnDestroy(): void {
-    this.clearAnnounce();
-  }
-
   onClick(): void {
-    this.announceNext = true;
-    if (this.announceTimer) clearTimeout(this.announceTimer);
-    // 呼叫端沒有因為這一下改排序狀態（例如擋下來了）：不要留到之後別的原因改排序時才念
-    this.announceTimer = setTimeout(() => {
-      this.announceNext = false;
-      this.announceTimer = null;
-    }, 1000);
+    this.clickedAt = Date.now();
     this.sortChange.emit(this.key);
     this.cdr.markForCheck();
   }
 
-  private clearAnnounce(): void {
-    this.announceNext = false;
-    if (this.announceTimer) {
-      clearTimeout(this.announceTimer);
-      this.announceTimer = null;
-    }
+  /**
+   * 使用者離開這一欄（焦點移走，或滑鼠移開）就把那一句清掉。
+   * 那一句在填進去的當下已經念過；留著的話，之後用瀏覽模式逐項讀會再讀到一次過時的確認。
+   * 滑鼠移開也算：有的瀏覽器用滑鼠點按鈕不會給焦點，只等 blur 會一直留著。
+   */
+  onLeave(): void {
+    if (!this.statusText) return;
+    this.statusText = '';
+    this.cdr.markForCheck();
   }
 }

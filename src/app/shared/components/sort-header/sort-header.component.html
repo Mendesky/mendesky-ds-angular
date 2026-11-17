@@ -4,6 +4,8 @@
   [class.ds-sort-header--active]="active"
   [attr.data-testid]="key ? 'sort-' + key : null"
   (click)="onClick()"
+  (blur)="onLeave()"
+  (pointerleave)="onLeave()"
 >
   @if (leftIcon) {
     <app-icon class="ds-sort-header__left-icon" [name]="leftIcon" size="12" />

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { TestBed, ComponentFixture, fakeAsync } from '@angular/core/testing';
 import { SortHeaderComponent } from './sort-header.component';
 import { nextSort, SortState } from './sort-header.model';
 
@@ -40,6 +40,7 @@ describe('SortHeaderComponent', () => {
     fixture.detectChanges();
     expect(host.hasAttribute('role')).toBeFalse();
     expect(host.hasAttribute('aria-sort')).toBeFalse();
+    expect(host.hasAttribute('aria-label')).toBeFalse();
   });
 
   it('沒有排序：按鈕只念欄名，圖示是通用排序符號，沒有作用中樣式', () => {
@@ -62,6 +63,20 @@ describe('SortHeaderComponent', () => {
     expect(name()).toBe('姓名，升冪排序');
     expect(component.icon).toBe('Sort-Asc');
     expect(button().classList).toContain('ds-sort-header--active');
+  });
+
+  it('畫面上真的換了圖示：沒在排序、升冪、降冪三種的圖形都不一樣', () => {
+    const drawn = () => (host.querySelector('.ds-sort-header__icon svg') as SVGElement).innerHTML;
+    fixture.detectChanges();
+    const idle = drawn();
+    fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+    fixture.detectChanges();
+    const asc = drawn();
+    fixture.componentRef.setInput('sort', { key: 'name', dir: 'desc' });
+    fixture.detectChanges();
+    const desc = drawn();
+    expect(idle.length).toBeGreaterThan(0);
+    expect(new Set([idle, asc, desc]).size).toBe(3);
   });
 
   it('降冪：按鈕念「姓名，降冪排序」、圖示 Sort-Desc', () => {
@@ -167,20 +182,119 @@ describe('SortHeaderComponent', () => {
       expect(status().textContent).toBe('');
     });
 
-    it('點的是別欄：這一欄不念', () => {
+    it('別欄被點而排到別欄：這一欄不念', () => {
       fixture.detectChanges();
       fixture.componentRef.setInput('sort', { key: 'email', dir: 'asc' });
       fixture.detectChanges();
       expect(status().textContent).toBe('');
     });
 
-    it('點了但呼叫端沒改排序，之後才因為別的原因排到這一欄：不念', async () => {
+    describe('一秒的期限（用假時鐘，不真的等）', () => {
+      let now = 1_000_000;
+      beforeEach(() => {
+        now = 1_000_000;
+        spyOn(Date, 'now').and.callFake(() => now);
+      });
+
+      it('點了之後 999 毫秒排序狀態才傳回來：念', () => {
+        fixture.detectChanges();
+        button().click();
+        now += 999;
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+        fixture.detectChanges();
+        expect(status().textContent).toBe('已依姓名升冪排序');
+      });
+
+      it('剛好 1000 毫秒：念', () => {
+        fixture.detectChanges();
+        button().click();
+        now += 1000;
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+        fixture.detectChanges();
+        expect(status().textContent).toBe('已依姓名升冪排序');
+      });
+
+      it('1001 毫秒才傳回來：不念', () => {
+        fixture.detectChanges();
+        button().click();
+        now += 1001;
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+        fixture.detectChanges();
+        expect(status().textContent).toBe('');
+      });
+
+      it('過期的那一下不會留到下一次：之後從別的入口排到這一欄也不念', () => {
+        fixture.detectChanges();
+        button().click();
+        now += 5000;
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+        fixture.detectChanges();
+        now += 10;
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'desc' });
+        fixture.detectChanges();
+        expect(status().textContent).toBe('');
+      });
+
+      it('點了這一欄但結果排到別欄：這一下作廢，之後這一欄被別的入口排到也不念', () => {
+        fixture.detectChanges();
+        button().click();
+        fixture.componentRef.setInput('sort', { key: 'email', dir: 'asc' });
+        fixture.detectChanges();
+        now += 10;
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+        fixture.detectChanges();
+        expect(status().textContent).toBe('');
+      });
+
+      it('連點兩下：以第二下的時間算', () => {
+        fixture.detectChanges();
+        button().click();
+        now += 900;
+        button().click();
+        now += 900;
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+        fixture.detectChanges();
+        expect(status().textContent).toBe('已依姓名升冪排序');
+      });
+    });
+
+    it('點擊不留計時器：在 fakeAsync 裡點了不用 flush 也不會報「還有計時器」', fakeAsync(() => {
       fixture.detectChanges();
       button().click();
-      await new Promise(r => setTimeout(r, 1100));
-      fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
       fixture.detectChanges();
+      // fakeAsync 區塊結束時佇列裡若還有計時器，Angular 會丟錯；這條能跑完就代表沒有
       expect(status().textContent).toBe('');
+    }));
+
+    describe('離開這一欄就清空', () => {
+      const announce = () => {
+        fixture.detectChanges();
+        button().click();
+        fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+        fixture.detectChanges();
+        expect(status().textContent).toBe('已依姓名升冪排序');
+      };
+
+      it('焦點移走（blur）：清空', () => {
+        announce();
+        button().dispatchEvent(new FocusEvent('blur'));
+        fixture.detectChanges();
+        expect(status().textContent).toBe('');
+      });
+
+      it('滑鼠移開（pointerleave）：清空', () => {
+        announce();
+        button().dispatchEvent(new PointerEvent('pointerleave'));
+        fixture.detectChanges();
+        expect(status().textContent).toBe('');
+      });
+
+      it('清空後按鈕名稱照舊帶著排序方向', () => {
+        announce();
+        button().dispatchEvent(new FocusEvent('blur'));
+        fixture.detectChanges();
+        expect(name()).toBe('姓名，升冪排序');
+      });
     });
   });
 
@@ -343,6 +457,50 @@ describe('SortHeaderComponent 放在表格列（role="row"）裡', () => {
     fixture.componentInstance.sort = { key: 'name', dir: 'asc' };
     fixture.detectChanges();
     expect(el().querySelector('[role="status"]')!.textContent).toBe('已依姓名升冪排序');
+  });
+
+  it('欄標頭的名稱固定是欄名：念過確認句之後也不會把那一句算進去', () => {
+    fixture.detectChanges();
+    expect(el().getAttribute('aria-label')).toBe('姓名');
+    button().click();
+    fixture.componentInstance.sort = { key: 'name', dir: 'asc' };
+    fixture.detectChanges();
+    // 內容裡有那一句（給報讀區域念），但欄標頭的名稱由 aria-label 決定
+    expect(el().textContent).toContain('已依姓名升冪排序');
+    expect(el().getAttribute('aria-label')).toBe('姓名');
+  });
+});
+
+/** role="row" 不在上一層、而在更外層時也算；原生 <tr> 沒有 role 屬性，不算 */
+@Component({
+  standalone: true,
+  imports: [SortHeaderComponent],
+  template: `
+    <div role="row"><div class="cell"><div class="inner"><app-sort-header id="deep" label="姓名" key="name" /></div></div></div>
+    <table><tbody><tr><td><app-sort-header id="native" label="姓名" key="name" /></td></tr></tbody></table>
+  `,
+})
+class RowDetectionHostComponent {}
+
+describe('SortHeaderComponent 怎麼判斷外層是表格列', () => {
+  let fixture: ComponentFixture<RowDetectionHostComponent>;
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [RowDetectionHostComponent] }).compileComponents();
+    fixture = TestBed.createComponent(RowDetectionHostComponent);
+    fixture.detectChanges();
+  });
+
+  it('role="row" 隔了幾層：算，帶 columnheader', () => {
+    const el = fixture.nativeElement.querySelector('#deep') as HTMLElement;
+    expect(el.getAttribute('role')).toBe('columnheader');
+    expect(el.getAttribute('aria-sort')).toBe('none');
+  });
+
+  it('原生 <tr>（沒有 role 屬性）：不算，不帶 role、aria-sort、aria-label', () => {
+    const el = fixture.nativeElement.querySelector('#native') as HTMLElement;
+    expect(el.hasAttribute('role')).toBeFalse();
+    expect(el.hasAttribute('aria-sort')).toBeFalse();
+    expect(el.hasAttribute('aria-label')).toBeFalse();
   });
 });
 

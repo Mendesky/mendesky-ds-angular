@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { SortHeaderComponent, nextSort, type SortState } from '../../../../index';
 
 // 欄名與 key 為示意的列表表頭：
-// name「編號及名稱」、status「狀態」、recurring「持續性費用」、onetime「一次性費用」、
+// name「編號及名稱」、status「狀態」、count「數量」、amount「金額」、
 // person「承辦人員」、time「最後修改時間」
 const meta: Meta<SortHeaderComponent> = {
   title: '展示元件/Sort Header',
@@ -86,9 +86,9 @@ export const AlignEnd: Story = {
     `,
   }),
   args: {
-    label: '持續性費用',
-    key: 'recurring',
-    sort: { key: 'recurring', dir: 'desc' },
+    label: '數量',
+    key: 'count',
+    sort: { key: 'count', dir: 'desc' },
     align: 'end',
   },
 };
@@ -186,8 +186,8 @@ export const HeaderRow: Story = {
         <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;font-size:13px;">
           <app-sort-header label="編號及名稱" key="name" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="狀態" key="status" align="center" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="持續性費用" key="recurring" align="end" leftIcon="Money" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
-          <app-sort-header label="一次性費用" key="onetime" align="end" leftIcon="Money" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="數量" key="count" align="end" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
+          <app-sort-header label="金額" key="amount" align="end" leftIcon="Money" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="承辦人員" key="person" align="center" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
           <app-sort-header label="最後修改時間" key="time" align="center" [sort]="sort" (sortChange)="onSort($event)"></app-sort-header>
         </div>
@@ -201,15 +201,15 @@ export const HeaderRow: Story = {
       labels: {
         name: '編號及名稱',
         status: '狀態',
-        recurring: '持續性費用',
-        onetime: '一次性費用',
+        count: '數量',
+        amount: '金額',
         person: '承辦人員',
         time: '最後修改時間',
       } as Record<string, string>,
       onSort(key: string) {
         const self = this as { sort: SortState | null };
-        // 費用與時間欄第一次點就「多到少 / 新到舊」
-        const defaultDir = ['recurring', 'onetime', 'time'].includes(key) ? 'desc' : 'asc';
+        // 數量、金額與時間欄第一次點就「多到少 / 新到舊」
+        const defaultDir = ['count', 'amount', 'time'].includes(key) ? 'desc' : 'asc';
         self.sort = nextSort(self.sort, key, defaultDir);
       },
     },
