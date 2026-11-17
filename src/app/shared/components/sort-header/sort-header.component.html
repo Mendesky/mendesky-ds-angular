@@ -4,7 +4,16 @@
   [class.ds-sort-header--active]="active"
   [attr.data-testid]="key ? 'sort-' + key : null"
   (click)="onClick()"
+  (blur)="onLeave()"
+  (pointerleave)="onLeave()"
 >
+  @if (leftIcon) {
+    <app-icon class="ds-sort-header__left-icon" [name]="leftIcon" size="12" />
+  }
   <span class="ds-sort-header__label">{{ label }}</span>
+  @if (stateText) {
+    <span class="ds-sort-header__sr">{{ stateText }}</span>
+  }
   <app-icon class="ds-sort-header__icon" [name]="icon" size="12" />
 </button>
+<span class="ds-sort-header__sr" role="status">{{ statusText }}</span>

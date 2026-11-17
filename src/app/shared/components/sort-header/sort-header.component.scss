@@ -3,6 +3,8 @@
  * 往外凸 6px 的按鈕會被裁掉，滑過時一側的底色就不見了。表頭本身不需要裁切，這裡強制不裁。
  */
 :host {
+  /* 給報讀專用文字（position: absolute）一個定位基準，不讓它跑到捲動容器外面撐出捲軸 */
+  position: relative;
   display: flex;
   align-items: center;
   min-width: 0;
@@ -11,6 +13,10 @@
 
 :host(.ds-sort-header--end) {
   justify-content: flex-end;
+}
+
+:host(.ds-sort-header--center) {
+  justify-content: center;
 }
 
 /* class 前綴用 .ds-sort-header，與 .ds-progress 同理：避免跟消費端既有的 .lt-hd--sortable 撞名 */
@@ -48,6 +54,20 @@
   margin: 0 -6px 0 0;
 }
 
+/*
+ * 置中的欄：欄名本身要在這一格的正中間。
+ * 排序圖示在欄名右邊佔 16px（12px 圖示加 4px 間距），沒在排序時看不到但仍佔位；
+ * 左邊補一樣寬的空位（6px 內距 + 16px），欄名才不會偏左，圖示出現或消失時欄名也不會動。
+ * 這兩塊 16px 不能算進欄寬，不然 120px 的欄放不下六個字的欄名（22 + 86 + 22 = 130px）會被截成刪節號：
+ * 左右各用 -16px 的 margin 拉回，佔的版面只剩「欄名加左右各 6px」，底色與焦點框左右各凸出這一格 16px。
+ * 跟靠左、靠右時往外凸 6px 是同一種做法。
+ */
+:host(.ds-sort-header--center) .ds-sort-header {
+  max-width: calc(100% + 32px);
+  margin: 0 -16px;
+  padding-left: 22px;
+}
+
 /* 正在排序的欄：動作色 + 半粗（hover 時仍維持動作色） */
 .ds-sort-header--active,
 .ds-sort-header--active:hover {
@@ -60,6 +80,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 欄名前面的圖示：一直顯示，跟著文字色 */
+.ds-sort-header__left-icon {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* 只給報讀軟體：畫面上看不到，也不佔位置 */
+.ds-sort-header__sr {
+  position: absolute;
+  /* 固定在元件的左上角：不跟著靠右、置中的排版跑到元件外面，貼著捲動容器邊緣時不會多出 1px 捲動 */
+  top: 0;
+  inset-inline-start: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* 圖示跟著文字色；沒在排序時先藏起來，滑過或鍵盤聚焦才出現 */
