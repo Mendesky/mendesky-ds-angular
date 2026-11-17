@@ -34,7 +34,7 @@ import { SortState } from './sort-header.model';
  * 報讀：
  * - 排序狀態寫在按鈕的名稱裡（畫面上看不到的一段字），例如「姓名，升冪排序」。列表多半沒有表格結構，
  *   單靠 columnheader＋aria-sort 念不出來。
- * - 外層真的是表格列（祖先有 role="row"）時，host 才帶 role="columnheader" 與 aria-sort，
+ * - 外層是表格列（任何一層祖先帶 role="row" 屬性；原生 <tr> 不算）時，host 才帶 role="columnheader" 與 aria-sort，
  *   這時按鈕名稱不再重複寫排序狀態。只在元件建立時判斷一次。
  * - 點了這一欄、排序狀態傳回來之後，role="status" 區域念「已依姓名升冪排序」。區域一直都在、平常是空的：
  *   焦點還在同一顆按鈕上，名稱變了報讀軟體多半不會重念。
@@ -133,9 +133,13 @@ export class SortHeaderComponent implements OnInit, OnChanges, OnDestroy {
       this.clearAnnounce();
       return;
     }
-    if (this.announceNext && changes['sort']) {
+    if (!changes['sort']) return;
+    if (this.announceNext) {
       this.statusText = `已依${this.label}${this.dirText}`;
       this.clearAnnounce();
+    } else {
+      // 不是點這一欄造成的改變（例如從別的入口反轉方向）：上一句已經不對了，清掉
+      this.statusText = '';
     }
   }
 

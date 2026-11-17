@@ -134,6 +134,27 @@ describe('SortHeaderComponent', () => {
       expect(status().textContent).toBe('');
     });
 
+    it('念過之後，方向從別的入口被反轉（不是點這一欄）：清空，不留著相反的那一句', () => {
+      fixture.detectChanges();
+      button().click();
+      fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+      fixture.detectChanges();
+      expect(status().textContent).toBe('已依姓名升冪排序');
+      fixture.componentRef.setInput('sort', { key: 'name', dir: 'desc' });
+      fixture.detectChanges();
+      expect(status().textContent).toBe('');
+    });
+
+    it('排序被清掉（sort 變回 null）：清空', () => {
+      fixture.detectChanges();
+      button().click();
+      fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
+      fixture.detectChanges();
+      fixture.componentRef.setInput('sort', null);
+      fixture.detectChanges();
+      expect(status().textContent).toBe('');
+    });
+
     it('點的是別欄：這一欄不念', () => {
       fixture.detectChanges();
       fixture.componentRef.setInput('sort', { key: 'email', dir: 'asc' });
@@ -189,6 +210,23 @@ describe('SortHeaderComponent', () => {
     fixture.componentRef.setInput('sort', { key: 'name', dir: 'asc' });
     fixture.detectChanges();
     expect(getComputedStyle(icon()).opacity).toBe('1');
+  });
+
+  it('鍵盤聚焦時也出現排序圖示，並有 2px 外框', () => {
+    fixture.detectChanges();
+    const icon = host.querySelector('.ds-sort-header__icon') as HTMLElement;
+    icon.style.transition = 'none';
+    button().style.transition = 'none';
+    expect(getComputedStyle(icon).opacity).toBe('0');
+    button().focus();
+    // 還沒有任何滑鼠操作時，程式聚焦的按鈕算鍵盤聚焦；瀏覽器不這樣判時這條不驗（不讓它空過成綠燈）
+    if (!button().matches(':focus-visible')) {
+      pending('這個瀏覽器把程式聚焦當成滑鼠聚焦，:focus-visible 沒有生效');
+      return;
+    }
+    expect(getComputedStyle(icon).opacity).toBe('1');
+    expect(getComputedStyle(button()).outlineWidth).toBe('2px');
+    button().blur();
   });
 
   it('align="center" 時 host 置中，按鈕不往外拉', () => {
