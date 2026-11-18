@@ -1,0 +1,18 @@
+<app-icon-btn propClass="Drag" size="16-"
+              [ariaLabel]="menuLabel"
+              ariaHaspopup="menu"
+              [ariaExpanded]="open()"
+              [disabled]="isDisabled"
+              (btnClick)="toggle()">
+  <app-icon name="DragDrop" size="16"></app-icon>
+</app-icon-btn>
+@if (open()) {
+  <app-action-menu [ariaLabel]="menuLabel" [anchorEl]="host" (closeMenu)="open.set(false)">
+    @for (item of directions; track item.direction) {
+      <app-menu-item [label]="item.label"
+                     [disabled]="!canMove(item.direction)"
+                     [attr.data-direction]="item.direction"
+                     (itemClick)="pick(item.direction)"></app-menu-item>
+    }
+  </app-action-menu>
+}
