@@ -3,7 +3,7 @@ import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import type { Meta, StoryObj } from '@storybook/angular';
 import {
   CollapsibleComponent, IconBtnComponent, IconComponent, ReorderHandleComponent, ReorderStatusComponent,
-  captureReorder, moveInArray, reorderMessage,
+  captureReorder, moveInArray, reorderMessage, settleReorder,
 } from '../../../../index';
 
 // 範例資料用中性詞：項目一、項目二…；分組一、分組二…
@@ -13,18 +13,21 @@ interface Group { id: string; name: string; rows: Row[] }
 const rows = (prefix: string, n: number): Row[] =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i + 1}`, name: `項目${'一二三四五六七八九十'[i]}` }));
 
-/** 拖曳放下與選單移動共用：搬陣列、念結果、其他項目滑過去、被移動的發光 */
+/**
+ * 拖曳放下與選單移動共用：搬陣列、念結果。
+ * 選單移動時其他項目從舊位置滑過去（captureReorder）；拖曳放下時預覽已經滑回落點，只讓被移動的發光（settleReorder）。
+ */
 function reorder<T extends { name: string }>(
-  list: T[], e: { previousIndex: number; currentIndex: number },
+  list: T[], e: { previousIndex: number; currentIndex: number } | CdkDragDrop<unknown>,
   container: HTMLElement, status: ReorderStatusComponent, injector: Injector,
 ): T[] {
   if (e.previousIndex === e.currentIndex) return list;
   const items = Array.from(container.children).filter(el => el.classList.contains('cdk-drag')) as HTMLElement[];
   const moved = items[e.previousIndex];
-  const snap = captureReorder(container, ':scope > .cdk-drag');
+  const snap = 'direction' in e ? captureReorder(container, ':scope > .cdk-drag') : null;
   const next = moveInArray(list, e.previousIndex, e.currentIndex);
   status.announce(reorderMessage({ name: list[e.previousIndex].name, from: e.previousIndex, to: e.currentIndex, count: list.length }));
-  afterNextRender(() => snap.play(moved), { injector });
+  afterNextRender(() => (snap ? snap.play(moved) : settleReorder(moved)), { injector });
   return next;
 }
 
@@ -45,7 +48,7 @@ function reorder<T extends { name: string }>(
     <div class="wrap">
       <div #list class="list ds-sortable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="onMove($event)">
         @for (row of items; track row.id; let i = $index) {
-          <div class="cdk-drag-host" cdkDrag cdkDragPreviewClass="ds-sortable-preview"
+          <div class="cdk-drag-host" cdkDrag cdkDragPreviewClass="ds-sortable-preview" [cdkDragStartDelay]="{ touch: 250, mouse: 0 }"
                [class.row]="!headerColor" [class.header]="!!headerColor" [style.background]="headerColor || null">
             <app-reorder-handle [label]="row.name" [index]="i" [count]="items.length"
               [appearance]="headerColor ? 'inverse' : 'default'" (move)="onMove($event)"></app-reorder-handle>
@@ -90,14 +93,14 @@ class ReorderListDemoComponent {
     <div class="wrap">
       <div #groupList class="groups ds-sortable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="moveGroup($event)">
         @for (g of groups; track g.id; let gi = $index) {
-          <div class="group" cdkDrag cdkDragPreviewClass="ds-sortable-preview">
+          <div class="group" cdkDrag cdkDragPreviewClass="ds-sortable-preview" [cdkDragStartDelay]="{ touch: 250, mouse: 0 }">
             <div class="group-header">
               <app-reorder-handle appearance="inverse" [label]="g.name" [index]="gi" [count]="groups.length" (move)="moveGroup($event)"></app-reorder-handle>
               {{ g.name }}
             </div>
             <div #rowList class="rows ds-sortable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="moveRow(g, rowList, $event)">
               @for (r of g.rows; track r.id; let i = $index) {
-                <div class="row" cdkDrag cdkDragPreviewClass="ds-sortable-preview">
+                <div class="row" cdkDrag cdkDragPreviewClass="ds-sortable-preview" [cdkDragStartDelay]="{ touch: 250, mouse: 0 }">
                   <app-reorder-handle [label]="r.name" [index]="i" [count]="g.rows.length" (move)="moveRow(g, rowList, $event)"></app-reorder-handle>
                   {{ r.name }}
                 </div>
@@ -144,7 +147,7 @@ class ReorderNestedDemoComponent {
     <div class="wrap">
       <div #list class="list ds-sortable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="onMove($event)">
         @for (s of sections; track s.id; let i = $index) {
-          <div class="card" cdkDrag cdkDragPreviewClass="ds-sortable-preview">
+          <div class="card" cdkDrag cdkDragPreviewClass="ds-sortable-preview" [cdkDragStartDelay]="{ touch: 250, mouse: 0 }">
             <app-collapsible appearance="accent" [title]="'第' + nums[i] + '段'" [expanded]="i === 0">
               <app-reorder-handle collapsibleLeading [label]="'第' + nums[i] + '段'" [index]="i" [count]="sections.length" (move)="onMove($event)"></app-reorder-handle>
               <span collapsibleSummary>{{ s.text }}</span>
@@ -176,12 +179,12 @@ class ReorderCollapsibleDemoComponent {
     const name = `第${this.nums[e.previousIndex]}段`;
     const items = Array.from(this.list.nativeElement.children).filter(el => el.classList.contains('cdk-drag')) as HTMLElement[];
     const moved = items[e.previousIndex];
-    const snap = captureReorder(this.list.nativeElement, ':scope > .cdk-drag');
+    const snap = 'direction' in e ? captureReorder(this.list.nativeElement, ':scope > .cdk-drag') : null;
     this.sections = moveInArray(this.sections, e.previousIndex, e.currentIndex);
     this.status.announce(reorderMessage({
       name, from: e.previousIndex, to: e.currentIndex, count: this.sections.length, newName: `第${this.nums[e.currentIndex]}段`,
     }));
-    afterNextRender(() => snap.play(moved), { injector: this.injector });
+    afterNextRender(() => (snap ? snap.play(moved) : settleReorder(moved)), { injector: this.injector });
   }
 }
 
@@ -197,7 +200,7 @@ const meta: Meta<ReorderHandleComponent> = {
     appearance: {
       control: 'radio',
       options: ['default', 'inverse'],
-      description: '預設：白底、淺色底；反白：深色標頭',
+      description: '預設：白底；反白：深色標頭',
       table: { defaultValue: { summary: "'default'" } },
     },
     disabled: { control: 'boolean', description: '停用', table: { defaultValue: { summary: 'false' } } },

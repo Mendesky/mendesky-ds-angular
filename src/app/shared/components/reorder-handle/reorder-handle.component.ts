@@ -62,7 +62,7 @@ export class ReorderHandleComponent implements OnChanges {
   @Input({ required: true }) index = 0;
   /** 清單共幾個項目 */
   @Input({ required: true }) count = 0;
-  /** 預設（白底、淺色底）或反白（深色標頭） */
+  /** 預設（白底）或反白（深色標頭） */
   @Input() appearance: ReorderHandleAppearance = 'default';
   /** 停用：不能拖、不開選單 */
   @Input({ transform: booleanAttribute }) disabled = false;

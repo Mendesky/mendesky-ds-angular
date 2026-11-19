@@ -17,8 +17,12 @@ import { CollapsibleComponent } from '../collapsible/collapsible.component';
  * - 放在 app-collapsible 綠色外觀的前置區：不設反白也是白色圖示、白色焦點框（本體規格的 dos 這樣寫）。
  * - 本身就是 CDK 握把：從握把按住移動會開始拖曳，從項目的其他地方按住不會。
  * - 反白外觀圖示是白色、焦點框改白；按鈕 24×24。
+ * - 選單打開時，打開它的那顆握把加一層按下的底色（預設灰底、圖示變深；反白與綠色外觀 16% 白色淡底），關掉後恢復。
  * 全部從真的 DOM 查。
  */
+/** 等握把的底色、顏色轉場（150ms）跑完再量 */
+const settle = () => new Promise<void>(r => setTimeout(r, 200));
+
 interface Item { id: string; name: string }
 
 @Component({
@@ -260,6 +264,30 @@ describe('ReorderHandleComponent', () => {
       expect(getComputedStyle(handles()[0]).getPropertyValue('--focus-ring-color').trim()).toMatch(/#ffffff|#fff|rgb\(255, 255, 255\)/i);
     });
 
+    it('選單打開：預設外觀加一層灰底、圖示變深；選單關掉後恢復', async () => {
+      button(1).click();
+      fixture.detectChanges();
+      await settle();
+      expect(getComputedStyle(button(1)).backgroundColor).toBe('rgb(231, 231, 231)');
+      expect(getComputedStyle(button(1)).color).toBe('rgb(104, 104, 104)');
+      // 只有打開選單的那一顆
+      expect(getComputedStyle(button(0)).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      button(1).click();
+      fixture.detectChanges();
+      await settle();
+      expect(getComputedStyle(button(1)).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    });
+
+    it('選單打開：反白外觀加 16% 白色淡底', async () => {
+      host.appearance = 'inverse';
+      fixture.detectChanges();
+      button(1).click();
+      fixture.detectChanges();
+      await settle();
+      expect(getComputedStyle(button(1)).backgroundColor).toMatch(/0\.16\)$/);
+      expect(getComputedStyle(button(1)).color).toBe('rgb(255, 255, 255)');
+    });
+
     it('停用：跟 icon-btn 停用一樣淡成一半', () => {
       host.items = [{ id: 'a', name: '項目一' }];
       fixture.detectChanges();
@@ -291,6 +319,19 @@ describe('ReorderHandleComponent 放在 app-collapsible 綠色外觀', () => {
     expect([r.width, r.height]).toEqual([24, 24]);
     handle.focusButton();
     expect(document.activeElement).toBe(b);
+    expect(getComputedStyle(b).outlineStyle).toBe('solid');
     expect(getComputedStyle(b).outlineColor).toBe('rgb(255, 255, 255)');
+  });
+
+  it('選單打開：16% 白色淡底', async () => {
+    const fixture = TestBed.createComponent(AccentHostComponent);
+    fixture.detectChanges();
+    const b = fixture.nativeElement.querySelector('app-reorder-handle button') as HTMLButtonElement;
+    b.click();
+    fixture.detectChanges();
+    await settle();
+    expect(getComputedStyle(b).backgroundColor).toMatch(/0\.16\)$/);
+    document.querySelectorAll('app-action-menu').forEach(m => m.remove());
+    fixture.destroy();
   });
 });

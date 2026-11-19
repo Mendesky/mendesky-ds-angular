@@ -15,6 +15,13 @@
 
 // 停用跟 #icon-btn 一樣：淡成一半、游標 not-allowed
 
+// 選單打開：打開它的那顆握把加一層按下的底色，看得出選單是從哪一顆打開的。焦點已經在選單裡，不畫焦點框。
+// 綠色外觀（app-collapsible accent）的前置區由 collapsible 自己給 16% 白色淡底
+:host ::ng-deep .icon-btn--drag[aria-expanded='true'] {
+  background: var(--color\/grey\/20, #e7e7e7);
+  color: var(--text\/body, #686868);
+}
+
 // 反白：深色標頭上用純白。85% 白在標籤金色底上只有 2.67:1，純白 3.09:1
 :host(.ds-reorder-handle--inverse) {
   --focus-ring-color: var(--border\/white, #ffffff);
@@ -24,7 +31,8 @@
   color: var(--icon\/white, #ffffff);
 
   &:hover:not(:disabled),
-  &:active:not(:disabled) {
+  &:active:not(:disabled),
+  &[aria-expanded='true'] {
     color: var(--icon\/white, #ffffff);
     background: color-mix(in srgb, var(--icon\/white, #ffffff) 16%, transparent);
   }
@@ -43,5 +51,10 @@
 
   :host ::ng-deep .icon-btn--drag:disabled {
     color: GrayText;
+  }
+
+  // 強制色彩會蓋掉底色：選單打開改用外框標示
+  :host ::ng-deep .icon-btn--drag[aria-expanded='true'] {
+    outline: 1px solid ButtonText;
   }
 }

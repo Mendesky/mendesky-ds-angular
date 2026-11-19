@@ -240,14 +240,16 @@
     padding-right: 8px;
   }
 
-  // 前置區、尾端區的 #icon-btn：圖示跟標頭文字同色、平時透明底；滑過用白色淡底，不用預設的淺灰或藍色方塊
+  // 前置區、尾端區的 #icon-btn：圖示跟標頭文字同色、平時透明底；滑過用白色淡底，不用預設的淺灰或藍色方塊。
+  // 打開了選單的按鈕（aria-expanded="true"，例如 #reorder-handle、「⋯」）也用同一層淡底，看得出選單是從哪一顆打開的
   .collapsible__leading ::ng-deep .icon-btn,
   .collapsible__trailing ::ng-deep .icon-btn {
     background: transparent;
     color: var(--text\/body-lightest, #ffffff);
 
     &:hover:not(:disabled),
-    &:active:not(:disabled) {
+    &:active:not(:disabled),
+    &[aria-expanded='true'] {
       background: color-mix(in srgb, var(--text\/body-lightest, #ffffff) 16%, transparent);
       color: var(--text\/body-lightest, #ffffff);
     }
