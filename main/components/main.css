@@ -757,12 +757,75 @@ button {
     transform: scaleX(1);
   }
 }
+/* ── 可排序清單（#reorder-handle）────────────────────
+   清單容器加 ds-sortable；拖曳預覽（拖著跑的那張）加 ds-sortable-preview。
+   落點是被拿起那個項目的複製品（Angular CDK 預設），所以高度、間距、圓角都跟原項目相同；
+   這裡只換外觀：內容藏起來，疊一層 2px 藍色虛線框、白底，圓角跟原項目一樣。不靠程式量高度。 */
+.ds-sortable .cdk-drag-placeholder {
+  position: relative;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.ds-sortable .cdk-drag-placeholder > * {
+  visibility: hidden;
+}
+
+.ds-sortable .cdk-drag-placeholder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 2px dashed var(--button\/action, #3a9ccd);
+  border-radius: inherit;
+  background: var(--bg\/white, #ffffff);
+  pointer-events: none;
+}
+
+/* 拖曳中，其他項目讓位；放下時預覽滑回落點 */
+.ds-sortable.cdk-drop-list-dragging > .cdk-drag:not(.cdk-drag-placeholder),
+.ds-sortable.cdk-drop-list-dragging > :not(.cdk-drag-placeholder) > .cdk-drag:not(.cdk-drag-placeholder) {
+  transition: transform 250ms var(--ease-enter);
+}
+
+/* 預覽由拖曳工具搬到 body（不在清單容器裡），所以直接選預覽本身；Angular CDK 只在預覽加 cdk-drag-animating */
+.ds-sortable-preview.cdk-drag-animating {
+  transition: transform 250ms var(--ease-enter);
+}
+
+.ds-sortable-preview {
+  box-sizing: border-box;
+  box-shadow: 0 8px 24px rgba(28, 28, 46, 0.18);
+  opacity: 0.95;
+  cursor: grabbing;
+}
+
+/* 選單移動：其他項目從舊位置滑到新位置；被移動的項目發一次光（captureReorder 加的 class） */
+.ds-sortable-flip {
+  transition: transform 300ms var(--ease-enter);
+}
+
+.ds-sortable-settled {
+  animation: drag-settle-glow 600ms var(--ease-exit) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* 清單拖曳排序 */
   .drag-flip {
     transition-duration: 0ms !important;
   }
   .drag-settled {
+    animation: none !important;
+  }
+  /* 可排序清單：讓位、滑回、選單移動都直接到位，不發光 */
+  .ds-sortable .cdk-drag,
+  .ds-sortable-preview.cdk-drag-animating,
+  .ds-sortable-flip {
+    transition-duration: 0ms !important;
+  }
+  .ds-sortable-settled {
     animation: none !important;
   }
   /* Dashboard card drag */
