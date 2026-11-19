@@ -1,0 +1,80 @@
+<!-- 清單元素一直在（輸入框的 aria-controls 指著它）；沒有列或不是 ready 時藏起來，裡面的列也不畫 -->
+<div
+  class="rl__list"
+  role="listbox"
+  [id]="listId"
+  [attr.aria-label]="ariaLabel"
+  [hidden]="!showList()"
+>
+  @for (group of shownGroups(); track group.labelId) {
+    @if (group.label) {
+      <div class="rl__group" role="group" [attr.aria-labelledby]="group.labelId">
+        <div class="rl__group-label" role="presentation" [id]="group.labelId">{{ group.label }}</div>
+        <ng-container *ngTemplateOutlet="rowsTpl; context: { $implicit: group.rows }"></ng-container>
+      </div>
+    } @else {
+      <ng-container *ngTemplateOutlet="rowsTpl; context: { $implicit: group.rows }"></ng-container>
+    }
+  }
+</div>
+
+<ng-template #rowsTpl let-rows>
+  <!-- track 用畫面上的 id（依位置產生，一定不重複）：項目的 id 重複時也畫得出來 -->
+  @for (row of rows; track row.domId) {
+    <div
+      class="rl__option"
+      role="option"
+      [id]="row.domId"
+      [class.rl__option--active]="active() === row.item.id && activeOptionId === row.domId"
+      [attr.aria-selected]="active() === row.item.id && activeOptionId === row.domId"
+      (mousemove)="onPointerMove(row, $event)"
+      (mousedown)="onPointerDown($event)"
+      (click)="onClick(row)"
+    >
+      @if (itemTemplate) {
+        <ng-container
+          *ngTemplateOutlet="itemTemplate; context: { $implicit: row.item, active: activeOptionId === row.domId }"
+        ></ng-container>
+      } @else {
+        @if (row.item.icon) {
+          <app-icon class="rl__icon" [name]="row.item.icon" size="16"></app-icon>
+        }
+        <span class="rl__body">
+          <span class="rl__label">{{ row.item.label }}</span>
+          @if (row.item.description) {
+            <span class="rl__desc">{{ row.item.description }}</span>
+          }
+        </span>
+      }
+    </div>
+  }
+</ng-template>
+
+@switch (state) {
+  @case ('loading') {
+    <div class="rl__state rl__loading">
+      <!-- 轉圈只是畫面：念的是下面的報讀區 -->
+      <app-spinner size="24" [decorative]="true"></app-spinner>
+      <span aria-hidden="true">{{ loadingText }}</span>
+    </div>
+  }
+  @case ('empty') {
+    <div class="rl__state rl__empty">
+      <app-icon class="rl__empty-icon" name="Search" size="48"></app-icon>
+      <span aria-hidden="true">{{ emptyText }}</span>
+    </div>
+  }
+  @case ('error') {
+    <div class="rl__state rl__error">
+      @if (canRetry) {
+        <app-empty-state variant="error" [title]="errorTitle" [description]="errorDescription"
+          [retryText]="retryText" (retry)="onRetry()"></app-empty-state>
+      } @else {
+        <app-empty-state variant="error" [title]="errorTitle" [description]="errorDescription"></app-empty-state>
+      }
+    </div>
+  }
+}
+
+<!-- 報讀區一直在、一開始是空的，之後才填字（放在會出現又消失的區塊裡，報讀軟體常常不念） -->
+<span class="rl__sr" role="status">{{ statusText }}</span>

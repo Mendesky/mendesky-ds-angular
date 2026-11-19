@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const searchFieldDoc: ComponentApi = {
   id: 'search-field',
   selector: 'app-search-field',
-  summary: 'ariaLabel（必填） · appearance: outline|embedded · size: S|M|L · placeholder value [disabled] · (valueChange) (searchSubmit) · focus() · [searchFieldEnd]',
+  summary: 'ariaLabel（必填） · appearance: outline|embedded · size: S|M|L · placeholder value [disabled] · listboxId [listboxExpanded] [activeDescendant]（搭配 app-result-list） · (valueChange) (searchSubmit) · focus() · [searchFieldEnd]',
   props: [
     {
       name: 'ariaLabel',
@@ -39,6 +39,24 @@ export const searchFieldDoc: ComponentApi = {
       type: 'boolean',
       default: 'false',
       desc: '停用：不能打字、沒有清除鈕，按 Esc 也不清空。',
+    },
+    {
+      name: 'listboxId',
+      type: 'string',
+      default: "''",
+      desc: '搜尋框下面那個 app-result-list 的 listId。設了，輸入框才標成 combobox 並指到那個清單；不設時就是一般的搜尋框，下面兩個屬性也沒有作用。',
+    },
+    {
+      name: 'listboxExpanded',
+      type: 'boolean',
+      default: 'false',
+      desc: '清單現在有沒有列可以選，輸出成 aria-expanded。',
+    },
+    {
+      name: 'activeDescendant',
+      type: 'string | null',
+      default: 'null',
+      desc: '清單裡選中那一列的 id，接 app-result-list 的 (activeOptionIdChange)。listboxExpanded 是 true 而且這裡有值時，輸出成 aria-activedescendant。',
     },
     {
       name: '(valueChange)',
@@ -90,13 +108,14 @@ export const searchFieldDoc: ComponentApi = {
       type: 'warn',
       content: '頁面會改值（例如換頁時清空）就用 [(value)]，不要只用 [value]。只綁單向時，使用者打字後頁面的值沒跟著變；頁面再設成同一個值，Angular 認為沒變，輸入框不會更新。',
     },
+    '要從包住搜尋框的元件判斷「按鍵是不是在輸入框上按的」，用元件的 inputElement（內層的 input 元素）跟 event.target 比。只拿來比對，不要直接改它的值或自己加事件。',
     '輸出叫 searchSubmit，不叫 search：type="search" 的原生 search 事件會冒泡到元件外層，同名輸出會觸發兩次。',
     '放在 app-modal-shell 裡不用另外處理 Esc：焦點在輸入框或清除鈕上、框裡有字時，元件攔下 Esc 只清空，空了才讓 app-modal-shell 的 escapePress 收到。焦點在右側位置的按鈕上時，元件不處理 Esc，對話框會直接關。',
     {
       type: 'warn',
-      content: '放在 app-modal-shell 裡不用自己放焦點：對話框打開約 0.45 秒後，會把焦點放到第一個能用 Tab 停的地方，搜尋框在最上面，就是它。iPhone 例外：對話框在 iPhone 上只把一般文字框、密碼框、下拉選單和多行文字框當成能停的地方，搜尋框不算，焦點不會自動進去，使用者要自己點一下。不要在打開時呼叫 focus()：打開的同一輪輸入框還沒畫出來，沒有作用；畫出來之後、0.45 秒之前呼叫，對話框會把搜尋框當成打開前的焦點，關掉後焦點回不到原本的按鈕。',
+      content: '放在 app-modal-shell 裡不用自己放焦點：對話框打開約 0.45 秒後，會把焦點放到第一個能用 Tab 停的地方，搜尋框在最上面，就是它。iPhone 例外：對話框在 iPhone 上只把一般文字框、密碼框、下拉選單和多行文字框當成能停的地方，搜尋框不算，焦點不會自動進去，使用者要自己點一下。不要在打開時呼叫 focus()：打開的同一輪輸入框還沒畫出來，沒有作用；畫出來之後、0.45 秒之前呼叫，對話框會把搜尋框當成打開前的焦點，關掉後焦點回不到原本的按鈕。要一打開就能打字，用 app-command-palette。',
     },
-    '搜尋框下面掛跟著字篩選的下拉清單時，Esc 應該先關清單。元件目前沒辦法讓清單先處理：有字時第一下 Esc 會直接清空。要讓使用者從清單裡選一個值，用 app-autocomplete；真的需要搜尋框加下拉清單，先提出來，元件再加對應的做法。',
+    '搜尋框下面掛「會自己收起來」的下拉清單時，Esc 應該先收清單。元件沒辦法讓清單先處理：有字時第一下 Esc 會直接清空。要讓使用者從清單裡選一個值，用 app-autocomplete。結果一直顯示在搜尋框下面、不會收起來的，用 app-result-list：設 listboxId、listboxExpanded、activeDescendant，再把輸入框的 keydown 轉給清單的 handleKeydown()，寫法見 app-result-list 的範例。整個搜尋對話框用 app-command-palette，這些它都接好了。',
     '寬度跟著外層走。放在 app-ctrl-bar 右邊時給固定寬度，例如 width: 240px；放在會伸縮的 flex 列裡時，在 app-search-field 上給 flex 與 min-width，例如 flex: 0 1 240px、min-width: 140px。',
   ],
 };
