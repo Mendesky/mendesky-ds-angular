@@ -54,6 +54,8 @@ export * from './app/shared/components/rich-text-editor/rich-text-editor.compone
 export * from './app/shared/components/rich-text-editor/rich-text-editor.helpers';
 export * from './app/shared/components/rich-text-editor/table-toolbar/rte-table-grip.component';
 export * from './app/shared/components/rich-text-editor/table-toolbar/rte-table-highlight.plugin';
+export * from './app/shared/components/reorder-handle/reorder-handle.component';
+export * from './app/shared/components/reorder-status/reorder-status.component';
 export * from './app/shared/components/search-field/search-field.component';
 export * from './app/shared/components/result-list/result-list.component';
 export * from './app/shared/components/command-palette/command-palette.component';

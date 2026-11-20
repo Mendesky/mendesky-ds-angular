@@ -1,0 +1,60 @@
+// 握把：24×24 的透明按鈕，圖示 16px。外觀見本體規格 #reorder-handle 的「外觀」表。
+:host {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+// app-icon-btn 的 16- 是 20×20；握把放大到 24×24，達到 WCAG 2.5.8 的最小觸控範圍
+:host ::ng-deep .icon-btn.icon-btn--drag {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radious\/sm, 4px);
+  transition: background-color 150ms var(--ease-enter), color 150ms var(--ease-enter);
+}
+
+// 停用跟 #icon-btn 一樣：淡成一半、游標 not-allowed
+
+// 選單打開：打開它的那顆握把加一層按下的底色，看得出選單是從哪一顆打開的。焦點已經在選單裡，不畫焦點框。
+// 綠色外觀（app-collapsible accent）的前置區由 collapsible 自己給 16% 白色淡底
+:host ::ng-deep .icon-btn--drag[aria-expanded='true'] {
+  background: var(--color\/grey\/20, #e7e7e7);
+  color: var(--text\/body, #686868);
+}
+
+// 反白：深色標頭上用純白。85% 白在標籤金色底上只有 2.67:1，純白 3.09:1
+:host(.ds-reorder-handle--inverse) {
+  --focus-ring-color: var(--border\/white, #ffffff);
+}
+
+:host(.ds-reorder-handle--inverse) ::ng-deep .icon-btn--drag {
+  color: var(--icon\/white, #ffffff);
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled),
+  &[aria-expanded='true'] {
+    color: var(--icon\/white, #ffffff);
+    background: color-mix(in srgb, var(--icon\/white, #ffffff) 16%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host ::ng-deep .icon-btn--drag {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :host ::ng-deep .icon-btn--drag {
+    color: ButtonText;
+  }
+
+  :host ::ng-deep .icon-btn--drag:disabled {
+    color: GrayText;
+  }
+
+  // 強制色彩會蓋掉底色：選單打開改用外框標示
+  :host ::ng-deep .icon-btn--drag[aria-expanded='true'] {
+    outline: 1px solid ButtonText;
+  }
+}
