@@ -1,0 +1,50 @@
+<app-modal-shell
+  [isOpen]="isOpen"
+  variant="search"
+  [ariaLabel]="ariaLabel"
+  [width]="width"
+  [maxHeight]="maxHeight"
+  (backdropClick)="closeRequest.emit('backdrop')"
+  (escapePress)="closeRequest.emit('escape')"
+  (afterLeave)="onAfterLeave()"
+>
+  <div class="cp" (keydown)="onKeydown($event)">
+    <app-search-field
+      class="cp__search"
+      appearance="embedded"
+      [ariaLabel]="inputLabel || ariaLabel"
+      [placeholder]="placeholder"
+      [value]="current"
+      [listboxId]="listId"
+      [listboxExpanded]="expanded"
+      [activeDescendant]="activeDescendant()"
+      (valueChange)="onQuery($event)"
+    >
+      <ng-container ngProjectAs="[searchFieldEnd]">
+        <ng-content select="[paletteEnd]"></ng-content>
+      </ng-container>
+    </app-search-field>
+
+    <!-- tabindex="-1"：內容超出高度時，瀏覽器會把會捲的區塊變成一個沒有名稱的 Tab 停點；這裡的清單是用上下鍵走的，不要那個停點 -->
+    <div class="cp__body" tabindex="-1" (focus)="onBodyFocus()">
+      <ng-content></ng-content>
+      <app-result-list
+        [listId]="listId" [ariaLabel]="listLabel" [groups]="groups" [state]="state" [itemTemplate]="itemTemplate"
+        [autoActivateFirst]="autoActivateFirst" [wrap]="wrap" [loadingText]="loadingText" [emptyText]="emptyText"
+        [errorTitle]="errorTitle" [errorDescription]="errorDescription" [retryText]="retryText"
+        [showRetry]="hasRetry" [announcement]="announcement"
+        (activeOptionIdChange)="onActiveOption($event)" (itemSelect)="onItemSelect($event)"
+        (retry)="onRetry()"
+      ></app-result-list>
+    </div>
+
+    @if (showHints) {
+      <!-- 只是畫面上的提示：怎麼操作，報讀軟體從 combobox 與 listbox 就知道了 -->
+      <div class="cp__footer" aria-hidden="true">
+        <span class="cp__hint"><kbd class="cp__kbd">↑</kbd><kbd class="cp__kbd">↓</kbd>瀏覽</span>
+        <span class="cp__hint"><kbd class="cp__kbd">↵</kbd>{{ selectHint }}</span>
+        <span class="cp__hint"><kbd class="cp__kbd">esc</kbd>關閉</span>
+      </div>
+    }
+  </div>
+</app-modal-shell>

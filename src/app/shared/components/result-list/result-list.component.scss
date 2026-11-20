@@ -1,0 +1,140 @@
+:host {
+  position: relative;
+  display: block;
+  min-width: 0;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+
+.rl__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing\/xs, 8px);
+}
+
+// 元件自己設了 display，會蓋掉 hidden 屬性預設的 display:none，要自己寫回來
+.rl__list[hidden] {
+  display: none;
+}
+
+.rl__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// 群組之間留一點距離；第一組上面不用
+.rl__group + .rl__group,
+.rl__option + .rl__group {
+  margin-top: var(--spacing\/xs, 8px);
+}
+
+.rl__group-label {
+  padding: 4px 8px 2px;
+  // 不用更淡的 --text/body-light：12px 的字在白底要 4.5:1，它只有 3.07:1
+  color: var(--text\/body, #686868);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.rl__option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing\/sm, 12px);
+  min-width: 0;
+  min-height: 32px;
+  padding: var(--spacing\/xs, 8px) var(--spacing\/sm, 12px);
+  border-radius: var(--radious\/sm, 4px);
+  box-sizing: border-box;
+  color: var(--text\/body, #686868);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: background 150ms var(--ease-enter, ease-out);
+}
+
+// 選中（鍵盤移到或滑鼠滑過）：淺灰底加一圈焦點框顏色的外框，字色不變。
+// 只靠淺灰底對白底是 1.11:1，鍵盤使用者看不出選到哪一列；外框對白底 3.08:1。
+// 外框畫在列裡面（offset 負值），不會被清單的捲動邊界裁掉
+.rl__option--active {
+  background: var(--color\/white\/20, #f1f3f5);
+  outline: 2px solid var(--focus-ring-color, #3a9ccd);
+  outline-offset: -2px;
+}
+
+.rl__option:active {
+  background: var(--color\/grey\/20, #e7e7e7);
+}
+
+.rl__icon {
+  flex-shrink: 0;
+}
+
+.rl__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+// 名稱固定一行，放不下用刪節號
+.rl__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rl__desc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  // 同群組標題：選中的淺灰底上 --text/body-light 只有 2.76:1
+  color: var(--text\/body, #686868);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.rl__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing\/sm, 12px);
+  padding: var(--spacing\/xl, 40px) var(--spacing\/md, 16px);
+  color: var(--text\/body, #686868);
+  font-size: 14px;
+  text-align: center;
+}
+
+.rl__empty-icon {
+  color: var(--text\/disabled, #939393);
+}
+
+// 只給報讀軟體：畫面上看不到，也不佔位置
+.rl__sr {
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// 強制色彩：底色會被系統拿掉，選中改用外框
+@media (forced-colors: active) {
+  .rl__option--active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rl__option { transition: none; }
+}

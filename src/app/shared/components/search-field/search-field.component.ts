@@ -57,6 +57,18 @@ export class SearchFieldComponent implements OnChanges {
   /** 框裡的字；跟 valueChange 一起可以寫成 [(value)] */
   @Input() value = '';
 
+  /**
+   * 搜尋框下面那個清單（app-result-list）的 id。設了，輸入框才標成 combobox 並輸出下面兩個屬性；
+   * 不設（空字串）時輸入框跟一般搜尋框一樣
+   */
+  @Input() listboxId = '';
+
+  /** 清單現在有沒有列可以選；輸出成 aria-expanded。設了 listboxId 才有作用 */
+  @Input() listboxExpanded = false;
+
+  /** 清單裡選中那一列的 id；輸出成 aria-activedescendant。清單收起或沒選中時不輸出 */
+  @Input() activeDescendant: string | null = null;
+
   /** 每次輸入、清除都送；選字中不送，選好字送一次（Android 例外：每次輸入都送） */
   @Output() valueChange = new EventEmitter<string>();
 
@@ -72,6 +84,15 @@ export class SearchFieldComponent implements OnChanges {
 
   protected get embedded(): boolean {
     return this.appearance === 'embedded';
+  }
+
+  /** 有沒有搭配清單 */
+  protected get combobox(): boolean {
+    return !!this.listboxId;
+  }
+
+  protected get activeDescendantAttr(): string | null {
+    return this.combobox && this.listboxExpanded && this.activeDescendant ? this.activeDescendant : null;
   }
 
   protected get boxClasses(): Record<string, boolean> {
@@ -94,6 +115,22 @@ export class SearchFieldComponent implements OnChanges {
   /** 把焦點移進輸入框。放在 app-modal-shell 裡不用呼叫：對話框打開約 0.45 秒後會自己把焦點放進第一個可 Tab 的元素 */
   focus(): void {
     this.inputRef.nativeElement.focus();
+  }
+
+  /**
+   * 從外面直接把框裡的字換掉，不送 valueChange。
+   * 給「使用者打了字、但包住搜尋框的元件決定不收」的情況用（例如面板已經在關了）：
+   * 這時 [value] 沒有變，光靠它畫面不會改回來。
+   */
+  setValue(value: string): void {
+    this.current = value;
+    this.lastEmitted = value;
+    this.inputRef.nativeElement.value = value;
+  }
+
+  /** 內層的輸入框元素。包住搜尋框的元件要判斷「按鍵是不是從輸入框來的」時用 */
+  get inputElement(): HTMLInputElement {
+    return this.inputRef.nativeElement;
   }
 
   /** 點外框、放大鏡、留白都等於點輸入框；點按鈕與右側位置不搶焦點 */

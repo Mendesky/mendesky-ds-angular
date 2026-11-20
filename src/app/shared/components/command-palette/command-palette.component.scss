@@ -1,0 +1,60 @@
+// 對話框卡片是直排、超出就裁掉：這裡接著直排，讓搜尋列與提示列固定、中間的清單自己捲
+.cp {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+
+.cp__search {
+  flex-shrink: 0;
+}
+
+.cp__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cp__footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--spacing\/md, 16px);
+  padding: var(--spacing\/xs, 8px) var(--spacing\/lg, 24px);
+  border-top: 1px solid var(--border\/primary, #e7e7e7);
+  flex-shrink: 0;
+}
+
+.cp__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing\/xxs, 4px);
+  color: var(--text\/body, #686868);
+  font-size: 12px;
+}
+
+// 鍵帽：數值照 app-keyboard-help 的鍵帽
+.cp__kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border\/primary-dark, #d3d3d3);
+  border-radius: 4px;
+  background: var(--color\/white\/20, #f1f3f5);
+  box-shadow: 0 1px 0 var(--border\/primary-dark, #d3d3d3);
+  box-sizing: border-box;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text\/body, #686868);
+}
+
+// 觸控裝置沒有鍵盤：不畫按鍵提示
+@media (hover: none) and (pointer: coarse) {
+  .cp__footer { display: none; }
+}

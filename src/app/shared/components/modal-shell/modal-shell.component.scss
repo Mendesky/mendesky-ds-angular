@@ -190,4 +190,15 @@
   .modal-card {
     transform: translate(-50%, -50%) !important;
   }
+
+  /* 上面那一條是「置中卡片」的位移。位置不是置中的變體要各自寫回來，
+     不然 search 卡片會變成以 14vh 為中心、內容一長就往上長出畫面；
+     floating-right 卡片會被推離右下角。要排在上面那一條後面才蓋得過。 */
+  .modal-card--search {
+    transform: translate(-50%, 0) !important;
+  }
+
+  .modal-card--floating-right {
+    transform: none !important;
+  }
 }
