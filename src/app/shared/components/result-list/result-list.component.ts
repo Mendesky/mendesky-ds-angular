@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges,
-  TemplateRef, computed, inject, isDevMode, signal,
+  ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, TemplateRef, computed, inject, isDevMode, signal,
 } from '@angular/core';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { IconComponent } from '../icon/icon.component';
@@ -66,8 +65,9 @@ let nextListId = 0;
   styleUrls: ['./result-list.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ResultListComponent implements OnChanges {
+export class ResultListComponent implements OnChanges, OnDestroy {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly zone = inject(NgZone);
 
   /** 清單的報讀名稱，例如「搜尋結果」 */
   @Input({ required: true }) ariaLabel = '';
@@ -157,8 +157,36 @@ export class ResultListComponent implements OnChanges {
     return this.rows().find(r => r.item.id === id) ?? null;
   });
 
-  /** 滑鼠上一次的位置（螢幕座標） */
+  /** 滑鼠上一次的位置（螢幕座標）；整頁都算，不只在列上的時候 */
   private lastPointer: { x: number; y: number } | null = null;
+  /** 正在處理的這一個移動事件，滑鼠是不是真的換了位置 */
+  private pointerMoved = false;
+
+  /**
+   * 記滑鼠在整頁的位置。只記「在列上」的位置不夠：滑鼠停在群組標題或清單外面時沒有紀錄，
+   * 之後用鍵盤捲動、瀏覽器在原地補送的移動事件就會被當成「動了」，把鍵盤選好的列搶走。
+   * 用 capture：比列自己的處理早跑；還沒看過滑鼠在哪裡時，第一個事件不算動了。
+   * 放在 Angular 的區域外：整頁的滑鼠移動不該每一下都觸發畫面檢查。
+   */
+  private readonly trackPointer = (event: MouseEvent): void => {
+    const last = this.lastPointer;
+    this.pointerMoved = !!last && (last.x !== event.screenX || last.y !== event.screenY);
+    this.lastPointer = { x: event.screenX, y: event.screenY };
+  };
+
+  /**
+   * autoActivateFirst 時，選中是不是「跟著第一列」。一開始與還原之後是；使用者自己移動、或使用端指定之後不是。
+   * 跟著的時候內容一換就選新的第一列，不會留在舊結果的那一筆。
+   */
+  private followFirst = true;
+
+  constructor() {
+    this.zone.runOutsideAngular(() => document.addEventListener('mousemove', this.trackPointer, true));
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('mousemove', this.trackPointer, true);
+  }
 
   /** 上一次送出去的值；一樣就不重送 */
   private lastEmittedId: string | null = null;
@@ -199,6 +227,7 @@ export class ResultListComponent implements OnChanges {
     if (changes['state']) this.stateSig.set(this.state);
     if (changes['activeId']) {
       this.active.set(this.activeId);
+      this.followFirst = false;
       // 使用端自己設的值不用再通知回去
       this.lastEmittedId = this.activeId;
     }
@@ -237,6 +266,7 @@ export class ResultListComponent implements OnChanges {
    * 使用端在「查詢的字變了」「面板關掉」時呼叫，免得上一次選中的列留到下一次。
    */
   resetActive(): void {
+    this.followFirst = true;
     const rows = this.showList() ? this.rows() : [];
     this.active.set(this.autoActivateFirst && rows.length > 0 ? rows[0].item.id : null);
     this.notify();
@@ -245,11 +275,10 @@ export class ResultListComponent implements OnChanges {
   /**
    * 滑鼠在列上移動 → 選中那一列。只認「滑鼠真的動了」：用鍵盤讓清單捲動時，滑鼠沒動、底下的列卻換了，
    * 有些瀏覽器會補送一次移動事件；位置跟上一次一樣就不處理，免得把鍵盤選好的列搶走。
+   * 有沒有動由 trackPointer 判斷（它先跑）。
    */
-  protected onPointerMove(row: Row, event: MouseEvent): void {
-    const moved = !this.lastPointer || this.lastPointer.x !== event.screenX || this.lastPointer.y !== event.screenY;
-    this.lastPointer = { x: event.screenX, y: event.screenY };
-    if (!moved) return;
+  protected onPointerMove(row: Row): void {
+    if (!this.pointerMoved) return;
     if (this.active() === row.item.id) return;
     this.setActive(row.item.id, false);
   }
@@ -291,6 +320,7 @@ export class ResultListComponent implements OnChanges {
   }
 
   private setActive(id: string | null, scroll: boolean): void {
+    this.followFirst = false;
     this.active.set(id);
     this.notify();
     if (scroll) this.scrollActiveIntoView();
@@ -300,6 +330,7 @@ export class ResultListComponent implements OnChanges {
   private reconcile(): void {
     const rows = this.showList() ? this.rows() : [];
     let id = this.active();
+    if (this.autoActivateFirst && this.followFirst) id = null;
     if (id !== null && !rows.some(r => r.item.id === id)) id = null;
     if (id === null && this.autoActivateFirst && rows.length > 0) id = rows[0].item.id;
     if (id !== this.active()) this.active.set(id);

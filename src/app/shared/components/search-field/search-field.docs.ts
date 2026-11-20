@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const searchFieldDoc: ComponentApi = {
   id: 'search-field',
   selector: 'app-search-field',
-  summary: 'ariaLabel（必填） · appearance: outline|embedded · size: S|M|L · placeholder value [disabled] · listboxId [listboxExpanded] [activeDescendant]（搭配 app-result-list） · (valueChange) (searchSubmit) · focus() · [searchFieldEnd]',
+  summary: 'ariaLabel（必填） · appearance: outline|embedded · size: S|M|L · placeholder value [disabled] · listboxId [listboxExpanded] [activeDescendant]（搭配 app-result-list） · (valueChange) (searchSubmit) · focus() setValue() · [searchFieldEnd]',
   props: [
     {
       name: 'ariaLabel',
@@ -109,6 +109,7 @@ export const searchFieldDoc: ComponentApi = {
       content: '頁面會改值（例如換頁時清空）就用 [(value)]，不要只用 [value]。只綁單向時，使用者打字後頁面的值沒跟著變；頁面再設成同一個值，Angular 認為沒變，輸入框不會更新。',
     },
     '要從包住搜尋框的元件判斷「按鍵是不是在輸入框上按的」，用元件的 inputElement（內層的 input 元素）跟 event.target 比。只拿來比對，不要直接改它的值或自己加事件。',
+    '平常用 [value] 設框裡的字就好。setValue(字) 是給一種情況用的：使用者打了字，但你決定不收（例如面板已經在關了），這時你手上的值沒有變，[value] 不會把畫面改回來。setValue 直接把框裡的字換掉，不送 valueChange。',
     '輸出叫 searchSubmit，不叫 search：type="search" 的原生 search 事件會冒泡到元件外層，同名輸出會觸發兩次。',
     '放在 app-modal-shell 裡不用另外處理 Esc：焦點在輸入框或清除鈕上、框裡有字時，元件攔下 Esc 只清空，空了才讓 app-modal-shell 的 escapePress 收到。焦點在右側位置的按鈕上時，元件不處理 Esc，對話框會直接關。',
     {

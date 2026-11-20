@@ -27,7 +27,7 @@
       [id]="row.domId"
       [class.rl__option--active]="active() === row.item.id && activeOptionId === row.domId"
       [attr.aria-selected]="active() === row.item.id && activeOptionId === row.domId"
-      (mousemove)="onPointerMove(row, $event)"
+      (mousemove)="onPointerMove(row)"
       (mousedown)="onPointerDown($event)"
       (click)="onClick(row)"
     >

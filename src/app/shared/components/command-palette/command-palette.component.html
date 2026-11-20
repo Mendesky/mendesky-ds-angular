@@ -25,7 +25,8 @@
       </ng-container>
     </app-search-field>
 
-    <div class="cp__body">
+    <!-- tabindex="-1"：內容超出高度時，瀏覽器會把會捲的區塊變成一個沒有名稱的 Tab 停點；這裡的清單是用上下鍵走的，不要那個停點 -->
+    <div class="cp__body" tabindex="-1" (focus)="onBodyFocus()">
       <ng-content></ng-content>
       <app-result-list
         [listId]="listId" [ariaLabel]="listLabel" [groups]="groups" [state]="state" [itemTemplate]="itemTemplate"

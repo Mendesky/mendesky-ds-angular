@@ -188,7 +188,11 @@ export class CommandPaletteComponent implements OnChanges, AfterViewChecked {
 
   protected onQuery(value: string): void {
     // 退場動畫（約 0.45 秒）期間焦點還在輸入框，鍵盤還打得進來：關了就不再收
-    if (!this.isOpen) return;
+    if (!this.isOpen) {
+      // 不收，而且把剛打進去的字拿掉：不然它留在輸入框裡，重開時看得到字、清單卻是空字串的結果
+      this.searchField?.setValue(this.current);
+      return;
+    }
     this.current = value;
     this.list?.resetActive();
     this.queryChange.emit(value);
@@ -201,6 +205,8 @@ export class CommandPaletteComponent implements OnChanges, AfterViewChecked {
     if (this.list?.handleKeydown(event)) return;
     if (event.key !== 'Enter') return;
     if (event.isComposing || event.keyCode === 229) return;
+    // 按著 Ctrl／⌘／Alt 的 Enter 不是「送出」：不處理，留給頁面或瀏覽器
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     // 這一下元件用掉了：不往外傳給頁面的快速鍵；按住不放的連發也攔下，但不重複送
     event.preventDefault();
     event.stopPropagation();
@@ -213,6 +219,14 @@ export class CommandPaletteComponent implements OnChanges, AfterViewChecked {
    */
   protected onRetry(): void {
     this.retry.emit();
+    this.searchField?.focus();
+  }
+
+  /**
+   * 捲動區拿到焦點（點到列以外的空白）：送回輸入框。
+   * 它設了 tabindex="-1" 才不會變成 Tab 停點，代價是用滑鼠點得到它
+   */
+  protected onBodyFocus(): void {
     this.searchField?.focus();
   }
 

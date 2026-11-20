@@ -206,7 +206,20 @@ describe('CommandPaletteComponent', () => {
     it('輸入法選字中的 Enter、按住不放的連發：都不發', async () => {
       await open();
       await press('Enter', { isComposing: true });
+      // Safari 確認選字的那一下 Enter：isComposing 已經是 false，只剩 keyCode 229 認得出來
+      await press('Enter', { keyCode: 229 } as KeyboardEventInit);
       await press('Enter', { repeat: true });
+      expect(host.submitted).toEqual([]);
+      expect(host.picked).toEqual([]);
+    });
+
+    it('按著 Ctrl、⌘、Alt 的 Enter：不選取、不送出，也不攔（留給頁面或瀏覽器）', async () => {
+      await open();
+      await press('ArrowDown');
+      for (const mod of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
+        const e = await press('Enter', mod);
+        expect(e.defaultPrevented).withContext(JSON.stringify(mod)).toBeFalse();
+      }
       expect(host.submitted).toEqual([]);
       expect(host.picked).toEqual([]);
     });
@@ -269,20 +282,64 @@ describe('CommandPaletteComponent', () => {
   });
 
   describe('Esc 與關閉', () => {
-    it('退場動畫期間（已經關了）打字、按 ↓、Enter：都不再往外送', async () => {
+    /** 關掉，但只做同步更新：退場動畫（0.45 秒）還沒跑完，對話框與輸入框都還在畫面上 */
+    const closeButStillLeaving = async () => {
       await open();
       host.open = false;
       fixture.detectChanges();
       await Promise.resolve();
       host.queries.length = 0;
+    };
+
+    it('退場動畫期間打字：不往外送，字也不留在輸入框', async () => {
+      await closeButStillLeaving();
       input().value = 'x';
       input().dispatchEvent(new Event('input', { bubbles: true }));
-      input().dispatchEvent(key('ArrowDown'));
-      input().dispatchEvent(key('Enter'));
       fixture.detectChanges();
       expect(host.queries).toEqual([]);
-      expect(host.picked).toEqual([]);
+      expect(input().value).toBe('');
+    });
+
+    it('退場動畫期間打過字，重開之後：輸入框是空的、沒有清除鈕', async () => {
+      await closeButStillLeaving();
+      input().value = 'x';
+      input().dispatchEvent(new Event('input', { bubbles: true }));
+      fixture.detectChanges();
+      await wait(600);
+      await settle();
+      await open();
+      expect(input().value).toBe('');
+      expect(dialog()!.querySelector('.search-field__clear, [aria-label="清除"]')).toBeNull();
+      expect(host.query).toBe('');
+    });
+
+    it('退場動畫期間按 Enter：不送出查詢', async () => {
+      await closeButStillLeaving();
+      input().dispatchEvent(key('Enter'));
+      fixture.detectChanges();
       expect(host.submitted).toEqual([]);
+    });
+
+    it('退場動畫期間按 ↓：不選中任何一列', async () => {
+      await closeButStillLeaving();
+      input().dispatchEvent(key('ArrowDown'));
+      fixture.detectChanges();
+      expect(options().filter(o => o.getAttribute('aria-selected') === 'true').length).toBe(0);
+    });
+
+    it('退場動畫期間點一列：不選取', async () => {
+      await closeButStillLeaving();
+      options()[0].click();
+      fixture.detectChanges();
+      expect(host.picked).toEqual([]);
+    });
+
+    it('清單的捲動區不是 Tab 停點；焦點落到它身上（例如點到列以外的空白）就送回輸入框', async () => {
+      await open();
+      const body = dialog()!.querySelector('.cp__body') as HTMLElement;
+      expect(body.getAttribute('tabindex')).toBe('-1');
+      body.focus();
+      expect(document.activeElement).toBe(input());
     });
 
     it('有字按 Esc：清空，面板還開著，事件不往外傳', async () => {
@@ -385,12 +442,15 @@ describe('CommandPaletteComponent', () => {
       expect(document.activeElement).toBe(opener);
     });
 
-    it('打開後 60 毫秒內就關掉：不會之後又把焦點搶進輸入框', async () => {
+    it('打開後 30 毫秒就關掉（進場動畫還沒跑完）：不會之後又把焦點搶進輸入框', async () => {
       const opener = document.getElementById('opener') as HTMLElement;
       opener.focus();
-      await open();
+      // 只做同步更新：fixture.whenStable() 會等對話框 0.45 秒的計時器，等完就不是「馬上關」了
+      host.open = true;
+      fixture.detectChanges();
+      await wait(30);
       host.open = false;
-      await settle();
+      fixture.detectChanges();
       await wait(600);
       await settle();
       expect(dialog()).toBeNull();

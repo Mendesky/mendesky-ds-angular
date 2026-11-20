@@ -117,6 +117,17 @@ export class SearchFieldComponent implements OnChanges {
     this.inputRef.nativeElement.focus();
   }
 
+  /**
+   * 從外面直接把框裡的字換掉，不送 valueChange。
+   * 給「使用者打了字、但包住搜尋框的元件決定不收」的情況用（例如面板已經在關了）：
+   * 這時 [value] 沒有變，光靠它畫面不會改回來。
+   */
+  setValue(value: string): void {
+    this.current = value;
+    this.lastEmitted = value;
+    this.inputRef.nativeElement.value = value;
+  }
+
   /** 內層的輸入框元素。包住搜尋框的元件要判斷「按鍵是不是從輸入框來的」時用 */
   get inputElement(): HTMLInputElement {
     return this.inputRef.nativeElement;

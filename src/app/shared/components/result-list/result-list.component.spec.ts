@@ -232,29 +232,68 @@ describe('ResultListComponent', () => {
   });
 
   describe('滑鼠', () => {
-    it('滑過一列 → 選中它', () => {
-      set('groups', FLAT);
-      options()[1].dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+    /** 滑鼠在 target 上、螢幕座標 (x, y) 的一次移動事件 */
+    const mouseAt = (target: EventTarget, x: number, y: number) => {
+      target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, screenX: x, screenY: y }));
       fixture.detectChanges();
+    };
+
+    it('滑鼠移到一列上 → 選中它', () => {
+      set('groups', FLAT);
+      mouseAt(document.body, 10, 10);
+      mouseAt(options()[1], 40, 40);
       expect(selected()).toEqual(['項目 b']);
     });
 
     it('滑鼠沒動（位置跟上一次一樣）卻又收到移動事件：不搶走鍵盤選好的列', () => {
       set('groups', FLAT);
-      const at = { bubbles: true, screenX: 40, screenY: 60 };
-      options()[2].dispatchEvent(new MouseEvent('mousemove', at));
-      fixture.detectChanges();
+      mouseAt(document.body, 10, 10);
+      mouseAt(options()[2], 40, 60);
       expect(selected()).toEqual(['項目 c']);
       press('ArrowUp');
       expect(selected()).toEqual(['項目 b']);
       // 清單捲動後，瀏覽器在同一個位置補送的移動事件
-      options()[2].dispatchEvent(new MouseEvent('mousemove', at));
-      fixture.detectChanges();
+      mouseAt(options()[2], 40, 60);
       expect(selected()).toEqual(['項目 b']);
       // 滑鼠真的動了才換
-      options()[0].dispatchEvent(new MouseEvent('mousemove', { bubbles: true, screenX: 40, screenY: 20 }));
-      fixture.detectChanges();
+      mouseAt(options()[0], 40, 20);
       expect(selected()).toEqual(['項目 a']);
+    });
+
+    it('滑鼠停在群組標題上（不是列）之後，同一個位置的移動事件落在列上：不搶走鍵盤選好的列', () => {
+      set('groups', TWO_GROUPS);
+      const label = host.querySelector('.rl__group-label') as HTMLElement;
+      mouseAt(document.body, 10, 10);
+      // 先經過第一列（選中 a），再真的移到標題上、停住。
+      // 要先經過一列：只在列上記位置的寫法，這時記的還是列上那個位置，下面補送的事件就會被當成動了
+      mouseAt(options()[0], 40, 30);
+      expect(selected()).toEqual(['項目 a']);
+      mouseAt(label, 40, 12);
+      press('ArrowDown');
+      expect(selected()).toEqual(['項目 b']);
+      // 清單捲動，標題捲走、底下換成一列；滑鼠沒動，瀏覽器補送一次
+      mouseAt(options()[2], 40, 12);
+      expect(selected()).toEqual(['項目 b']);
+    });
+
+    it('還沒看過滑鼠在哪裡時，第一個移動事件不算「動了」：不選中', () => {
+      set('groups', FLAT);
+      press('ArrowDown');
+      mouseAt(options()[2], 40, 60);
+      expect(selected()).toEqual(['項目 a']);
+    });
+
+    it('元件拿掉之後，不再留著整頁的滑鼠監聽', () => {
+      set('groups', FLAT);
+      const removed: string[] = [];
+      const original = document.removeEventListener.bind(document);
+      const spy = spyOn(document, 'removeEventListener').and.callFake(((type: string, ...rest: unknown[]) => {
+        removed.push(type);
+        return (original as (...a: unknown[]) => void)(type, ...rest);
+      }) as typeof document.removeEventListener);
+      fixture.destroy();
+      spy.and.callThrough();
+      expect(removed).toContain('mousemove');
     });
 
     it('點一列 → 發出 itemSelect', () => {
@@ -376,9 +415,13 @@ describe('ResultListComponent', () => {
     it('狀態不是 ready 時，選中清掉', async () => {
       set('groups', FLAT);
       press('ArrowDown');
+      const domIds: Array<string | null> = [];
+      component.activeOptionIdChange.subscribe(v => domIds.push(v));
       set('state', 'loading');
       await fixture.whenStable();
       expect(component.activeOptionId).toBeNull();
+      // 使用端是靠這個事件更新輸入框的 aria-activedescendant：只讀 getter 對，事件沒送也不行
+      expect(domIds).toEqual([null]);
     });
   });
 
@@ -399,20 +442,57 @@ describe('ResultListComponent', () => {
       set('groups', FLAT);
       press('ArrowDown');
       press('ArrowDown');
+      const ids: Array<string | null> = [];
+      const domIds: Array<string | null> = [];
+      component.activeIdChange.subscribe(v => ids.push(v));
+      component.activeOptionIdChange.subscribe(v => domIds.push(v));
       set('groups', [{ id: 'all', items: [item('z'), item('q'), item('b')] }]);
       await fixture.whenStable();
       fixture.detectChanges();
       expect(selected()).toEqual(['項目 b']);
       expect(component.activeOptionId).toBe('rl-test-o2');
+      // 選中的項目沒變、畫面上的 id 變了：只通知畫面上的 id（輸入框的 aria-activedescendant 要跟著換）
+      expect(ids).toEqual([]);
+      expect(domIds).toEqual(['rl-test-o2']);
     });
 
     it('使用端設 activeId：選中那一列；設成不存在的 id → 沒有選中', async () => {
       set('groups', FLAT);
+      const domIds: Array<string | null> = [];
+      component.activeOptionIdChange.subscribe(v => domIds.push(v));
       set('activeId', 'c');
+      await fixture.whenStable();
       expect(selected()).toEqual(['項目 c']);
+      expect(domIds).toEqual(['rl-test-o2']);
       set('activeId', 'nope');
       await fixture.whenStable();
       expect(selected()).toEqual([]);
+      expect(domIds).toEqual(['rl-test-o2', null]);
+    });
+
+    it('autoActivateFirst：還原之後內容直接換掉（中間沒有載入中）→ 選中新內容的第一列，不是留在舊的那一筆', async () => {
+      set('autoActivateFirst', true);
+      set('groups', FLAT);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(selected()).toEqual(['項目 a']);
+      // 查詢的字變了：使用端還原選中，接著同一輪就給新結果，舊的第一筆排到後面
+      component.resetActive();
+      set('groups', [{ id: 'all', items: [item('b'), item('a')] }]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(selected()).toEqual(['項目 b']);
+    });
+
+    it('autoActivateFirst：使用者自己移到別列之後內容換掉、那一筆還在 → 留在使用者選的那一筆', async () => {
+      set('autoActivateFirst', true);
+      set('groups', FLAT);
+      await fixture.whenStable();
+      press('ArrowDown');
+      set('groups', [{ id: 'all', items: [item('z'), item('b')] }]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(selected()).toEqual(['項目 b']);
     });
 
     it('resetActive：清掉選中並通知；autoActivateFirst 時回到第一列', async () => {
