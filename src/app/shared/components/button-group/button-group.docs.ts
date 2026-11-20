@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const buttonGroupDoc: ComponentApi = {
   id: 'button-group',
   selector: 'app-button-group',
-  summary: 'type: form|round|view · size: S|M|L · options: ButtonGroupOption[] · value · [disabled] errorMessage errorPosition: top|bottom · (valueChange)',
+  summary: 'type: form|round|view · size: S|M|L · color: neutral|primary（view）· options: ButtonGroupOption[]（可放 icon）· value · [disabled] errorMessage errorPosition: top|bottom · (valueChange)',
   props: [
     {
       name: 'type',
@@ -15,13 +15,19 @@ export const buttonGroupDoc: ComponentApi = {
       name: 'size',
       type: "'S' | 'M' | 'L'",
       default: "'L'",
-      desc: 'form / view 皆生效。form: L≈46 / M≈36 / S≈26px；view: L=32 / M=28 / S=24px（外框高度）。round 不吃 size。',
+      desc: 'form / view 皆生效。form: L≈46 / M≈36 / S≈26px；view: 按鈕 L=32 / M=28 / S=24px，外框（白底槽）再加上下各 2px，L=36 / M=32 / S=28px。只放圖示的按鈕是正方形。round 不吃 size。',
+    },
+    {
+      name: 'color',
+      type: "'neutral' | 'primary'",
+      default: "'neutral'",
+      desc: '只對 view 生效：選中的底色。neutral＝深灰，用在中性的設定（例：字級、排版方式）；primary＝深藍，用在功能操作（例：切換畫面的呈現方式）。',
     },
     {
       name: 'options',
       type: 'ButtonGroupOption[]',
       default: '[]',
-      desc: '{ value: string; label: string }[]',
+      desc: '{ value: string; label: string; disabled?: boolean; icon?: string }[]。有 icon（同 app-icon 的 name）時按鈕只放圖示，label 改當報讀名稱與滑過提示，所以 label 仍然必填。建議只在 view 用 icon。',
     },
     {
       name: 'value',
@@ -62,6 +68,18 @@ export const buttonGroupDoc: ComponentApi = {
   [options]="[{value:'a', label:'選項A'}, {value:'b', label:'選項B'}]"
   [(value)]="selectedValue"
   errorMessage="請至少選擇一項"
+></app-button-group>`,
+    },
+    {
+      label: 'view：只放圖示、選中深藍',
+      code: `<app-button-group
+  type="view" size="M" color="primary"
+  [options]="[
+    { value: 'list', label: '清單', icon: 'Table' },
+    { value: 'kanban', label: '看板', icon: 'Kanban' },
+  ]"
+  [value]="mode"
+  (valueChange)="mode = $event"
 ></app-button-group>`,
     },
   ],

@@ -5,19 +5,27 @@ import {
  ChangeDetectionStrategy, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
+import { TooltipDirective } from '../../directives/tooltip/tooltip.directive';
+import { IconComponent } from '../icon/icon.component';
 
 export interface ButtonGroupOption {
   value: string;
+  /** 選項名稱。有 icon 時不顯示在畫面上，改當報讀名稱（aria-label）與滑過提示 */
   label: string;
   disabled?: boolean;
+  /** 圖示名稱（同 app-icon 的 name）。有值時按鈕只放圖示；建議只用在 view 型 */
+  icon?: string;
 }
 
 export type ButtonGroupType = 'form' | 'round' | 'view';
 
+/** view 型選中的顏色：neutral＝深灰（中性的設定）、primary＝深藍（切換畫面這類功能操作）。form、round 不吃 */
+export type ButtonGroupColor = 'neutral' | 'primary';
+
 @Component({
   selector: 'app-button-group',
   standalone: true,
-  imports: [CommonModule, ErrorTooltipDirective],
+  imports: [CommonModule, ErrorTooltipDirective, TooltipDirective, IconComponent],
   templateUrl: './button-group.component.html',
   styleUrls: ['./button-group.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +35,7 @@ export class ButtonGroupComponent implements OnChanges {
 
   @Input() type: ButtonGroupType = 'form';
   @Input() size: 'S' | 'M' | 'L' = 'L';
+  @Input() color: ButtonGroupColor = 'neutral';
   @Input() options: ButtonGroupOption[] = [];
   @Input() value: string | null = null;
   @Input() disabled = false;

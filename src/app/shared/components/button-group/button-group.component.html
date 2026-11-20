@@ -11,20 +11,27 @@
     [class.btn-group--size-s]="size === 'S'"
     [class.is-error]="hasError"
     [class.is-disabled]="disabled"
+    [class.btn-group--color-primary]="type === 'view' && color === 'primary'"
     role="group">
 
+    <!-- 有 icon：只放圖示，選項名稱改當 aria-label 與滑過提示（提示放下方，避免蓋到上方的頁首） -->
     <button
       *ngFor="let opt of options; let i = index; trackBy: trackByOptionValue"
       class="btn-group__item"
+      [class.btn-group__item--icon]="!!opt.icon"
       [class.is-selected]="value === opt.value"
       [class.is-option-disabled]="opt.disabled"
       [disabled]="disabled || opt.disabled"
       [attr.tabindex]="focusIndex() === i ? 0 : -1"
       [attr.aria-pressed]="value === opt.value"
+      [attr.aria-label]="opt.icon ? opt.label : null"
+      [appTooltip]="opt.icon ? opt.label : ''"
+      appTooltipDirection="bottom"
       type="button"
       (click)="select(opt.value)"
       (keydown)="onKeydown($event, i)">
-      {{ opt.label }}
+      <app-icon *ngIf="opt.icon; else textLabel" [name]="opt.icon" size="16" aria-hidden="true"></app-icon>
+      <ng-template #textLabel>{{ opt.label }}</ng-template>
     </button>
 
   </div>

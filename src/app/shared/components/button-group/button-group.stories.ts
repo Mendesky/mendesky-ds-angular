@@ -19,6 +19,12 @@ const VIEW_OPTIONS: ButtonGroupOption[] = [
   { value: 'kanban', label: '看板' },
 ];
 
+const VIEW_ICON_OPTIONS: ButtonGroupOption[] = [
+  { value: 'list', label: '清單', icon: 'Table' },
+  { value: 'kanban', label: '看板', icon: 'Kanban' },
+  { value: 'chart', label: '圖表', icon: 'Dashboard' },
+];
+
 const meta: Meta<ButtonGroupComponent> = {
   title: '互動元件/Button Group',
   id: 'button-group',
@@ -29,6 +35,11 @@ const meta: Meta<ButtonGroupComponent> = {
       description: '按鈕群組樣式類型',
       control: { type: 'select' },
       options: ['form', 'round', 'view'],
+    },
+    color: {
+      description: 'View 類型選中的顏色：neutral 深灰（中性的設定）、primary 深藍（功能操作）',
+      control: { type: 'select' },
+      options: ['neutral', 'primary'],
     },
     options: {
       description: '選項清單，每項含 value 與 label',
@@ -87,6 +98,29 @@ export const ViewType: Story = {
     type: 'view',
     options: VIEW_OPTIONS,
     value: 'list',
+  },
+};
+
+/** 只放圖示：選項名稱當報讀名稱與滑過提示。切換畫面屬於功能操作，選中用深藍（color="primary"） */
+export const ViewIconOnly: Story = {
+  name: 'View 類型：只放圖示（深藍）',
+  args: {
+    type: 'view',
+    size: 'M',
+    color: 'primary',
+    options: VIEW_ICON_OPTIONS,
+    value: 'list',
+  },
+};
+
+/** 沒有任何選中時，兩兩之間都有分隔線；選中後，選中那顆兩側的線消失 */
+export const ViewNoneSelected: Story = {
+  name: 'View 類型：還沒選',
+  args: {
+    type: 'view',
+    size: 'M',
+    options: VIEW_OPTIONS,
+    value: null,
   },
 };
 

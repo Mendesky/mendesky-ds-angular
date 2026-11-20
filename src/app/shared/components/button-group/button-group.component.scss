@@ -136,14 +136,20 @@
 }
 
 // ── View ──────────────────────────────────────────────────────
-// baseline = M (28px)；size 變化由修飾 class 覆蓋
+// 2026-11-20 改版（原型 https://claude.ai/artifact/9Qq2vZe7n7VFwFFZfJ8V6m）：
+// - 白底槽加 1px #e7e7e7 內框（同篩選鈕的框）。舊的 #e7e7e7 灰底槽放在頁面灰底上只有 1.13:1，看不出範圍。
+// - 槽有 2px 內距與間距，槽比按鈕高 4px：M 按鈕 28、槽 32。
+// - 沒選中：文字 #686868（白底 5.57:1）、圖示 #939393（3.07:1）；滑過只加深一階、不加底色。
+// - 選中：color="neutral" 深灰 #686868（中性的設定）、color="primary" 深藍 #1a6489（功能操作）；字與圖示白色。
+// - 兩顆都沒選中的按鈕之間畫 1px 直線，選中那顆兩側不畫（它本身已經有底色分開）。
 .btn-group--view {
   display: inline-flex;
   align-items: center;
-  height: 28px;
-  background: #e7e7e7;
-  border-radius: 4px;
-  padding: 0;
+  gap: 2px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e7e7e7;
+  border-radius: 6px;
+  padding: 2px;
 
   &.is-disabled {
     opacity: 0.5;
@@ -151,57 +157,127 @@
   }
 
   .btn-group__item {
+    position: relative;
     min-height: 28px;
     min-width: 28px;
     border-radius: 5px;
     padding: 0 8px;
     font-size: 12px;
+    color: #686868;
+
+    &:hover:not(:disabled):not(.is-selected) {
+      color: #535353;
+    }
+
+    &.is-selected,
+    &:active:not(:disabled) {
+      background: #686868;
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    // 藍色焦點框在選中的深底上不到 3:1（深灰 1.81、深藍 2.11），改白框（5.57、6.51）
+    &.is-selected:focus-visible {
+      outline-color: var(--border\/white, #ffffff);
+    }
+  }
+
+  // 只放圖示：圖示置中（正方形的寬在下面三種尺寸各自設定）；沒選中用較淡的灰（圖示只要 3:1）
+  .btn-group__item--icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: #939393;
 
     &:hover:not(:disabled):not(.is-selected) {
-      background: rgba(0, 0, 0, 0.06);
+      color: #686868;
     }
+  }
 
-    &.is-selected {
-      background: #686868;
-      color: #ffffff;
-      border-color: #e7e7e7;
-    }
+  // 分隔線：畫在 2px 間距的正中間（按鈕左緣往外 2px，線寬 1px）
+  .btn-group__item:not(.is-selected) + .btn-group__item:not(.is-selected)::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 50%;
+    width: 1px;
+    height: 16px;
+    transform: translateY(-50%);
+    background: var(--border\/primary-dark, #d3d3d3);
+    pointer-events: none;
+  }
+}
+
+.btn-group--view.btn-group--color-primary .btn-group__item {
+  &.is-selected,
+  &:active:not(:disabled) {
+    background: #1a6489;
   }
 }
 
 // ── View Size Variants ─────────────────────────────────────────
-// L=32（editor toolbar 對齊 icon-btn size="16"=32px）
-.btn-group--view.btn-group--size-l {
-  height: 32px;
+// 按鈕高度 L=32 / M=28 / S=24；槽再加上下各 2px 內距
+.btn-group--view.btn-group--size-l .btn-group__item {
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0 10px;
 
-  .btn-group__item {
-    min-height: 32px;
-    min-width: 32px;
-    padding: 0 10px;
+  &.btn-group__item--icon {
+    width: 32px;
+    padding: 0;
   }
 }
 
-// M=28（與 baseline 相同，顯式宣告以保留可讀性）
-.btn-group--view.btn-group--size-m {
-  height: 28px;
+.btn-group--view.btn-group--size-m .btn-group__item {
+  min-height: 28px;
+  min-width: 28px;
+  padding: 0 8px;
 
-  .btn-group__item {
-    min-height: 28px;
-    min-width: 28px;
-    padding: 0 8px;
+  &.btn-group__item--icon {
+    width: 28px;
+    padding: 0;
   }
 }
 
-// S=24
-.btn-group--view.btn-group--size-s {
-  height: 24px;
+.btn-group--view.btn-group--size-s .btn-group__item {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 0 6px;
+  font-size: 11px;
 
-  .btn-group__item {
-    min-height: 24px;
-    min-width: 24px;
-    padding: 0 6px;
-    font-size: 11px;
+  &.btn-group__item--icon {
+    width: 24px;
+    padding: 0;
   }
 }
 
+// ── View：減少動態、強制色彩 ───────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  .btn-group--view .btn-group__item {
+    transition: none;
+  }
+}
+
+// 強制色彩（Windows 高對比）會拿掉背景與陰影：槽改用外框，選中改用系統反白色，否則選中與沒選中一樣
+@media (forced-colors: active) {
+  .btn-group--view {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  // 深藍那條的選擇器比較長，要一起列，不然會蓋過系統色
+  .btn-group--view .btn-group__item.is-selected,
+  .btn-group--view.btn-group--color-primary .btn-group__item.is-selected {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .btn-group--view .btn-group__item:not(.is-selected) + .btn-group__item:not(.is-selected)::before {
+    background: CanvasText;
+  }
+
+  .btn-group--view.is-disabled .btn-group__item {
+    color: GrayText;
+  }
+}
