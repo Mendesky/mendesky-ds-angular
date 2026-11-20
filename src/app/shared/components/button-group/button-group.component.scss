@@ -146,8 +146,8 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px #e7e7e7;
+  background: var(--button\/white, #ffffff);
+  box-shadow: inset 0 0 0 1px var(--border\/primary, #e7e7e7);
   border-radius: 6px;
   padding: 2px;
 
@@ -163,16 +163,17 @@
     border-radius: 5px;
     padding: 0 8px;
     font-size: 12px;
-    color: #686868;
+    color: var(--text\/body, #686868);
 
-    &:hover:not(:disabled):not(.is-selected) {
-      color: #535353;
+    // 按住時不算滑過：滑過的字色比按下的白字優先度高，不排除的話按住時字會跟底色同色、看不見
+    &:hover:not(:disabled):not(.is-selected):not(:active) {
+      color: var(--text\/secondary, #535353);
     }
 
     &.is-selected,
     &:active:not(:disabled) {
-      background: #686868;
-      color: #ffffff;
+      background: var(--button\/neutral-darker-hover, #686868);
+      color: var(--text\/body-lightest, #ffffff);
       border-color: transparent;
     }
 
@@ -187,10 +188,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #939393;
+    color: var(--button\/neutral, #939393);
 
-    &:hover:not(:disabled):not(.is-selected) {
-      color: #686868;
+    &:hover:not(:disabled):not(.is-selected):not(:active) {
+      color: var(--icon\/body, #686868);
     }
   }
 
@@ -211,7 +212,7 @@
 .btn-group--view.btn-group--color-primary .btn-group__item {
   &.is-selected,
   &:active:not(:disabled) {
-    background: #1a6489;
+    background: var(--color\/calmblue\/80, #1a6489);
   }
 }
 
@@ -265,19 +266,29 @@
     outline-offset: -1px;
   }
 
-  // 深藍那條的選擇器比較長，要一起列，不然會蓋過系統色
+  // 深藍那條的選擇器比較長，要一起列，不然會蓋過系統色。按住（:active）也要列：
+  // 不列的話按住選中的按鈕會蓋回深灰或深藍
   .btn-group--view .btn-group__item.is-selected,
-  .btn-group--view.btn-group--color-primary .btn-group__item.is-selected {
+  .btn-group--view.btn-group--color-primary .btn-group__item.is-selected,
+  .btn-group--view .btn-group__item.is-selected:active:not(:disabled),
+  .btn-group--view.btn-group--color-primary .btn-group__item.is-selected:active:not(:disabled) {
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;
+  }
+
+  // forced-color-adjust: none 讓系統不再替焦點框換色；白框畫在 Highlight 上，淺色主題看不清楚。
+  // 焦點框畫在按鈕裡面（offset -2px），底是 Highlight，所以用 HighlightText
+  .btn-group--view .btn-group__item.is-selected:focus-visible {
+    outline-color: HighlightText;
   }
 
   .btn-group--view .btn-group__item:not(.is-selected) + .btn-group__item:not(.is-selected)::before {
     background: CanvasText;
   }
 
-  .btn-group--view.is-disabled .btn-group__item {
+  // 整組停用：只改沒選中的。選中的維持 Highlight／HighlightText（深灰、深藍兩型一致），整組半透明已表示停用
+  .btn-group--view.is-disabled .btn-group__item:not(.is-selected) {
     color: GrayText;
   }
 }

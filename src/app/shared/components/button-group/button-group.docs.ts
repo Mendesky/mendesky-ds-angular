@@ -27,7 +27,7 @@ export const buttonGroupDoc: ComponentApi = {
       name: 'options',
       type: 'ButtonGroupOption[]',
       default: '[]',
-      desc: '{ value: string; label: string; disabled?: boolean; icon?: string }[]。有 icon（同 app-icon 的 name）時按鈕只放圖示，label 改當報讀名稱與滑過提示，所以 label 仍然必填。建議只在 view 用 icon。',
+      desc: '{ value: string; label: string; disabled?: boolean; icon?: string }[]。有 icon（同 app-icon 的 name）時按鈕只放圖示，label 改當報讀名稱與滑過提示，所以 label 仍然必填。建議只在 view 用 icon。只放圖示的選項不要停用：停用的按鈕滑鼠碰不到、鍵盤停不上去，提示出不來，看畫面的人不知道它叫什麼；要停用的選項改放文字（開發模式下會在主控台提醒）。',
     },
     {
       name: 'value',
@@ -39,7 +39,7 @@ export const buttonGroupDoc: ComponentApi = {
       name: 'disabled',
       type: 'boolean',
       default: 'false',
-      desc: '整組禁用',
+      desc: '整組禁用。選項只放圖示時不要整組停用，理由同 options。',
     },
     {
       name: 'errorMessage',

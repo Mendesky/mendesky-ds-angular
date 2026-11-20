@@ -42,7 +42,7 @@ const meta: Meta<ButtonGroupComponent> = {
       options: ['neutral', 'primary'],
     },
     options: {
-      description: '選項清單，每項含 value 與 label',
+      description: '選項清單，每項含 value 與 label，可選 disabled、icon。有 icon 時只放圖示，label 當報讀名稱與滑過提示；只放圖示的選項不要停用',
       control: { type: 'object' },
     },
     value: {

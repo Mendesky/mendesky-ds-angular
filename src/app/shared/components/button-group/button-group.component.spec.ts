@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ButtonGroupColor, ButtonGroupComponent, ButtonGroupOption } from './button-group.component';
 
 /**
@@ -41,6 +41,54 @@ class HostComponent {
 const TEXT_OPTIONS: ButtonGroupOption[] = [
   { value: 's', label: '小' }, { value: 'm', label: '中' }, { value: 'l', label: '大' },
 ];
+
+/**
+ * 把 button-group 的樣式表複製一份，把 :hover／:active／:focus-visible 換成 class，就能在 Karma 裡「按住」「滑過」。
+ * unwrap 給媒體條件時，該 @media 裡的規則直接攤平（Karma 切不了系統設定），用來量強制色彩與減少動態。
+ * 寫法同 menu-item.component.spec.ts 的 emulateForcedColorsCascade。
+ */
+function emulateCascade(unwrap?: string): () => void {
+  const isTarget = (r: CSSRule): r is CSSMediaRule =>
+    !!unwrap && r instanceof CSSMediaRule && r.conditionText.includes(unwrap);
+  const sheets = Array.from(document.styleSheets).filter((sheet) => {
+    try {
+      return Array.from(sheet.cssRules).some((r) => r.cssText.includes('.btn-group--view'));
+    } catch {
+      return false;
+    }
+  });
+  const clones = sheets.map((sheet) => {
+    const css = Array.from(sheet.cssRules)
+      .map((r) => (isTarget(r) ? Array.from(r.cssRules).map((x) => x.cssText).join('\n') : r.cssText))
+      .join('\n')
+      .replace(/:hover/g, '.t-hover')
+      .replace(/:active/g, '.t-active')
+      .replace(/:focus-visible/g, '.t-focus')
+      // 量顏色時不要量到漸變的起點；量減少動態時另外讀原始規則，不加這行
+      + (unwrap?.includes('reduced-motion') ? '' : '\n.btn-group__item { transition: none !important; }');
+    const el = document.createElement('style');
+    el.textContent = css;
+    const owner = sheet.ownerNode as Element;
+    owner.parentNode!.insertBefore(el, owner.nextSibling);
+    sheet.disabled = true;
+    return el;
+  });
+  expect(sheets.length).withContext('含 view 型規則的樣式表').toBeGreaterThan(0);
+  return () => {
+    clones.forEach((el) => el.remove());
+    sheets.forEach((sheet) => (sheet.disabled = false));
+  };
+}
+
+/** 系統色（Highlight、GrayText 這類）在這個瀏覽器算出來的顏色 */
+function systemColor(name: string): string {
+  const probe = document.createElement('div');
+  probe.style.color = name;
+  document.body.appendChild(probe);
+  const value = getComputedStyle(probe).color;
+  probe.remove();
+  return value;
+}
 
 describe('ButtonGroupComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
@@ -142,6 +190,118 @@ describe('ButtonGroupComponent', () => {
         expect(Math.round(group().getBoundingClientRect().height)).toBe(btn + 4);
       });
     }
+  });
+
+  describe('按住、強制色彩、減少動態（複製樣式表模擬）', () => {
+    let restore: (() => void) | null = null;
+    afterEach(() => { restore?.(); restore = null; });
+    const press = (b: HTMLElement) => b.classList.add('t-hover', 't-active');
+
+    for (const color of ['neutral', 'primary'] as const) {
+      const bg = color === 'primary' ? 'rgb(26, 100, 137)' : 'rgb(104, 104, 104)';
+      it(`按住沒選中的選項（${color}）：底色變深、字與圖示白色，不會跟底色同色`, () => {
+        set({ color });
+        restore = emulateCascade();
+        const icon = items()[1];
+        press(icon);
+        expect(cs(icon).backgroundColor).withContext('圖示選項底色').toBe(bg);
+        expect(cs(icon).color).withContext('圖示選項字色').toBe('rgb(255, 255, 255)');
+        set({ options: TEXT_OPTIONS, value: 's' });
+        const text = items()[1];
+        press(text);
+        expect(cs(text).backgroundColor).withContext('文字選項底色').toBe(bg);
+        expect(cs(text).color).withContext('文字選項字色').toBe('rgb(255, 255, 255)');
+      });
+    }
+
+    it('滑過沒選中的選項（沒按住）：只加深字色，不加底色', () => {
+      restore = emulateCascade();
+      items()[1].classList.add('t-hover');
+      expect(cs(items()[1]).color).toBe('rgb(104, 104, 104)');
+      expect(cs(items()[1]).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      set({ options: TEXT_OPTIONS, value: 's' });
+      items()[1].classList.add('t-hover');
+      expect(cs(items()[1]).color).toBe('rgb(83, 83, 83)');
+    });
+
+    for (const color of ['neutral', 'primary'] as const) {
+      it(`強制色彩（${color}）：選中是系統反白色，按住、焦點、整組停用都不變；焦點框用反白字色`, () => {
+        set({ color });
+        restore = emulateCascade('forced-colors: active');
+        const highlight = systemColor('Highlight');
+        const highlightText = systemColor('HighlightText');
+        const grayText = systemColor('GrayText');
+        expect(highlight).not.toBe(highlightText);
+        const sel = items()[0];
+        for (const state of [[], ['t-hover', 't-active'], ['t-focus']]) {
+          sel.classList.remove('t-hover', 't-active', 't-focus');
+          sel.classList.add(...state);
+          const ctx = state.join('+') || '平常';
+          expect(cs(sel).backgroundColor).withContext(`${ctx} 底色`).toBe(highlight);
+          expect(cs(sel).color).withContext(`${ctx} 字色`).toBe(highlightText);
+        }
+        expect(cs(sel).outlineColor).withContext('焦點框').toBe(highlightText);
+        sel.classList.remove('t-focus');
+        expect(cs(items()[2], '::before').backgroundColor).withContext('分隔線').toBe(systemColor('CanvasText'));
+
+        set({ disabled: true });
+        expect(cs(items()[0]).backgroundColor).withContext('整組停用：選中底色').toBe(highlight);
+        expect(cs(items()[0]).color).withContext('整組停用：選中字色').toBe(highlightText);
+        expect(cs(items()[1]).color).withContext('整組停用：沒選中字色').toBe(grayText);
+      });
+    }
+
+    it('減少動態：拿掉轉場；平常有轉場', () => {
+      expect(cs(items()[1]).transitionDuration).withContext('平常').not.toBe('0s');
+      restore = emulateCascade('prefers-reduced-motion: reduce');
+      expect(cs(items()[1]).transitionDuration.split(',').every(d => d.trim() === '0s')).withContext(cs(items()[1]).transitionDuration).toBeTrue();
+    });
+  });
+
+  describe('滑過提示', () => {
+    const tooltips = () => document.body.querySelectorAll('app-tooltip-portal');
+    afterEach(() => tooltips().forEach(t => t.remove()));
+
+    it('圖示選項：滑過 300ms 後在下方出現選項名稱', fakeAsync(() => {
+      items()[1].dispatchEvent(new MouseEvent('mouseenter'));
+      tick(300);
+      fixture.detectChanges();
+      expect(tooltips().length).toBe(1);
+      expect(tooltips()[0].textContent).toContain('格狀');
+      items()[1].dispatchEvent(new MouseEvent('mouseleave'));
+      tick(500);
+    }));
+
+    it('文字選項：滑過不出提示（字已經在畫面上）', fakeAsync(() => {
+      set({ options: TEXT_OPTIONS, value: 's' });
+      items()[1].dispatchEvent(new MouseEvent('mouseenter'));
+      tick(300);
+      fixture.detectChanges();
+      expect(tooltips().length).toBe(0);
+    }));
+  });
+
+  describe('開發模式提醒', () => {
+    it('只放圖示的選項被停用（單一選項或整組）時提醒一次；文字選項停用不提醒', () => {
+      const warn = spyOn(console, 'warn');
+      set({ options: TEXT_OPTIONS.map((o, i) => ({ ...o, disabled: i === 1 })), value: 's' });
+      expect(warn).not.toHaveBeenCalled();
+      set({ options: [
+        { value: 'list', label: '清單', icon: 'Table' },
+        { value: 'grid', label: '格狀', icon: 'Kanban', disabled: true },
+      ], value: 'list' });
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.calls.mostRecent().args[0]).toContain('格狀');
+      set({ disabled: true });
+      expect(warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('整組停用、選項只放圖示：也提醒', () => {
+      const warn = spyOn(console, 'warn');
+      set({ disabled: true });
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.calls.mostRecent().args[0]).toContain('清單');
+    });
   });
 
   describe('鍵盤', () => {
