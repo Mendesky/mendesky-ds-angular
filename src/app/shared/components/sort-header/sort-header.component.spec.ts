@@ -471,7 +471,16 @@ describe('SortHeaderComponent', () => {
     fixture.componentRef.setInput('align', 'end');
     fixture.detectChanges();
     expect(host.classList).toContain('ds-sort-header--end');
-    expect(getComputedStyle(host).justifyContent).toBe('flex-end');
+    // 量實際位置，不比對 getComputedStyle 的字：同一條 justify-content: flex-end，
+    // Chrome 147 回報 'flex-end'、Chrome 158 回報 'flow-end'，畫出來的位置一樣
+    host.style.width = '240px';
+    const h = host.getBoundingClientRect();
+    const b = button().getBoundingClientRect();
+    // 按鈕貼著右邊，並往外多出 6px（文字才跟下方靠右的內容對齊）
+    expect(b.right - h.right).toBeCloseTo(6, 0);
+    // 左邊留著空位：不是靠左
+    expect(b.left - h.left).toBeGreaterThan(40);
+    host.style.width = '';
   });
 
   it('消費端的欄寬 class 帶 overflow: hidden 時也不裁切按鈕', () => {
