@@ -2,22 +2,30 @@ import {
   Component, Input, Output, EventEmitter,
   ElementRef, OnChanges, SimpleChanges,
   inject, signal,
- ChangeDetectionStrategy, } from '@angular/core';
+ ChangeDetectionStrategy, isDevMode, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
+import { TooltipDirective } from '../../directives/tooltip/tooltip.directive';
+import { IconComponent } from '../icon/icon.component';
 
 export interface ButtonGroupOption {
   value: string;
+  /** 選項名稱。有 icon 時不顯示在畫面上，改當報讀名稱（aria-label）與滑過提示 */
   label: string;
   disabled?: boolean;
+  /** 圖示名稱（同 app-icon 的 name）。有值時按鈕只放圖示；建議只用在 view 型。只放圖示的選項不要停用（停用時提示出不來），要停用請改放文字 */
+  icon?: string;
 }
 
 export type ButtonGroupType = 'form' | 'round' | 'view';
 
+/** view 型選中的顏色：neutral＝深灰（中性的設定）、primary＝深藍（切換畫面這類功能操作）。form、round 不吃 */
+export type ButtonGroupColor = 'neutral' | 'primary';
+
 @Component({
   selector: 'app-button-group',
   standalone: true,
-  imports: [CommonModule, ErrorTooltipDirective],
+  imports: [CommonModule, ErrorTooltipDirective, TooltipDirective, IconComponent],
   templateUrl: './button-group.component.html',
   styleUrls: ['./button-group.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +35,7 @@ export class ButtonGroupComponent implements OnChanges {
 
   @Input() type: ButtonGroupType = 'form';
   @Input() size: 'S' | 'M' | 'L' = 'L';
+  @Input() color: ButtonGroupColor = 'neutral';
   @Input() options: ButtonGroupOption[] = [];
   @Input() value: string | null = null;
   @Input() disabled = false;
@@ -49,6 +58,23 @@ export class ButtonGroupComponent implements OnChanges {
     if (changes['options'] || changes['value'] || changes['disabled']) {
       this.focusIndex.set(this.resolveInitialFocus());
     }
+    if (changes['options'] || changes['disabled']) {
+      this.warnDisabledIconOption();
+    }
+  }
+
+  /**
+   * 開發模式：只放圖示的選項不要停用（單一選項或整組都算）。
+   * 停用的按鈕滑鼠碰不到、鍵盤停不上去，滑過提示出不來，看畫面的人就不知道它叫什麼。
+   * 要停用的選項請改放文字（拿掉 icon）。每個元件只提醒一次。
+   */
+  private warnedDisabledIcon = false;
+  private warnDisabledIconOption(): void {
+    if (!isDevMode() || this.warnedDisabledIcon) return;
+    const hit = this.options.find(o => o.icon && (o.disabled || this.disabled));
+    if (!hit) return;
+    this.warnedDisabledIcon = true;
+    console.warn(`[app-button-group] 只放圖示的選項「${hit.label}」被停用了。停用時滑過提示不會出現，看畫面的人不知道它叫什麼。要停用的選項請改放文字（拿掉 icon）。`);
   }
 
   select(val: string): void {
