@@ -11,7 +11,7 @@ const meta: Meta<LabelComponent> = {
       control: 'select',
       options: [
         'White', 'Transparent', 'GreyOutline', 'LightWhite',
-        'SoftBlue', 'Red', 'Salmon', 'Green',
+        'SoftBlue', 'Red', 'Salmon', 'Salmon90', 'Green',
         'Grey25', 'Blue', 'SeaGreen', 'Grey70',
         'Grey16', 'Error', 'GreenAll', 'Golden',
       ],
@@ -65,6 +65,7 @@ export const AllColors: Story = {
         <app-label color="Green"       size="L" text="Green"></app-label>
         <app-label color="Golden"      size="L" text="Golden"></app-label>
         <app-label color="Salmon"      size="L" text="Salmon"></app-label>
+        <app-label color="Salmon90"    size="L" text="Salmon90"></app-label>
         <app-label color="Grey70"      size="L" text="Grey70"></app-label>
         <app-label color="Grey25"      size="L" text="Grey25"></app-label>
         <app-label color="Grey16"      size="L" text="Grey16"></app-label>

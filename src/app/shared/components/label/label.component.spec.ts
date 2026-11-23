@@ -78,6 +78,17 @@ describe('LabelComponent — 類別標示 variant（Purple / GreenOutline）', (
     expect(getComputedStyle(textEl).color).toBe('rgb(90, 140, 44)');
   });
 
+  it('Salmon90：深鮭魚底（#794234）白字，跟 Salmon 分得開', () => {
+    component.color = 'Salmon90';
+    component.text = '標籤';
+    expect(component.hostClasses['label--salmon90']).toBeTrue();
+    expect(component.textClass).toBe('text--white');
+    expect(component.iconColorClass).toBe('icon--white');
+    fixture.detectChanges();
+    const labelEl = fixture.nativeElement.querySelector('.label') as HTMLElement;
+    expect(getComputedStyle(labelEl).backgroundColor).toBe('rgb(121, 66, 52)');
+  });
+
   it('三張顏色對照表的 key 完全一致——新增 variant 只改其中一張會被抓出來', () => {
     const colorKeys = Object.keys((component as any).COLOR_CSS).sort();
     const textKeys  = Object.keys((component as any).TEXT_CLASS).sort();
