@@ -60,6 +60,11 @@
   background: var(--label\/accent-salmon, #b36a56);
 }
 
+/* Salmon90：深一階的鮭魚色（Color/Salmon/90），白字對比 7.95:1 */
+.label--salmon90 {
+  background: var(--label\/accent-salmon-dark, #794234);
+}
+
 /* Green: white bg + green border */
 .label--green {
   background: var(--label\/secondary, #ffffff);

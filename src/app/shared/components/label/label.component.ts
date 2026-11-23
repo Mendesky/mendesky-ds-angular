@@ -4,7 +4,7 @@ import { IconComponent } from '../icon/icon.component';
 
 export type LabelColor =
   | 'White' | 'Transparent' | 'GreyOutline' | 'LightWhite'
-  | 'SoftBlue' | 'Red' | 'Salmon' | 'Green'
+  | 'SoftBlue' | 'Red' | 'Salmon' | 'Salmon90' | 'Green'
   | 'Grey25' | 'Blue' | 'SeaGreen' | 'Grey70'
   | 'Grey16' | 'Error' | 'GreenAll' | 'Golden'
   | 'Purple' | 'GreenOutline'
@@ -41,6 +41,7 @@ export class LabelComponent {
     SoftBlue:    'label--soft-blue',
     Red:         'label--red',
     Salmon:      'label--salmon',
+    Salmon90:    'label--salmon90',
     Green:       'label--green',
     Grey25:      'label--grey25',
     Blue:        'label--blue',
@@ -73,6 +74,7 @@ export class LabelComponent {
     Blue:        'text--white',   // white（藍底）
     SeaGreen:    'text--white',   // white（綠底）
     Salmon:      'text--white',   // white（橙底）
+    Salmon90:    'text--white',   // white（深鮭魚底 #794234，對比 7.95:1）
     Grey70:      'text--white',   // white（深灰底）
     Golden:      'text--white',   // white（金底）
     GreenAll:    'text--white',   // white（淺綠底）
@@ -99,6 +101,7 @@ export class LabelComponent {
     Blue:        'icon--white',
     SeaGreen:    'icon--white',
     Salmon:      'icon--white',
+    Salmon90:    'icon--white',
     Grey70:      'icon--white',
     Golden:      'icon--white',
     GreenAll:    'icon--white',
