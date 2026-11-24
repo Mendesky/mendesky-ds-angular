@@ -11,7 +11,8 @@
     [class.btn-group--size-s]="size === 'S'"
     [class.is-error]="hasError"
     [class.is-disabled]="disabled"
-    [class.btn-group--color-primary]="type === 'view' && color === 'primary'"
+    [class.btn-group--color-primary]="type !== 'round' && resolvedColor === 'primary'"
+    [class.btn-group--color-neutral]="type === 'form' && resolvedColor === 'neutral'"
     role="group">
 
     <!-- 有 icon：只放圖示，選項名稱改當 aria-label 與滑過提示（提示放下方，避免蓋到上方的頁首） -->

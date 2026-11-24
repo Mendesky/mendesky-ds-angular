@@ -19,8 +19,14 @@ export interface ButtonGroupOption {
 
 export type ButtonGroupType = 'form' | 'round' | 'view';
 
-/** view 型選中的顏色：neutral＝深灰（中性的設定）、primary＝深藍（切換畫面這類功能操作）。form、round 不吃 */
-export type ButtonGroupColor = 'neutral' | 'primary';
+/**
+ * 選中的顏色看用途，不看喜好：
+ * - progress＝綠：跟填寫進度有關的作答。form 型不設 color 就是這個。
+ * - primary＝深藍：選了以後畫面上顯示的東西會變（篩掉一部分資料、換一種排法）。
+ * - neutral＝深灰：只是偏好的設定（單位、字級）。
+ * view 型不拿來作答：不設或設 progress 都是深灰。round 型不吃 color。
+ */
+export type ButtonGroupColor = 'progress' | 'primary' | 'neutral';
 
 @Component({
   selector: 'app-button-group',
@@ -35,7 +41,7 @@ export class ButtonGroupComponent implements OnChanges {
 
   @Input() type: ButtonGroupType = 'form';
   @Input() size: 'S' | 'M' | 'L' = 'L';
-  @Input() color: ButtonGroupColor = 'neutral';
+  @Input() color?: ButtonGroupColor;
   @Input() options: ButtonGroupOption[] = [];
   @Input() value: string | null = null;
   @Input() disabled = false;
@@ -49,6 +55,12 @@ export class ButtonGroupComponent implements OnChanges {
 
   /** trackBy for *ngFor — options.value 在同一組內必須唯一 */
   trackByOptionValue = (_i: number, opt: ButtonGroupOption) => opt.value;
+
+  /** 實際用的選中色：form 型不設是 progress；view 型只認 primary，其餘都是 neutral */
+  get resolvedColor(): ButtonGroupColor {
+    if (this.type === 'form') return this.color ?? 'progress';
+    return this.color === 'primary' ? 'primary' : 'neutral';
+  }
 
   get hasError(): boolean {
     return this.type === 'form' && !!this.errorMessage;

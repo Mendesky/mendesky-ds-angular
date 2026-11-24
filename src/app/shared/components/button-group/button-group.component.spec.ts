@@ -10,7 +10,11 @@ import { ButtonGroupColor, ButtonGroupComponent, ButtonGroupOption } from './but
  * - 檢視型分隔線：只畫在兩顆都沒選中的按鈕之間。
  * - 檢視型選中按鈕的焦點框白色（藍框在深底上不到 3:1）。
  * - 圖示按鈕是正方形：S 24、M 28、L 32；槽比按鈕高 4px。
- * - 表單型、圓角型外觀不變。
+ * - 圓角型外觀不變。
+ * 2026-11-24 起（本體 #59 規格「選中的顏色看用途」）：
+ * - 表單型也吃 color：不設或 progress＝綠 #74ae3e（填寫進度）；primary＝深藍 #1a6489；neutral＝深灰 #686868。
+ * - 檢視型不設 color 是深灰；progress 也是深灰（檢視型不拿來作答）。
+ * - 表單型深藍、深灰選中時焦點框白色；強制色彩下表單型選中改用系統反白色（三種顏色都是）。
  * 全部從真的 DOM 與 computed style 查。
  */
 @Component({
@@ -19,7 +23,7 @@ import { ButtonGroupColor, ButtonGroupComponent, ButtonGroupOption } from './but
   template: `
     <div style="padding:16px;background:#eef1f5">
       <app-button-group data-testid="g" [type]="type" [size]="size" [color]="color"
-        [options]="options" [value]="value" [disabled]="disabled"
+        [options]="options" [value]="value" [disabled]="disabled" [errorMessage]="errorMessage"
         (valueChange)="changes.push($event); value = $event"></app-button-group>
     </div>
   `,
@@ -27,7 +31,8 @@ import { ButtonGroupColor, ButtonGroupComponent, ButtonGroupOption } from './but
 class HostComponent {
   type: 'form' | 'round' | 'view' = 'view';
   size: 'S' | 'M' | 'L' = 'M';
-  color: ButtonGroupColor = 'neutral';
+  // 不設 color 時由型別決定預設（表單型綠、檢視型深灰），所以 host 預設不傳
+  color: ButtonGroupColor | undefined = undefined;
   options: ButtonGroupOption[] = [
     { value: 'list', label: '清單', icon: 'Table' },
     { value: 'grid', label: '格狀', icon: 'Kanban' },
@@ -35,6 +40,7 @@ class HostComponent {
   ];
   value: string | null = 'list';
   disabled = false;
+  errorMessage = '';
   changes: string[] = [];
 }
 
@@ -318,13 +324,106 @@ describe('ButtonGroupComponent', () => {
     });
   });
 
-  describe('其他型不受影響', () => {
-    it('表單型：選中綠色、槽有框', () => {
-      set({ type: 'form', options: TEXT_OPTIONS, value: 'm' });
-      expect(cs(items()[1]).backgroundColor).toBe('rgb(116, 174, 62)');
+  describe('表單型的選中色（看用途）', () => {
+    const GREEN = 'rgb(116, 174, 62)';
+    const BLUE = 'rgb(26, 100, 137)';
+    const GREY = 'rgb(104, 104, 104)';
+    const WHITE = 'rgb(255, 255, 255)';
+    // 從檢視型切過來時，框與底色有 0.15 秒漸變；量之前先讓漸變跑完，不然量到的是起點色
+    const form = (patch: Partial<HostComponent> = {}) => {
+      set({ type: 'form', options: TEXT_OPTIONS, value: 'm', ...patch });
+      root().getAnimations({ subtree: true }).forEach((a) => a.finish());
+    };
+
+    it('不設 color：選中綠色、白字、槽有框（跟以前一樣）', () => {
+      form();
+      expect(cs(items()[1]).backgroundColor).toBe(GREEN);
+      expect(cs(items()[1]).color).toBe(WHITE);
       expect(cs(group()).borderTopColor).toBe('rgb(231, 231, 231)');
       expect(cs(items()[2], '::before').content).toBe('none');
     });
+
+    for (const [color, bg] of [['progress', GREEN], ['primary', BLUE], ['neutral', GREY]] as const) {
+      it(`color="${color}"：選中 ${bg}、白字；沒選中的維持透明底、#686868 字`, () => {
+        form({ color });
+        expect(cs(items()[1]).backgroundColor).toBe(bg);
+        expect(cs(items()[1]).color).toBe(WHITE);
+        expect(cs(items()[0]).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+        expect(cs(items()[0]).color).toBe(GREY);
+      });
+    }
+
+    for (const size of ['S', 'M', 'L'] as const) {
+      it(`尺寸 ${size}：color="primary" 一樣是深藍`, () => {
+        form({ color: 'primary', size });
+        expect(cs(items()[1]).backgroundColor).toBe(BLUE);
+      });
+    }
+
+    it('換顏色不改尺寸：三種顏色的按鈕高度、寬度都一樣', () => {
+      const boxes = (['progress', 'primary', 'neutral'] as const).map((color) => {
+        form({ color });
+        const r = items()[1].getBoundingClientRect();
+        return `${Math.round(r.width)}x${Math.round(r.height)}`;
+      });
+      expect(new Set(boxes).size).withContext(boxes.join(' / ')).toBe(1);
+    });
+
+    for (const color of ['primary', 'neutral'] as const) {
+      it(`color="${color}"：選中那顆拿到鍵盤焦點時焦點框白色（藍框在深底上不到 3:1）`, () => {
+        form({ color });
+        items()[1].focus();
+        expect(items()[1].matches(':focus-visible')).toBeTrue();
+        expect(cs(items()[1]).outlineColor).toBe(WHITE);
+      });
+    }
+
+    it('整組停用：選中的顏色不變，整組半透明', () => {
+      form({ color: 'primary', disabled: true });
+      expect(cs(items()[1]).backgroundColor).toBe(BLUE);
+      expect(cs(group()).opacity).toBe('0.5');
+    });
+
+    it('有錯誤時：框變紅，選中的顏色不變', () => {
+      form({ color: 'primary', errorMessage: '請選一項' });
+      expect(cs(group()).borderTopColor).toBe('rgb(204, 82, 82)');
+      expect(cs(items()[1]).backgroundColor).toBe(BLUE);
+    });
+
+    describe('滑過、強制色彩（複製樣式表模擬）', () => {
+      let restore: (() => void) | null = null;
+      afterEach(() => { restore?.(); restore = null; });
+
+      for (const color of [undefined, 'primary', 'neutral'] as const) {
+        it(`滑過沒選中的選項（color=${color ?? '不設'}）：淺灰底 #e7e7e7，跟選中色無關`, () => {
+          form({ color });
+          restore = emulateCascade();
+          items()[0].classList.add('t-hover');
+          expect(cs(items()[0]).backgroundColor).toBe('rgb(231, 231, 231)');
+        });
+      }
+
+      for (const color of [undefined, 'progress', 'primary', 'neutral'] as const) {
+        it(`強制色彩（color=${color ?? '不設'}）：選中是系統反白色，沒選中不是`, () => {
+          form({ color });
+          restore = emulateCascade('forced-colors: active');
+          const highlight = systemColor('Highlight');
+          expect(cs(items()[1]).backgroundColor).toBe(highlight);
+          expect(cs(items()[1]).color).toBe(systemColor('HighlightText'));
+          expect(cs(items()[0]).backgroundColor).not.toBe(highlight);
+        });
+      }
+    });
+  });
+
+  describe('檢視型的 color="progress"', () => {
+    it('跟不設一樣是深灰（檢視型不拿來作答）', () => {
+      set({ color: 'progress' });
+      expect(cs(items()[0]).backgroundColor).toBe('rgb(104, 104, 104)');
+    });
+  });
+
+  describe('其他型不受影響', () => {
 
     it('圓角型：選中深灰、color 不影響', () => {
       set({ type: 'round', options: TEXT_OPTIONS, value: 'm', color: 'primary' });

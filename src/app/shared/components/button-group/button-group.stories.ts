@@ -19,6 +19,18 @@ const VIEW_OPTIONS: ButtonGroupOption[] = [
   { value: 'kanban', label: '看板' },
 ];
 
+const RANGE_OPTIONS: ButtonGroupOption[] = [
+  { value: '7d', label: '近 7 天' },
+  { value: '30d', label: '近 30 天' },
+  { value: 'all', label: '全部' },
+];
+
+const UNIT_OPTIONS: ButtonGroupOption[] = [
+  { value: 'one', label: '元' },
+  { value: 'thousand', label: '千元' },
+  { value: 'ten-thousand', label: '萬元' },
+];
+
 const VIEW_ICON_OPTIONS: ButtonGroupOption[] = [
   { value: 'list', label: '清單', icon: 'Table' },
   { value: 'kanban', label: '看板', icon: 'Kanban' },
@@ -37,9 +49,9 @@ const meta: Meta<ButtonGroupComponent> = {
       options: ['form', 'round', 'view'],
     },
     color: {
-      description: 'View 類型選中的顏色：neutral 深灰（中性的設定）、primary 深藍（功能操作）',
+      description: '選中的顏色看用途：progress 綠（填寫進度，form 不設就是這個）、primary 深藍（選了畫面會變）、neutral 深灰（偏好設定）。view 不設或設 progress 都是深灰；round 不吃',
       control: { type: 'select' },
-      options: ['neutral', 'primary'],
+      options: [undefined, 'progress', 'primary', 'neutral'],
     },
     options: {
       description: '選項清單，每項含 value 與 label，可選 disabled、icon。有 icon 時只放圖示，label 當報讀名稱與滑過提示；只放圖示的選項不要停用',
@@ -80,6 +92,30 @@ export const FormType: Story = {
     type: 'form',
     options: POLICY_OPTIONS,
     value: 'new',
+  },
+};
+
+/** 選了以後畫面顯示的資料會變（篩掉一部分），跟填寫進度無關，選中用深藍 */
+export const FormPrimary: Story = {
+  name: 'Form 類型：篩選（深藍）',
+  args: {
+    type: 'form',
+    size: 'M',
+    color: 'primary',
+    options: RANGE_OPTIONS,
+    value: '30d',
+  },
+};
+
+/** 只是偏好的設定（金額單位），跟填寫進度無關、也不改變資料，選中用深灰 */
+export const FormNeutral: Story = {
+  name: 'Form 類型：偏好設定（深灰）',
+  args: {
+    type: 'form',
+    size: 'M',
+    color: 'neutral',
+    options: UNIT_OPTIONS,
+    value: 'thousand',
   },
 };
 
