@@ -76,6 +76,21 @@
 
 }
 
+// 選中的顏色看用途（2026-11-24）：綠色留給填寫進度；選了以後畫面會變的用深藍，偏好設定用深灰
+.btn-group--form.btn-group--color-primary .btn-group__item.is-selected {
+  background: var(--color\/calmblue\/80, #1a6489);
+}
+
+.btn-group--form.btn-group--color-neutral .btn-group__item.is-selected {
+  background: var(--button\/neutral-darker-hover, #686868);
+}
+
+// 藍色焦點框在深藍、深灰底上不到 3:1（2.11、1.81），改白框（6.51、5.57）
+.btn-group--form.btn-group--color-primary .btn-group__item.is-selected:focus-visible,
+.btn-group--form.btn-group--color-neutral .btn-group__item.is-selected:focus-visible {
+  outline-color: var(--border\/white, #ffffff);
+}
+
 // ── Form Size Variants ─────────────────────────────────────────
 .btn-group--form.btn-group--size-m {
   padding: 3px;
@@ -290,5 +305,21 @@
   // 整組停用：只改沒選中的。選中的維持 Highlight／HighlightText（深灰、深藍兩型一致），整組半透明已表示停用
   .btn-group--view.is-disabled .btn-group__item:not(.is-selected) {
     color: GrayText;
+  }
+
+  // 表單型：系統會拿掉選中的底色，綠、深藍、深灰都跟沒選中一樣，所以三種都改用系統反白色。
+  // 深藍、深灰的選擇器比較長，要一起列，不然會蓋過系統色
+  .btn-group--form .btn-group__item.is-selected,
+  .btn-group--form.btn-group--color-primary .btn-group__item.is-selected,
+  .btn-group--form.btn-group--color-neutral .btn-group__item.is-selected {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .btn-group--form .btn-group__item.is-selected:focus-visible,
+  .btn-group--form.btn-group--color-primary .btn-group__item.is-selected:focus-visible,
+  .btn-group--form.btn-group--color-neutral .btn-group__item.is-selected:focus-visible {
+    outline-color: HighlightText;
   }
 }
