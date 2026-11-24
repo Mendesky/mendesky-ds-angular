@@ -30,6 +30,8 @@
   --button\/white: #ffffff;
   --button\/action: #3a9ccd;
   --button\/action-light: #4fbaef;
+  /* 藍底白字按鈕的滑過色（Calm Blue 75）。主色藍 #3a9ccd 配白字只有 3.08:1，這是白字還能過 4.5:1 的最淺藍 */
+  --button\/action-hover: #287ea9;
   --button\/neutral: #939393;
   --button\/neutral-lightest: #e7e7e7;
   --button\/neutral-lighter: #bebebe;
@@ -145,6 +147,8 @@
   --color\/calmblue\/100: #073045;
   --color\/calmblue\/90: #0f4a67;
   --color\/calmblue\/80: #1a6489;
+  /* 75：--button/action-hover 的值。配白字對比 4.52:1，過 4.5:1；Calm Blue 70 配白字只有 4.40:1 */
+  --color\/calmblue\/75: #287ea9;
   --color\/calmblue\/70: #2980ab;
   --color\/calmblue\/60: #3a9ccd;
   --color\/calmblue\/50: #4fbaef;
