@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NumberInputComponent } from './number-input.component';
@@ -584,5 +585,115 @@ describe('NumberInputComponent — 按上下按鈕後 600ms 內點進輸入框',
     focusInput();
     blurInput();
     expect(emittedCommits).toEqual([6]);
+  }));
+});
+
+// 使用端常見寫法：(valueChange) 接回 [initialValue]。按 ↑↓ 後的回寫會觸發 ngOnChanges，
+// 這時不能把起點換成按鈕改過的值、也不能清 isDirty，否則排好的 commit 會被當成「沒改」。
+@Component({
+  standalone: true,
+  imports: [NumberInputComponent],
+  template: `<app-number-input [initialValue]="v" (valueChange)="v = $event"
+                               (valueCommit)="commits.push($event)"></app-number-input>`,
+})
+class EchoHostComponent {
+  v: number | null = 5;
+  commits: (number | null)[] = [];
+}
+
+describe('NumberInputComponent — 使用端把 valueChange 接回 initialValue 時，按上下按鈕後點進輸入框', () => {
+  let fixture: ComponentFixture<EchoHostComponent>;
+  let host: EchoHostComponent;
+  let input: HTMLInputElement;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EchoHostComponent],
+    }).compileComponents();
+    fixture = TestBed.createComponent(EchoHostComponent);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+    input = fixture.debugElement.query(By.css('.number-input-field')).nativeElement;
+  });
+
+  function clickUp(): void {
+    fixture.debugElement.query(By.css('.stepper-btn--up')).nativeElement.click();
+    fixture.detectChanges(); // 回寫的 initialValue 在這裡進 ngOnChanges
+  }
+
+  function focusInput(): void {
+    input.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+  }
+
+  function blurInput(): void {
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+  }
+
+  function type(value: string): void {
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    tick(0); // onInput 內還原游標的 setTimeout(0)
+    fixture.detectChanges();
+  }
+
+  it('沒點進去：600ms 後送出；之後點進去沒改值離開不重送', fakeAsync(() => {
+    clickUp();
+    expect(host.v).toBe(6);
+    tick(600);
+    expect(host.commits).toEqual([6]);
+
+    focusInput();
+    blurInput();
+    expect(host.commits).toEqual([6]);
+  }));
+
+  it('100ms 點進去、沒改值就離開：送出按鈕改的值', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    blurInput();
+    tick(600);
+    expect(host.commits).toEqual([6]);
+  }));
+
+  it('100ms 點進去、停 700ms：有焦點期間不送，離開時送出', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    tick(700);
+    expect(host.commits).toEqual([]);
+
+    blurInput();
+    expect(host.commits).toEqual([6]);
+  }));
+
+  it('100ms 點進去、打字後離開：只送打的值', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    type('9');
+    blurInput();
+    tick(600);
+    expect(host.commits).toEqual([9]);
+  }));
+
+  it('100ms 點進去、改回按按鈕前的值再離開：不送', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    type('5');
+    blurInput();
+    tick(600);
+    expect(host.commits).toEqual([]);
+  }));
+
+  it('100ms 點進去、元件被銷毀：仍送出按鈕改的值', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    fixture.destroy();
+    expect(host.commits).toEqual([6]);
   }));
 });

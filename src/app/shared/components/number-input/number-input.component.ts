@@ -55,7 +55,9 @@ export class NumberInputComponent implements OnChanges, OnDestroy {
         this.numericValue = null;
         this.displayValue = '';
       }
-      if (!this.focused) {
+      // 有焦點、或按 ↑↓ 排好的 commit 還沒送時，回寫的 initialValue 多半是使用端把 (valueChange) 接回來，
+      // 不是外部重新給值：不換起點、不清 isDirty，否則這次 commit 會被當成「沒改」而不見（見 onFocus）。
+      if (!this.focused && this.commitTimer === null) {
         this.isDirty = false;
         this.baselineValue = this.numericValue;
       }
