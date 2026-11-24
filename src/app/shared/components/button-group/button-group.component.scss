@@ -224,6 +224,23 @@
   }
 }
 
+// 帶選單的選項（2026-11-24，原型「主管報價案件總覽」第二版的卡片切換「合計｜分布 ▾｜走勢 ▾」）：
+// 字後面一個 12px 箭頭，右內距縮一點讓箭頭貼近邊；選單開著時箭頭轉向
+.btn-group--view .btn-group__item--menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.btn-group__menu-arrow {
+  flex: none;
+  transition: transform 0.15s;
+}
+
+.btn-group__item.is-menu-open .btn-group__menu-arrow {
+  transform: rotate(180deg);
+}
+
 .btn-group--view.btn-group--color-primary .btn-group__item {
   &.is-selected,
   &:active:not(:disabled) {
@@ -267,9 +284,15 @@
   }
 }
 
+// 帶選單：右內距比文字選項少，箭頭才不會離邊太遠（L 6、M 4、S 3）
+.btn-group--view.btn-group--size-l .btn-group__item--menu { padding-right: 6px; }
+.btn-group--view.btn-group--size-m .btn-group__item--menu { padding-right: 4px; }
+.btn-group--view.btn-group--size-s .btn-group__item--menu { padding-right: 3px; }
+
 // ── View：減少動態、強制色彩 ───────────────────────────────────
 @media (prefers-reduced-motion: reduce) {
-  .btn-group--view .btn-group__item {
+  .btn-group--view .btn-group__item,
+  .btn-group__menu-arrow {
     transition: none;
   }
 }

@@ -15,6 +15,11 @@ import { ButtonGroupColor, ButtonGroupComponent, ButtonGroupOption } from './but
  * - 表單型也吃 color：不設或 progress＝綠 #74ae3e（填寫進度）；primary＝深藍 #1a6489；neutral＝深灰 #686868。
  * - 檢視型不設 color 是深灰；progress 也是深灰（檢視型不拿來作答）。
  * - 表單型深藍、深灰選中時焦點框白色；強制色彩下表單型選中改用系統反白色（三種顏色都是）。
+ * 2026-11-24 起（帶選單的選項，原型「主管報價案件總覽」第二版的「合計｜分布 ▾｜走勢 ▾」）：
+ * - 只有檢視型的文字選項能帶選單：字後面 12px 箭頭，右內距 L 6、M 4、S 3；有 icon 或不是檢視型不畫（開發模式提醒）。
+ * - 沒選中時按＝選取；選中後再按＝開關選單（menuToggle），不再送 valueChange；選單開著時按（點外面先關）送的是關。
+ * - 選中、帶選單那顆 aria-haspopup="menu"、aria-expanded 跟 menuOpen；報讀「走勢，目前：金額」、滑過提示「走勢：金額」。
+ * - 選單開著時箭頭轉 180°；空白鍵同滑鼠按；menuAnchor() 給選單對齊。
  * 全部從真的 DOM 與 computed style 查。
  */
 @Component({
@@ -23,8 +28,8 @@ import { ButtonGroupColor, ButtonGroupComponent, ButtonGroupOption } from './but
   template: `
     <div style="padding:16px;background:#eef1f5">
       <app-button-group data-testid="g" [type]="type" [size]="size" [color]="color"
-        [options]="options" [value]="value" [disabled]="disabled" [errorMessage]="errorMessage"
-        (valueChange)="changes.push($event); value = $event"></app-button-group>
+        [options]="options" [value]="value" [disabled]="disabled" [errorMessage]="errorMessage" [menuOpen]="menuOpen"
+        (valueChange)="changes.push($event); value = $event" (menuToggle)="toggles.push($event)"></app-button-group>
     </div>
   `,
 })
@@ -41,7 +46,9 @@ class HostComponent {
   value: string | null = 'list';
   disabled = false;
   errorMessage = '';
+  menuOpen = false;
   changes: string[] = [];
+  toggles: boolean[] = [];
 }
 
 const TEXT_OPTIONS: ButtonGroupOption[] = [
@@ -420,6 +427,125 @@ describe('ButtonGroupComponent', () => {
     it('跟不設一樣是深灰（檢視型不拿來作答）', () => {
       set({ color: 'progress' });
       expect(cs(items()[0]).backgroundColor).toBe('rgb(104, 104, 104)');
+    });
+  });
+
+  describe('帶選單的選項', () => {
+    const MENU_OPTIONS: ButtonGroupOption[] = [
+      { value: 'cards', label: '合計' },
+      { value: 'dist', label: '分布', menu: { hint: '金額' } },
+      { value: 'trend', label: '走勢', menu: { hint: '件數' } },
+    ];
+    const arrow = (b: HTMLElement) => b.querySelector('.btn-group__menu-arrow') as HTMLElement | null;
+    const component = () => fixture.debugElement.children[0].children[0].componentInstance as ButtonGroupComponent;
+    const press = (b: HTMLElement) => { b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b.click(); fixture.detectChanges(); };
+    beforeEach(() => set({ options: MENU_OPTIONS, value: 'cards' }));
+
+    it('檢視型的文字選項：字後面一個 12px 箭頭，報讀不念箭頭', () => {
+      expect(arrow(items()[0])).withContext('沒帶選單').toBeNull();
+      for (const b of [items()[1], items()[2]]) {
+        expect(arrow(b)).not.toBeNull();
+        expect(arrow(b)!.getAttribute('aria-hidden')).toBe('true');
+        expect(Math.round(arrow(b)!.getBoundingClientRect().width)).toBe(12);
+        expect(b.textContent!.trim()).toBe(MENU_OPTIONS[items().indexOf(b)].label);
+      }
+    });
+
+    for (const [size, right] of [['S', '3px'], ['M', '4px'], ['L', '6px']] as const) {
+      it(`尺寸 ${size}：帶選單的右內距 ${right}（箭頭貼近邊）；沒帶選單的不變`, () => {
+        set({ size });
+        expect(cs(items()[1]).paddingRight).toBe(right);
+        expect(cs(items()[0]).paddingRight).not.toBe(right);
+      });
+    }
+
+    it('沒選中時按：選取，不開選單；選中後再按：開選單，不再選取', () => {
+      press(items()[1]);
+      expect(host.changes).toEqual(['dist']);
+      expect(host.toggles).toEqual([]);
+      press(items()[1]);
+      expect(host.changes).toEqual(['dist']);
+      expect(host.toggles).toEqual([true]);
+    });
+
+    it('選單開著時按：送「關」；按下時選單還開著、放開前已經被點外面關掉，也是送「關」（不會又打開）', () => {
+      set({ value: 'dist', menuOpen: true });
+      press(items()[1]);
+      expect(host.toggles).toEqual([false]);
+      items()[1].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      set({ menuOpen: false });
+      items()[1].click();
+      fixture.detectChanges();
+      expect(host.toggles).toEqual([false, false]);
+    });
+
+    it('選中、帶選單那顆 aria-haspopup="menu"、aria-expanded 跟著選單；沒選中的沒有', () => {
+      set({ value: 'dist' });
+      expect(items()[1].getAttribute('aria-haspopup')).toBe('menu');
+      expect(items()[1].getAttribute('aria-expanded')).toBe('false');
+      set({ menuOpen: true });
+      expect(items()[1].getAttribute('aria-expanded')).toBe('true');
+      expect(items()[2].hasAttribute('aria-haspopup')).withContext('沒選中：按下去是選取').toBeFalse();
+      expect(items()[0].hasAttribute('aria-expanded')).toBeFalse();
+    });
+
+    it('報讀名稱帶目前值：「分布，目前：金額」；沒帶選單的照舊不加 aria-label', () => {
+      expect(items()[1].getAttribute('aria-label')).toBe('分布，目前：金額');
+      expect(items()[2].getAttribute('aria-label')).toBe('走勢，目前：件數');
+      expect(items()[0].hasAttribute('aria-label')).toBeFalse();
+    });
+
+    it('選單開著時箭頭轉 180°；關著不轉', () => {
+      set({ value: 'dist' });
+      // 量轉完的角度，不量轉場中間的值
+      arrow(items()[1])!.style.transition = 'none';
+      expect(cs(arrow(items()[1])!).transform).toBe('none');
+      set({ menuOpen: true });
+      fixture.detectChanges();
+      const t = cs(arrow(items()[1])!).transform;
+      expect(t === 'matrix(-1, 0, 0, -1, 0, 0)' || t.startsWith('matrix(-1, 1.2')).withContext(t).toBeTrue();
+      expect(cs(arrow(items()[2])!).transform).withContext('沒選中的不轉').toBe('none');
+    });
+
+    it('空白鍵：沒選中＝選取；選中帶選單那顆＝開關選單', () => {
+      items()[1].dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      fixture.detectChanges();
+      expect(host.changes).toEqual(['dist']);
+      items()[1].dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      fixture.detectChanges();
+      expect(host.toggles).toEqual([true]);
+    });
+
+    it('menuAnchor()：選中、帶選單那顆；選中的沒帶選單、或整組停用時是 null', () => {
+      expect(component().menuAnchor()).toBeNull();
+      set({ value: 'trend' });
+      expect(component().menuAnchor()).toBe(items()[2]);
+      set({ disabled: true });
+      expect(component().menuAnchor()).toBeNull();
+    });
+
+    it('滑過提示「分布：金額」（目前值不在畫面上）', fakeAsync(() => {
+      items()[1].dispatchEvent(new MouseEvent('mouseenter'));
+      tick(300);
+      fixture.detectChanges();
+      const tips = document.body.querySelectorAll('app-tooltip-portal');
+      expect(tips.length).toBe(1);
+      expect(tips[0].textContent).toContain('分布：金額');
+      items()[1].dispatchEvent(new MouseEvent('mouseleave'));
+      tick(500);
+      tips.forEach(t => t.remove());
+    }));
+
+    it('只有檢視型的文字選項能帶：表單型、只放圖示的不畫箭頭，開發模式提醒一次', () => {
+      const warn = spyOn(console, 'warn');
+      set({ options: [{ value: 'a', label: '甲', icon: 'Table', menu: {} }, { value: 'b', label: '乙', icon: 'Kanban' }], value: 'a' });
+      expect(arrow(items()[0])).toBeNull();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.calls.mostRecent().args[0]).toContain('甲');
+      set({ type: 'form', options: MENU_OPTIONS, value: 'dist' });
+      expect(arrow(items()[1])).toBeNull();
+      press(items()[1]);
+      expect(host.toggles).withContext('表單型按選中那顆不開選單').toEqual([]);
     });
   });
 

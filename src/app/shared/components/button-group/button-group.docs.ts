@@ -3,7 +3,7 @@ import type { ComponentApi } from '../../../../docs/component-doc';
 export const buttonGroupDoc: ComponentApi = {
   id: 'button-group',
   selector: 'app-button-group',
-  summary: 'type: form|round|view · size: S|M|L · color: progress|primary|neutral（form、view）· options: ButtonGroupOption[]（可放 icon）· value · [disabled] errorMessage errorPosition: top|bottom · (valueChange)',
+  summary: 'type: form|round|view · size: S|M|L · color: progress|primary|neutral（form、view）· options: ButtonGroupOption[]（可放 icon；view 的文字選項可帶 menu）· value · [disabled] errorMessage errorPosition: top|bottom · [menuOpen] (menuToggle) · (valueChange)',
   props: [
     {
       name: 'type',
@@ -27,7 +27,19 @@ export const buttonGroupDoc: ComponentApi = {
       name: 'options',
       type: 'ButtonGroupOption[]',
       default: '[]',
-      desc: '{ value: string; label: string; disabled?: boolean; icon?: string }[]。有 icon（同 app-icon 的 name）時按鈕只放圖示，label 改當報讀名稱與滑過提示，所以 label 仍然必填。建議只在 view 用 icon。只放圖示的選項不要停用：停用的按鈕滑鼠碰不到、鍵盤停不上去，提示出不來，看畫面的人不知道它叫什麼；要停用的選項改放文字（開發模式下會在主控台提醒）。',
+      desc: '{ value: string; label: string; disabled?: boolean; icon?: string; menu?: { hint?: string } }[]。有 icon（同 app-icon 的 name）時按鈕只放圖示，label 改當報讀名稱與滑過提示，所以 label 仍然必填。建議只在 view 用 icon。只放圖示的選項不要停用：停用的按鈕滑鼠碰不到、鍵盤停不上去，提示出不來，看畫面的人不知道它叫什麼；要停用的選項改放文字（開發模式下會在主控台提醒）。menu：這個選項帶一個選單（例：「走勢」再選畫金額或件數），只有 view 的文字選項能帶（有 icon 或不是 view 時不畫箭頭，開發模式提醒）；字後面畫 12px 箭頭，選中後再按一次是開關選單（menuToggle），沒選中時按下去照舊是選它；hint 是選單目前的值，報讀念「走勢，目前：金額」、滑過提示「走勢：金額」。',
+    },
+    {
+      name: 'menuOpen',
+      type: 'boolean',
+      default: 'false',
+      desc: '帶選單的選項（選中那顆）的選單開著沒，由使用端管：選單開著時箭頭轉向、aria-expanded="true"。',
+    },
+    {
+      name: '(menuToggle)',
+      type: 'EventEmitter<boolean>',
+      desc: '按了選中、帶選單的那顆（滑鼠或空白鍵）：true＝要打開、false＝要關上。選單開著時按它，選單會先因「點外面」關掉，元件記得按下時是開的，送的是 false，不會又打開。選單由使用端放：app-action-menu 用 [anchorEl]="group.menuAnchor()" 對齊選中那顆（元件的公開方法；沒有這顆時是 null）。',
+      isOutput: true,
     },
     {
       name: 'value',
@@ -82,6 +94,25 @@ export const buttonGroupDoc: ComponentApi = {
   [value]="range"
   (valueChange)="range = $event"
 ></app-button-group>`,
+    },
+    {
+      label: 'view：帶選單的選項（選中後再按開選單）',
+      code: `<app-button-group #view
+  type="view" size="S"
+  [options]="[
+    { value: 'cards', label: '合計' },
+    { value: 'dist', label: '分布', menu: { hint: metric === 'amount' ? '金額' : '件數' } },
+    { value: 'trend', label: '走勢', menu: { hint: metric === 'amount' ? '金額' : '件數' } },
+  ]"
+  [value]="view" (valueChange)="view = $event"
+  [menuOpen]="menuOpen" (menuToggle)="menuOpen = $event"
+></app-button-group>
+@if (menuOpen) {
+  <app-action-menu [anchorEl]="view.menuAnchor()" ariaLabel="畫金額或件數" (closeMenu)="menuOpen = false">
+    <app-menu-item label="金額" [selected]="metric === 'amount'" (itemClick)="metric = 'amount'"></app-menu-item>
+    <app-menu-item label="件數" [selected]="metric === 'count'" (itemClick)="metric = 'count'"></app-menu-item>
+  </app-action-menu>
+}`,
     },
     {
       label: 'view：只放圖示、選中深藍',

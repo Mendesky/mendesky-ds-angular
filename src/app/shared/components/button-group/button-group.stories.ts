@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { action } from '@storybook/addon-actions';
-import { ButtonGroupComponent, ButtonGroupOption } from '../../../../index';
+import { ActionMenuComponent, ButtonGroupComponent, ButtonGroupOption, MenuItemComponent } from '../../../../index';
 
 const GENDER_OPTIONS: ButtonGroupOption[] = [
   { value: 'male', label: '男性' },
@@ -158,6 +158,44 @@ export const ViewNoneSelected: Story = {
     options: VIEW_OPTIONS,
     value: null,
   },
+};
+
+/**
+ * 帶選單的選項：「分布」「走勢」再選畫金額或件數。沒選中時按下去是選它；選中後再按一次開選單，箭頭轉向。
+ * 選單本身由使用端放，用 menuAnchor() 對齊選中那顆
+ */
+export const ViewWithMenu: Story = {
+  name: 'View 類型：帶選單的選項',
+  render: () => ({
+    moduleMetadata: { imports: [ButtonGroupComponent, ActionMenuComponent, MenuItemComponent] },
+    template: `
+      <div style="padding:16px;">
+        <app-button-group #group type="view" size="S"
+          [options]="options()" [value]="view" (valueChange)="view = $event"
+          [menuOpen]="menuOpen" (menuToggle)="menuOpen = $event"></app-button-group>
+        @if (menuOpen) {
+          <app-action-menu style="width:160px" [anchorEl]="group.menuAnchor()" ariaLabel="畫金額或件數" (closeMenu)="menuOpen = false">
+            <app-menu-item label="金額" [selected]="metric === 'amount'" (itemClick)="metric = 'amount'"></app-menu-item>
+            <app-menu-item label="件數" [selected]="metric === 'count'" (itemClick)="metric = 'count'"></app-menu-item>
+          </app-action-menu>
+        }
+        <p style="font-size:12px;margin-top:6px;">顯示：{{ view }}・畫：{{ metric === 'amount' ? '金額' : '件數' }}</p>
+      </div>
+    `,
+    props: {
+      view: 'dist',
+      metric: 'amount',
+      menuOpen: false,
+      options(): ButtonGroupOption[] {
+        const hint = (this as any).metric === 'amount' ? '金額' : '件數';
+        return [
+          { value: 'cards', label: '合計' },
+          { value: 'dist', label: '分布', menu: { hint } },
+          { value: 'trend', label: '走勢', menu: { hint } },
+        ];
+      },
+    },
+  }),
 };
 
 export const WithError: Story = {

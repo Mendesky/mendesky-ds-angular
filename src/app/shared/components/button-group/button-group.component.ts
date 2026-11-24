@@ -1,6 +1,6 @@
 import {
   Component, Input, Output, EventEmitter,
-  ElementRef, OnChanges, SimpleChanges,
+  ElementRef, OnChanges, SimpleChanges, QueryList, ViewChildren,
   inject, signal,
  ChangeDetectionStrategy, isDevMode, } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -15,6 +15,16 @@ export interface ButtonGroupOption {
   disabled?: boolean;
   /** 圖示名稱（同 app-icon 的 name）。有值時按鈕只放圖示；建議只用在 view 型。只放圖示的選項不要停用（停用時提示出不來），要停用請改放文字 */
   icon?: string;
+  /**
+   * 這個選項帶一個選單（例：「走勢」再選畫金額或件數）。只有 view 型的文字選項能帶；有 icon 或不是 view 型時不畫箭頭（開發模式會提醒）。
+   * 選中後再按一次是開關選單（送出 menuToggle），沒選中時按下去照舊是選它。選單本身由使用端放（app-action-menu 的 anchorEl 給 menuAnchor()）。
+   */
+  menu?: ButtonGroupOptionMenu;
+}
+
+export interface ButtonGroupOptionMenu {
+  /** 選單目前選的值（例：「金額」）：報讀念「走勢，目前：金額」，滑過提示「走勢：金額」。 */
+  hint?: string;
 }
 
 export type ButtonGroupType = 'form' | 'round' | 'view';
@@ -48,7 +58,14 @@ export class ButtonGroupComponent implements OnChanges {
   @Input() errorMessage = '';
   @Input() errorPosition: 'top' | 'bottom' = 'bottom';
 
+  /** 帶選單的選項（選中那顆）的選單開著沒（使用端管）：箭頭轉向、aria-expanded 跟著它。 */
+  @Input() menuOpen = false;
+
   @Output() valueChange = new EventEmitter<string>();
+  /** 按了選中、帶選單的那顆：要打開（true）或關上（false）選單。 */
+  @Output() menuToggle = new EventEmitter<boolean>();
+
+  @ViewChildren('btn') private btnRefs?: QueryList<ElementRef<HTMLButtonElement>>;
 
   /** 目前可 Tab 進入的項目索引（roving tabindex 模式） */
   focusIndex = signal(0);
@@ -73,6 +90,70 @@ export class ButtonGroupComponent implements OnChanges {
     if (changes['options'] || changes['disabled']) {
       this.warnDisabledIconOption();
     }
+    if (changes['options'] || changes['type']) {
+      this.warnUnsupportedMenu();
+    }
+  }
+
+  /** 這個選項畫不畫選單箭頭：只有 view 型的文字選項能帶選單。 */
+  hasMenu(opt: ButtonGroupOption): boolean {
+    return !!opt.menu && this.type === 'view' && !opt.icon;
+  }
+
+  /** 按這顆是開關選單（不是選取）：帶選單、而且已經選中、沒停用。 */
+  isMenuTrigger(opt: ButtonGroupOption): boolean {
+    return this.hasMenu(opt) && this.value === opt.value && !this.disabled && !opt.disabled;
+  }
+
+  /** 選單要對齊的按鈕（選中、帶選單的那顆）；給使用端放的 app-action-menu 當 anchorEl。沒有這顆時是 null。 */
+  menuAnchor(): HTMLElement | null {
+    const idx = this.options.findIndex(o => this.isMenuTrigger(o));
+    return idx < 0 ? null : this.btnRefs?.get(idx)?.nativeElement ?? null;
+  }
+
+  /** 報讀名稱：只放圖示念選項名稱；帶選單、有目前值念「走勢，目前：金額」；其他念畫面上的字（不設）。 */
+  ariaLabelOf(opt: ButtonGroupOption): string | null {
+    if (opt.icon) return opt.label;
+    if (this.hasMenu(opt) && opt.menu?.hint) return `${opt.label}，目前：${opt.menu.hint}`;
+    return null;
+  }
+
+  /** 滑過提示：只放圖示提示選項名稱；帶選單、有目前值提示「走勢：金額」（目前值不在畫面上）；其他不提示。 */
+  tooltipOf(opt: ButtonGroupOption): string {
+    if (opt.icon) return opt.label;
+    if (this.hasMenu(opt) && opt.menu?.hint) return `${opt.label}：${opt.menu.hint}`;
+    return '';
+  }
+
+  /**
+   * 按下（pointerdown）時記下選單開著沒。選單開著時按觸發鈕，選單會先因「點外面」關掉，
+   * 到 click 時已經是關的，不記的話會馬上又打開；記下來才能判斷這一按是「關」。
+   */
+  private openAtPointerDown: boolean | null = null;
+
+  onPointerDown(opt: ButtonGroupOption): void {
+    this.openAtPointerDown = this.isMenuTrigger(opt) ? this.menuOpen : null;
+  }
+
+  onItemClick(opt: ButtonGroupOption, event: Event): void {
+    const wasOpen = this.openAtPointerDown ?? this.menuOpen;
+    this.openAtPointerDown = null;
+    if (this.isMenuTrigger(opt)) {
+      event.stopPropagation();
+      this.menuToggle.emit(!wasOpen);
+      return;
+    }
+    this.select(opt.value);
+  }
+
+  /** 開發模式：選項設了 menu 卻畫不出箭頭（不是 view 型、或只放圖示）時提醒一次。 */
+  private warnedMenu = false;
+  private warnUnsupportedMenu(): void {
+    if (!isDevMode() || this.warnedMenu) return;
+    const hit = this.options.find(o => o.menu && (this.type !== 'view' || o.icon));
+    if (!hit) return;
+    this.warnedMenu = true;
+    console.warn(`[app-button-group] 選項「${hit.label}」設了 menu，但只有 view 型的文字選項能帶選單，這一格不會畫箭頭。`);
   }
 
   /**
@@ -128,7 +209,8 @@ export class ButtonGroupComponent implements OnChanges {
         event.preventDefault();
         const opt = this.options[currentIdx];
         if (opt && !opt.disabled && !this.disabled) {
-          this.select(opt.value);
+          // 選中、帶選單的那顆：空白鍵開關選單（同滑鼠按）
+          this.onItemClick(opt, event);
         }
         break;
       }
