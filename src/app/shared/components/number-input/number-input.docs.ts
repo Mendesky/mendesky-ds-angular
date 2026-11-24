@@ -86,7 +86,7 @@ export const numberInputDoc: ComponentApi = {
     {
       name: '(valueCommit)',
       type: 'EventEmitter<number | null>',
-      desc: '使用者完成輸入後才 emit（debounce 600ms）；打 API 請接這個，不要接 (inputBlur)。觸發時機：⑴ 連點/連按 ↑↓ → 600ms 後 ⑵ 失焦（blur flush）⑶ 元件銷毀（destroy flush）⑷ clearValue → 立即 emit null。',
+      desc: '使用者完成輸入後才 emit（debounce 600ms）；打 API 請接這個，不要接 (inputBlur)。觸發時機：⑴ 連點/連按 ↑↓ → 600ms 後（這 600ms 內點進輸入框就改成離開時才送，送的是離開當下的值；改回按 ↑↓ 前的值則不送）⑵ 失焦（blur flush）⑶ 元件銷毀（destroy flush）⑷ clearValue → 立即 emit null。',
       isOutput: true,
     },
     {

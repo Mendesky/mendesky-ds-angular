@@ -491,3 +491,98 @@ describe('NumberInputComponent — allowEmpty（必填欄位不可清空）', ()
     expect(emittedCommits).toEqual([6]);   // blur 才 emit 一次
   }));
 });
+
+describe('NumberInputComponent — 按上下按鈕後 600ms 內點進輸入框', () => {
+  // 按鈕改的值排在 600ms 後送出。這段期間點進輸入框，排好的這次不能被當成「沒改」取消：
+  // 有焦點期間先不送（使用者可能要接著打字），離開時把最後的值送出。
+  let component: NumberInputComponent;
+  let fixture: ComponentFixture<NumberInputComponent>;
+  let emittedCommits: (number | null)[];
+  let input: HTMLInputElement;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [NumberInputComponent],
+    }).compileComponents();
+    fixture = TestBed.createComponent(NumberInputComponent);
+    component = fixture.componentInstance;
+    emittedCommits = [];
+    component.valueCommit.subscribe((val) => emittedCommits.push(val));
+    fixture.componentRef.setInput('initialValue', 5);
+    fixture.detectChanges();
+    input = fixture.debugElement.query(By.css('.number-input-field')).nativeElement;
+  });
+
+  function clickUp(): void {
+    fixture.debugElement.query(By.css('.stepper-btn--up')).nativeElement.click();
+    fixture.detectChanges();
+  }
+
+  function focusInput(): void {
+    input.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+  }
+
+  function blurInput(): void {
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+  }
+
+  function type(value: string): void {
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    tick(0); // onInput 內還原游標的 setTimeout(0)
+    fixture.detectChanges();
+  }
+
+  it('沒改值就離開：仍送出按鈕改的值，只送一次', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    blurInput();
+    expect(emittedCommits).toEqual([6]);
+
+    tick(600);
+    expect(emittedCommits).toEqual([6]);
+  }));
+
+  it('有焦點期間不送；接著打字，離開時只送打的值', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    tick(600);
+    expect(emittedCommits).toEqual([]);
+
+    type('9');
+    blurInput();
+    expect(emittedCommits).toEqual([9]);
+  }));
+
+  it('改回按按鈕前的值再離開：不送（後端本來就是這個值）', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    type('5');
+    blurInput();
+    tick(600);
+    expect(emittedCommits).toEqual([]);
+  }));
+
+  it('有焦點時元件被銷毀：仍送出按鈕改的值', fakeAsync(() => {
+    clickUp();
+    tick(100);
+    focusInput();
+    fixture.destroy();
+    expect(emittedCommits).toEqual([6]);
+  }));
+
+  it('600ms 到了已送出，之後點進去沒改值離開：不重送', fakeAsync(() => {
+    clickUp();
+    tick(600);
+    expect(emittedCommits).toEqual([6]);
+
+    focusInput();
+    blurInput();
+    expect(emittedCommits).toEqual([6]);
+  }));
+});
