@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter,
-  ElementRef, OnChanges, SimpleChanges,
-  inject, signal,
+  ElementRef, OnChanges, SimpleChanges, QueryList, ViewChildren,
+  DestroyRef, NgZone, inject, signal,
  ChangeDetectionStrategy, isDevMode, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -15,6 +15,17 @@ export interface ButtonGroupOption {
   disabled?: boolean;
   /** 圖示名稱（同 app-icon 的 name）。有值時按鈕只放圖示；建議只用在 view 型。只放圖示的選項不要停用（停用時提示出不來），要停用請改放文字 */
   icon?: string;
+  /**
+   * 這個選項帶一個選單（例：「走勢」再選畫金額或件數）。只有 view 型的文字選項能帶；有 icon 或不是 view 型時不畫箭頭（開發模式會提醒）。
+   * 選中後再按一次（滑鼠、Enter、空白鍵）是開關選單（送出 menuToggle），沒選中時按下去照舊是選它。
+   * 選單本身由使用端放：app-action-menu 的 anchorEl 給 menuAnchor()，按這顆才不會被當成點選單外面。
+   */
+  menu?: ButtonGroupOptionMenu;
+}
+
+export interface ButtonGroupOptionMenu {
+  /** 選單目前選的值（例：「金額」）：報讀念「走勢，目前：金額」，滑過提示「走勢：金額」。 */
+  hint?: string;
 }
 
 export type ButtonGroupType = 'form' | 'round' | 'view';
@@ -38,6 +49,11 @@ export type ButtonGroupColor = 'progress' | 'primary' | 'neutral';
 })
 export class ButtonGroupComponent implements OnChanges {
   private el = inject(ElementRef);
+  private zone = inject(NgZone);
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.stopSwallowingKey?.());
+  }
 
   @Input() type: ButtonGroupType = 'form';
   @Input() size: 'S' | 'M' | 'L' = 'L';
@@ -48,7 +64,14 @@ export class ButtonGroupComponent implements OnChanges {
   @Input() errorMessage = '';
   @Input() errorPosition: 'top' | 'bottom' = 'bottom';
 
+  /** 帶選單的選項（選中那顆）的選單開著沒（使用端管）：箭頭轉向、aria-expanded 跟著它，開著時整組的滑過提示收起。 */
+  @Input() menuOpen = false;
+
   @Output() valueChange = new EventEmitter<string>();
+  /** 按了選中、帶選單的那顆：要打開（true）或關上（false）選單。 */
+  @Output() menuToggle = new EventEmitter<boolean>();
+
+  @ViewChildren('btn') private btnRefs?: QueryList<ElementRef<HTMLButtonElement>>;
 
   /** 目前可 Tab 進入的項目索引（roving tabindex 模式） */
   focusIndex = signal(0);
@@ -73,6 +96,89 @@ export class ButtonGroupComponent implements OnChanges {
     if (changes['options'] || changes['disabled']) {
       this.warnDisabledIconOption();
     }
+    if (changes['options'] || changes['type']) {
+      this.warnUnsupportedMenu();
+    }
+    this.closeMenuIfTriggerGone(changes);
+  }
+
+  /**
+   * 選單開著時，開著選單的那顆不再是觸發鈕：送 menuToggle(false) 讓使用端關選單，不然選單會留在原本那顆下面。
+   * - value 被外面改掉（包括改成另一個帶選單的選項，例如從網址還原、推播更新）：選單是開在原本那顆的，一律關。
+   *   選單是這一輪才打開的（包括第一次綁定就是開的）不算：選單跟著新的值一起開，不是開在原本那顆。
+   * - 整組或那一項停用、拿掉 menu、換了型別，整組已經沒有觸發鈕（這一輪才打開的也算）。
+   * 在變更偵測之後才送：使用端在這一輪改狀態會觸發 ExpressionChanged 錯誤。
+   */
+  private closeMenuIfTriggerGone(changes: SimpleChanges): void {
+    if (!this.menuOpen) return;
+    // 第一次綁定時 previousValue 是 undefined，也算這一輪才打開
+    const openedNow = !!changes['menuOpen'] && !changes['menuOpen'].previousValue;
+    const valueChanged = !!changes['value'] && !openedNow;
+    const triggerGone = !!(changes['options'] || changes['disabled'] || changes['type'] || changes['menuOpen'])
+      && !this.options.some(o => this.isMenuTrigger(o));
+    if (!valueChanged && !triggerGone) return;
+    void Promise.resolve().then(() => {
+      if (this.menuOpen) this.menuToggle.emit(false);
+    });
+  }
+
+  /** 這個選項畫不畫選單箭頭：只有 view 型的文字選項能帶選單。 */
+  hasMenu(opt: ButtonGroupOption): boolean {
+    return !!opt.menu && this.type === 'view' && !opt.icon;
+  }
+
+  /** 按這顆是開關選單（不是選取）：帶選單、而且已經選中、沒停用。 */
+  isMenuTrigger(opt: ButtonGroupOption): boolean {
+    return this.hasMenu(opt) && this.value === opt.value && !this.disabled && !opt.disabled;
+  }
+
+  /** 選單要對齊的按鈕（選中、帶選單的那顆）；給使用端放的 app-action-menu 當 anchorEl。沒有這顆時是 null。 */
+  menuAnchor(): HTMLElement | null {
+    const idx = this.options.findIndex(o => this.isMenuTrigger(o));
+    return idx < 0 ? null : this.btnRefs?.get(idx)?.nativeElement ?? null;
+  }
+
+  /** 報讀名稱：只放圖示念選項名稱；帶選單、有目前值念「走勢，目前：金額」；其他念畫面上的字（不設）。 */
+  ariaLabelOf(opt: ButtonGroupOption): string | null {
+    if (opt.icon) return opt.label;
+    if (this.hasMenu(opt) && opt.menu?.hint) return `${opt.label}，目前：${opt.menu.hint}`;
+    return null;
+  }
+
+  /**
+   * 滑過提示：只放圖示提示選項名稱；帶選單、有目前值提示「走勢：金額」（目前值不在畫面上）；其他不提示。
+   * 選單開著時整組都不提示：提示和選單都往下出，選單比按鈕寬，旁邊選項的提示也會疊上去
+   * （Safari 點按鈕不給焦點、不會 blur，提示要等滑鼠離開才收）。
+   */
+  tooltipOf(opt: ButtonGroupOption): string {
+    if (this.menuOpen && this.options.some(o => this.isMenuTrigger(o))) return '';
+    if (opt.icon) return opt.label;
+    if (this.hasMenu(opt) && opt.menu?.hint) return `${opt.label}：${opt.menu.hint}`;
+    return '';
+  }
+
+  /**
+   * 選中、帶選單那顆：開關選單（看 menuOpen）。這一下 click 不往外冒：開選單的同一下點擊再傳到外層，
+   * 外層聽 click 的東西（例如整列點了會展開的卡片標題）會把它當成點了自己。其他選項照常往外冒。
+   * 選單要用 menuAnchor() 對齊：按這顆時定位服務不把它算成點外面，選單到 click 時還開著，送的是「關」。
+   */
+  onItemClick(opt: ButtonGroupOption, event: Event): void {
+    if (this.isMenuTrigger(opt)) {
+      event.stopPropagation();
+      this.menuToggle.emit(!this.menuOpen);
+      return;
+    }
+    this.select(opt.value);
+  }
+
+  /** 開發模式：選項設了 menu 卻畫不出箭頭（不是 view 型、或只放圖示）時提醒一次。 */
+  private warnedMenu = false;
+  private warnUnsupportedMenu(): void {
+    if (!isDevMode() || this.warnedMenu) return;
+    const hit = this.options.find(o => o.menu && (this.type !== 'view' || o.icon));
+    if (!hit) return;
+    this.warnedMenu = true;
+    console.warn(`[app-button-group] 選項「${hit.label}」設了 menu，但只有 view 型的文字選項能帶選單，這一格不會畫箭頭。`);
   }
 
   /**
@@ -117,6 +223,17 @@ export class ButtonGroupComponent implements OnChanges {
           event.preventDefault();
           break;
         }
+        if (this.isMenuTrigger(opt)) {
+          // 選中、帶選單那顆：Enter 開關選單，不再冒泡給外層（wizard 的 onFormEnter 不會同時跳下一步）；
+          // 擋原生 click，免得開了又關。按住不放的連發不算
+          event.preventDefault();
+          event.stopPropagation();
+          if (!event.repeat) {
+            this.onItemClick(opt, event);
+            this.swallowKeyUntilKeyup('Enter');
+          }
+          break;
+        }
         if (this.value === opt.value) {
           break;
         }
@@ -127,12 +244,58 @@ export class ButtonGroupComponent implements OnChanges {
       case ' ': {
         event.preventDefault();
         const opt = this.options[currentIdx];
-        if (opt && !opt.disabled && !this.disabled) {
-          this.select(opt.value);
+        // 按住不放的連發不算：不然選單會一直開開關關
+        if (opt && !opt.disabled && !this.disabled && !event.repeat) {
+          // 選中、帶選單的那顆：空白鍵開關選單（同滑鼠按）
+          this.onItemClick(opt, event);
+          // 只攔帶選單的選項（選中的開關選單、沒選中的剛被選中）；其他選項放開時補的 click 只是再選一次同一個值，連發照常往外傳
+          if (this.hasMenu(opt)) this.swallowKeyUntilKeyup(' ');
         }
         break;
       }
     }
+  }
+
+  /** 正在攔的那個鍵（空白鍵或 Enter），呼叫它就停止 */
+  private stopSwallowingKey: (() => void) | null = null;
+
+  /**
+   * 帶選單的選項按了空白鍵、Enter（已經處理過）之後，到放開之前：連發的 keydown 不執行預設動作、也不往下傳；
+   * 放開那一下只取消預設動作（不會補一次 click），照常往下傳。別的鍵不攔。沒帶選單的選項不攔。
+   * - 空白鍵在按鈕上是放開時才按下去：keydown 已經處理過，Firefox 放開時可能再補一次 click，選單會開了又關，
+   *   或沒選中的帶選單選項剛被選中、放開時又被當成「再按一次」打開選單。
+   * - 打開選單後焦點已經移進選單（第一項），放開、連發都落在那一項上，會點到它；所以掛在 window，不掛在按鈕上。
+   * 放開、按了新的一下、視窗失去焦點、元件被移除時停止。
+   * 跟 Action Menu 同一個做法（action-menu.component.ts 的 swallowRepeatsUntilKeyup）：掛在 window 的捕獲階段、跑在 NgZone 外。
+   */
+  private swallowKeyUntilKeyup(key: string): void {
+    this.stopSwallowingKey?.();
+    const stop = (): void => {
+      window.removeEventListener('keydown', onKeydown, true);
+      window.removeEventListener('keyup', onKeyup, true);
+      window.removeEventListener('blur', stop);
+      if (this.stopSwallowingKey === stop) this.stopSwallowingKey = null;
+    };
+    const onKeydown = (e: KeyboardEvent): void => {
+      if (e.key !== key) return;
+      if (!e.repeat) {
+        stop();
+        return;
+      }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    };
+    const onKeyup = (e: KeyboardEvent): void => {
+      if (e.key !== key) return;
+      e.preventDefault();
+      stop();
+    };
+    this.zone.runOutsideAngular(() => {
+      window.addEventListener('keydown', onKeydown, true);
+      window.addEventListener('keyup', onKeyup, true);
+      window.addEventListener('blur', stop);
+    });
+    this.stopSwallowingKey = stop;
   }
 
   /**

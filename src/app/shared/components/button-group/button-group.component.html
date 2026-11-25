@@ -15,24 +15,31 @@
     [class.btn-group--color-neutral]="type === 'form' && resolvedColor === 'neutral'"
     role="group">
 
-    <!-- 有 icon：只放圖示，選項名稱改當 aria-label 與滑過提示（提示放下方，避免蓋到上方的頁首） -->
+    <!-- 有 icon：只放圖示，選項名稱改當 aria-label 與滑過提示（提示放下方，避免蓋到上方的頁首）。
+         帶選單（view 型文字選項）：字後面一個小箭頭；選中後再按是開關選單，這時才是 aria-haspopup="menu" -->
     <button
+      #btn
       *ngFor="let opt of options; let i = index; trackBy: trackByOptionValue"
       class="btn-group__item"
       [class.btn-group__item--icon]="!!opt.icon"
+      [class.btn-group__item--menu]="hasMenu(opt)"
       [class.is-selected]="value === opt.value"
       [class.is-option-disabled]="opt.disabled"
+      [class.is-menu-trigger]="isMenuTrigger(opt)"
+      [class.is-menu-open]="isMenuTrigger(opt) && menuOpen"
       [disabled]="disabled || opt.disabled"
       [attr.tabindex]="focusIndex() === i ? 0 : -1"
       [attr.aria-pressed]="value === opt.value"
-      [attr.aria-label]="opt.icon ? opt.label : null"
-      [appTooltip]="opt.icon ? opt.label : ''"
+      [attr.aria-label]="ariaLabelOf(opt)"
+      [attr.aria-haspopup]="isMenuTrigger(opt) ? 'menu' : null"
+      [attr.aria-expanded]="isMenuTrigger(opt) ? menuOpen : null"
+      [appTooltip]="tooltipOf(opt)"
       appTooltipDirection="bottom"
       type="button"
-      (click)="select(opt.value)"
+      (click)="onItemClick(opt, $event)"
       (keydown)="onKeydown($event, i)">
       <app-icon *ngIf="opt.icon; else textLabel" [name]="opt.icon" size="16" aria-hidden="true"></app-icon>
-      <ng-template #textLabel>{{ opt.label }}</ng-template>
+      <ng-template #textLabel>{{ opt.label }}<app-icon *ngIf="hasMenu(opt)" class="btn-group__menu-arrow" name="DownArrow" size="12" aria-hidden="true"></app-icon></ng-template>
     </button>
 
   </div>
