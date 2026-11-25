@@ -224,8 +224,7 @@
   }
 }
 
-// 帶選單的選項（2026-11-24，原型「主管報價案件總覽」第二版的卡片切換「合計｜分布 ▾｜走勢 ▾」）：
-// 字後面一個 12px 箭頭，右內距縮一點讓箭頭貼近邊；選單開著時箭頭轉向
+// 帶選單的選項（2026-11-24）：字後面一個 12px 箭頭，右內距縮一點讓箭頭貼近邊；選單開著時箭頭轉向
 .btn-group--view .btn-group__item--menu {
   display: inline-flex;
   align-items: center;
@@ -234,7 +233,7 @@
 
 .btn-group__menu-arrow {
   flex: none;
-  transition: transform 0.15s;
+  transition: transform 0.15s var(--ease-enter);
 }
 
 .btn-group__item.is-menu-open .btn-group__menu-arrow {
@@ -245,6 +244,28 @@
   &.is-selected,
   &:active:not(:disabled) {
     background: var(--color\/calmblue\/80, #1a6489);
+  }
+}
+
+// 選中、帶選單那顆按了會開選單：滑過比選中深一階、按下再深一階，看得出按得下去（其他選中的按了不做事，維持不變）。
+// 深灰 #686868 → 滑過 #535353 → 按下 #333333；深藍 #1a6489 → #0f4a67 → #073045。白字對比都比選中高（深灰 5.57 → 7.69／12.63，深藍 6.51 → 9.56／13.84）
+.btn-group--view .btn-group__item.is-menu-trigger {
+  &:hover:not(:active) {
+    background: var(--button\/neutral-darkest-actived, #535353);
+  }
+
+  &:active {
+    background: var(--color\/grey\/100, #333333);
+  }
+}
+
+.btn-group--view.btn-group--color-primary .btn-group__item.is-menu-trigger {
+  &:hover:not(:active) {
+    background: var(--color\/calmblue\/90, #0f4a67);
+  }
+
+  &:active {
+    background: var(--color\/calmblue\/100, #073045);
   }
 }
 
@@ -323,6 +344,20 @@
 
   .btn-group--view .btn-group__item:not(.is-selected) + .btn-group__item:not(.is-selected)::before {
     background: CanvasText;
+  }
+
+  // 選中、帶選單那顆：系統色沒有深淺可分，滑過改加底線、按下改反白（底 HighlightText、字 Highlight）。
+  // 選擇器要比上面平常的滑過、按下（會蓋回深灰、深藍）和選中的系統色都長
+  .btn-group--view .btn-group__item.is-selected.is-menu-trigger:hover:not(:active),
+  .btn-group--view.btn-group--color-primary .btn-group__item.is-selected.is-menu-trigger:hover:not(:active) {
+    background: Highlight;
+    text-decoration: underline;
+  }
+
+  .btn-group--view .btn-group__item.is-selected.is-menu-trigger:active,
+  .btn-group--view.btn-group--color-primary .btn-group__item.is-selected.is-menu-trigger:active {
+    background: HighlightText;
+    color: Highlight;
   }
 
   // 整組停用：只改沒選中的。選中的維持 Highlight／HighlightText（深灰、深藍兩型一致），整組半透明已表示停用

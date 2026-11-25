@@ -25,6 +25,7 @@
       [class.btn-group__item--menu]="hasMenu(opt)"
       [class.is-selected]="value === opt.value"
       [class.is-option-disabled]="opt.disabled"
+      [class.is-menu-trigger]="isMenuTrigger(opt)"
       [class.is-menu-open]="isMenuTrigger(opt) && menuOpen"
       [disabled]="disabled || opt.disabled"
       [attr.tabindex]="focusIndex() === i ? 0 : -1"
@@ -35,7 +36,6 @@
       [appTooltip]="tooltipOf(opt)"
       appTooltipDirection="bottom"
       type="button"
-      (pointerdown)="onPointerDown(opt)"
       (click)="onItemClick(opt, $event)"
       (keydown)="onKeydown($event, i)">
       <app-icon *ngIf="opt.icon; else textLabel" [name]="opt.icon" size="16" aria-hidden="true"></app-icon>

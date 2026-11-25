@@ -164,6 +164,14 @@ export const ViewNoneSelected: Story = {
  * 帶選單的選項：「分布」「走勢」再選畫金額或件數。沒選中時按下去是選它；選中後再按一次開選單，箭頭轉向。
  * 選單本身由使用端放，用 menuAnchor() 對齊選中那顆
  */
+function menuOptions(hint: string): ButtonGroupOption[] {
+  return [
+    { value: 'cards', label: '合計' },
+    { value: 'dist', label: '分布', menu: { hint } },
+    { value: 'trend', label: '走勢', menu: { hint } },
+  ];
+}
+
 export const ViewWithMenu: Story = {
   name: 'View 類型：帶選單的選項',
   render: () => ({
@@ -171,7 +179,7 @@ export const ViewWithMenu: Story = {
     template: `
       <div style="padding:16px;">
         <app-button-group #group type="view" size="S"
-          [options]="options()" [value]="view" (valueChange)="view = $event"
+          [options]="optionsByMetric[metric]" [value]="view" (valueChange)="view = $event"
           [menuOpen]="menuOpen" (menuToggle)="menuOpen = $event"></app-button-group>
         @if (menuOpen) {
           <app-action-menu style="width:160px" [anchorEl]="group.menuAnchor()" ariaLabel="畫金額或件數" (closeMenu)="menuOpen = false">
@@ -186,13 +194,10 @@ export const ViewWithMenu: Story = {
       view: 'dist',
       metric: 'amount',
       menuOpen: false,
-      options(): ButtonGroupOption[] {
-        const hint = (this as any).metric === 'amount' ? '金額' : '件數';
-        return [
-          { value: 'cards', label: '合計' },
-          { value: 'dist', label: '分布', menu: { hint } },
-          { value: 'trend', label: '走勢', menu: { hint } },
-        ];
+      // 選項陣列要固定（不要每次變更偵測都產生新的）：options 換了，鍵盤焦點會跳回選中那顆
+      optionsByMetric: {
+        amount: menuOptions('金額'),
+        count: menuOptions('件數'),
       },
     },
   }),

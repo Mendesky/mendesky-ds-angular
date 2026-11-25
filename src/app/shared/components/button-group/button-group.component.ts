@@ -17,7 +17,8 @@ export interface ButtonGroupOption {
   icon?: string;
   /**
    * 這個選項帶一個選單（例：「走勢」再選畫金額或件數）。只有 view 型的文字選項能帶；有 icon 或不是 view 型時不畫箭頭（開發模式會提醒）。
-   * 選中後再按一次是開關選單（送出 menuToggle），沒選中時按下去照舊是選它。選單本身由使用端放（app-action-menu 的 anchorEl 給 menuAnchor()）。
+   * 選中後再按一次（滑鼠、Enter、空白鍵）是開關選單（送出 menuToggle），沒選中時按下去照舊是選它。
+   * 選單本身由使用端放：app-action-menu 的 anchorEl 給 menuAnchor()，按這顆才不會被當成點選單外面。
    */
   menu?: ButtonGroupOptionMenu;
 }
@@ -58,7 +59,7 @@ export class ButtonGroupComponent implements OnChanges {
   @Input() errorMessage = '';
   @Input() errorPosition: 'top' | 'bottom' = 'bottom';
 
-  /** 帶選單的選項（選中那顆）的選單開著沒（使用端管）：箭頭轉向、aria-expanded 跟著它。 */
+  /** 帶選單的選項（選中那顆）的選單開著沒（使用端管）：箭頭轉向、aria-expanded 跟著它，開著時這顆的滑過提示收起。 */
   @Input() menuOpen = false;
 
   @Output() valueChange = new EventEmitter<string>();
@@ -93,6 +94,19 @@ export class ButtonGroupComponent implements OnChanges {
     if (changes['options'] || changes['type']) {
       this.warnUnsupportedMenu();
     }
+    this.closeMenuIfTriggerGone(changes);
+  }
+
+  /**
+   * 選單開著時觸發鈕沒了資格（整組或那一項停用、value 被外面改成別的、拿掉 menu）：送 menuToggle(false) 讓使用端關選單，
+   * 不然選單會留在一顆已經不是觸發鈕的按鈕下面。在變更偵測之後才送，使用端在這一輪改狀態會觸發 ExpressionChanged 錯誤。
+   */
+  private closeMenuIfTriggerGone(changes: SimpleChanges): void {
+    const relevant = changes['options'] || changes['value'] || changes['disabled'] || changes['type'] || changes['menuOpen'];
+    if (!relevant || !this.menuOpen || this.options.some(o => this.isMenuTrigger(o))) return;
+    void Promise.resolve().then(() => {
+      if (this.menuOpen && !this.options.some(o => this.isMenuTrigger(o))) this.menuToggle.emit(false);
+    });
   }
 
   /** 這個選項畫不畫選單箭頭：只有 view 型的文字選項能帶選單。 */
@@ -118,29 +132,26 @@ export class ButtonGroupComponent implements OnChanges {
     return null;
   }
 
-  /** 滑過提示：只放圖示提示選項名稱；帶選單、有目前值提示「走勢：金額」（目前值不在畫面上）；其他不提示。 */
+  /**
+   * 滑過提示：只放圖示提示選項名稱；帶選單、有目前值提示「走勢：金額」（目前值不在畫面上）；其他不提示。
+   * 選單開著時這顆不提示：提示和選單都往下出，會疊在一起（Safari 點按鈕不給焦點、不會 blur，提示要等滑鼠離開才收）。
+   */
   tooltipOf(opt: ButtonGroupOption): string {
     if (opt.icon) return opt.label;
+    if (this.isMenuTrigger(opt) && this.menuOpen) return '';
     if (this.hasMenu(opt) && opt.menu?.hint) return `${opt.label}：${opt.menu.hint}`;
     return '';
   }
 
   /**
-   * 按下（pointerdown）時記下選單開著沒。選單開著時按觸發鈕，選單會先因「點外面」關掉，
-   * 到 click 時已經是關的，不記的話會馬上又打開；記下來才能判斷這一按是「關」。
+   * 選中、帶選單那顆：開關選單（看 menuOpen）。這一下 click 不往外冒：開選單的同一下點擊再傳到外層，
+   * 外層聽 click 的東西（例如整列點了會展開的卡片標題）會把它當成點了自己。其他選項照常往外冒。
+   * 選單要用 menuAnchor() 對齊：按這顆時定位服務不把它算成點外面，選單到 click 時還開著，送的是「關」。
    */
-  private openAtPointerDown: boolean | null = null;
-
-  onPointerDown(opt: ButtonGroupOption): void {
-    this.openAtPointerDown = this.isMenuTrigger(opt) ? this.menuOpen : null;
-  }
-
   onItemClick(opt: ButtonGroupOption, event: Event): void {
-    const wasOpen = this.openAtPointerDown ?? this.menuOpen;
-    this.openAtPointerDown = null;
     if (this.isMenuTrigger(opt)) {
       event.stopPropagation();
-      this.menuToggle.emit(!wasOpen);
+      this.menuToggle.emit(!this.menuOpen);
       return;
     }
     this.select(opt.value);
@@ -198,6 +209,14 @@ export class ButtonGroupComponent implements OnChanges {
           event.preventDefault();
           break;
         }
+        if (this.isMenuTrigger(opt)) {
+          // 選中、帶選單那顆：Enter 開關選單，不再冒泡給外層（wizard 的 onFormEnter 不會同時跳下一步）；
+          // 擋原生 click，免得開了又關。按住不放的連發不算
+          event.preventDefault();
+          event.stopPropagation();
+          if (!event.repeat) this.onItemClick(opt, event);
+          break;
+        }
         if (this.value === opt.value) {
           break;
         }
@@ -208,7 +227,8 @@ export class ButtonGroupComponent implements OnChanges {
       case ' ': {
         event.preventDefault();
         const opt = this.options[currentIdx];
-        if (opt && !opt.disabled && !this.disabled) {
+        // 按住不放的連發不算：不然選單會一直開開關關
+        if (opt && !opt.disabled && !this.disabled && !event.repeat) {
           // 選中、帶選單的那顆：空白鍵開關選單（同滑鼠按）
           this.onItemClick(opt, event);
         }

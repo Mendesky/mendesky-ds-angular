@@ -27,18 +27,18 @@ export const buttonGroupDoc: ComponentApi = {
       name: 'options',
       type: 'ButtonGroupOption[]',
       default: '[]',
-      desc: '{ value: string; label: string; disabled?: boolean; icon?: string; menu?: { hint?: string } }[]。有 icon（同 app-icon 的 name）時按鈕只放圖示，label 改當報讀名稱與滑過提示，所以 label 仍然必填。建議只在 view 用 icon。只放圖示的選項不要停用：停用的按鈕滑鼠碰不到、鍵盤停不上去，提示出不來，看畫面的人不知道它叫什麼；要停用的選項改放文字（開發模式下會在主控台提醒）。menu：這個選項帶一個選單（例：「走勢」再選畫金額或件數），只有 view 的文字選項能帶（有 icon 或不是 view 時不畫箭頭，開發模式提醒）；字後面畫 12px 箭頭，選中後再按一次是開關選單（menuToggle），沒選中時按下去照舊是選它；hint 是選單目前的值，報讀念「走勢，目前：金額」、滑過提示「走勢：金額」。',
+      desc: '{ value: string; label: string; disabled?: boolean; icon?: string; menu?: { hint?: string } }[]。有 icon（同 app-icon 的 name）時按鈕只放圖示，label 改當報讀名稱與滑過提示，所以 label 仍然必填。建議只在 view 用 icon。只放圖示的選項不要停用：停用的按鈕滑鼠碰不到、鍵盤停不上去，提示出不來，看畫面的人不知道它叫什麼；要停用的選項改放文字（開發模式下會在主控台提醒）。menu：這個選項帶一個選單（例：「走勢」再選畫金額或件數），只有 view 的文字選項能帶（有 icon 或不是 view 時不畫箭頭，開發模式提醒）；字後面畫 12px 箭頭，選中後再按一次是開關選單（menuToggle），沒選中時按下去照舊是選它；選中、帶選單那顆滑過比選中深一階、按下再深一階（深灰、深藍都是；強制色彩下滑過加底線、按下反白），看得出按得下去；hint 是選單目前的值，報讀念「走勢，目前：金額」、滑過提示「走勢：金額」。',
     },
     {
       name: 'menuOpen',
       type: 'boolean',
       default: 'false',
-      desc: '帶選單的選項（選中那顆）的選單開著沒，由使用端管：選單開著時箭頭轉向、aria-expanded="true"。',
+      desc: '帶選單的選項（選中那顆）的選單開著沒，由使用端管：選單開著時箭頭轉向、aria-expanded="true"，這顆的滑過提示收起（提示和選單都往下出，不收會疊在一起）。',
     },
     {
       name: '(menuToggle)',
       type: 'EventEmitter<boolean>',
-      desc: '按了選中、帶選單的那顆（滑鼠或空白鍵）：true＝要打開、false＝要關上。選單開著時按它，選單會先因「點外面」關掉，元件記得按下時是開的，送的是 false，不會又打開。選單由使用端放：app-action-menu 用 [anchorEl]="group.menuAnchor()" 對齊選中那顆（元件的公開方法；沒有這顆時是 null）。',
+      desc: '按了選中、帶選單的那顆（滑鼠、Enter 或空白鍵；按住不放的連發不算）：true＝要打開、false＝要關上，依 menuOpen 決定。選單由使用端放：app-action-menu 一定要用 [anchorEl]="group.menuAnchor()" 對齊選中那顆（元件的公開方法；沒有這顆時是 null），按這顆時才不會被當成點選單外面而先關掉、接著又被打開。這一下 click 不往外冒，Enter 也不往外冒（放在 wizard 裡不會同時觸發 onFormEnter）；其他選項照常。選單開著時這顆沒了資格（整組或這一項停用、value 被改成別的），元件送 false。',
       isOutput: true,
     },
     {
@@ -97,7 +97,7 @@ export const buttonGroupDoc: ComponentApi = {
     },
     {
       label: 'view：帶選單的選項（選中後再按開選單）',
-      code: `<app-button-group #view
+      code: `<app-button-group #group
   type="view" size="S"
   [options]="[
     { value: 'cards', label: '合計' },
@@ -108,7 +108,7 @@ export const buttonGroupDoc: ComponentApi = {
   [menuOpen]="menuOpen" (menuToggle)="menuOpen = $event"
 ></app-button-group>
 @if (menuOpen) {
-  <app-action-menu [anchorEl]="view.menuAnchor()" ariaLabel="畫金額或件數" (closeMenu)="menuOpen = false">
+  <app-action-menu [anchorEl]="group.menuAnchor()" ariaLabel="畫金額或件數" (closeMenu)="menuOpen = false">
     <app-menu-item label="金額" [selected]="metric === 'amount'" (itemClick)="metric = 'amount'"></app-menu-item>
     <app-menu-item label="件數" [selected]="metric === 'count'" (itemClick)="metric = 'count'"></app-menu-item>
   </app-action-menu>
