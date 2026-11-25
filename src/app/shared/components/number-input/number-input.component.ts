@@ -55,7 +55,9 @@ export class NumberInputComponent implements OnChanges, OnDestroy {
         this.numericValue = null;
         this.displayValue = '';
       }
-      if (!this.focused) {
+      // 有焦點、或按 ↑↓ 排好的 commit 還沒送時，回寫的 initialValue 多半是使用端把 (valueChange) 接回來，
+      // 不是外部重新給值：不換起點、不清 isDirty，否則這次 commit 會被當成「沒改」而不見（見 onFocus）。
+      if (!this.focused && this.commitTimer === null) {
         this.isDirty = false;
         this.baselineValue = this.numericValue;
       }
@@ -198,6 +200,15 @@ export class NumberInputComponent implements OnChanges, OnDestroy {
 
   onFocus(): void {
     this.focused = true;
+    // 按 ↑↓ 排好的 commit 還沒送時點進輸入框：先停掉計時器（有焦點期間不送，使用者可能要接著打字），
+    // 但不把起點換成按鈕改過的值、也不清 isDirty。否則沒改值就離開時，onBlur 會把按鈕改的值當成「沒改」，
+    // 這次 commit 就整個不見了；保留起點（上次送出的值），離開或銷毀時會照常送出最後的值。
+    if (this.commitTimer !== null) {
+      clearTimeout(this.commitTimer);
+      this.commitTimer = null;
+      this.pendingValue = null;
+      return;
+    }
     this.baselineValue = this.numericValue;
   }
 
