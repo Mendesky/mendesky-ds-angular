@@ -33,12 +33,12 @@ export const buttonGroupDoc: ComponentApi = {
       name: 'menuOpen',
       type: 'boolean',
       default: 'false',
-      desc: '帶選單的選項（選中那顆）的選單開著沒，由使用端管：選單開著時箭頭轉向、aria-expanded="true"，這顆的滑過提示收起（提示和選單都往下出，不收會疊在一起）。',
+      desc: '帶選單的選項（選中那顆）的選單開著沒，由使用端管：選單開著時箭頭轉向、aria-expanded="true"，整組的滑過提示收起（提示和選單都往下出，不收會疊在一起）。',
     },
     {
       name: '(menuToggle)',
       type: 'EventEmitter<boolean>',
-      desc: '按了選中、帶選單的那顆（滑鼠、Enter 或空白鍵；按住不放的連發不算）：true＝要打開、false＝要關上，依 menuOpen 決定。選單由使用端放：app-action-menu 一定要用 [anchorEl]="group.menuAnchor()" 對齊選中那顆（元件的公開方法；沒有這顆時是 null），按這顆時才不會被當成點選單外面而先關掉、接著又被打開。這一下 click 不往外冒，Enter 也不往外冒（放在 wizard 裡不會同時觸發 onFormEnter）；其他選項照常。選單開著時這顆沒了資格（整組或這一項停用、value 被改成別的），元件送 false。',
+      desc: '按了選中、帶選單的那顆（滑鼠、Enter 或空白鍵；按住不放的連發不算）：true＝要打開、false＝要關上，依 menuOpen 決定。選單由使用端放：app-action-menu 一定要用 [anchorEl]="group.menuAnchor()" 對齊選中那顆（元件的公開方法；沒有這顆時是 null），按這顆時才不會被當成點選單外面而先關掉、接著又被打開。這一下 click 不往外冒，Enter 也不往外冒（放在 wizard 裡不會同時觸發 onFormEnter）；其他選項照常。選單開著時 value 被改掉（包括改成另一個帶選單的選項），或這顆沒了資格（整組或這一項停用），元件送 false。按下空白鍵或 Enter 後到放開前的連發、放開那一下都會被吃掉，焦點移進選單後不會點到第一項。',
       isOutput: true,
     },
     {

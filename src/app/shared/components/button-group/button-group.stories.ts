@@ -160,10 +160,6 @@ export const ViewNoneSelected: Story = {
   },
 };
 
-/**
- * 帶選單的選項：「分布」「走勢」再選畫金額或件數。沒選中時按下去是選它；選中後再按一次開選單，箭頭轉向。
- * 選單本身由使用端放，用 menuAnchor() 對齊選中那顆
- */
 function menuOptions(hint: string): ButtonGroupOption[] {
   return [
     { value: 'cards', label: '合計' },
@@ -172,6 +168,10 @@ function menuOptions(hint: string): ButtonGroupOption[] {
   ];
 }
 
+/**
+ * 帶選單的選項：「分布」「走勢」再選畫金額或件數。沒選中時按下去是選它；選中後再按一次開選單，箭頭轉向。
+ * 選單本身由使用端放，用 menuAnchor() 對齊選中那顆
+ */
 export const ViewWithMenu: Story = {
   name: 'View 類型：帶選單的選項',
   render: () => ({
@@ -194,7 +194,8 @@ export const ViewWithMenu: Story = {
       view: 'dist',
       metric: 'amount',
       menuOpen: false,
-      // 選項陣列要固定（不要每次變更偵測都產生新的）：options 換了，鍵盤焦點會跳回選中那顆
+      // 選項陣列要固定（不要每次變更偵測都產生新的）：options 換了，可以 Tab 進來的位置會重設回選中那顆，
+      // 用方向鍵移到別顆之後，Tab 停的位置跟畫面上的焦點就對不上
       optionsByMetric: {
         amount: menuOptions('金額'),
         count: menuOptions('件數'),

@@ -1,7 +1,7 @@
 import {
   Component, Input, Output, EventEmitter,
   ElementRef, OnChanges, SimpleChanges, QueryList, ViewChildren,
-  inject, signal,
+  DestroyRef, NgZone, inject, signal,
  ChangeDetectionStrategy, isDevMode, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ErrorTooltipDirective } from '../../directives/error-tooltip.directive';
@@ -49,6 +49,11 @@ export type ButtonGroupColor = 'progress' | 'primary' | 'neutral';
 })
 export class ButtonGroupComponent implements OnChanges {
   private el = inject(ElementRef);
+  private zone = inject(NgZone);
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.stopSwallowingKey?.());
+  }
 
   @Input() type: ButtonGroupType = 'form';
   @Input() size: 'S' | 'M' | 'L' = 'L';
@@ -59,7 +64,7 @@ export class ButtonGroupComponent implements OnChanges {
   @Input() errorMessage = '';
   @Input() errorPosition: 'top' | 'bottom' = 'bottom';
 
-  /** 帶選單的選項（選中那顆）的選單開著沒（使用端管）：箭頭轉向、aria-expanded 跟著它，開著時這顆的滑過提示收起。 */
+  /** 帶選單的選項（選中那顆）的選單開著沒（使用端管）：箭頭轉向、aria-expanded 跟著它，開著時整組的滑過提示收起。 */
   @Input() menuOpen = false;
 
   @Output() valueChange = new EventEmitter<string>();
@@ -98,14 +103,19 @@ export class ButtonGroupComponent implements OnChanges {
   }
 
   /**
-   * 選單開著時觸發鈕沒了資格（整組或那一項停用、value 被外面改成別的、拿掉 menu）：送 menuToggle(false) 讓使用端關選單，
-   * 不然選單會留在一顆已經不是觸發鈕的按鈕下面。在變更偵測之後才送，使用端在這一輪改狀態會觸發 ExpressionChanged 錯誤。
+   * 選單開著時，開著選單的那顆不再是觸發鈕：送 menuToggle(false) 讓使用端關選單，不然選單會留在原本那顆下面。
+   * - value 被外面改掉（包括改成另一個帶選單的選項，例如從網址還原、推播更新）：選單是開在原本那顆的，一律關。
+   * - 整組或那一項停用、拿掉 menu、換了型別，整組已經沒有觸發鈕。
+   * 在變更偵測之後才送：使用端在這一輪改狀態會觸發 ExpressionChanged 錯誤。
    */
   private closeMenuIfTriggerGone(changes: SimpleChanges): void {
-    const relevant = changes['options'] || changes['value'] || changes['disabled'] || changes['type'] || changes['menuOpen'];
-    if (!relevant || !this.menuOpen || this.options.some(o => this.isMenuTrigger(o))) return;
+    if (!this.menuOpen) return;
+    const valueChanged = !!changes['value'] && !changes['value'].firstChange;
+    const triggerGone = !!(changes['options'] || changes['disabled'] || changes['type'] || changes['menuOpen'])
+      && !this.options.some(o => this.isMenuTrigger(o));
+    if (!valueChanged && !triggerGone) return;
     void Promise.resolve().then(() => {
-      if (this.menuOpen && !this.options.some(o => this.isMenuTrigger(o))) this.menuToggle.emit(false);
+      if (this.menuOpen) this.menuToggle.emit(false);
     });
   }
 
@@ -134,11 +144,12 @@ export class ButtonGroupComponent implements OnChanges {
 
   /**
    * 滑過提示：只放圖示提示選項名稱；帶選單、有目前值提示「走勢：金額」（目前值不在畫面上）；其他不提示。
-   * 選單開著時這顆不提示：提示和選單都往下出，會疊在一起（Safari 點按鈕不給焦點、不會 blur，提示要等滑鼠離開才收）。
+   * 選單開著時整組都不提示：提示和選單都往下出，選單比按鈕寬，旁邊選項的提示也會疊上去
+   * （Safari 點按鈕不給焦點、不會 blur，提示要等滑鼠離開才收）。
    */
   tooltipOf(opt: ButtonGroupOption): string {
+    if (this.menuOpen && this.options.some(o => this.isMenuTrigger(o))) return '';
     if (opt.icon) return opt.label;
-    if (this.isMenuTrigger(opt) && this.menuOpen) return '';
     if (this.hasMenu(opt) && opt.menu?.hint) return `${opt.label}：${opt.menu.hint}`;
     return '';
   }
@@ -214,7 +225,10 @@ export class ButtonGroupComponent implements OnChanges {
           // 擋原生 click，免得開了又關。按住不放的連發不算
           event.preventDefault();
           event.stopPropagation();
-          if (!event.repeat) this.onItemClick(opt, event);
+          if (!event.repeat) {
+            this.onItemClick(opt, event);
+            this.swallowKeyUntilKeyup('Enter');
+          }
           break;
         }
         if (this.value === opt.value) {
@@ -231,10 +245,52 @@ export class ButtonGroupComponent implements OnChanges {
         if (opt && !opt.disabled && !this.disabled && !event.repeat) {
           // 選中、帶選單的那顆：空白鍵開關選單（同滑鼠按）
           this.onItemClick(opt, event);
+          this.swallowKeyUntilKeyup(' ');
         }
         break;
       }
     }
+  }
+
+  /** 正在吃掉的那個鍵（空白鍵或 Enter），呼叫它就停止 */
+  private stopSwallowingKey: (() => void) | null = null;
+
+  /**
+   * 空白鍵、Enter 按下去（已經處理過）之後，到放開之前：連發的 keydown 不執行預設動作、也不往下傳；放開那一下也取消預設動作。
+   * - 空白鍵在按鈕上是放開時才按下去：keydown 已經處理過，Firefox 放開時可能再補一次 click，選單會開了又關，
+   *   或沒選中的帶選單選項剛被選中、放開時又被當成「再按一次」打開選單。
+   * - 打開選單後焦點已經移進選單（第一項），放開、連發都落在那一項上，會點到它；所以掛在 window，不掛在按鈕上。
+   * 放開、按了新的一下、視窗失去焦點、元件被移除時停止。
+   * 跟 Action Menu 同一個做法（action-menu.component.ts 的 swallowRepeatsUntilKeyup）：掛在 window 的捕獲階段、跑在 NgZone 外。
+   */
+  private swallowKeyUntilKeyup(key: string): void {
+    this.stopSwallowingKey?.();
+    const stop = (): void => {
+      window.removeEventListener('keydown', onKeydown, true);
+      window.removeEventListener('keyup', onKeyup, true);
+      window.removeEventListener('blur', stop);
+      if (this.stopSwallowingKey === stop) this.stopSwallowingKey = null;
+    };
+    const onKeydown = (e: KeyboardEvent): void => {
+      if (e.key !== key) return;
+      if (!e.repeat) {
+        stop();
+        return;
+      }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    };
+    const onKeyup = (e: KeyboardEvent): void => {
+      if (e.key !== key) return;
+      e.preventDefault();
+      stop();
+    };
+    this.zone.runOutsideAngular(() => {
+      window.addEventListener('keydown', onKeydown, true);
+      window.addEventListener('keyup', onKeyup, true);
+      window.addEventListener('blur', stop);
+    });
+    this.stopSwallowingKey = stop;
   }
 
   /**

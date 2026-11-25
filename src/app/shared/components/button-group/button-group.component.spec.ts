@@ -20,8 +20,9 @@ import { MenuItemComponent } from '../menu-item/menu-item.component';
  * 2026-11-24 起（帶選單的選項，例：「合計｜分布 ▾｜走勢 ▾」）：
  * - 只有檢視型的文字選項能帶選單：字後面 12px 箭頭，右內距 L 6、M 4、S 3；有 icon 或不是檢視型不畫（開發模式提醒）。
  * - 沒選中時按＝選取；選中後再按（滑鼠、Enter、空白鍵）＝開關選單（menuToggle，依 menuOpen），不再送 valueChange；
- *   這一下 click 與 Enter 不往外冒，按住不放的連發不算。選單開著時這顆沒了資格（停用、value 改掉）送「關」。
- * - 選中、帶選單那顆 aria-haspopup="menu"、aria-expanded 跟 menuOpen；報讀「走勢，目前：金額」、滑過提示「走勢：金額」，選單開著時不提示。
+ *   這一下 click 與 Enter 不往外冒，按住不放的連發不算；按下空白鍵、Enter 後到放開前的連發與放開那一下都吃掉（window 層）。
+ *   選單開著時 value 被改掉（包括改成另一個帶選單的）或這顆沒了資格（停用）送「關」。
+ * - 選中、帶選單那顆 aria-haspopup="menu"、aria-expanded 跟 menuOpen；報讀「走勢，目前：金額」、滑過提示「走勢：金額」，選單開著時整組不提示。
  * - 選中、帶選單那顆滑過比選中深一階、按下再深一階（深灰 #535353／#333333、深藍 #0f4a67／#073045）；強制色彩下滑過底線、按下反白。
  * - 選單開著時箭頭轉 180°；menuAnchor() 給選單對齊（搭真的 app-action-menu 驗過開、關、Esc）。
  * 全部從真的 DOM 與 computed style 查。
@@ -68,8 +69,8 @@ class HostComponent {
         [menuOpen]="menuOpen" (menuToggle)="toggles.push($event); menuOpen = $event"></app-button-group>
       @if (menuOpen) {
         <app-action-menu style="width:160px" [anchorEl]="group.menuAnchor()" ariaLabel="畫金額或件數" (closeMenu)="closes = closes + 1; menuOpen = false">
-          <app-menu-item label="金額" [selected]="metric === 'amount'" (itemClick)="metric = 'amount'"></app-menu-item>
-          <app-menu-item label="件數" [selected]="metric === 'count'" (itemClick)="metric = 'count'"></app-menu-item>
+          <app-menu-item label="金額" [selected]="metric === 'amount'" (itemClick)="metric = 'amount'; picks = picks + 1"></app-menu-item>
+          <app-menu-item label="件數" [selected]="metric === 'count'" (itemClick)="metric = 'count'; picks = picks + 1"></app-menu-item>
         </app-action-menu>
       }
     </div>
@@ -85,6 +86,8 @@ class MenuHostComponent {
   menuOpen = false;
   toggles: boolean[] = [];
   closes = 0;
+  /** 選單項目被點了幾次 */
+  picks = 0;
 }
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -619,24 +622,91 @@ describe('ButtonGroupComponent', () => {
       expect(host.outerKeys).withContext('開關選單的 Enter（連發的也是）不往外冒').not.toContain('Enter');
     });
 
-    it('選單開著時這顆沒了資格（整組停用、這一項停用、value 被改掉）：送「關」；還有資格時不送', fakeAsync(() => {
-      set({ value: 'dist', menuOpen: true });
-      set({ size: 'S' });
-      flushMicrotasks();
-      expect(host.toggles).withContext('還是觸發鈕').toEqual([]);
-      set({ disabled: true });
-      flushMicrotasks();
-      expect(host.toggles).withContext('整組停用').toEqual([false]);
-      set({ disabled: false, options: MENU_OPTIONS.map(o => ({ ...o, disabled: o.value === 'dist' })) });
-      flushMicrotasks();
-      expect(host.toggles).withContext('這一項停用').toEqual([false, false]);
-      set({ options: MENU_OPTIONS, value: 'cards' });
-      flushMicrotasks();
-      expect(host.toggles).withContext('value 被改成沒帶選單的').toEqual([false, false, false]);
-      set({ menuOpen: false, value: 'trend' });
-      flushMicrotasks();
-      expect(host.toggles).withContext('選單關著不送').toEqual([false, false, false]);
+    it('按住空白鍵、Enter 時焦點才移到這組（沒先在這裡按下）：收到的連發不算，沒選中的不會被選取，Enter 也不往外冒', () => {
+      set({ value: 'dist' });
+      for (const k of [' ', 'Enter']) {
+        items()[1].dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, repeat: true }));
+      }
+      items()[2].dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true, repeat: true }));
+      fixture.detectChanges();
+      expect(host.toggles).withContext('觸發鈕不開關選單').toEqual([]);
+      expect(host.changes).withContext('沒選中的不被選取').toEqual([]);
+      expect(host.outerKeys).withContext('觸發鈕上的 Enter 連發不往外冒').not.toContain('Enter');
+    });
+
+    it('選單開著時 value 被改掉（改成另一個帶選單的、或沒帶選單的）或這顆沒了資格（整組停用、這一項停用）：送「關」；還是觸發鈕時不送', fakeAsync(() => {
+      const step = (patch: Partial<HostComponent>) => { set(patch); flushMicrotasks(); return [...host.toggles]; };
+      step({ value: 'dist' });
+      expect(step({ menuOpen: true })).withContext('打開').toEqual([]);
+      expect(step({ size: 'S' })).withContext('還是觸發鈕').toEqual([]);
+      expect(step({ value: 'trend' })).withContext('value 改成另一個帶選單的').toEqual([false]);
+      expect(step({ value: 'cards' })).withContext('value 改成沒帶選單的').toEqual([false, false]);
+      host.toggles = [];
+      step({ value: 'dist' });
+      host.toggles = [];
+      expect(step({ disabled: true })).withContext('整組停用').toEqual([false]);
+      expect(step({ disabled: false, options: MENU_OPTIONS.map(o => ({ ...o, disabled: o.value === 'dist' })) })).withContext('這一項停用').toEqual([false, false]);
+      host.toggles = [];
+      step({ options: MENU_OPTIONS, menuOpen: false });
+      expect(step({ value: 'trend' })).withContext('選單關著不送').toEqual([]);
     }));
+
+    describe('按下空白鍵、Enter 後到放開前（window 層）', () => {
+      let other: HTMLButtonElement;
+      let otherKeys: string[];
+      const key = (target: Element, type: 'keydown' | 'keyup', k: string, repeat = false) => {
+        const e = new KeyboardEvent(type, { key: k, bubbles: true, cancelable: true, repeat });
+        target.dispatchEvent(e);
+        fixture.detectChanges();
+        return e;
+      };
+      beforeEach(() => {
+        // 代表焦點已經移進選單的第一項：按鈕組以外的元素
+        other = document.createElement('button');
+        document.body.appendChild(other);
+        otherKeys = [];
+        other.addEventListener('keydown', (e) => otherKeys.push(e.key));
+      });
+      afterEach(() => other.remove());
+
+      for (const k of [' ', 'Enter']) {
+        const name = k === ' ' ? '空白鍵' : 'Enter';
+        it(`${name}開關選單後：連發不往下傳、放開取消預設動作（焦點已移到別處也一樣）；放開之後就不再攔`, () => {
+          set({ value: 'dist' });
+          key(items()[1], 'keydown', k);
+          expect(host.toggles).toEqual([true]);
+          const repeat = key(other, 'keydown', k, true);
+          expect(repeat.defaultPrevented).withContext('連發：取消預設動作').toBeTrue();
+          expect(otherKeys).withContext('連發：不往下傳').toEqual([]);
+          expect(key(other, 'keyup', k).defaultPrevented).withContext('放開：取消預設動作').toBeTrue();
+          expect(key(other, 'keydown', k, true).defaultPrevented).withContext('放開之後：不再攔').toBeFalse();
+          expect(key(other, 'keyup', k).defaultPrevented).withContext('放開之後：不再攔').toBeFalse();
+          expect(host.toggles).toEqual([true]);
+        });
+      }
+
+      it('空白鍵選取沒選中的帶選單選項：放開時取消預設動作（Firefox 放開時補的 click 不會把剛選中的選單打開）', () => {
+        key(items()[1], 'keydown', ' ');
+        expect(host.changes).toEqual(['dist']);
+        expect(key(items()[1], 'keyup', ' ').defaultPrevented).toBeTrue();
+        expect(host.toggles).toEqual([]);
+      });
+
+      it('按了新的一下、視窗失去焦點、元件被移除：都停止攔', () => {
+        set({ value: 'dist' });
+        key(items()[1], 'keydown', ' ');
+        key(other, 'keydown', ' ');
+        expect(key(other, 'keyup', ' ').defaultPrevented).withContext('按了新的一下').toBeFalse();
+        key(items()[1], 'keydown', ' ');
+        window.dispatchEvent(new Event('blur'));
+        expect(key(other, 'keyup', ' ').defaultPrevented).withContext('視窗失去焦點').toBeFalse();
+        key(items()[1], 'keydown', ' ');
+        fixture.destroy();
+        const up = new KeyboardEvent('keyup', { key: ' ', bubbles: true, cancelable: true });
+        other.dispatchEvent(up);
+        expect(up.defaultPrevented).withContext('元件被移除').toBeFalse();
+      });
+    });
 
     it('選中、帶選單那顆 aria-haspopup="menu"、aria-expanded 跟著選單；沒選中的沒有', () => {
       set({ value: 'dist' });
@@ -711,7 +781,7 @@ describe('ButtonGroupComponent', () => {
       expect(host.toggles).toEqual([]);
     }));
 
-    it('選單開著時不出提示（提示和選單都往下出）；已經出來的提示在選單打開時收起', fakeAsync(() => {
+    it('選單開著時整組不出提示（提示和選單都往下出）；已經出來的提示在選單打開時收起；選單關了照常提示', fakeAsync(() => {
       const tips = () => document.body.querySelectorAll('app-tooltip-portal');
       set({ value: 'dist' });
       items()[1].dispatchEvent(new MouseEvent('mouseenter'));
@@ -728,7 +798,13 @@ describe('ButtonGroupComponent', () => {
       items()[2].dispatchEvent(new MouseEvent('mouseenter'));
       tick(300);
       fixture.detectChanges();
-      expect(tips().length).withContext('別顆照常提示').toBe(1);
+      expect(tips().length).withContext('選單開著時旁邊的選項也不提示（選單比按鈕寬，會疊到）').toBe(0);
+      items()[2].dispatchEvent(new MouseEvent('mouseleave'));
+      set({ menuOpen: false });
+      items()[2].dispatchEvent(new MouseEvent('mouseenter'));
+      tick(300);
+      fixture.detectChanges();
+      expect(tips().length).withContext('選單關了：照常提示').toBe(1);
       items()[2].dispatchEvent(new MouseEvent('mouseleave'));
       tick(500);
       tips().forEach(t => t.remove());
@@ -786,8 +862,8 @@ describe('ButtonGroupComponent', () => {
       await nextFrame();
       menuFixture.detectChanges();
     };
-    const key = async (target: Element, k: string) => {
-      target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    const key = async (target: Element, k: string, repeat = false) => {
+      target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, repeat }));
       menuFixture.detectChanges();
       await nextFrame();
       await nextFrame();
@@ -842,6 +918,21 @@ describe('ButtonGroupComponent', () => {
       await key(trigger(), ' ');
       expect(menuHost.toggles).withContext('再按一次就打開').toEqual([true, true]);
       expect(menu()).not.toBeNull();
+    });
+
+    it('空白鍵打開、焦點移進選單後：按住不放的連發點不到選單第一項，放開也取消預設動作', async () => {
+      trigger().focus();
+      await key(trigger(), ' ');
+      expect(menu()).not.toBeNull();
+      const item = document.activeElement!;
+      expect(menu()!.contains(item)).withContext('焦點在選單裡').toBeTrue();
+      await key(item, ' ', true);
+      await key(item, ' ', true);
+      expect(menuHost.picks).withContext('選單項目沒被點到').toBe(0);
+      expect(menu()).withContext('選單還開著').not.toBeNull();
+      const up = new KeyboardEvent('keyup', { key: ' ', bubbles: true, cancelable: true });
+      item.dispatchEvent(up);
+      expect(up.defaultPrevented).withContext('放開：取消預設動作').toBeTrue();
     });
 
     it('點選單外面關掉之後，再按觸發鈕一次就打開', async () => {
