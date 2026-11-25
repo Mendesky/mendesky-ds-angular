@@ -105,12 +105,15 @@ export class ButtonGroupComponent implements OnChanges {
   /**
    * 選單開著時，開著選單的那顆不再是觸發鈕：送 menuToggle(false) 讓使用端關選單，不然選單會留在原本那顆下面。
    * - value 被外面改掉（包括改成另一個帶選單的選項，例如從網址還原、推播更新）：選單是開在原本那顆的，一律關。
-   * - 整組或那一項停用、拿掉 menu、換了型別，整組已經沒有觸發鈕。
+   *   選單是這一輪才打開的（包括第一次綁定就是開的）不算：選單跟著新的值一起開，不是開在原本那顆。
+   * - 整組或那一項停用、拿掉 menu、換了型別，整組已經沒有觸發鈕（這一輪才打開的也算）。
    * 在變更偵測之後才送：使用端在這一輪改狀態會觸發 ExpressionChanged 錯誤。
    */
   private closeMenuIfTriggerGone(changes: SimpleChanges): void {
     if (!this.menuOpen) return;
-    const valueChanged = !!changes['value'] && !changes['value'].firstChange;
+    // 第一次綁定時 previousValue 是 undefined，也算這一輪才打開
+    const openedNow = !!changes['menuOpen'] && !changes['menuOpen'].previousValue;
+    const valueChanged = !!changes['value'] && !openedNow;
     const triggerGone = !!(changes['options'] || changes['disabled'] || changes['type'] || changes['menuOpen'])
       && !this.options.some(o => this.isMenuTrigger(o));
     if (!valueChanged && !triggerGone) return;
@@ -245,18 +248,20 @@ export class ButtonGroupComponent implements OnChanges {
         if (opt && !opt.disabled && !this.disabled && !event.repeat) {
           // 選中、帶選單的那顆：空白鍵開關選單（同滑鼠按）
           this.onItemClick(opt, event);
-          this.swallowKeyUntilKeyup(' ');
+          // 只攔帶選單的選項（選中的開關選單、沒選中的剛被選中）；其他選項放開時補的 click 只是再選一次同一個值，連發照常往外傳
+          if (this.hasMenu(opt)) this.swallowKeyUntilKeyup(' ');
         }
         break;
       }
     }
   }
 
-  /** 正在吃掉的那個鍵（空白鍵或 Enter），呼叫它就停止 */
+  /** 正在攔的那個鍵（空白鍵或 Enter），呼叫它就停止 */
   private stopSwallowingKey: (() => void) | null = null;
 
   /**
-   * 空白鍵、Enter 按下去（已經處理過）之後，到放開之前：連發的 keydown 不執行預設動作、也不往下傳；放開那一下也取消預設動作。
+   * 帶選單的選項按了空白鍵、Enter（已經處理過）之後，到放開之前：連發的 keydown 不執行預設動作、也不往下傳；
+   * 放開那一下只取消預設動作（不會補一次 click），照常往下傳。別的鍵不攔。沒帶選單的選項不攔。
    * - 空白鍵在按鈕上是放開時才按下去：keydown 已經處理過，Firefox 放開時可能再補一次 click，選單會開了又關，
    *   或沒選中的帶選單選項剛被選中、放開時又被當成「再按一次」打開選單。
    * - 打開選單後焦點已經移進選單（第一項），放開、連發都落在那一項上，會點到它；所以掛在 window，不掛在按鈕上。

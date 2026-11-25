@@ -38,7 +38,7 @@ export const buttonGroupDoc: ComponentApi = {
     {
       name: '(menuToggle)',
       type: 'EventEmitter<boolean>',
-      desc: '按了選中、帶選單的那顆（滑鼠、Enter 或空白鍵；按住不放的連發不算）：true＝要打開、false＝要關上，依 menuOpen 決定。選單由使用端放：app-action-menu 一定要用 [anchorEl]="group.menuAnchor()" 對齊選中那顆（元件的公開方法；沒有這顆時是 null），按這顆時才不會被當成點選單外面而先關掉、接著又被打開。這一下 click 不往外冒，Enter 也不往外冒（放在 wizard 裡不會同時觸發 onFormEnter）；其他選項照常。選單開著時 value 被改掉（包括改成另一個帶選單的選項），或這顆沒了資格（整組或這一項停用），元件送 false。按下空白鍵或 Enter 後到放開前的連發、放開那一下都會被吃掉，焦點移進選單後不會點到第一項。',
+      desc: '按了選中、帶選單的那顆（滑鼠、Enter 或空白鍵；按住不放的連發不算）：true＝要打開、false＝要關上，依 menuOpen 決定。選單由使用端放：app-action-menu 一定要用 [anchorEl]="group.menuAnchor()" 對齊選中那顆（元件的公開方法；沒有這顆時是 null），按這顆時才不會被當成點選單外面而先關掉、接著又被打開。這一下 click 不往外冒，Enter 也不往外冒（放在 wizard 裡不會同時觸發 onFormEnter）；其他選項照常。選單開著時 value 被改掉（包括改成另一個帶選單的選項），或這顆沒了資格（整組或這一項停用），元件送 false；同一輪把 value 改成另一個帶選單的選項、menuOpen 改成 true 時不送（選單跟著新的值開）。帶選單的選項按下空白鍵或 Enter 後，到放開前的連發不執行預設動作、也不往下傳，放開那一下取消預設動作（不會補一次點擊），焦點移進選單後不會點到第一項；沒帶選單的選項不受影響。',
       isOutput: true,
     },
     {
