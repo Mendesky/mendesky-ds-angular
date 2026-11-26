@@ -42,6 +42,32 @@ const GROUPED: SideNavGroup[] = [
   },
 ];
 
+// 有子頁面：母項目的網址給第一個子頁面
+const NESTED: SideNavGroup[] = [
+  {
+    id: 'main',
+    items: [
+      { id: 'home', label: '首頁', icon: 'Dashboard', href: '#home' },
+      {
+        id: 'team', label: '團隊', icon: 'CustomerManagement', href: '#members',
+        children: [
+          { id: 'members', label: '成員', icon: 'Person', href: '#members' },
+          { id: 'roles', label: '角色', icon: 'IdCard', href: '#roles' },
+        ],
+      },
+      {
+        id: 'notify', label: '通知', icon: 'BellRing', href: '#activity',
+        children: [
+          { id: 'activity', label: '發送紀錄', icon: 'Pulse', href: '#activity' },
+          { id: 'rules', label: '寄件規則', icon: 'Mails', href: '#rules' },
+          { id: 'copy', label: '文案', icon: 'MessageText', href: '#copy' },
+        ],
+      },
+      { id: 'settings', label: '設定', icon: 'Setting', href: '#settings' },
+    ],
+  },
+];
+
 // 窄的視窗放不下 200px 側欄加內容區時，外框自己橫向捲動，不撐寬整頁
 const FRAME = 'display:flex;gap:8px;height:420px;max-width:100%;overflow:auto;padding:20px;background:#EEF1F5;border-radius:8px;box-sizing:border-box';
 const CONTENT = 'flex:1;min-width:0;background:#ffffff;border-radius:12px;padding:16px;color:#686868';
@@ -141,5 +167,28 @@ export const InDrawer: Story = {
       </app-drawer-shell>
     `,
     moduleMetadata: { imports: [SideNavComponent, ButtonComponent, DrawerShellComponent] },
+  }),
+};
+
+// ── 子頁面：窄欄滑過浮出子選單，展開時列在母項目下方 ───────────
+export const WithChildren: Story = {
+  name: '子頁面（窄欄浮出子選單、展開時列在下方）',
+  render: () => ({
+    props: { groups: NESTED, rail: true, current: 'roles' },
+    template: `
+      <div style="${FRAME};flex-direction:column;gap:12px">
+        <app-button variant="outlined" color="neutral" [leftIcon]="rail ? 'RightArrow' : 'LeftArrow'"
+                    [text]="rail ? '換成展開' : '換成窄欄'" (btnClick)="rail = !rail"></app-button>
+        <div style="display:flex;gap:8px;flex:1;min-height:0">
+          <app-side-nav [groups]="groups" [mode]="rail ? 'rail' : 'expanded'" [currentId]="current"
+                        (navigate)="current = $event.id"></app-side-nav>
+          <div style="${CONTENT}">
+            窄欄：滑過「團隊」或「通知」，右邊浮出子選單；用鍵盤停到母項目再按 Tab 進入子選單。目前頁「角色」在團隊底下，窄欄時團隊是選中的樣子。
+            展開：子頁面列在母項目下方，一直看得到。
+          </div>
+        </div>
+      </div>
+    `,
+    moduleMetadata: { imports: [SideNavComponent, ButtonComponent] },
   }),
 };

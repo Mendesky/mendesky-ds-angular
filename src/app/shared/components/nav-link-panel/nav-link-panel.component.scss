@@ -1,0 +1,147 @@
+@use '../../../../styles/mixins' as mx;
+
+// 浮出的連結面板：側欄窄欄的子選單、麵包屑切換選單共用。
+// 外框照 action-menu（半透明白底、模糊 15px、白邊、圓角 10px、陰影）；每一列照 menu-item 的尺寸與滑過色，
+// 目前頁改用側欄「選中」的綠 85 底白字 4.58:1、滑過綠 90 6.34:1（導覽的「你在這一頁」，不是單選選單的「選了這個值」）。
+// 標題 --text/body 12px 中等粗，同側欄展開時的群組標題。
+// 動畫 150ms（Micro 等級）：出現 ease-enter、收起 ease-exit，原點由元件設在錨點那一側；減少動態時不播。
+
+:host {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  position: fixed;
+  min-width: 200px;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--border\/white, #ffffff);
+  border-radius: 10px;
+  box-shadow: 0 4px 40px -10px rgba(0, 0, 0, 0.28);
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
+  animation: navLinkPanelIn 150ms var(--ease-enter);
+}
+
+// 側欄子選單從母項目長出來，縮放幅度大一點才看得出方向；麵包屑選單照 action-menu 的 0.97
+:host(.nav-link-panel--right) {
+  --nav-link-panel-from: 0.6;
+}
+
+:host(.nav-link-panel--below) {
+  --nav-link-panel-from: 0.97;
+}
+
+:host(.nav-link-panel--leaving) {
+  animation: navLinkPanelOut 150ms var(--ease-exit) forwards;
+  pointer-events: none;
+}
+
+@keyframes navLinkPanelIn {
+  from { opacity: 0; transform: scale(var(--nav-link-panel-from, 0.97)); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes navLinkPanelOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(var(--nav-link-panel-from, 0.97)); }
+}
+
+.nav-link-panel__heading {
+  padding: 6px 10px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text\/body, #686868);
+  white-space: nowrap;
+}
+
+app-divider {
+  display: block;
+  margin: 2px 0;
+}
+
+.nav-link-panel__link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: var(--radious\/sm, 4px);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text\/body, #686868);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 150ms var(--ease-enter),
+    color 150ms var(--ease-enter);
+  @include mx.focus-ring(-2px);
+
+  app-icon {
+    flex-shrink: 0;
+    color: currentColor;
+  }
+
+  &:hover {
+    background: var(--button\/neutral, #939393);
+    color: var(--color\/white\/20, #f1f3f5);
+  }
+}
+
+// 寫在一般連結的滑過之後：目前頁滑過要蓋掉灰底
+.nav-link-panel__link--current {
+  background: var(--color\/green\/85, #538227);
+  color: var(--text\/body-lightest, #ffffff);
+  font-weight: 500;
+
+  &:hover {
+    background: var(--color\/green\/90, #426a1c);
+    color: var(--text\/body-lightest, #ffffff);
+  }
+
+  // 藍框放在綠 85 上只有 1.49:1，改白框
+  &:focus-visible {
+    outline-color: var(--border\/white, #ffffff);
+  }
+}
+
+.nav-link-panel__label {
+  flex: 1;
+  min-width: 0;
+}
+
+// 觸控裝置：每一列至少 44px 高
+@media (pointer: coarse) {
+  .nav-link-panel__link {
+    min-height: 44px;
+  }
+}
+
+// 強制色彩：背景色會被系統拿掉，目前頁改用外框標示
+.nav-link-panel__link--current {
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+}
+
+@media (forced-colors: active) {
+  :host {
+    border-color: CanvasText;
+  }
+
+  .nav-link-panel__link--current {
+    outline-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host,
+  :host(.nav-link-panel--leaving) {
+    animation: none;
+  }
+
+  .nav-link-panel__link {
+    transition: none;
+  }
+}

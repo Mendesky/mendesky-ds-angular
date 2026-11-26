@@ -1,0 +1,18 @@
+@if (heading) {
+  <div class="nav-link-panel__heading" [id]="panelId + '-heading'">{{ heading }}</div>
+  <app-divider aria-hidden="true"></app-divider>
+}
+@for (link of links; track link.id; let i = $index) {
+  <a
+    class="nav-link-panel__link"
+    [class.nav-link-panel__link--current]="link.id === currentId"
+    [href]="link.href"
+    [attr.aria-current]="link.id === currentId ? 'page' : null"
+    (click)="onLinkClick($event, link)"
+    (keydown)="onLinkKeydown($event, i)">
+    @if (link.icon) {
+      <app-icon [name]="link.icon" size="16"></app-icon>
+    }
+    <span class="nav-link-panel__label">{{ link.label }}</span>
+  </a>
+}

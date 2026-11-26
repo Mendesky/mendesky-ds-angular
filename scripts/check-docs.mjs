@@ -31,6 +31,7 @@ const ts = require('typescript');
 export const INTERNAL_COMPONENTS = [
   'autocomplete-panel',
   'date-panel',
+  'nav-link-panel',
   'select-panel',
   'template-var-panel',
   'tooltip-portal',

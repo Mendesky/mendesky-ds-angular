@@ -15,19 +15,57 @@
       @for (item of group.items; track item.id) {
         <a
           class="side-nav__item"
-          [class.side-nav__item--current]="item.id === currentId"
+          [class.side-nav__item--current]="isCurrent(item)"
           [href]="item.href"
-          [attr.aria-current]="item.id === currentId ? 'page' : null"
+          [attr.aria-current]="ariaCurrent(item)"
           [attr.aria-label]="layout === 'rail' ? item.label : null"
-          [appTooltip]="mode === 'rail' ? item.label : ''"
+          [attr.aria-expanded]="ariaExpanded(item)"
+          [attr.aria-controls]="ariaControls(item)"
+          [appTooltip]="mode === 'rail' && !hasChildren(item) ? item.label : ''"
           appTooltipDirection="right"
+          (mouseenter)="onItemEnter(item, $event.currentTarget)"
+          (mouseleave)="onPointerLeave()"
+          (focus)="onItemFocus(item, $event.currentTarget)"
+          (focusout)="onFocusOut($event)"
+          (keydown)="onItemKeydown($event, item)"
           (click)="onItemClick($event, item)">
           <app-icon [name]="item.icon" [size]="layout === 'expanded' ? '20' : '24'"></app-icon>
           @if (layout === 'expanded') {
             <span class="side-nav__label">{{ item.label }}</span>
           }
         </a>
+        @if (layout === 'expanded' && hasChildren(item)) {
+          <div class="side-nav__children" role="group" [attr.aria-label]="item.label">
+            @for (child of item.children; track child.id) {
+              <a
+                class="side-nav__item side-nav__item--child"
+                [class.side-nav__item--current]="child.id === currentId"
+                [href]="child.href"
+                [attr.aria-current]="child.id === currentId ? 'page' : null"
+                (click)="onItemClick($event, child)">
+                <app-icon [name]="child.icon" size="16"></app-icon>
+                <span class="side-nav__label">{{ child.label }}</span>
+              </a>
+            }
+          </div>
+        }
       }
     </div>
   }
 </nav>
+@for (f of flyouts(); track f.key) {
+  <app-nav-link-panel
+    side="right"
+    [panelId]="flyoutId(f)"
+    [anchor]="f.anchor"
+    [links]="f.item.children ?? []"
+    [heading]="f.item.label"
+    [currentId]="currentId"
+    [leaving]="f.leaving"
+    (mouseenter)="onPanelEnter()"
+    (mouseleave)="onPointerLeave()"
+    (focusout)="onFocusOut($event)"
+    (linkClick)="onPanelLinkClick($event)"
+    (dismiss)="onPanelDismiss($event, f)"
+    (tabOut)="onPanelTabOut($event, f)"></app-nav-link-panel>
+}
