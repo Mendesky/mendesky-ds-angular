@@ -1,0 +1,130 @@
+@use '../../../../styles/mixins' as mx;
+
+// 麵包屑。顏色（頁面背景 #EEF1F5）：
+//   前面的節 --text/body 4.92:1；滑過 --text/secondary 6.16:1＋底線
+//   目前頁、切換鈕 --text/headings 中等粗 6.16:1；切換鈕滑過疊 5% 深色（同側欄展開的滑過）
+//   分隔箭頭 --border/primary-darker：裝飾，報讀不念
+// 名稱與圖示 16px。放不下時前面的節先縮（flex-shrink 1），目前頁最後才縮（極小的 flex-shrink）
+
+:host {
+  display: block;
+  min-width: 0;
+  font-family: var(--font-family\/noto, 'Noto Sans TC', sans-serif);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.breadcrumb__nav {
+  min-width: 0;
+}
+
+.breadcrumb__list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.breadcrumb__seg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  // 縮到只剩圖示＋刪節號就不再縮
+  min-width: 44px;
+}
+
+.breadcrumb__seg--last {
+  flex-shrink: 0.001;
+}
+
+.breadcrumb__link,
+.breadcrumb__text,
+.breadcrumb__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+
+  app-icon {
+    flex-shrink: 0;
+    color: currentColor;
+  }
+}
+
+.breadcrumb__link {
+  color: var(--text\/body, #686868);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 150ms var(--ease-enter);
+  @include mx.focus-ring(2px);
+
+  &:hover {
+    color: var(--text\/secondary, #535353);
+
+    .breadcrumb__label {
+      text-decoration: underline;
+    }
+  }
+}
+
+.breadcrumb__text {
+  color: var(--text\/body, #686868);
+}
+
+.breadcrumb__text--current {
+  color: var(--text\/headings, #535353);
+  font-weight: 500;
+}
+
+.breadcrumb__switch {
+  box-sizing: border-box;
+  height: 32px;
+  margin: 0;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-weight: 500;
+  color: var(--text\/headings, #535353);
+  cursor: pointer;
+  transition: background-color 150ms var(--ease-enter);
+  @include mx.focus-ring(0);
+
+  &:hover {
+    background: rgba(28, 28, 46, 0.05);
+  }
+
+  .breadcrumb__caret {
+    color: var(--icon\/body, #686868);
+  }
+}
+
+.breadcrumb__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb__sep {
+  flex-shrink: 0;
+  color: var(--border\/primary-darker, #bebebe);
+}
+
+@media (forced-colors: active) {
+  .breadcrumb__switch {
+    border: 1px solid ButtonText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breadcrumb__link,
+  .breadcrumb__switch {
+    transition: none;
+  }
+}

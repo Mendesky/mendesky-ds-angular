@@ -1,0 +1,58 @@
+<nav class="breadcrumb__nav" [attr.aria-label]="ariaLabel">
+  <ol class="breadcrumb__list">
+    @for (item of items; track $index; let isLast = $last) {
+      <li class="breadcrumb__seg" [class.breadcrumb__seg--last]="isLast">
+        @if (isLast && hasSwitch) {
+          <button
+            #switchBtn
+            type="button"
+            class="breadcrumb__switch"
+            aria-current="page"
+            [attr.aria-expanded]="menuOpen"
+            [attr.aria-controls]="menuOpen ? panelId : null"
+            (click)="toggleMenu()"
+            (focusout)="onFocusOut($event)">
+            @if (item.icon) {
+              <app-icon [name]="item.icon" size="16"></app-icon>
+            }
+            <span class="breadcrumb__label">{{ item.label }}</span>
+            <app-icon class="breadcrumb__caret" name="DownArrow" size="16"></app-icon>
+          </button>
+        } @else if (!isLast && item.href) {
+          <a class="breadcrumb__link" [href]="item.href" (click)="onLinkClick($event, item)">
+            @if (item.icon) {
+              <app-icon [name]="item.icon" size="16"></app-icon>
+            }
+            <span class="breadcrumb__label">{{ item.label }}</span>
+          </a>
+        } @else {
+          <span class="breadcrumb__text" [class.breadcrumb__text--current]="isLast" [attr.aria-current]="isLast ? 'page' : null">
+            @if (item.icon) {
+              <app-icon [name]="item.icon" size="16"></app-icon>
+            }
+            <span class="breadcrumb__label">{{ item.label }}</span>
+          </span>
+        }
+        @if (!isLast) {
+          <app-icon class="breadcrumb__sep" name="RightArrow" size="16" aria-hidden="true"></app-icon>
+        }
+      </li>
+    }
+  </ol>
+</nav>
+@if (menu(); as m) {
+  @if (switchEl; as anchor) {
+    <app-nav-link-panel
+      side="below"
+      [panelId]="panelId"
+      [anchor]="anchor"
+      [links]="menuLinks"
+      [currentId]="currentKey"
+      [ariaLabel]="last?.label ?? ''"
+      [leaving]="m.leaving"
+      (focusout)="onFocusOut($event)"
+      (linkClick)="onPanelLinkClick($event)"
+      (dismiss)="onPanelDismiss($event)"
+      (tabOut)="onPanelTabOut($event)"></app-nav-link-panel>
+  }
+}
