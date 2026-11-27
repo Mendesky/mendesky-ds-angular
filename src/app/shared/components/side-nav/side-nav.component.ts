@@ -88,7 +88,7 @@ let nextUid = 0;
  *   換母項目時舊的播完收起動畫才移除。捲動、改大小、點外面、Esc、點子頁面、換寬度都收起。
  *   子選單在 body 底下，Tab 順序接不上母項目，所以由這裡接：母項目 Tab 進第一個子頁面（子選單收著時先打開）、
  *   第一個子頁面 Shift＋Tab 回母項目、最後一個子頁面 Tab 到母項目的下一個項目（母項目是最後一項時交回母項目、不擋預設）。
- *   焦點在子選單裡時：滑鼠離開不收；選了子頁面、捲動、改大小、換寬度收起時，焦點交回母項目，
+ *   焦點在子選單裡時：滑鼠離開、焦點沒有去處（切到別的視窗）不收；選了子頁面、滑鼠滑到別的項目、捲動、改大小、換成展開寬度收起時，焦點交回母項目，
  *   這次交回不會又打開子選單。焦點移到不是項目的地方（含側欄上方投影進來的按鈕）就收起。
  * - 目前頁是子頁面時：展開時那個子頁面選中；窄欄時母項目選中、aria-current="true"。
  */
@@ -242,6 +242,8 @@ export class SideNavComponent implements AfterViewChecked, OnDestroy {
     const next = event.relatedTarget as Node | null;
     const open = this.flyouts().filter(f => !f.leaving);
     if (!open.length) return;
+    // 沒有去處（例：切到別的視窗）：不收，回來時焦點還在原處。點到不能聚焦的地方由面板的點外面處理
+    if (!next) return;
     const stays = open.some(f => f.anchor === next || this.panelFor(f)?.contains(next));
     if (stays || this.pointerInside) return;
     // 焦點移到側欄的其他項目時，那一項的 focus 會自己處理（開它的子選單或收起）。
@@ -318,13 +320,13 @@ export class SideNavComponent implements AfterViewChecked, OnDestroy {
 
   private activate(item: SideNavItem, anchor: HTMLAnchorElement): void {
     this.cancelClose();
-    if (!this.hasChildren(item)) {
-      this.closeFlyouts();
-      return;
-    }
     const current = this.openFlyout(item);
     if (current && current.anchor === anchor) return;
+    // 滑鼠滑到別的項目時焦點還在子選單裡：先交回原本的母項目，不然子選單移除後焦點掉到 body
+    const focused = this.flyoutWithFocus();
+    if (focused) this.focusAnchor(focused.anchor);
     this.closeFlyouts();
+    if (!this.hasChildren(item)) return;
     this.flyouts.update(list => [...list, { key: this.nextFlyoutKey++, item, anchor, leaving: false }]);
   }
 

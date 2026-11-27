@@ -884,4 +884,41 @@ describe('SideNavComponent 子頁面', () => {
     expect(click.defaultPrevented).toBeTrue();
     expect(sent).toEqual(['team-roles']);
   });
+
+  /** 母項目按 Tab 進子選單第一個子頁面 */
+  const focusIntoPanel = (label: string) => {
+    const parent = item(label);
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    return parent;
+  };
+
+  it('C26. 焦點在子選單裡、滑鼠滑到另一個母項目：焦點交回原本的母項目，新的子選單打開', () => {
+    render({ mode: 'rail' });
+    const team = focusIntoPanel('團隊');
+    expect(document.activeElement).toBe(panelLinks(openPanels()[0])[0]);
+    hover(item('通知'));
+    expect(document.activeElement).withContext('焦點不能掉到 body').toBe(team);
+    expect(openPanels().length).toBe(1);
+    expect(openPanels()[0].textContent).toContain('寄件規則');
+  });
+
+  it('C27. 焦點在子選單裡、滑鼠滑到一般項目：子選單收起，焦點交回母項目', () => {
+    render({ mode: 'rail' });
+    const team = focusIntoPanel('團隊');
+    hover(item('設定'));
+    expect(document.activeElement).withContext('焦點不能掉到 body').toBe(team);
+    expect(openPanels().length).toBe(0);
+  });
+
+  it('C28. 焦點在子選單裡、焦點離開但沒有去處（例：切到別的視窗）：子選單不收', () => {
+    render({ mode: 'rail' });
+    focusIntoPanel('團隊');
+    const link = panelLinks(openPanels()[0])[0];
+    link.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    expect(document.activeElement).toBe(link);
+  });
 });
