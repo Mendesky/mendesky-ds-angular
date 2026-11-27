@@ -1,7 +1,7 @@
 <nav class="breadcrumb__nav" [attr.aria-label]="ariaLabel">
   <ol class="breadcrumb__list">
     @for (item of items; track $index; let isLast = $last) {
-      <li class="breadcrumb__seg" [class.breadcrumb__seg--last]="isLast">
+      <li class="breadcrumb__seg" [class.breadcrumb__seg--last]="isLast" [class.breadcrumb__seg--switch]="isLast && hasSwitch">
         @if (isLast && hasSwitch) {
           <button
             #switchBtn

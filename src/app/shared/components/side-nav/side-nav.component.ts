@@ -1,4 +1,5 @@
 import {
+  AfterViewChecked,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -85,8 +86,10 @@ let nextUid = 0;
  * - 窄欄：滑過或焦點在母項目時，右邊浮出子選單（app-nav-link-panel，搬到 body、層級由浮層定位服務給）。
  *   母項目不出現名稱提示（子選單第一行就是名稱）。滑鼠離開母項目和子選單 250ms 後收起；
  *   換母項目時舊的播完收起動畫才移除。捲動、改大小、點外面、Esc、點子頁面、換寬度都收起。
- *   子選單在 body 底下，Tab 順序接不上母項目，所以由這裡接：母項目 Tab 進第一個子頁面、
- *   第一個子頁面 Shift＋Tab 回母項目、最後一個子頁面 Tab 到母項目的下一個項目。
+ *   子選單在 body 底下，Tab 順序接不上母項目，所以由這裡接：母項目 Tab 進第一個子頁面（子選單收著時先打開）、
+ *   第一個子頁面 Shift＋Tab 回母項目、最後一個子頁面 Tab 到母項目的下一個項目（母項目是最後一項時交回母項目、不擋預設）。
+ *   焦點在子選單裡時：滑鼠離開不收；選了子頁面、捲動、改大小、換寬度收起時，焦點交回母項目，
+ *   這次交回不會又打開子選單。焦點移到不是項目的地方（含側欄上方投影進來的按鈕）就收起。
  * - 目前頁是子頁面時：展開時那個子頁面選中；窄欄時母項目選中、aria-current="true"。
  */
 @Component({
@@ -104,13 +107,15 @@ let nextUid = 0;
     '[attr.inert]': 'mode === "hidden" ? "" : null',
   },
 })
-export class SideNavComponent implements OnDestroy {
+export class SideNavComponent implements AfterViewChecked, OnDestroy {
   /** 群組與項目。不分群就傳一個不給標題的群組 */
   @Input({ required: true }) groups: readonly SideNavGroup[] = [];
 
   /** 寬度：expanded（預設）／rail／hidden */
   @Input()
   set mode(value: SideNavMode) {
+    // 焦點在子選單裡時，子選單一移除焦點就掉到 body，先記下要交回的母項目
+    const focusedIn = value !== 'rail' ? this.flyoutWithFocus() : undefined;
     this._mode = value;
     // 子選單只在窄欄：換成其他寬度直接移除，不等收起動畫
     if (value !== 'rail') this.dropFlyouts();
@@ -120,6 +125,8 @@ export class SideNavComponent implements OnDestroy {
     } else if (!this._shownOnce) {
       this.layout = 'rail';
     }
+    // 藏起來時整條 inert，不交回
+    if (focusedIn && value !== 'hidden') this.focusAnchor(focusedIn.anchor);
   }
   get mode(): SideNavMode {
     return this._mode;
@@ -152,6 +159,8 @@ export class SideNavComponent implements OnDestroy {
   private readonly removeTimers = new Set<ReturnType<typeof setTimeout>>();
   /** 滑鼠在母項目或子選單上 */
   private pointerInside = false;
+  /** 母項目按 Tab 時子選單還沒開：開好後焦點移到這個子選單的第一個子頁面 */
+  private focusFirstKey: number | null = null;
 
   headingId(groupIndex: number): string {
     return `${this.uid}-h-${groupIndex}`;
@@ -235,18 +244,26 @@ export class SideNavComponent implements OnDestroy {
     if (!open.length) return;
     const stays = open.some(f => f.anchor === next || this.panelFor(f)?.contains(next));
     if (stays || this.pointerInside) return;
-    // 焦點移到側欄的其他項目時，那一項的 focus 會自己處理（開它的子選單或收起）
-    if (next && this.hostEl.nativeElement.contains(next)) return;
+    // 焦點移到側欄的其他項目時，那一項的 focus 會自己處理（開它的子選單或收起）。
+    // 側欄裡不是項目的地方（例：上方投影進來的按鈕）不會處理，要在這裡收
+    const toItem = next instanceof Element && !!next.closest('a.side-nav__item') && this.hostEl.nativeElement.contains(next);
+    if (toItem) return;
     this.closeFlyouts();
   }
 
   onItemKeydown(event: KeyboardEvent, item: SideNavItem): void {
     if (event.key !== 'Tab' || event.shiftKey) return;
+    if (this.mode !== 'rail' || !this.hasChildren(item)) return;
     const f = this.openFlyout(item);
     const panel = f && this.panelFor(f);
-    if (!panel) return;
     event.preventDefault();
-    panel.focusFirst();
+    if (panel) {
+      panel.focusFirst();
+      return;
+    }
+    // 子選單收著（例：選了子頁面、捲動收起後焦點交回母項目）：先打開，畫面更新後再移焦點
+    this.activate(item, event.currentTarget as HTMLAnchorElement);
+    this.focusFirstKey = this.openFlyout(item)?.key ?? null;
   }
 
   onPanelTabOut(e: { direction: 'forward' | 'backward'; event: KeyboardEvent }, f: Flyout): void {
@@ -257,27 +274,40 @@ export class SideNavComponent implements OnDestroy {
     }
     const items = Array.from(this.hostEl.nativeElement.querySelectorAll<HTMLAnchorElement>('a.side-nav__item'));
     const next = items[items.indexOf(f.anchor) + 1];
-    this.closeFlyouts();
     if (next) {
+      this.closeFlyouts();
       e.event.preventDefault();
       next.focus();
     } else {
       // 母項目是最後一項：焦點放回母項目、不擋預設，瀏覽器接著把焦點移到側欄後面
-      f.anchor.focus();
+      this.focusAnchor(f.anchor);
+      this.closeFlyouts();
     }
   }
 
-  onPanelLinkClick(e: { link: NavPanelLink; event: MouseEvent }): void {
+  onPanelLinkClick(e: { link: NavPanelLink; event: MouseEvent }, f: Flyout): void {
+    // 焦點在子選單裡要先交回母項目，不然子選單移除後焦點掉到 body
+    if (this.panelFor(f)?.contains(document.activeElement)) this.focusAnchor(f.anchor);
     this.closeFlyouts();
     if (!this.navigate.observed) return;
     e.event.preventDefault();
     this.navigate.emit(e.link as SideNavLink);
   }
 
-  onPanelDismiss(reason: NavPanelDismissReason, f: Flyout): void {
-    // Esc：焦點在子選單裡要先還給母項目，不然會留在播收起動畫的子選單上
-    if (reason === 'escape' && this.panelFor(f)?.contains(document.activeElement)) f.anchor.focus();
+  onPanelDismiss(_reason: NavPanelDismissReason, f: Flyout): void {
+    // 焦點在子選單裡要先交回母項目，不然會留在播收起動畫的子選單上
+    if (this.panelFor(f)?.contains(document.activeElement)) this.focusAnchor(f.anchor);
     this.closeFlyouts();
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.focusFirstKey === null) return;
+    const f = this.flyouts().find(x => x.key === this.focusFirstKey);
+    const panel = f && !f.leaving ? this.panelFor(f) : undefined;
+    if (!f || f.leaving) this.focusFirstKey = null;
+    if (!panel) return;
+    this.focusFirstKey = null;
+    panel.focusFirst();
   }
 
   ngOnDestroy(): void {
@@ -307,8 +337,24 @@ export class SideNavComponent implements OnDestroy {
     this.cancelClose();
     this.closeTimer = setTimeout(() => {
       this.closeTimer = null;
+      // 焦點在子選單裡：鍵盤還在用，滑鼠離開不收
+      if (this.flyoutWithFocus()) return;
       this.closeFlyouts();
     }, CLOSE_DELAY_MS);
+  }
+
+  /** 焦點所在的子選單（還沒播收起動畫的） */
+  private flyoutWithFocus(): Flyout | undefined {
+    const active = document.activeElement;
+    return this.flyouts().find(f => !f.leaving && !!this.panelFor(f)?.contains(active));
+  }
+
+  /**
+   * 把焦點交回母項目。一定要在收起子選單之前叫：這時子選單還開著，母項目的 focus 認得是同一個、不會重開；
+   * 先收起再交回，focus 會當成「聚焦母項目」又打開一個新的子選單
+   */
+  private focusAnchor(anchor: HTMLAnchorElement): void {
+    anchor.focus();
   }
 
   private cancelClose(): void {
@@ -334,6 +380,7 @@ export class SideNavComponent implements OnDestroy {
   private dropFlyouts(): void {
     this.cancelClose();
     this.pointerInside = false;
+    this.focusFirstKey = null;
     if (this.flyouts().length) this.flyouts.set([]);
   }
 }

@@ -5,17 +5,17 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
  * app-breadcrumb：頁首的「區 › 頁」路徑。每一節圖示＋名稱；前面的節是連結、最後一節是目前頁；
  * 最後一節帶兩頁以上同區頁面時變成切換鈕，打開切換選單（連結，目前頁綠底）。
  */
-const IAM: BreadcrumbItem[] = [
-  { id: 'iam', label: '權限管理', icon: 'Shield', href: '/iam/users' },
-  { id: 'iam-roles', label: '角色', icon: 'IdCard', href: '/iam/roles' },
+const TEAM: BreadcrumbItem[] = [
+  { id: 'team', label: '團隊', icon: 'Shield', href: '/team/members' },
+  { id: 'team-roles', label: '角色', icon: 'IdCard', href: '/team/roles' },
 ];
 const SIBLINGS: BreadcrumbItem[] = [
-  { id: 'iam-users', label: '人員', icon: 'Person', href: '/iam/users' },
-  { id: 'iam-roles', label: '角色', icon: 'IdCard', href: '/iam/roles' },
+  { id: 'team-members', label: '成員', icon: 'Person', href: '/team/members' },
+  { id: 'team-roles', label: '角色', icon: 'IdCard', href: '/team/roles' },
 ];
 const VERSION: BreadcrumbItem[] = [
-  { id: 'products', label: '版本更新管理', icon: 'Megaphone', href: '/products' },
-  { id: 'p1', label: '會計系統', icon: 'AppWindow', href: '/products/p1' },
+  { id: 'products', label: '總覽', icon: 'Megaphone', href: '/products' },
+  { id: 'p1', label: '專案 A', icon: 'AppWindow', href: '/products/p1' },
   { id: 'v1', label: 'v2.4.0', icon: 'VersionTag' },
 ];
 
@@ -30,7 +30,7 @@ describe('BreadcrumbComponent', () => {
   const cleanups: Array<() => void> = [];
 
   const render = (inputs: { items?: BreadcrumbItem[]; siblings?: BreadcrumbItem[] }) => {
-    for (const [k, v] of Object.entries({ items: IAM, ...inputs })) fixture.componentRef.setInput(k, v);
+    for (const [k, v] of Object.entries({ items: TEAM, ...inputs })) fixture.componentRef.setInput(k, v);
     fixture.detectChanges();
   };
   const key = (el: HTMLElement, k: string, shiftKey = false) => {
@@ -66,7 +66,7 @@ describe('BreadcrumbComponent', () => {
     expect(nav.getAttribute('aria-label')).toBe('目前位置');
     expect(nav.querySelector('ol')).not.toBeNull();
     expect(segs().length).toBe(3);
-    expect(segs().map(li => li.textContent!.trim())).toEqual(['版本更新管理', '會計系統', 'v2.4.0']);
+    expect(segs().map(li => li.textContent!.trim())).toEqual(['總覽', '專案 A', 'v2.4.0']);
     for (const li of segs()) {
       const icon = li.querySelector<HTMLElement>('app-icon:not(.breadcrumb__sep)')!;
       expect(icon).withContext(li.textContent!).not.toBeNull();
@@ -136,8 +136,8 @@ describe('BreadcrumbComponent', () => {
     expect(p.getAttribute('role')).toBe('group');
     expect(p.getAttribute('aria-label')).toBe('角色');
     const links = panelLinks();
-    expect(links.map(a => a.textContent!.trim())).toEqual(['人員', '角色']);
-    expect(links.map(a => a.getAttribute('href'))).toEqual(['/iam/users', '/iam/roles']);
+    expect(links.map(a => a.textContent!.trim())).toEqual(['成員', '角色']);
+    expect(links.map(a => a.getAttribute('href'))).toEqual(['/team/members', '/team/roles']);
     expect(links.every(a => a.querySelector('app-icon'))).toBeTrue();
     expect(links[1].getAttribute('aria-current')).toBe('page');
     expect(getComputedStyle(links[1]).backgroundColor).toBe('rgb(83, 130, 39)');
@@ -189,7 +189,7 @@ describe('BreadcrumbComponent', () => {
     panelLinks()[0].dispatchEvent(plain);
     fixture.detectChanges();
     expect(plain.defaultPrevented).toBeTrue();
-    expect(sent).toEqual(['iam-users']);
+    expect(sent).toEqual(['team-members']);
     expect(openPanels().length).toBe(0);
 
     await openMenu();
@@ -218,7 +218,7 @@ describe('BreadcrumbComponent', () => {
     fixture.detectChanges();
     tick();
     expect(openPanels().length).toBe(1);
-    render({ items: [...IAM] });
+    render({ items: [...TEAM] });
     expect(panels().length).toBe(0);
     tick(500);
   }));
@@ -239,5 +239,111 @@ describe('BreadcrumbComponent', () => {
     expect(getComputedStyle(firstLabel).textOverflow).toBe('ellipsis');
     expect(lastLabel.scrollWidth).toBeLessThanOrEqual(lastLabel.clientWidth);
     expect(host().getBoundingClientRect().width).toBe(220);
+  });
+  // ── 第一輪審查後補（11-26）──
+
+  const THREE: BreadcrumbItem[] = [
+    { id: 'n-a', label: '發送紀錄', icon: 'Pulse', href: '/n/a' },
+    { id: 'n-b', label: '寄件規則', icon: 'Mails', href: '/n/b' },
+    { id: 'n-c', label: '文案', icon: 'MessageText', href: '/n/c' },
+  ];
+  const clickProbe = (target: EventTarget) => {
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    let notPrevented = false;
+    const probe = (ev: Event) => { if (ev === click) { notPrevented = !ev.defaultPrevented; ev.preventDefault(); } };
+    document.addEventListener('click', probe);
+    cleanups.push(() => document.removeEventListener('click', probe));
+    target.dispatchEvent(click);
+    return () => notPrevented;
+  };
+
+  it('B12. 選了選單的頁面（鍵盤 Enter）：焦點回到切換鈕，不掉到 body', async () => {
+    render({ siblings: SIBLINGS });
+    fixture.componentInstance.navigate.subscribe(() => undefined);
+    await openMenu();
+    const link = panelLinks()[0];
+    link.focus();
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(switchBtn());
+  });
+
+  it('B13. 換頁（items 換新）時焦點在選單裡：焦點回到切換鈕', async () => {
+    render({ siblings: SIBLINGS });
+    await openMenu();
+    expect(panels()[0].contains(document.activeElement)).toBeTrue();
+    render({ items: [...TEAM] });
+    expect(panels().length).toBe(0);
+    expect(document.activeElement).toBe(switchBtn());
+  });
+
+  it('B14. 收起動畫還沒播完就再按切換鈕：重新打開，焦點移到目前頁', fakeAsync(() => {
+    render({ siblings: SIBLINGS });
+    switchBtn()!.click();
+    fixture.detectChanges();
+    tick();
+    switchBtn()!.click();
+    fixture.detectChanges();
+    tick(50);
+    switchBtn()!.focus();
+    switchBtn()!.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    expect(switchBtn()!.getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement).toBe(panelLinks()[1]);
+    tick(500);
+  }));
+
+  it('B15. 選單中間的頁面按 Tab／Shift＋Tab：在選單裡移動（Safari 預設 Tab 不停連結也一樣）', async () => {
+    render({ items: [TEAM[0], THREE[1]], siblings: THREE });
+    await openMenu();
+    const links = panelLinks();
+    links[0].focus();
+    const fwd = key(links[0], 'Tab');
+    expect(fwd.defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(links[1]);
+    const back = key(links[1], 'Tab', true);
+    expect(back.defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(links[0]);
+  });
+
+  it('B16. 焦點移到別處：選單收起', async () => {
+    render({ siblings: SIBLINGS });
+    await openMenu();
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    cleanups.push(() => outside.remove());
+    outside.focus();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+  });
+
+  it('B17. 使用端沒接 navigate：前面的節、選單的頁面都照連結換頁（不擋預設）', async () => {
+    render({ items: VERSION });
+    expect(clickProbe(segs()[0].querySelector('a')!)()).toBeTrue();
+    render({ items: TEAM, siblings: SIBLINGS });
+    await openMenu();
+    expect(clickProbe(panelLinks()[0])()).toBeTrue();
+  });
+
+  it('B18. 窄到前面的節縮到最小：還留得下圖示和刪節號', () => {
+    render({
+      items: [
+        { id: 'a', label: '一個非常非常非常非常長的上層區域名稱', icon: 'Megaphone', href: '/a' },
+        { id: 'b', label: '另一個也很長很長的中間層名稱', icon: 'AppWindow', href: '/b' },
+        { id: 'c', label: '目前頁', icon: 'VersionTag' },
+      ],
+    });
+    host().style.cssText = 'display:block;width:120px';
+    cleanups.push(() => host().removeAttribute('style'));
+    fixture.detectChanges();
+    for (const li of segs().slice(0, 2)) {
+      const label = li.querySelector<HTMLElement>('.breadcrumb__label')!;
+      // 刪節號「…」在 16px 下大約 16px 寬；名稱至少要留一個字寬才畫得出來
+      expect(label.getBoundingClientRect().width).withContext(li.textContent!).toBeGreaterThanOrEqual(14);
+      expect(li.querySelector('app-icon:not(.breadcrumb__sep)')!.getBoundingClientRect().width).toBe(16);
+    }
   });
 });

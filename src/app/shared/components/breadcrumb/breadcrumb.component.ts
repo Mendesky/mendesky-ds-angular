@@ -39,9 +39,10 @@ let nextUid = 0;
  * 最後一節是目前頁（aria-current="page"），不是連結。
  *
  * 最後一節帶兩頁以上的同區頁面（`siblings`）時變成切換鈕：按下打開切換選單（app-nav-link-panel，搬到 body），
- * 列出同區頁面的連結，目前頁綠底。打開時焦點移到目前頁；Esc 收起並還焦點給切換鈕；
- * 第一頁 Shift＋Tab 回切換鈕；最後一頁 Tab 收起、焦點交回切換鈕不擋預設，瀏覽器接著往下走。
- * `items` 換成新陣列（換頁了）時，開著的選單直接移除。
+ * 列出同區頁面的連結，目前頁綠底。打開時焦點移到目前頁；收起動畫還沒播完就再按，也是重新打開、焦點移到目前頁。
+ * 選單裡 Tab／Shift＋Tab 在頁面之間移動；第一頁 Shift＋Tab 回切換鈕；最後一頁 Tab 收起、焦點交回切換鈕不擋預設，瀏覽器接著往下走。
+ * Esc、選了頁面時收起，焦點在選單裡就交回切換鈕。
+ * `items` 換成新陣列（換頁了）時，開著的選單直接移除；焦點在選單裡也交回切換鈕。
  *
  * 名稱放不下時，前面的節先縮成刪節號，目前頁最後才縮。
  */
@@ -141,12 +142,22 @@ export class BreadcrumbComponent implements OnChanges, OnDestroy {
       return;
     }
     this.clearRemoveTimer();
+    const m = this.menu();
+    if (m?.leaving && this.panel) {
+      // 收起動畫還沒播完：同一個面板改回打開。面板不會重建，不會再走 panelRef 的 setter，所以這裡自己移焦點
+      const panel = this.panel;
+      this.menu.set({ ...m, leaving: false });
+      queueMicrotask(() => panel.focusCurrentOrFirst());
+      return;
+    }
     this.focusOnOpen = true;
     this.menu.set({ key: this.nextKey++, leaving: false });
   }
 
   onPanelLinkClick(e: { link: NavPanelLink; event: MouseEvent }): void {
     const target = this.siblings.find(s => this.keyOf(s) === e.link.id);
+    // 焦點在選單裡要先交回切換鈕，不然選單移除後焦點掉到 body
+    if (this.panel?.contains(document.activeElement)) this.switchBtn?.nativeElement.focus();
     this.closeMenu();
     if (!target || !this.navigate.observed) return;
     e.event.preventDefault();
@@ -195,6 +206,7 @@ export class BreadcrumbComponent implements OnChanges, OnDestroy {
   private dropMenu(): void {
     this.clearRemoveTimer();
     this.focusOnOpen = false;
+    if (this.panel?.contains(document.activeElement)) this.switchBtn?.nativeElement.focus();
     if (this.menu()) this.menu.set(null);
   }
 

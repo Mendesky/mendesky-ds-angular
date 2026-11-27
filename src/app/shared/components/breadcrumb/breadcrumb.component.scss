@@ -34,12 +34,19 @@
   align-items: center;
   gap: 6px;
   flex: 0 1 auto;
-  // 縮到只剩圖示＋刪節號就不再縮
-  min-width: 44px;
+  // 縮到只剩圖示＋刪節號就不再縮：圖示 16＋間距 4＋刪節號約 16＋間距 6＋分隔箭頭 16
+  min-width: 58px;
 }
 
 .breadcrumb__seg--last {
   flex-shrink: 0.001;
+  // 最後一節沒有分隔箭頭：圖示 16＋間距 4＋刪節號約 16
+  min-width: 36px;
+}
+
+.breadcrumb__seg--switch {
+  // 切換鈕：左右內距各 6＋圖示 16＋間距 4＋刪節號約 16＋間距 4＋下拉箭頭 16
+  min-width: 68px;
 }
 
 .breadcrumb__link,

@@ -40,14 +40,16 @@ const VIEWPORT_MARGIN = 8;
  *
  * 一出現就搬到 body，交給浮層定位服務：層級由服務給，不會被側欄或頁首的外框裁掉、蓋住。
  * - right：上緣對齊錨點上緣、左邊離錨點 8px；下方放不下時往上移到整個面板在畫面裡。
- *   位置在打開那一刻算好，之後不追錨點；頁面捲動、視窗改大小時送出 dismiss，由使用端收起。
+ *   位置在打開那一刻算好，之後不追錨點；捲動讓錨點移位、視窗改大小時送出 dismiss，由使用端收起。
+ *   捲動但錨點沒動（例如焦點把錨點捲進畫面那一下，在面板打開之前就捲完了）不收。
  * - below：切換鈕下方 6px、左邊對齊；服務負責翻面與跟著捲動。
  *
  * 動畫原點設在錨點那一側，看起來是從錨點長出來的（側欄子選單：母項目右緣、圖示中線）。
  * 離場由使用端把 leaving 設成 true，播完 150ms 再移除元件（減少動態時直接移除）。
  *
- * 鍵盤：面板在 body 底下，Tab 順序接不上錨點，所以由使用端處理錨點的 Tab；
- * 面板只在「第一個連結 Shift＋Tab」「最後一個連結 Tab」時送出 tabOut，讓使用端決定焦點去哪。
+ * 鍵盤：面板在 body 底下，Tab 順序接不上錨點，所以由使用端處理錨點的 Tab。
+ * 面板裡的 Tab、Shift＋Tab 由面板自己在連結之間移動（Safari 預設按 Tab 不停在連結上，交給瀏覽器會跳出面板）；
+ * 「第一個連結 Shift＋Tab」「最後一個連結 Tab」送出 tabOut，讓使用端決定焦點去哪。
  */
 @Component({
   selector: 'app-nav-link-panel',
@@ -91,10 +93,16 @@ export class NavLinkPanelComponent implements AfterViewInit, OnDestroy {
   private readonly zone = inject(NgZone);
   private overlayRef: PortalOverlayRef | null = null;
   private destroyed = false;
+  /** right：打開時錨點的位置。捲動後錨點離開這個位置，子選單就對不上了 */
+  private anchorAt: { top: number; left: number } | null = null;
 
   private readonly onScroll = (event: Event) => {
     // 面板自己裡面捲動不算
     if (event.target instanceof Node && this.el.nativeElement.contains(event.target)) return;
+    if (this.anchorAt) {
+      const r = this.anchor.getBoundingClientRect();
+      if (Math.abs(r.top - this.anchorAt.top) < 0.5 && Math.abs(r.left - this.anchorAt.left) < 0.5) return;
+    }
     this.emitDismiss('scroll');
   };
   private readonly onResize = () => this.emitDismiss('resize');
@@ -128,6 +136,7 @@ export class NavLinkPanelComponent implements AfterViewInit, OnDestroy {
 
     if (this.side === 'right') {
       const r = this.anchor.getBoundingClientRect();
+      this.anchorAt = { top: r.top, left: r.left };
       // 進場動畫一開始就把外框縮小，getBoundingClientRect 量到的是縮放後的高度；用排版高度（含小數）
       const h = parseFloat(getComputedStyle(host).height) || host.offsetHeight;
       const top = Math.max(VIEWPORT_MARGIN, Math.min(r.top, window.innerHeight - h - VIEWPORT_MARGIN));
@@ -191,6 +200,10 @@ export class NavLinkPanelComponent implements AfterViewInit, OnDestroy {
     const last = this.links.length - 1;
     if (!event.shiftKey && index === last) this.tabOut.emit({ direction: 'forward', event });
     else if (event.shiftKey && index === 0) this.tabOut.emit({ direction: 'backward', event });
+    else {
+      event.preventDefault();
+      this.linkElements()[event.shiftKey ? index - 1 : index + 1]?.focus();
+    }
   }
 
   private emitDismiss(reason: NavPanelDismissReason): void {
