@@ -140,6 +140,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  // 子頁面：列在母項目下方，左邊縮排 36px（8px 內距＋20px 圖示＋8px 間距），子頁面的圖示對齊母項目的名稱。
+  // 顏色、滑過、選中、焦點都沿用上面的項目規則
+  .side-nav__children {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .side-nav__item--child {
+    min-height: 32px;
+    padding-left: 36px;
+  }
 }
 
 // ── 窄欄（藏起來時也沿用，寬度轉場期間排法不變） ──

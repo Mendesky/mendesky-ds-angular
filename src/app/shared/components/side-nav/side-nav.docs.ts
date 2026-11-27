@@ -8,7 +8,7 @@ export const sideNavDoc: ComponentApi = {
     {
       name: 'groups',
       type: 'readonly SideNavGroup[]',
-      desc: '必填。群組與項目：SideNavGroup 是 { id, heading?, items }，SideNavItem 是 { id, label, icon, href }。不分群就傳一個不給 heading 的群組',
+      desc: '必填。群組與項目：SideNavGroup 是 { id, heading?, items }，SideNavItem 是 { id, label, icon, href, children? }，children 是子頁面 SideNavLink { id, label, icon, href }，只有一層。不分群就傳一個不給 heading 的群組',
     },
     {
       name: 'mode',
@@ -20,7 +20,7 @@ export const sideNavDoc: ComponentApi = {
       name: 'currentId',
       type: 'string | null',
       default: 'null',
-      desc: '目前頁的項目 id。對到的項目換成選中樣式，加 aria-current="page"',
+      desc: '目前頁的項目或子頁面 id。對到的換成選中樣式，加 aria-current="page"。目前頁是子頁面時，窄欄的母項目也換成選中樣式',
     },
     {
       name: 'ariaLabel',
@@ -30,16 +30,16 @@ export const sideNavDoc: ComponentApi = {
     },
     {
       name: '(navigate)',
-      type: 'EventEmitter<SideNavItem>',
-      desc: '左鍵單擊項目、沒按修飾鍵時送出；元件已擋掉瀏覽器換頁',
+      type: 'EventEmitter<SideNavLink>',
+      desc: '左鍵單擊項目或子頁面、沒按修飾鍵時送出；元件已擋掉瀏覽器換頁',
       isOutput: true,
     },
   ],
   events: [
     {
       name: 'navigate',
-      type: 'EventEmitter<SideNavItem>',
-      description: '左鍵單擊項目、沒按 Ctrl／⌘／Shift／Alt 時送出，元件已擋掉瀏覽器換頁。使用端在這裡用路由換頁',
+      type: 'EventEmitter<SideNavLink>',
+      description: '左鍵單擊項目或子頁面、沒按 Ctrl／⌘／Shift／Alt 時送出，元件已擋掉瀏覽器換頁。使用端在這裡用路由換頁',
     },
   ],
   usage: [
@@ -75,6 +75,8 @@ export const sideNavDoc: ComponentApi = {
     },
   ],
   usageNotes: [
+    '子頁面放在項目的 `children`。母項目的 `href` 給第一個子頁面的網址，`currentId` 給子頁面的 id。',
+    '`navigate` 送出的是 `SideNavLink`（項目或子頁面）。原本把參數型別寫成 `SideNavItem` 的處理函式不用改。',
     '頂端區用 `sideNavHeader` 屬性標記要投影的元素。',
     '`currentId` 由使用端從路由算出來，例如網址開頭對到哪個項目的 href。',
     '元件高度是外層的 100%，項目多到放不下時側欄自己捲動。',

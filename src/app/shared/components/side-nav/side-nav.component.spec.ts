@@ -364,3 +364,561 @@ describe('SideNavComponent', () => {
     });
   });
 });
+
+/**
+ * 子頁面（11-26）：項目可以帶一層子頁面。
+ * 展開：子頁面列在母項目下方、縮排、一直看得到。
+ * 窄欄：滑過或焦點在母項目時，右邊浮出子選單（搬到 body）：母項目名稱、分隔線、子頁面連結。
+ */
+describe('SideNavComponent 子頁面', () => {
+  const NESTED: SideNavGroup[] = [
+    {
+      id: 'main',
+      items: [
+        { id: 'home', label: '首頁', icon: 'Dashboard', href: '/home' },
+        {
+          id: 'team', label: '團隊', icon: 'Shield', href: '/team/members',
+          children: [
+            { id: 'team-members', label: '成員', icon: 'Person', href: '/team/members' },
+            { id: 'team-roles', label: '角色', icon: 'IdCard', href: '/team/roles' },
+          ],
+        },
+        {
+          id: 'notify', label: '通知', icon: 'BellRing', href: '/n/delivery',
+          children: [
+            { id: 'n-delivery', label: '發送紀錄', icon: 'Pulse', href: '/n/delivery' },
+            { id: 'n-cc', label: '寄件規則', icon: 'Mails', href: '/n/cc' },
+            { id: 'n-copy', label: '文案', icon: 'MessageText', href: '/n/copy' },
+          ],
+        },
+        { id: 'settings', label: '設定', icon: 'Assign', href: '/settings' },
+      ],
+    },
+  ];
+
+  let fixture: ComponentFixture<SideNavComponent>;
+  const host = () => fixture.nativeElement as HTMLElement;
+  /** 側欄本身的項目（不含子選單） */
+  const item = (label: string) =>
+    Array.from(host().querySelectorAll<HTMLAnchorElement>('a.side-nav__item')).find(a => a.textContent!.trim() === label || a.getAttribute('aria-label') === label)!;
+  const panels = () => Array.from(document.body.querySelectorAll<HTMLElement>(':scope > app-nav-link-panel'));
+  const openPanels = () => panels().filter(p => !p.classList.contains('nav-link-panel--leaving'));
+  const panelLinks = (p: HTMLElement) => Array.from(p.querySelectorAll<HTMLAnchorElement>('a'));
+  const tooltips = () => document.body.querySelectorAll('app-tooltip-portal');
+  const cleanups2: Array<() => void> = [];
+
+  const render = (inputs: { mode?: SideNavMode; currentId?: string | null; groups?: SideNavGroup[] }) => {
+    for (const [key, val] of Object.entries({ groups: NESTED, ...inputs })) fixture.componentRef.setInput(key, val);
+    fixture.detectChanges();
+  };
+  const hover = (el: HTMLElement) => { el.dispatchEvent(new MouseEvent('mouseenter')); fixture.detectChanges(); };
+  const unhover = (el: HTMLElement) => { el.dispatchEvent(new MouseEvent('mouseleave')); fixture.detectChanges(); };
+  const key = (el: HTMLElement, k: string, shiftKey = false) => {
+    const e = new KeyboardEvent('keydown', { key: k, shiftKey, bubbles: true, cancelable: true });
+    el.dispatchEvent(e);
+    fixture.detectChanges();
+    return e;
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [SideNavComponent] }).compileComponents();
+    fixture = TestBed.createComponent(SideNavComponent);
+    document.body.appendChild(host());
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    host().remove();
+    panels().forEach(p => p.remove());
+    tooltips().forEach(t => t.remove());
+    cleanups2.splice(0).forEach(fn => fn());
+  });
+
+  it('C1. 展開：子頁面列在母項目下方、包成以母項目為名的群組；目前子頁面 aria-current="page" 綠底，母項目不標', () => {
+    render({ mode: 'expanded', currentId: 'team-roles' });
+    const group = host().querySelector<HTMLElement>('[role="group"][aria-label="團隊"]')!;
+    expect(group).withContext('子頁面群組').not.toBeNull();
+    const kids = Array.from(group.querySelectorAll<HTMLAnchorElement>('a'));
+    expect(kids.map(a => a.textContent!.trim())).toEqual(['成員', '角色']);
+    expect(kids.map(a => a.getAttribute('href'))).toEqual(['/team/members', '/team/roles']);
+    expect(kids.every(a => a.querySelector('app-icon'))).toBeTrue();
+    // 母項目緊接在子頁面群組前面
+    expect(group.previousElementSibling).toBe(item('團隊'));
+    expect(kids[1].getAttribute('aria-current')).toBe('page');
+    expect(getComputedStyle(kids[1]).backgroundColor).toBe('rgb(83, 130, 39)');
+    expect(item('團隊').getAttribute('aria-current')).toBeNull();
+    expect(item('團隊').hasAttribute('aria-expanded')).toBeFalse();
+    // 縮排：子頁面的圖示對齊母項目的名稱
+    const parentLabel = item('團隊').querySelector('.side-nav__label')!.getBoundingClientRect().left;
+    const kidIcon = kids[0].querySelector('app-icon')!.getBoundingClientRect().left;
+    expect(Math.abs(kidIcon - parentLabel)).toBeLessThanOrEqual(1);
+    expect(kids[0].getBoundingClientRect().height).toBeGreaterThanOrEqual(32);
+  });
+
+  it('C2. 窄欄：子頁面不在側欄裡；母項目 aria-expanded="false"；目前頁在它底下時母項目綠底、aria-current="true"', () => {
+    render({ mode: 'rail', currentId: 'n-cc' });
+    expect(host().querySelector('[role="group"][aria-label="通知"]')).toBeNull();
+    expect(item('通知').getAttribute('aria-expanded')).toBe('false');
+    expect(item('首頁').hasAttribute('aria-expanded')).toBeFalse();
+    expect(item('通知').getAttribute('aria-current')).toBe('true');
+    expect(getComputedStyle(item('通知')).backgroundColor).toBe('rgb(83, 130, 39)');
+    expect(item('團隊').getAttribute('aria-current')).toBeNull();
+  });
+
+  it('C3. 窄欄滑過母項目：body 出現子選單（標題、分隔線、子頁面含圖示），母項目 aria-expanded、aria-controls 指向它', () => {
+    render({ mode: 'rail', currentId: 'team-roles' });
+    hover(item('團隊'));
+    expect(openPanels().length).toBe(1);
+    const p = openPanels()[0];
+    expect(p.querySelector('.nav-link-panel__heading')!.textContent!.trim()).toBe('團隊');
+    expect(p.querySelector('app-divider')).not.toBeNull();
+    expect(p.getAttribute('role')).toBe('group');
+    expect(document.getElementById(p.getAttribute('aria-labelledby')!)!.textContent!.trim()).toBe('團隊');
+    expect(panelLinks(p).map(a => a.textContent!.trim())).toEqual(['成員', '角色']);
+    expect(panelLinks(p).every(a => a.querySelector('app-icon'))).toBeTrue();
+    expect(panelLinks(p)[1].getAttribute('aria-current')).toBe('page');
+    expect(item('團隊').getAttribute('aria-expanded')).toBe('true');
+    expect(item('團隊').getAttribute('aria-controls')).toBe(p.id);
+    expect(Number(p.style.zIndex)).toBeGreaterThanOrEqual(9999);
+  });
+
+  it('C4. 有子頁面的母項目不出現名稱提示；一般項目照舊出現', fakeAsync(() => {
+    const before = new Set(Array.from(tooltips()));
+    const mine = () => Array.from(tooltips()).filter(t => !before.has(t)).map(t => t.textContent!.trim());
+    render({ mode: 'rail' });
+    item('團隊').dispatchEvent(new FocusEvent('focus'));
+    tick(300);
+    fixture.detectChanges();
+    expect(mine()).toEqual([]);
+    item('首頁').dispatchEvent(new FocusEvent('focus'));
+    tick(300);
+    fixture.detectChanges();
+    expect(mine()).toEqual(['首頁']);
+    tick(500);
+  }));
+
+  it('C5. 位置：上緣對齊母項目上緣、左邊離母項目 8px；換母項目在新位置重開，舊的播完收起才移除', fakeAsync(() => {
+    render({ mode: 'rail' });
+    host().style.cssText = 'position:fixed;top:0;left:0;height:400px';
+    cleanups2.push(() => host().removeAttribute('style'));
+    hover(item('團隊'));
+    const a = item('團隊').getBoundingClientRect();
+    const p1 = openPanels()[0];
+    // 量定位寫的座標：動畫進行中外框是縮放過的，getBoundingClientRect 會偏
+    const pos = (el: HTMLElement) => ({ top: parseFloat(el.style.top), left: parseFloat(el.style.left) });
+    expect(Math.abs(pos(p1).top - a.top)).toBeLessThanOrEqual(1);
+    expect(Math.abs(pos(p1).left - (a.right + 8))).toBeLessThanOrEqual(1);
+    // 動畫原點：母項目右緣（面板左邊往左 8px）、母項目垂直中線
+    expect(p1.style.transformOrigin).toBe(`-8px ${Math.round(a.height / 2)}px`);
+
+    unhover(item('團隊'));
+    hover(item('通知'));
+    const b = item('通知').getBoundingClientRect();
+    expect(openPanels().length).toBe(1);
+    const p2 = openPanels()[0];
+    expect(p2).not.toBe(p1);
+    expect(Math.abs(pos(p2).top - b.top)).toBeLessThanOrEqual(1);
+    expect(p1.classList.contains('nav-link-panel--leaving')).toBeTrue();
+    tick(150);
+    fixture.detectChanges();
+    expect(panels()).toEqual([p2]);
+  }));
+
+  it('C6. 下方放不下：子選單往上移，整個留在畫面裡', () => {
+    render({ mode: 'rail' });
+    // 把母項目推到畫面最下面
+    host().style.position = 'fixed';
+    host().style.top = `${window.innerHeight - 150}px`;
+    host().style.height = '600px';
+    cleanups2.push(() => host().removeAttribute('style'));
+    hover(item('通知'));
+    const p = openPanels()[0];
+    // 量定位寫的座標加上未縮放的高度（動畫進行中外框是縮放過的）
+    const bottom = parseFloat(p.style.top) + p.offsetHeight;
+    expect(parseFloat(p.style.top)).toBeLessThan(item('通知').getBoundingClientRect().top);
+    expect(bottom).toBeLessThanOrEqual(window.innerHeight - 8 + 1);
+  });
+
+  it('C7. 滑鼠從母項目移進子選單途中不收；離開兩邊 250ms 後收起，再 150ms 移除；滑到一般項目立刻收起', fakeAsync(() => {
+    render({ mode: 'rail' });
+    hover(item('團隊'));
+    const p = openPanels()[0];
+    unhover(item('團隊'));
+    tick(100);
+    hover(p);
+    tick(300);
+    fixture.detectChanges();
+    expect(openPanels()).toEqual([p]);
+    unhover(p);
+    tick(249);
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    tick(1);
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+    tick(150);
+    fixture.detectChanges();
+    expect(panels().length).toBe(0);
+
+    hover(item('團隊'));
+    expect(openPanels().length).toBe(1);
+    hover(item('設定'));
+    expect(openPanels().length).toBe(0);
+    tick(500);
+  }));
+
+  it('C8. 點子頁面送出那個子頁面、擋預設、收起；按住 ⌘ 點不送不擋', () => {
+    render({ mode: 'rail' });
+    const sent: string[] = [];
+    fixture.componentInstance.navigate.subscribe(l => sent.push(l.id));
+    hover(item('團隊'));
+    const roles = panelLinks(openPanels()[0])[1];
+    const meta = new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true });
+    const guard = (e: Event) => e.preventDefault();
+    roles.addEventListener('click', guard);
+    roles.dispatchEvent(meta);
+    expect(sent).toEqual([]);
+    roles.removeEventListener('click', guard);
+
+    const plain = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    roles.dispatchEvent(plain);
+    fixture.detectChanges();
+    expect(plain.defaultPrevented).toBeTrue();
+    expect(sent).toEqual(['team-roles']);
+    expect(openPanels().length).toBe(0);
+  });
+
+  it('C9. 鍵盤：焦點到母項目就浮出；Tab 進第一個子頁面；第一個 Shift＋Tab 回母項目；Esc 收起並回到母項目', () => {
+    render({ mode: 'rail' });
+    const parent = item('團隊');
+    parent.focus();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    expect(document.activeElement).withContext('焦點不會自己跳進子選單').toBe(parent);
+
+    const tab = key(parent, 'Tab');
+    expect(tab.defaultPrevented).toBeTrue();
+    const links = panelLinks(openPanels()[0]);
+    expect(document.activeElement).toBe(links[0]);
+
+    const back = key(links[0], 'Tab', true);
+    expect(back.defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(parent);
+
+    key(parent, 'Tab');
+    key(document.activeElement as HTMLElement, 'Escape');
+    expect(openPanels().length).toBe(0);
+    expect(document.activeElement).toBe(parent);
+  });
+
+  it('C10. 鍵盤：最後一個子頁面按 Tab → 子選單收起，焦點到母項目的下一個項目', () => {
+    render({ mode: 'rail' });
+    const parent = item('團隊');
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    const links = panelLinks(openPanels()[0]);
+    links[1].focus();
+    const e = key(links[1], 'Tab');
+    expect(e.defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(item('通知'));
+    // 下一個也是母項目：它的子選單打開，團隊的收起
+    expect(openPanels().length).toBe(1);
+    expect(openPanels()[0].querySelector('.nav-link-panel__heading')!.textContent!.trim()).toBe('通知');
+  });
+
+  it('C11. 點子選單外面：收起，底下的元素照常收到點擊', () => {
+    render({ mode: 'rail' });
+    hover(item('團隊'));
+    expect(openPanels().length).toBe(1);
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    cleanups2.push(() => outside.remove());
+    let clicked = false;
+    outside.addEventListener('click', () => (clicked = true));
+    outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    outside.click();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+    expect(clicked).toBeTrue();
+  });
+
+  it('C12. 頁面捲動、視窗改大小、換成展開寬度：子選單收起', () => {
+    render({ mode: 'rail' });
+    host().style.cssText = 'position:fixed;top:0;left:0;height:400px';
+    cleanups2.push(() => host().removeAttribute('style'));
+    hover(item('團隊'));
+    expect(openPanels().length).toBe(1);
+    // 捲動讓母項目移位了：子選單已經對不上，收起
+    host().style.top = '40px';
+    document.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+
+    hover(item('通知'));
+    expect(openPanels().length).toBe(1);
+    window.dispatchEvent(new Event('resize'));
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+
+    hover(item('團隊'));
+    expect(openPanels().length).toBe(1);
+    render({ mode: 'expanded' });
+    expect(panels().length).withContext('換寬度直接移除，不等動畫').toBe(0);
+  });
+
+  it('C13. 動畫：150ms，出現 ease-enter、收起 ease-exit；減少動態時不播', () => {
+    render({ mode: 'rail' });
+    hover(item('團隊'));
+    const p = openPanels()[0];
+    const enter = getComputedStyle(p);
+    expect(enter.animationDuration).toBe('0.15s');
+    const easeEnter = getComputedStyle(document.documentElement).getPropertyValue('--ease-enter').trim();
+    const easeExit = getComputedStyle(document.documentElement).getPropertyValue('--ease-exit').trim();
+    expect(easeEnter).withContext('--ease-enter 要有定義').not.toBe('');
+    expect(enter.animationTimingFunction.replace(/\s/g, '')).toBe(easeEnter.replace(/\s/g, ''));
+    unhover(item('團隊'));
+    hover(item('設定'));
+    const leave = getComputedStyle(p);
+    expect(leave.animationTimingFunction.replace(/\s/g, '')).toBe(easeExit.replace(/\s/g, ''));
+
+    const reduced = Array.from(document.styleSheets).flatMap(s => { try { return Array.from(s.cssRules); } catch { return []; } })
+      .filter((r): r is CSSMediaRule => r instanceof CSSMediaRule && r.media.mediaText.includes('prefers-reduced-motion'))
+      .flatMap(m => Array.from(m.cssRules) as CSSStyleRule[])
+      // 收起中的規則比平常的具體，減少動態要另外寫一條蓋掉它；只認含 --leaving 的那條
+      .filter(r => r.selectorText?.includes('nav-link-panel--leaving') && r.style.animationName === 'none' && p.matches(r.selectorText));
+    expect(reduced.length).withContext('減少動態時收起中的子選單也不播').toBeGreaterThan(0);
+  });
+  // ── 第一輪審查後補（11-26）──
+
+  const LAST_PARENT: SideNavGroup[] = [{
+    id: 'main',
+    items: [
+      { id: 'home', label: '首頁', icon: 'Dashboard', href: '/home' },
+      {
+        id: 'notify', label: '通知', icon: 'BellRing', href: '/n/delivery',
+        children: [
+          { id: 'n-delivery', label: '發送紀錄', icon: 'Pulse', href: '/n/delivery' },
+          { id: 'n-cc', label: '寄件規則', icon: 'Mails', href: '/n/cc' },
+        ],
+      },
+    ],
+  }];
+  const nextFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+
+  it('C14. 選了子頁面（鍵盤 Enter）：子選單收起，焦點回到母項目，母項目不會因此又打開子選單', () => {
+    render({ mode: 'rail' });
+    fixture.componentInstance.navigate.subscribe(() => undefined);
+    const parent = item('團隊');
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    const link = panelLinks(openPanels()[0])[1];
+    expect(document.activeElement).toBe(panelLinks(openPanels()[0])[0]);
+    link.focus();
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    fixture.detectChanges();
+    expect(document.activeElement).withContext('焦點不能掉到 body').toBe(parent);
+    expect(openPanels().length).toBe(0);
+    expect(parent.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('C15. 母項目是最後一項：最後一個子頁面按 Tab，子選單收起不再閃開，焦點交回母項目、不擋預設', () => {
+    render({ mode: 'rail', groups: LAST_PARENT });
+    const parent = item('通知');
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    const links = panelLinks(openPanels()[0]);
+    links[1].focus();
+    const before = panels().length;
+    const e = key(links[1], 'Tab');
+    expect(e.defaultPrevented).withContext('讓瀏覽器把焦點移到側欄後面').toBeFalse();
+    expect(document.activeElement).toBe(parent);
+    expect(openPanels().length).withContext('不能又開一個新的子選單').toBe(0);
+    expect(panels().length).toBe(before);
+    expect(parent.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('C16. 焦點從母項目移到側欄上方放進來的按鈕（不是項目）：子選單收起', () => {
+    render({ mode: 'rail' });
+    const headerBtn = document.createElement('button');
+    host().insertBefore(headerBtn, host().firstChild);
+    const parent = item('團隊');
+    parent.focus();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    headerBtn.focus();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+  });
+
+  it('C17. 子選單中間的頁面按 Tab／Shift＋Tab：在子選單裡移動（Safari 預設 Tab 不停連結也一樣）', () => {
+    render({ mode: 'rail' });
+    const parent = item('通知');
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    const links = panelLinks(openPanels()[0]);
+    expect(links.length).toBe(3);
+    const fwd = key(links[0], 'Tab');
+    expect(fwd.defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(links[1]);
+    const back = key(links[1], 'Tab', true);
+    expect(back.defaultPrevented).toBeTrue();
+    expect(document.activeElement).toBe(links[0]);
+  });
+
+  it('C18. 焦點在子選單裡時捲動、改視窗大小收起：焦點回到母項目', () => {
+    render({ mode: 'rail' });
+    host().style.cssText = 'position:fixed;top:0;left:0;height:400px';
+    cleanups2.push(() => host().removeAttribute('style'));
+    const parent = item('團隊');
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    host().style.top = '40px';
+    document.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+    expect(document.activeElement).toBe(parent);
+
+    key(parent, 'Tab');
+    expect(openPanels().length).toBe(1);
+    window.dispatchEvent(new Event('resize'));
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+    expect(document.activeElement).toBe(parent);
+  });
+
+  it('C19. 焦點在子選單裡、滑鼠離開：不收起（鍵盤還在用）', fakeAsync(() => {
+    render({ mode: 'rail' });
+    const parent = item('團隊');
+    hover(parent);
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    unhover(parent);
+    tick(300);
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    expect(document.activeElement).toBe(panelLinks(openPanels()[0])[0]);
+    tick(500);
+  }));
+
+  it('C20. 換成展開寬度時焦點在子選單裡：焦點回到母項目', () => {
+    render({ mode: 'rail' });
+    const parent = item('團隊');
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    render({ mode: 'expanded' });
+    expect(panels().length).toBe(0);
+    expect(document.activeElement).toBe(item('團隊'));
+  });
+
+  it('C21. 側欄自己會捲動：用焦點帶出要捲進畫面的母項目，子選單打開後不會被這次捲動收掉', async () => {
+    const many: SideNavGroup[] = [{
+      id: 'main',
+      items: [
+        ...Array.from({ length: 12 }, (_, i) => ({ id: `x${i}`, label: `項目 ${i}`, icon: 'Dashboard', href: `/x${i}` })),
+        ...NESTED[0].items.filter(i => i.children),
+      ],
+    }];
+    render({ mode: 'rail', groups: many });
+    host().style.cssText = 'position:fixed;top:0;left:0;height:200px;overflow:auto';
+    cleanups2.push(() => host().removeAttribute('style'));
+    const parent = item('通知');
+    parent.focus();
+    fixture.detectChanges();
+    expect(host().scrollTop).withContext('前提：焦點讓側欄捲動了').toBeGreaterThan(0);
+    await nextFrame();
+    await nextFrame();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+  });
+
+  it('C22. 子選單開著時切成藏起來：直接移除', () => {
+    render({ mode: 'rail' });
+    hover(item('團隊'));
+    expect(openPanels().length).toBe(1);
+    render({ mode: 'hidden' });
+    expect(panels().length).toBe(0);
+  });
+
+  it('C23. 焦點移到側欄外面：子選單收起', () => {
+    render({ mode: 'rail' });
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    cleanups2.push(() => outside.remove());
+    item('團隊').focus();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    outside.focus();
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(0);
+  });
+
+  it('C24. 使用端沒接 navigate：點子選單的頁面照連結換頁（不擋預設）', () => {
+    render({ mode: 'rail' });
+    hover(item('團隊'));
+    const link = panelLinks(openPanels()[0])[1];
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    let notPrevented = false;
+    // 冒泡到 document 時還沒被擋，才算照連結換頁；量完自己擋掉，免得測試真的換頁
+    const probe = (ev: Event) => { if (ev === click) { notPrevented = !ev.defaultPrevented; ev.preventDefault(); } };
+    document.addEventListener('click', probe);
+    cleanups2.push(() => document.removeEventListener('click', probe));
+    link.dispatchEvent(click);
+    fixture.detectChanges();
+    expect(notPrevented).toBeTrue();
+  });
+
+  it('C25. 展開寬度點子頁面：送出那個子頁面、擋預設', () => {
+    render({ mode: 'expanded' });
+    const sent: string[] = [];
+    fixture.componentInstance.navigate.subscribe(l => sent.push(l.id));
+    const kid = host().querySelector<HTMLAnchorElement>('[role="group"][aria-label="團隊"] a:nth-child(2)')!;
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    kid.dispatchEvent(click);
+    expect(click.defaultPrevented).toBeTrue();
+    expect(sent).toEqual(['team-roles']);
+  });
+
+  /** 母項目按 Tab 進子選單第一個子頁面 */
+  const focusIntoPanel = (label: string) => {
+    const parent = item(label);
+    parent.focus();
+    fixture.detectChanges();
+    key(parent, 'Tab');
+    return parent;
+  };
+
+  it('C26. 焦點在子選單裡、滑鼠滑到另一個母項目：焦點交回原本的母項目，新的子選單打開', () => {
+    render({ mode: 'rail' });
+    const team = focusIntoPanel('團隊');
+    expect(document.activeElement).toBe(panelLinks(openPanels()[0])[0]);
+    hover(item('通知'));
+    expect(document.activeElement).withContext('焦點不能掉到 body').toBe(team);
+    expect(openPanels().length).toBe(1);
+    expect(openPanels()[0].textContent).toContain('寄件規則');
+  });
+
+  it('C27. 焦點在子選單裡、滑鼠滑到一般項目：子選單收起，焦點交回母項目', () => {
+    render({ mode: 'rail' });
+    const team = focusIntoPanel('團隊');
+    hover(item('設定'));
+    expect(document.activeElement).withContext('焦點不能掉到 body').toBe(team);
+    expect(openPanels().length).toBe(0);
+  });
+
+  it('C28. 焦點在子選單裡、焦點離開但沒有去處（例：切到別的視窗）：子選單不收', () => {
+    render({ mode: 'rail' });
+    focusIntoPanel('團隊');
+    const link = panelLinks(openPanels()[0])[0];
+    link.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    fixture.detectChanges();
+    expect(openPanels().length).toBe(1);
+    expect(document.activeElement).toBe(link);
+  });
+});
